@@ -1,0 +1,81 @@
+# Параметри ArduCopter 4.5.7 для Visual Homing + Smart RTL
+# Завантажити через Mission Planner: Config -> Full Parameter List -> Load from file
+# Оновлено: Додано підтримку MATEK 3901-L0X та TF-Luna
+
+# === UART для Pi Zero 2 W (MAVLink) ===
+# Використовуйте SERIAL3 (TX3/RX3)
+SERIAL3_PROTOCOL,2
+SERIAL3_BAUD,115
+
+# === UART для MATEK 3901-L0X (Optical Flow + VL53L0X) ===
+# Використовуйте SERIAL4 (TX4/RX4)
+SERIAL4_PROTOCOL,32
+SERIAL4_BAUD,115
+
+# === UART для TF-Luna LiDAR ===
+# Використовуйте SERIAL5 (TX5/RX5)
+SERIAL5_PROTOCOL,9
+SERIAL5_BAUD,115
+
+# === Компас ВИМКНЕНО ===
+COMPASS_ENABLE,0
+COMPASS_USE,0
+COMPASS_USE2,0
+COMPASS_USE3,0
+
+# === GPS (з можливістю вимкнення) ===
+GPS_TYPE,1
+
+# === External Navigation (Visual Homing) ===
+VISO_TYPE,1
+VISO_POS_M_NSE,0.1
+VISO_VEL_M_NSE,0.1
+VISO_YAW_M_NSE,0.1
+VISO_DELAY_MS,80
+
+# === Optical Flow (MATEK 3901-L0X) ===
+FLOW_TYPE,7
+FLOW_FXSCALER,-800
+FLOW_FYSCALER,-800
+
+# === Rangefinder 1 (TF-Luna LiDAR, UART) ===
+RNGFND1_TYPE,20
+RNGFND1_MIN_CM,20
+RNGFND1_MAX_CM,800
+RNGFND1_ORIENT,25
+RNGFND1_GNDCLEAR,10
+
+# === Rangefinder 2 (MATEK 3901-L0X built-in VL53L0X, MSP) ===
+RNGFND2_TYPE,32
+RNGFND2_MIN_CM,2
+RNGFND2_MAX_CM,200
+
+# === EKF Sources ===
+# Source Set 1: External Navigation (Visual Homing)
+EK3_SRC1_POSXY,6
+EK3_SRC1_VELXY,6
+EK3_SRC1_POSZ,1
+EK3_SRC1_YAW,6
+EK3_POS_I_GATE,500
+EK3_VEL_I_GATE,500
+
+# Source Set 2: Optical Flow (for low altitude)
+EK3_SRC2_POSXY,0
+EK3_SRC2_VELXY,5
+EK3_SRC2_POSZ,2
+EK3_SRC2_YAW,6
+
+# === RTL ===
+RTL_ALT,5000
+RTL_ALT_FINAL,0
+RTL_SPEED,800
+RTL_CLIMB_MIN,0
+RTL_LOIT_TIME,5000
+
+# === Stream Rates ===
+SR3_POSITION,10
+SR3_EXTRA1,10
+SR3_EXTRA2,5
+
+# === Failsafe ===
+FS_GPS_ENABLE,0

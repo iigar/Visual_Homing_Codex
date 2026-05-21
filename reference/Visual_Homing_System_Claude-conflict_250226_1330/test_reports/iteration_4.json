@@ -1,0 +1,93 @@
+{
+  "summary": "Update mode testing complete. Updated existing tests for new Modern Dark UI redesign and added new tests for Route History with MongoDB integration. All 18 frontend tests passed (13 original + 5 new), all 15 backend tests passed.",
+  "mode": "update",
+  "baseline_commit": "2268e0e48151a36aafcd08571e61a874040080c6",
+  "head_commit": "1d8666ed7fda522f44c3733021ee5bc8585b8145",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 3,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0
+  },
+  "specs_created": ["/app/tests/e2e/route-history.spec.ts"],
+  "specs_updated": ["/app/tests/e2e/core-flows.spec.ts", "/app/tests/e2e/map-simulation.spec.ts"],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/tests/e2e/core-flows.spec.ts",
+    "/app/tests/e2e/map-simulation.spec.ts",
+    "/app/tests/e2e/route-history.spec.ts"
+  ],
+  "action_items": [],
+  "updated_files": [
+    "/app/tests/e2e/core-flows.spec.ts",
+    "/app/tests/e2e/map-simulation.spec.ts",
+    "/app/tests/e2e/route-history.spec.ts",
+    "/app/backend/tests/test_api.py",
+    "/app/backend/tests/conftest.py"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15)",
+    "frontend": "100% (18/18)"
+  },
+  "seed_data_creation": "Test routes created dynamically with TEST_ prefix, cleaned up after each test",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test suite updated for Modern Dark UI redesign. Tests cover: 1) Core flows (header, navigation, tabs), 2) 3D Map simulation with auto-save toggle, 3) Route History CRUD operations with MongoDB. API /api/routes/demo/generate is MOCKED - returns static demo data.",
+  "tests_summary": {
+    "backend_tests": [
+      "test_root_endpoint - Root API returns version info",
+      "test_docs_list_returns_array - Docs list returns array",
+      "test_docs_list_has_required_fields - Docs have name/path/title",
+      "test_get_single_doc - Single doc content loads with HTML",
+      "test_demo_route_generate - Demo route has required fields",
+      "test_demo_route_has_points - Route has 100 points",
+      "test_demo_route_has_keyframes - Route has 10 keyframes",
+      "test_demo_route_total_distance - Distance calculated correctly",
+      "test_routes_list - Routes list endpoint works",
+      "test_create_and_delete_route - Routes CRUD operations work",
+      "test_delete_nonexistent_route - Error handling for missing route",
+      "test_get_position - Drone position GET works",
+      "test_post_position - Drone position POST updates correctly",
+      "test_start_simulation - Simulation start endpoint works",
+      "test_firmware_structure - Firmware structure returns files"
+    ],
+    "frontend_tests": {
+      "core-flows.spec.ts": [
+        "App loads with header and navigation",
+        "Navigation tabs visible and 3D Map active by default",
+        "Tab navigation switches between views (including History)",
+        "About section displays project info and specs",
+        "Documentation tab displays document list",
+        "Route History tab displays correctly"
+      ],
+      "map-simulation.spec.ts": [
+        "3D Map container and canvas render",
+        "Simulation buttons visible and functional",
+        "Start/Stop simulation button works",
+        "Reset button works",
+        "New route button loads new route from API",
+        "Map stats display keyframes and distance",
+        "Auto-save toggle is visible and functional"
+      ],
+      "route-history.spec.ts": [
+        "API: List routes endpoint returns array",
+        "API: Save and delete route via API",
+        "UI: Enable auto-save and save route",
+        "UI: Route History page displays saved routes",
+        "UI: Delete route from history"
+      ]
+    }
+  },
+  "mocked_api_note": "/api/routes/demo/generate returns static demo route data (not real flight data) - as expected per requirements"
+}

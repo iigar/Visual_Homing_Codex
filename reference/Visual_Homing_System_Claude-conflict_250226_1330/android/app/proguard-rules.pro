@@ -1,0 +1,3 @@
+-keep class ua.visualhoming.app.data.** { *; }
+-keepattributes *Annotation*
+-keepattributes Signature

@@ -1,0 +1,190 @@
+{
+  "project_name": "Visual Homing System",
+  "design_philosophy": {
+    "name": "Tactical Minimalism (Dark Mode)",
+    "description": "A precision-focused, dark-mode interface inspired by drone HUDs and mission control centers. It balances professional data visualization with an immersive, high-tech aesthetic.",
+    "core_principles": [
+      "Content is King: The 3D Map is the hero. UI floats above it.",
+      "Tactical Clarity: High contrast for data, subtle hierarchy for structure.",
+      "Glassmorphism: Used for overlays to maintain context of the map behind.",
+      "Motion: Smooth, physics-based transitions for drone movement and UI panels."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Chivo, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "installation": {
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    },
+    "usage": {
+      "h1": "font-heading font-black text-4xl md:text-5xl tracking-tight text-white",
+      "h2": "font-heading font-bold text-2xl md:text-3xl tracking-tight text-white/90",
+      "h3": "font-heading font-bold text-xl tracking-wide text-white/80 uppercase",
+      "body": "font-sans text-base text-zinc-400 leading-relaxed",
+      "label": "font-mono text-xs font-medium tracking-wider text-cyan-500 uppercase",
+      "data": "font-mono text-sm font-bold text-white"
+    }
+  },
+  "colors": {
+    "theme": "dark",
+    "palette": {
+      "background": {
+        "main": "#09090b",
+        "secondary": "#18181b",
+        "tertiary": "#27272a",
+        "overlay": "rgba(9, 9, 11, 0.7)"
+      },
+      "primary": {
+        "DEFAULT": "#06b6d4",
+        "foreground": "#000000",
+        "glow": "0 0 20px rgba(6, 182, 212, 0.5)"
+      },
+      "secondary": {
+        "DEFAULT": "#27272a",
+        "foreground": "#ffffff"
+      },
+      "accent": {
+        "DEFAULT": "#06b6d4",
+        "hover": "#22d3ee"
+      },
+      "status": {
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "error": "#f43f5e",
+        "info": "#3b82f6"
+      },
+      "border": {
+        "DEFAULT": "#27272a",
+        "subtle": "#27272a"
+      }
+    },
+    "gradients": {
+      "subtle_glow": "radial-gradient(circle at top left, rgba(6, 182, 212, 0.15), transparent 40%)",
+      "glass": "linear-gradient(180deg, rgba(24, 24, 27, 0.6) 0%, rgba(24, 24, 27, 0.8) 100%)",
+      "active_border": "linear-gradient(90deg, transparent, #06b6d4, transparent)"
+    }
+  },
+  "layout_strategies": {
+    "dashboard_map_page": {
+      "structure": "overlay",
+      "description": "The 3D map occupies the full screen (z-index 0). The UI panels float on top (z-index 10).",
+      "grid": "grid grid-cols-1 lg:grid-cols-12 gap-4 h-screen p-4 overflow-hidden",
+      "zones": {
+        "sidebar": "col-span-1 lg:col-span-3 h-full overflow-y-auto glass-panel",
+        "main_view": "absolute inset-0 z-0",
+        "top_bar": "absolute top-4 left-4 right-4 h-16 glass-panel z-20 flex items-center justify-between px-6",
+        "bottom_panel": "absolute bottom-4 left-4 right-4 h-32 glass-panel z-20"
+      }
+    },
+    "documentation_page": {
+      "structure": "split-pane",
+      "grid": "grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 max-w-7xl mx-auto h-[calc(100vh-80px)]",
+      "zones": {
+        "sidebar": "col-span-1 border-r border-border pr-4 overflow-y-auto",
+        "content": "col-span-3 overflow-y-auto pl-4"
+      }
+    },
+    "route_history_page": {
+      "structure": "list-view",
+      "container": "max-w-6xl mx-auto p-8",
+      "components": "Use Shadcn Table component with custom styling (transparent bg, hover effects)."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-2 px-6 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-300 hover:scale-105 active:scale-95",
+      "secondary": "bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-2 px-6 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-all",
+      "ghost": "bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white transition-colors",
+      "icon": "p-2 rounded-full hover:bg-white/10 transition-colors text-zinc-400 hover:text-cyan-400"
+    },
+    "cards": {
+      "base": "bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-xl shadow-xl overflow-hidden",
+      "interactive": "hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all duration-300 group cursor-pointer",
+      "glass": "bg-black/40 backdrop-blur-xl border border-white/10"
+    },
+    "inputs": {
+      "base": "bg-zinc-950/50 border border-zinc-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-md text-white placeholder:text-zinc-600 transition-all"
+    },
+    "navigation": {
+      "item": "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors text-zinc-400 hover:text-white hover:bg-white/5",
+      "active": "text-cyan-400 bg-cyan-950/30 border border-cyan-500/20"
+    }
+  },
+  "visual_enhancers": {
+    "glass_panel": "backdrop-blur-xl bg-black/60 border border-white/10 shadow-2xl",
+    "neon_glow": "shadow-[0_0_10px_rgba(6,182,212,0.5)]",
+    "grid_background": "bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]",
+    "animations": {
+      "hover_lift": "hover:-translate-y-1 transition-transform duration-300 ease-out",
+      "fade_in": "animate-in fade-in duration-500",
+      "slide_up": "animate-in slide-in-from-bottom-4 duration-500"
+    }
+  },
+  "3d_visualization": {
+    "library": "react-three-fiber",
+    "style": {
+      "background": "#050505",
+      "fog": "0x050505",
+      "terrain": "wireframe or dark low-poly mesh",
+      "drone_path": "CatmullRomCurve3 with Neon Cyan tube geometry + Bloom effect",
+      "drone_model": "Minimalist geometric cone or low-poly drone model",
+      "lighting": "Ambient light (intensity 0.2) + Point lights (Cyan/Teal) attached to drone"
+    },
+    "controls": "OrbitControls (enableDamping=true, dampingFactor=0.05)"
+  },
+  "universal_guidelines": [
+    "NEVER use generic 'slate-500' grey. Use 'zinc' or 'neutral' for a warmer/richer dark mode.",
+    "Always add `data-testid` to interactive elements.",
+    "Use 'sonner' for toast notifications.",
+    "Avoid 'Inter' for Headings. Use 'Chivo'.",
+    "Do not use gradients for text unless it's a very subtle brand moment.",
+    "Ensure all glassmorphism panels have a 1px border (`border-white/10` or similar) to define edges."
+  ],
+  "instructions_to_main_agent": [
+    "1. REFINE THE CSS: The existing `App.css` is legacy. Create a new `globals.css` that imports Tailwind directives and sets up the custom @layer base styles for fonts and colors defined in this JSON. Gradually migrate components to use Tailwind utility classes instead of `.sidebar`, `.header` classes.",
+    "2. UPDATE TAILWIND CONFIG: Add the custom colors (cyan, zinc) and fonts (Chivo, JetBrains Mono) to `tailwind.config.js`.",
+    "3. ENHANCE THE MAP: implementing the 'Map Page' with the overlay layout described above. Use `react-three-fiber` for the map.",
+    "4. CREATE ROUTE HISTORY: Build the new 'Route History' page using a Shadcn Table, styled with the 'cards.base' style.",
+    "5. MIGRATE COMPONENTS: Update existing components to use Shadcn UI primitives where possible (Buttons, Inputs, Dialogs, Toasts).",
+    "6. DOCUMENTATION: Ensure the markdown viewer allows for syntax highlighting with a dark theme (e.g., vsc-dark-plus)."
+  ],
+  "image_urls": {
+    "hero_backgrounds": [
+      {
+        "url": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop",
+        "description": "Cyberpunk city night - useful for ambient backgrounds or login screen",
+        "category": "background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1473968512647-3e447244af8f?q=80&w=2070&auto=format&fit=crop",
+        "description": "Drone flying at night - good for 'About' or 'Landing'",
+        "category": "background"
+      }
+    ],
+    "textures": [
+      {
+        "url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop",
+        "description": "Abstract dark flow - subtle texture for card backgrounds",
+        "category": "texture"
+      }
+    ]
+  },
+  "icons": {
+      "library": "lucide-react",
+      "preferred_icons": {
+          "dashboard": "LayoutDashboard",
+          "map": "Map",
+          "history": "History",
+          "settings": "Settings",
+          "docs": "FileText",
+          "code": "Code",
+          "drone": "Plane",
+          "user": "User",
+          "menu": "Menu",
+          "close": "X"
+      }
+  }
+}
