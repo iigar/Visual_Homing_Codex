@@ -9,6 +9,8 @@ This repository keeps the previous implementation as a reference baseline and bu
 - `reference/` - imported baseline project, kept for comparison and reuse.
 - `core/` - new deterministic C++ core.
 - `docs/` - architecture notes, roadmap, test strategy.
+- `notes/` - informal research notes and ideas.
+- `scripts/memory.ps1` - helper for project memory entries and session startup prompt.
 
 ## Direction
 
@@ -20,3 +22,25 @@ The new core is not intended to be a long-range metric SLAM system. The target i
 4. Keep all realtime stages measurable, bounded, and replay-testable.
 
 Python and web components may remain useful for tooling, monitoring, and offline experiments. Flight-critical logic should live in the C++ core.
+
+## Project Memory
+
+The repository is the source of truth for long-term project context.
+
+Use the helper script from the repository root:
+
+```powershell
+.\scripts\memory.ps1 startup
+.\scripts\memory.ps1 decision "Decision title" "Decision body"
+.\scripts\memory.ps1 session "Session title" "Progress summary"
+.\scripts\memory.ps1 memory "Context title" "Stable project context"
+.\scripts\memory.ps1 note "Research title" "Idea or research note"
+```
+
+Rules:
+
+- Technical project decisions go to `docs/DECISIONS.md`.
+- Current progress goes to `docs/SESSION_LOG.md`.
+- Stable project context goes to `docs/PROJECT_MEMORY.md`.
+- Ideas and research go to `notes/`.
+- Code changes are captured in detailed git commits.
