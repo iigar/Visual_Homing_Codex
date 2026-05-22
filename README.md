@@ -37,6 +37,15 @@ Use the helper script from the repository root:
 .\scripts\memory.ps1 note "Research title" "Idea or research note"
 ```
 
+Estimate the size of the standard startup context pack:
+
+```powershell
+.\scripts\context-status.ps1
+.\scripts\context-status.ps1 -MaxTokens 128000
+```
+
+This is not a live Codex context meter. It estimates the token size of the project memory files plus `git log -3`, which is the context pack normally read at the start of a session.
+
 Rules:
 
 - Technical project decisions go to `docs/DECISIONS.md`.
