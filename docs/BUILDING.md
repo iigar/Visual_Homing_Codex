@@ -45,6 +45,7 @@ Expected CTest coverage:
 - `health_monitor`
 - `pipeline_harness`
 - `route_signature`
+- `route_signature_recorder`
 
 Latest validation command:
 
