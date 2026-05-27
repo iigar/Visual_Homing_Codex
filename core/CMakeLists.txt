@@ -12,6 +12,7 @@ add_executable(visual_homing_core
 
 add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
+    src/health_monitor.cpp
     src/replay_frame_source.cpp
     src/system_clock.cpp
 )
@@ -60,4 +61,17 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME replay_frame_source COMMAND replay_frame_source_test)
+
+    add_executable(health_monitor_test
+        tests/health_monitor_test.cpp
+    )
+
+    target_link_libraries(health_monitor_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(health_monitor_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME health_monitor COMMAND health_monitor_test)
 endif()

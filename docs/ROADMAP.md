@@ -11,7 +11,7 @@
 - Define replay input format. Initial CSV manifest: `id,timestamp_ns,path`.
 - Load image/video sequences with timestamps. Initial implementation supports PGM P5 Gray8 image sequences.
 - Run preprocessing on small frames. Initial implementation supports deterministic Gray8 block-average resizing.
-- Emit per-frame timing and health metrics.
+- Emit per-frame timing and health metrics. Initial `HealthMonitor` tracks frame age, processing latency, counters, confidence, and link health.
 
 ## Milestone 2 - Visual Route Signature
 
