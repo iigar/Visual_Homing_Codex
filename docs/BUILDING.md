@@ -44,6 +44,7 @@ Expected CTest coverage:
 - `replay_frame_source`
 - `health_monitor`
 - `pipeline_harness`
+- `route_signature`
 
 Latest validation command:
 

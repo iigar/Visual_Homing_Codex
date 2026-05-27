@@ -70,3 +70,20 @@ Impact:
 
 Risk:
 - Infrastructure work can expand if it tries to become CI too early. Keep Milestone 1.5 limited to local developer hygiene and a minimal replay/preprocess/health loop.
+
+## 2026-05-27 - Route Signature V1 Is Explicit Little-Endian Binary
+
+Decision:
+- Start Milestone 2 with a binary route signature file format using magic `VHRS`, version `1`, explicit little-endian integer fields, fixed-size entry metadata, and length-prefixed payload bytes.
+
+Why:
+- Route files are a core contract for matching and replay, so versioning and byte order need to be explicit before algorithms depend on them.
+- Fixed metadata plus length-prefixed payloads keeps the format stream-friendly while allowing future Gray8, BGR, and thermal signatures.
+- A dependency-free binary writer/reader is small enough for Pi Zero class hardware and simple to round-trip in tests.
+
+Impact:
+- Matching work can consume a stable `RouteSignatureFile` structure instead of inventing storage concerns later.
+- The first implementation supports compact preprocessed payloads and route metadata: frame id, timestamp, altitude band, heading hint, dimensions, and pixel format.
+
+Risk:
+- The v1 format is intentionally minimal and may need extension for richer route metadata. Future changes must bump the version or add clearly reserved fields.

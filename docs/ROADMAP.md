@@ -25,11 +25,12 @@
 
 ## Milestone 2 - Visual Route Signature
 
-- Define route file format v1 with magic, version, endian policy, header size, entry count or streaming mode, metadata fields, and payload length.
+- Define route file format v1 with magic, version, endian policy, header size, entry count or streaming mode, metadata fields, and payload length. Initial implementation uses binary `VHRS` v1 with explicit little-endian fields.
 - Store compact grayscale/thermal signatures.
 - Add route metadata: frame id, time, altitude band, coarse heading hint.
 - Keep format versioned and stream-friendly.
 - Add writer/reader tests that round-trip metadata and payload bytes before matching logic begins.
+- Status: route signature v1 writer/reader is implemented and validated with round-trip tests.
 
 ## Milestone 3 - Coarse Route Matching
 

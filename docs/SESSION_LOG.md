@@ -21,3 +21,5 @@
 - Agreed to insert Milestone 1.5 before Visual Route Signature work: add `.gitignore`, `docs/BUILDING.md`, `scripts/test-core.ps1`, and an end-to-end replay/preprocess/health pipeline harness.
 - Completed Milestone 1.5 with build artifact ignore rules, Windows build documentation, a one-command core test script, and `PipelineHarness` for replay -> preprocess -> health metrics.
 - Validated Milestone 1.5 using `.\scripts\test-core.ps1 -Clean`: build passed and 4/4 CTest tests passed in Debug.
+- Started Milestone 2 by adding route signature format v1: binary `VHRS` files with explicit little-endian fields, entry metadata, writer/reader functions, and payload round-trip tests.
+- Validated route signature v1 using `.\scripts\test-core.ps1 -Clean`: build passed and 5/5 CTest tests passed in Debug.
