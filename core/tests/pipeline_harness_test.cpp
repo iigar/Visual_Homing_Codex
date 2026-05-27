@@ -1,10 +1,12 @@
 #include <cassert>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
 
 #include "visual_homing/pipeline_harness.hpp"
+#include "visual_homing/route_signature.hpp"
 
 namespace {
 
@@ -59,6 +61,34 @@ int main() {
     assert(output.find("frame id=1 size=2x2") != std::string::npos);
     assert(output.find("state=degraded") != std::string::npos);
     assert(output.find("pipeline_done frames_processed=2") != std::string::npos);
+
+    std::ostringstream record_metrics;
+    vh::RouteRecordingConfig record_config;
+    record_config.manifest_path = config.manifest_path;
+    record_config.route_output_path = std::filesystem::temp_directory_path() / "visual_homing_pipeline_record_test.vhrs";
+    record_config.target_width = 2;
+    record_config.target_height = 2;
+    record_config.altitude_m = 75.2;
+    record_config.heading_hint_rad = 0.125;
+
+    const auto record_result = vh::record_replay_route(record_config, record_metrics);
+    assert(record_result.frames_processed == 2);
+
+    const auto route = vh::read_route_signature_file(record_config.route_output_path);
+    assert(route.entries.size() == 2);
+    assert(route.entries[0].frame_id == 0);
+    assert(route.entries[0].timestamp_ns == 0);
+    assert(route.entries[0].altitude_band_m == 75);
+    assert(route.entries[0].width == 2);
+    assert(route.entries[0].height == 2);
+    assert(route.entries[0].payload == std::vector<std::uint8_t>({15, 115, 215, 55}));
+    assert(route.entries[1].frame_id == 1);
+    assert(route.entries[1].timestamp_ns == 33333333ULL);
+    assert(route.entries[1].payload == std::vector<std::uint8_t>({20, 120, 220, 60}));
+
+    const auto record_output = record_metrics.str();
+    assert(record_output.find("route_record_start frames_available=2 target=2x2") != std::string::npos);
+    assert(record_output.find("route_record_done frames_processed=2 entries=2") != std::string::npos);
 
     return 0;
 }

@@ -25,3 +25,5 @@
 - Validated route signature v1 using `.\scripts\test-core.ps1 -Clean`: build passed and 5/5 CTest tests passed in Debug.
 - Added `RouteSignatureRecorder` to convert preprocessed frames and navigation estimates into route signature entries and write `VHRS` route files.
 - Validated `RouteSignatureRecorder` using `.\scripts\test-core.ps1`: build passed and 6/6 CTest tests passed in Debug.
+- Added replay-to-route recording path through `record_replay_route` and CLI `--record-route`, producing `.vhrs` files from Gray8 preprocessed replay frames.
+- Validated replay-to-route recording using `.\scripts\test-core.ps1`: build passed and 6/6 CTest tests passed in Debug.

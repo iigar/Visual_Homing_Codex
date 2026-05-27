@@ -39,6 +39,9 @@ std::uint16_t dimension_to_u16(int value, const char* name) {
 } // namespace
 
 void RouteSignatureRecorder::observe(const Frame& frame, const NavigationEstimate& nav) {
+    if (frame.format != PixelFormat::Gray8) {
+        throw std::runtime_error("Route signature recorder currently accepts only Gray8 frames");
+    }
     if (frame.width <= 0 || frame.height <= 0) {
         throw std::runtime_error("Route signature recorder received invalid frame dimensions");
     }

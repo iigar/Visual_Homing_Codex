@@ -48,9 +48,27 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 8 && std::string(argv[1]) == "--record-route") {
+        try {
+            vh::RouteRecordingConfig config;
+            config.manifest_path = argv[2];
+            config.route_output_path = argv[3];
+            config.target_width = std::stoi(argv[4]);
+            config.target_height = std::stoi(argv[5]);
+            config.altitude_m = std::stod(argv[6]);
+            config.heading_hint_rad = std::stod(argv[7]);
+            const auto result = vh::record_replay_route(config, std::cout);
+            return result.frames_processed > 0 ? 0 : 1;
+        } catch (const std::exception& error) {
+            std::cerr << "record_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
+    std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

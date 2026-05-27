@@ -27,10 +27,10 @@
 
 - Define route file format v1 with magic, version, endian policy, header size, entry count or streaming mode, metadata fields, and payload length. Initial implementation uses binary `VHRS` v1 with explicit little-endian fields.
 - Store compact grayscale/thermal signatures.
-- Add route metadata: frame id, time, altitude band, coarse heading hint. Initial recorder maps preprocessed frames and navigation estimates into route signature entries.
+- Add route metadata: frame id, time, altitude band, coarse heading hint. Initial recorder maps Gray8 preprocessed frames and navigation estimates into route signature entries.
 - Keep format versioned and stream-friendly.
 - Add writer/reader tests that round-trip metadata and payload bytes before matching logic begins.
-- Status: route signature v1 writer/reader and `RouteSignatureRecorder` are implemented and validated with round-trip tests.
+- Status: route signature v1 writer/reader, `RouteSignatureRecorder`, and replay-to-route CLI recording path are implemented and validated with round-trip tests.
 
 ## Milestone 3 - Coarse Route Matching
 
