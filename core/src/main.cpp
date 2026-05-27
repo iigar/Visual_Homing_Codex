@@ -65,10 +65,28 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 8 && std::string(argv[1]) == "--match-route") {
+        try {
+            vh::RouteMatchingConfig config;
+            config.route_path = argv[2];
+            config.manifest_path = argv[3];
+            config.target_width = std::stoi(argv[4]);
+            config.target_height = std::stoi(argv[5]);
+            config.window_radius = static_cast<std::size_t>(std::stoull(argv[6]));
+            config.minimum_confidence = std::stod(argv[7]);
+            const auto result = vh::match_replay_route(config, std::cout);
+            return result.frames_processed > 0 ? 0 : 1;
+        } catch (const std::exception& error) {
+            std::cerr << "match_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
+    std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence>\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

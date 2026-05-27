@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/health_monitor.hpp"
 #include "visual_homing/replay_frame_source.hpp"
@@ -105,6 +106,57 @@ PipelineResult record_replay_route(const RouteRecordingConfig& config, std::ostr
 
     metrics << "route_record_done frames_processed=" << result.frames_processed
             << " entries=" << recorder.route().entries.size() << "\n";
+
+    return result;
+}
+
+PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics) {
+    if (config.target_width <= 0 || config.target_height <= 0) {
+        throw std::invalid_argument("Route matching target dimensions must be positive");
+    }
+
+    auto route = read_route_signature_file(config.route_path);
+    Gray8RouteMatcher matcher(std::move(route), {
+        .window_radius = config.window_radius,
+        .minimum_confidence = config.minimum_confidence,
+    });
+    auto replay = ReplayFrameSource::load_manifest(config.manifest_path);
+    Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
+    HealthMonitor health(now());
+    health.set_links(true, false, true);
+
+    replay.start();
+
+    PipelineResult result;
+    metrics << "route_match_start frames_available=" << replay.size()
+            << " route=" << config.route_path.string()
+            << " target=" << config.target_width << "x" << config.target_height
+            << " window_radius=" << config.window_radius
+            << " minimum_confidence=" << config.minimum_confidence << "\n";
+
+    while (const auto frame = replay.poll()) {
+        const auto processing_started = now();
+        const auto processed = preprocessor.process(*frame);
+        const auto match = matcher.match(processed);
+        const auto processing_finished = now();
+        const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
+        health.set_route_match_confidence(match.confidence);
+
+        ++result.frames_processed;
+        result.last_frame_age_ms = timing.frame_age_ms;
+        result.last_processing_latency_ms = timing.processing_latency_ms;
+
+        metrics << "match_frame id=" << processed.id
+                << " route_index=" << match.route_index
+                << " progress=" << match.progress
+                << " confidence=" << match.confidence
+                << " valid=" << (match.valid ? "true" : "false")
+                << " latency_ms=" << timing.processing_latency_ms
+                << "\n";
+    }
+
+    replay.stop();
+    metrics << "route_match_done frames_processed=" << result.frames_processed << "\n";
 
     return result;
 }

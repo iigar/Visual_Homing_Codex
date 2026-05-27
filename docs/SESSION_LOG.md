@@ -29,3 +29,5 @@
 - Validated replay-to-route recording using `.\scripts\test-core.ps1`: build passed and 6/6 CTest tests passed in Debug.
 - Started Milestone 3 with `Gray8RouteMatcher`, an offline deterministic matcher using normalized mean absolute byte distance, route-window limiting, and confidence gating.
 - Validated `Gray8RouteMatcher` using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
+- Added replay-to-route matching path through `match_replay_route` and CLI `--match-route`, producing per-frame route index, progress, confidence, and validity metrics.
+- Validated replay-to-route matching using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.

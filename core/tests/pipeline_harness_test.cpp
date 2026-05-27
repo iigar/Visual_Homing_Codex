@@ -90,5 +90,24 @@ int main() {
     assert(record_output.find("route_record_start frames_available=2 target=2x2") != std::string::npos);
     assert(record_output.find("route_record_done frames_processed=2 entries=2") != std::string::npos);
 
+    std::ostringstream match_metrics;
+    vh::RouteMatchingConfig match_config;
+    match_config.route_path = record_config.route_output_path;
+    match_config.manifest_path = config.manifest_path;
+    match_config.target_width = 2;
+    match_config.target_height = 2;
+    match_config.window_radius = 1;
+    match_config.minimum_confidence = 0.9;
+
+    const auto match_result = vh::match_replay_route(match_config, match_metrics);
+    assert(match_result.frames_processed == 2);
+
+    const auto match_output = match_metrics.str();
+    assert(match_output.find("route_match_start frames_available=2") != std::string::npos);
+    assert(match_output.find("match_frame id=0 route_index=0") != std::string::npos);
+    assert(match_output.find("match_frame id=1 route_index=1") != std::string::npos);
+    assert(match_output.find("valid=true") != std::string::npos);
+    assert(match_output.find("route_match_done frames_processed=2") != std::string::npos);
+
     return 0;
 }
