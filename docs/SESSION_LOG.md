@@ -18,3 +18,4 @@
 - Added `Gray8ResizePreprocessor` for deterministic small-frame preprocessing with block-average resizing.
 - Added `HealthMonitor` for per-frame timing, dropped-frame counters, route confidence, and health snapshots.
 - Installed/activated Visual Studio Build Tools C++ workload and validated `core/` with MSVC/CMake: build passed and 3/3 CTest tests passed with `-C Debug`.
+- Agreed to insert Milestone 1.5 before Visual Route Signature work: add `.gitignore`, `docs/BUILDING.md`, `scripts/test-core.ps1`, and an end-to-end replay/preprocess/health pipeline harness.

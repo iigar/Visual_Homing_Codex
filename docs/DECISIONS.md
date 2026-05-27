@@ -51,3 +51,22 @@ Impact:
 
 Risk:
 - PGM is not a production capture format. It is intentionally a low-dependency replay seed and should be extended once timing and preprocessing behavior are stable.
+
+## 2026-05-27 - Add Milestone 1.5 Before Route Signatures
+
+Decision:
+- Insert a short infrastructure and integration milestone before starting the Visual Route Signature format.
+- The milestone should add `.gitignore`, `docs/BUILDING.md`, `scripts/test-core.ps1`, and a minimal end-to-end replay pipeline harness.
+
+Why:
+- Milestone 1 unit coverage is now validated, but the modules still need a simple integrated loop before route files become a stable contract.
+- Local validation should be one command so future C++ changes are checked consistently.
+- Build artifacts such as `core/build/` should be kept out of git by policy instead of manual cleanup.
+
+Impact:
+- Milestone 2 starts slightly later but with lower integration risk.
+- Future sessions can immediately build/test the C++ core with the documented MSVC/CMake path.
+- The pipeline harness gives a place to emit timing and health metrics from real replay input before route recording is added.
+
+Risk:
+- Infrastructure work can expand if it tries to become CI too early. Keep Milestone 1.5 limited to local developer hygiene and a minimal replay/preprocess/health loop.

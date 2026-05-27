@@ -12,12 +12,23 @@
 - Load image/video sequences with timestamps. Initial implementation supports PGM P5 Gray8 image sequences.
 - Run preprocessing on small frames. Initial implementation supports deterministic Gray8 block-average resizing.
 - Emit per-frame timing and health metrics. Initial `HealthMonitor` tracks frame age, processing latency, counters, confidence, and link health.
+- Status: initial implementation complete and validated on Windows with MSVC/CMake; 3/3 CTest tests pass in Debug.
+
+## Milestone 1.5 - Local Validation And Pipeline Harness
+
+- Add `.gitignore` entries for generated build artifacts, especially `core/build/`.
+- Add `docs/BUILDING.md` with the validated Windows MSVC/CMake setup and test commands.
+- Add `scripts/test-core.ps1` to configure, build, and run CTest from one command.
+- Add a minimal end-to-end replay loop: `ReplayFrameSource -> Gray8ResizePreprocessor -> HealthMonitor -> metrics output`.
+- Keep the harness replay-first and dependency-light; it should not add camera, MAVLink, or route matching behavior yet.
 
 ## Milestone 2 - Visual Route Signature
 
+- Define route file format v1 with magic, version, endian policy, header size, entry count or streaming mode, metadata fields, and payload length.
 - Store compact grayscale/thermal signatures.
 - Add route metadata: frame id, time, altitude band, coarse heading hint.
 - Keep format versioned and stream-friendly.
+- Add writer/reader tests that round-trip metadata and payload bytes before matching logic begins.
 
 ## Milestone 3 - Coarse Route Matching
 
