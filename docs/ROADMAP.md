@@ -8,8 +8,8 @@
 
 ## Milestone 1 - Replay Pipeline
 
-- Define replay input format.
-- Load image/video sequences with timestamps.
+- Define replay input format. Initial CSV manifest: `id,timestamp_ns,path`.
+- Load image/video sequences with timestamps. Initial implementation supports PGM P5 Gray8 image sequences.
 - Run preprocessing on small frames.
 - Emit per-frame timing and health metrics.
 

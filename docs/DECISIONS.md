@@ -33,3 +33,21 @@ Impact:
 
 Risk:
 - Replay data can hide hardware-specific latency or exposure problems. Hardware capture remains a separate milestone.
+
+## 2026-05-27 - Start Replay With Manifest Plus PGM Gray8
+
+Decision:
+- Define the first replay input as a simple CSV manifest with `id,timestamp_ns,path`.
+- Load image frames initially from binary PGM P5 grayscale files.
+
+Why:
+- The replay path must work without camera hardware, Python, OpenCV, or heavyweight codecs.
+- PGM Gray8 is easy to generate in tests and maps directly to the first preprocessing and route-signature work.
+- A manifest keeps monotonic frame timestamps explicit instead of deriving timing from filenames or video decode.
+
+Impact:
+- Milestone 1 can progress with deterministic image-sequence tests on desktop and constrained hardware.
+- Video containers, Pi camera capture, BGR, and thermal formats remain later extensions behind the same `CameraSource` interface.
+
+Risk:
+- PGM is not a production capture format. It is intentionally a low-dependency replay seed and should be extended once timing and preprocessing behavior are stable.
