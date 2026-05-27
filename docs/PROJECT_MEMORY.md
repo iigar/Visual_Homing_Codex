@@ -7,7 +7,7 @@
 - Repository strategy: keep the imported baseline under `reference/` and build the new flight-critical system under `core/`.
 - Core implementation direction: C++ replay-first architecture with deterministic timing, bounded queues, and explicit health/failsafe state.
 - Current validated core baseline: replay pipeline plus route signature v1 and initial matching has `ReplayFrameSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `PipelineHarness`, binary `VHRS` route signature writer/reader, `RouteSignatureRecorder`, `Gray8RouteMatcher`, replay-to-route matching CLI, MSVC/CMake build support, and 7 passing CTest tests.
-- Near-term priority in Milestone 3: add broader synthetic perturbation coverage and begin direction-error estimation beyond route progress/confidence.
+- Near-term priority in Milestone 3: begin direction-error estimation beyond route progress/confidence.
 - Python/reference code is useful for documentation, tools, diagnostics, UI concepts, and comparison, but should not become the new flight-critical scheduler.
 - Commit messages should be detailed and explain what changed, why, impact, validation, and risk.
 

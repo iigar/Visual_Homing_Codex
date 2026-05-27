@@ -31,3 +31,4 @@
 - Validated `Gray8RouteMatcher` using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
 - Added replay-to-route matching path through `match_replay_route` and CLI `--match-route`, producing per-frame route index, progress, confidence, and validity metrics.
 - Validated replay-to-route matching using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
+- Added synthetic perturbation coverage for `Gray8RouteMatcher`, including brightness offsets and small payload perturbations.

@@ -36,7 +36,7 @@
 
 - Match current frame against a route window. Initial `Gray8RouteMatcher` uses normalized mean absolute byte distance over route signature entries and is exposed through replay-to-route matching.
 - Estimate route progress, confidence, and direction error. Initial implementation estimates progress and confidence; direction error remains a later step.
-- Add offline tests with synthetic route perturbations.
+- Add offline tests with synthetic route perturbations. Initial coverage includes brightness offsets and small payload perturbations.
 
 ## Milestone 4 - Navigation Command Model
 

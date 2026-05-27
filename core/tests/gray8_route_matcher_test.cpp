@@ -1,4 +1,5 @@
 #include <cassert>
+#include <algorithm>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -25,6 +26,14 @@ vh::Frame frame(std::uint64_t id, std::vector<std::uint8_t> payload) {
     result.format = vh::PixelFormat::Gray8;
     result.data = std::move(payload);
     return result;
+}
+
+std::vector<std::uint8_t> offset(std::vector<std::uint8_t> payload, int delta) {
+    for (auto& value : payload) {
+        const auto adjusted = std::clamp(static_cast<int>(value) + delta, 0, 255);
+        value = static_cast<std::uint8_t>(adjusted);
+    }
+    return payload;
 }
 
 } // namespace
@@ -64,6 +73,22 @@ int main() {
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));
     assert(!poor.valid);
     assert(poor.confidence < 0.9);
+
+    vh::RouteSignatureFile textured_route;
+    textured_route.entries.push_back(entry(0, {10, 80, 10, 80}));
+    textured_route.entries.push_back(entry(1, {80, 10, 80, 10}));
+    textured_route.entries.push_back(entry(2, {30, 30, 220, 220}));
+
+    vh::Gray8RouteMatcher perturbation_matcher(textured_route, {.window_radius = 0, .minimum_confidence = 0.8});
+    const auto brightness_offset = perturbation_matcher.match(frame(400, offset({80, 10, 80, 10}, 8)));
+    assert(brightness_offset.valid);
+    assert(brightness_offset.route_index == 1);
+    assert(brightness_offset.confidence > 0.96);
+
+    const auto noisy = perturbation_matcher.match(frame(401, {28, 35, 215, 225}));
+    assert(noisy.valid);
+    assert(noisy.route_index == 2);
+    assert(noisy.confidence > 0.97);
 
     return 0;
 }
