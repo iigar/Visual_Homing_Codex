@@ -1,0 +1,32 @@
+# CMake build outputs
+build/
+core/build/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Testing/
+cmake_install.cmake
+
+# Visual Studio generated files
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+.vs/
+
+# Binaries and object files
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# Local editor and OS noise
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini

@@ -21,6 +21,7 @@
 - Add `scripts/test-core.ps1` to configure, build, and run CTest from one command.
 - Add a minimal end-to-end replay loop: `ReplayFrameSource -> Gray8ResizePreprocessor -> HealthMonitor -> metrics output`.
 - Keep the harness replay-first and dependency-light; it should not add camera, MAVLink, or route matching behavior yet.
+- Status: complete and validated with `.\scripts\test-core.ps1 -Clean`; 4/4 CTest tests pass in Debug.
 
 ## Milestone 2 - Visual Route Signature
 

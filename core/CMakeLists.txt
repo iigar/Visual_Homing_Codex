@@ -13,6 +13,7 @@ add_executable(visual_homing_core
 add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
     src/health_monitor.cpp
+    src/pipeline_harness.cpp
     src/replay_frame_source.cpp
     src/system_clock.cpp
 )
@@ -74,4 +75,17 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME health_monitor COMMAND health_monitor_test)
+
+    add_executable(pipeline_harness_test
+        tests/pipeline_harness_test.cpp
+    )
+
+    target_link_libraries(pipeline_harness_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(pipeline_harness_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME pipeline_harness COMMAND pipeline_harness_test)
 endif()
