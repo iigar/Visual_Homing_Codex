@@ -15,3 +15,4 @@
 - Added dependency-light binary PGM P5 Gray8 frame loading for deterministic replay fixtures.
 - Split the core into `visual_homing_core_lib` plus CLI executable so replay components can be tested.
 - Added a CTest executable covering manifest loading, frame payloads, timestamps, and source lifecycle.
+- Added `Gray8ResizePreprocessor` for deterministic small-frame preprocessing with block-average resizing.
