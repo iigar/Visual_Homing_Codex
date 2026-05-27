@@ -87,3 +87,21 @@ Impact:
 
 Risk:
 - The v1 format is intentionally minimal and may need extension for richer route metadata. Future changes must bump the version or add clearly reserved fields.
+
+## 2026-05-27 - Start Matching With Gray8 Byte Distance
+
+Decision:
+- Start Milestone 3 with a simple Gray8 route matcher using normalized mean absolute pixel difference against route signature entries.
+- Keep the matcher offline and deterministic, with optional route-window limiting and a minimum confidence gate.
+
+Why:
+- A basic matcher gives an end-to-end contract for route progress and confidence before adding more expensive or complex visual methods.
+- Byte-level distance on preprocessed small frames is easy to test with synthetic perturbations and provides a baseline for later algorithm comparisons.
+- Window limiting lets future navigation constrain matching near the last known progress without changing the matcher interface.
+
+Impact:
+- Early matching will be coarse and sensitive to lighting/contrast changes, but it is sufficient to validate route storage, replay, and confidence plumbing.
+- Direction error remains `0.0` until a later step adds lateral/heading estimation.
+
+Risk:
+- This matcher should not be mistaken for final flight behavior. It is a deterministic baseline and must be improved or guarded before hardware flight tests.

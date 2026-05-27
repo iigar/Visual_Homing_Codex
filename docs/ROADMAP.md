@@ -34,8 +34,8 @@
 
 ## Milestone 3 - Coarse Route Matching
 
-- Match current frame against a route window.
-- Estimate route progress, confidence, and direction error.
+- Match current frame against a route window. Initial `Gray8RouteMatcher` uses normalized mean absolute byte distance over route signature entries.
+- Estimate route progress, confidence, and direction error. Initial implementation estimates progress and confidence; direction error remains a later step.
 - Add offline tests with synthetic route perturbations.
 
 ## Milestone 4 - Navigation Command Model

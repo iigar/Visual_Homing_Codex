@@ -12,6 +12,7 @@ add_executable(visual_homing_core
 
 add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
+    src/gray8_route_matcher.cpp
     src/health_monitor.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
@@ -116,4 +117,17 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_signature_recorder COMMAND route_signature_recorder_test)
+
+    add_executable(gray8_route_matcher_test
+        tests/gray8_route_matcher_test.cpp
+    )
+
+    target_link_libraries(gray8_route_matcher_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(gray8_route_matcher_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME gray8_route_matcher COMMAND gray8_route_matcher_test)
 endif()

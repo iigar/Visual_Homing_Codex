@@ -27,3 +27,5 @@
 - Validated `RouteSignatureRecorder` using `.\scripts\test-core.ps1`: build passed and 6/6 CTest tests passed in Debug.
 - Added replay-to-route recording path through `record_replay_route` and CLI `--record-route`, producing `.vhrs` files from Gray8 preprocessed replay frames.
 - Validated replay-to-route recording using `.\scripts\test-core.ps1`: build passed and 6/6 CTest tests passed in Debug.
+- Started Milestone 3 with `Gray8RouteMatcher`, an offline deterministic matcher using normalized mean absolute byte distance, route-window limiting, and confidence gating.
+- Validated `Gray8RouteMatcher` using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
