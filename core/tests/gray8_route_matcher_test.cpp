@@ -90,5 +90,63 @@ int main() {
     assert(noisy.route_index == 2);
     assert(noisy.confidence > 0.97);
 
+    vh::RouteSignatureFile shift_route;
+    shift_route.entries.push_back(entry(0, {
+        10, 30, 90, 170,
+        10, 30, 90, 170,
+    }));
+    shift_route.entries[0].width = 4;
+    shift_route.entries[0].height = 2;
+
+    vh::Gray8RouteMatcher shift_matcher(shift_route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+
+    auto shifted_left = frame(500, {
+        30, 90, 170, 170,
+        30, 90, 170, 170,
+    });
+    shifted_left.width = 4;
+    shifted_left.height = 2;
+    const auto left_error = shift_matcher.match(shifted_left);
+    assert(left_error.direction_error_rad > 0.049);
+    assert(left_error.direction_error_rad < 0.051);
+
+    vh::Gray8RouteMatcher right_shift_matcher(shift_route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+
+    auto shifted_right = frame(501, {
+        10, 10, 30, 90,
+        10, 10, 30, 90,
+    });
+    shifted_right.width = 4;
+    shifted_right.height = 2;
+    const auto right_error = right_shift_matcher.match(shifted_right);
+    assert(right_error.direction_error_rad < -0.049);
+    assert(right_error.direction_error_rad > -0.051);
+
+    vh::Gray8RouteMatcher no_shift_matcher(shift_route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+    auto aligned = frame(502, {
+        10, 30, 90, 170,
+        10, 30, 90, 170,
+    });
+    aligned.width = 4;
+    aligned.height = 2;
+    const auto aligned_error = no_shift_matcher.match(aligned);
+    assert(aligned_error.direction_error_rad > -0.001);
+    assert(aligned_error.direction_error_rad < 0.001);
+
     return 0;
 }

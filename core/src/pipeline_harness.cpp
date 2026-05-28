@@ -119,6 +119,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     Gray8RouteMatcher matcher(std::move(route), {
         .window_radius = config.window_radius,
         .minimum_confidence = config.minimum_confidence,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.02,
     });
     auto replay = ReplayFrameSource::load_manifest(config.manifest_path);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
@@ -149,6 +151,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         metrics << "match_frame id=" << processed.id
                 << " route_index=" << match.route_index
                 << " progress=" << match.progress
+                << " direction_error_rad=" << match.direction_error_rad
                 << " confidence=" << match.confidence
                 << " valid=" << (match.valid ? "true" : "false")
                 << " latency_ms=" << timing.processing_latency_ms

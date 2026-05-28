@@ -106,6 +106,7 @@ int main() {
     assert(match_output.find("route_match_start frames_available=2") != std::string::npos);
     assert(match_output.find("match_frame id=0 route_index=0") != std::string::npos);
     assert(match_output.find("match_frame id=1 route_index=1") != std::string::npos);
+    assert(match_output.find("direction_error_rad=") != std::string::npos);
     assert(match_output.find("valid=true") != std::string::npos);
     assert(match_output.find("route_match_done frames_processed=2") != std::string::npos);
 

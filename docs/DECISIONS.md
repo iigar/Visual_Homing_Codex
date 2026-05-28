@@ -105,3 +105,21 @@ Impact:
 
 Risk:
 - This matcher should not be mistaken for final flight behavior. It is a deterministic baseline and must be improved or guarded before hardware flight tests.
+
+## 2026-05-29 - Estimate Direction Error With Horizontal Pixel Shift
+
+Decision:
+- Complete the first Milestone 3 direction-error estimate by searching small horizontal pixel shifts around the matched Gray8 route entry.
+- Convert the best shift to radians with a fixed `radians_per_pixel` scale in the matcher configuration.
+
+Why:
+- Coarse homing needs a signed correction signal, not only route progress and confidence.
+- Small-shift matching is deterministic, cheap on constrained hardware, and easy to validate with synthetic left/right perturbations.
+- Keeping the scale configurable avoids pretending that the current estimate is camera-calibrated.
+
+Impact:
+- `RouteMatch.direction_error_rad` is now populated by the baseline matcher.
+- `--match-route` reports direction error in its per-frame metrics.
+
+Risk:
+- This is not a calibrated bearing estimate. It is a coarse lateral visual mismatch signal and must be bounded and confidence-gated before flight use.

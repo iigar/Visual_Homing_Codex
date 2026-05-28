@@ -32,3 +32,9 @@
 - Added replay-to-route matching path through `match_replay_route` and CLI `--match-route`, producing per-frame route index, progress, confidence, and validity metrics.
 - Validated replay-to-route matching using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
 - Added synthetic perturbation coverage for `Gray8RouteMatcher`, including brightness offsets and small payload perturbations.
+
+## 2026-05-29
+
+- Added coarse direction-error estimation to `Gray8RouteMatcher` using bounded horizontal pixel-shift search and exposed it in `--match-route` metrics.
+- Completed Milestone 3 baseline: replay-to-route matching now reports route index, progress, confidence, validity, and coarse direction error.
+- Validated Milestone 3 completion using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
