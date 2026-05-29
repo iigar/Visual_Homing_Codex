@@ -98,6 +98,11 @@ int main() {
     match_config.target_height = 2;
     match_config.window_radius = 1;
     match_config.minimum_confidence = 0.9;
+    match_config.navigator_minimum_confidence = 0.9;
+    match_config.navigator_max_match_age_ms = 1.0e12;
+    match_config.navigator_yaw_gain = 2.0;
+    match_config.navigator_max_yaw_rate_radps = 0.4;
+    match_config.navigator_max_yaw_accel_radps2 = 10.0;
 
     const auto match_result = vh::match_replay_route(match_config, match_metrics);
     assert(match_result.frames_processed == 2);
@@ -108,6 +113,8 @@ int main() {
     assert(match_output.find("match_frame id=1 route_index=1") != std::string::npos);
     assert(match_output.find("direction_error_rad=") != std::string::npos);
     assert(match_output.find("valid=true") != std::string::npos);
+    assert(match_output.find("command_valid=true") != std::string::npos);
+    assert(match_output.find("yaw_rate_radps=") != std::string::npos);
     assert(match_output.find("route_match_done frames_processed=2") != std::string::npos);
 
     return 0;

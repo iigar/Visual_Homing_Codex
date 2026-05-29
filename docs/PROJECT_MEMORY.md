@@ -6,8 +6,8 @@
 - Target hardware: Raspberry Pi Zero 2W class companion computer, Pi Camera or thermal camera, Matek H743 Slim V3 / ArduPilot flight controller.
 - Repository strategy: keep the imported baseline under `reference/` and build the new flight-critical system under `core/`.
 - Core implementation direction: C++ replay-first architecture with deterministic timing, bounded queues, and explicit health/failsafe state.
-- Current validated core baseline: replay pipeline plus route signature v1, coarse matching, and initial navigation command model has `ReplayFrameSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `PipelineHarness`, binary `VHRS` route signature writer/reader, `RouteSignatureRecorder`, `Gray8RouteMatcher`, `BoundedNavigator` with yaw-rate slew limiting, replay-to-route matching CLI with progress/confidence/direction error, MSVC/CMake build support, and 8 passing CTest tests.
-- Near-term priority in Milestone 4: integrate navigation command generation into the replay matching harness so match metrics and command outputs can be validated together.
+- Current validated core baseline: replay pipeline plus route signature v1, coarse matching, and initial navigation command model has `ReplayFrameSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `PipelineHarness`, binary `VHRS` route signature writer/reader, `RouteSignatureRecorder`, `Gray8RouteMatcher`, `BoundedNavigator` with yaw-rate slew limiting, replay-to-route matching CLI with progress/confidence/direction error/command output, MSVC/CMake build support, and 8 passing CTest tests.
+- Near-term priority in Milestone 4: finish documentation/status for the navigation command baseline, then prepare Milestone 5 MAVLink dry-run integration.
 - Python/reference code is useful for documentation, tools, diagnostics, UI concepts, and comparison, but should not become the new flight-critical scheduler.
 - Commit messages should be detailed and explain what changed, why, impact, validation, and risk.
 

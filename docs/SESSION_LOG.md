@@ -42,3 +42,5 @@
 - Validated `BoundedNavigator` using `.\scripts\test-core.ps1`: build passed and 8/8 CTest tests passed in Debug.
 - Added yaw-rate slew limiting to `BoundedNavigator` so successive valid commands respect a configurable max yaw acceleration.
 - Validated yaw-rate slew limiting using `.\scripts\test-core.ps1`: build passed and 8/8 CTest tests passed in Debug.
+- Integrated `BoundedNavigator` into replay-to-route matching metrics so `--match-route` reports command validity and yaw-rate output; offline replay matching uses relaxed command-age gating because replay timestamps are not live `steady_clock::now()` values.
+- Validated replay matching plus command generation using `.\scripts\test-core.ps1`: build passed and 8/8 CTest tests passed in Debug.

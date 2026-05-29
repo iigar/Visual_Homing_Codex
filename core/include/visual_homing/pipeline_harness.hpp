@@ -28,6 +28,12 @@ struct RouteMatchingConfig {
     int target_height = 24;
     std::size_t window_radius = 0;
     double minimum_confidence = 0.0;
+    double navigator_minimum_confidence = 0.70;
+    double navigator_max_match_age_ms = 1.0e12;
+    double navigator_yaw_gain = 1.0;
+    double navigator_max_yaw_rate_radps = 0.35;
+    double navigator_max_yaw_accel_radps2 = 1.0;
+    double navigator_forward_speed_mps = 0.0;
 };
 
 struct PipelineResult {

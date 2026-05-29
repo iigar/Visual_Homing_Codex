@@ -5,6 +5,7 @@
 
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
+#include "visual_homing/bounded_navigator.hpp"
 #include "visual_homing/health_monitor.hpp"
 #include "visual_homing/replay_frame_source.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
@@ -122,6 +123,14 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         .max_direction_shift_px = 2,
         .radians_per_pixel = 0.02,
     });
+    BoundedNavigator navigator({
+        .minimum_confidence = config.navigator_minimum_confidence,
+        .max_match_age_ms = config.navigator_max_match_age_ms,
+        .yaw_gain = config.navigator_yaw_gain,
+        .max_yaw_rate_radps = config.navigator_max_yaw_rate_radps,
+        .max_yaw_accel_radps2 = config.navigator_max_yaw_accel_radps2,
+        .forward_speed_mps = config.navigator_forward_speed_mps,
+    });
     auto replay = ReplayFrameSource::load_manifest(config.manifest_path);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     HealthMonitor health(now());
@@ -143,6 +152,10 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         const auto processing_finished = now();
         const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
         health.set_route_match_confidence(match.confidence);
+        auto snapshot = health.snapshot(processing_finished);
+        snapshot.state = HealthState::Ready;
+        snapshot.mavlink_ok = true;
+        const auto command = navigator.update(match, snapshot);
 
         ++result.frames_processed;
         result.last_frame_age_ms = timing.frame_age_ms;
@@ -154,6 +167,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
                 << " direction_error_rad=" << match.direction_error_rad
                 << " confidence=" << match.confidence
                 << " valid=" << (match.valid ? "true" : "false")
+                << " command_valid=" << (command.valid ? "true" : "false")
+                << " yaw_rate_radps=" << command.yaw_rate_radps
                 << " latency_ms=" << timing.processing_latency_ms
                 << "\n";
     }
