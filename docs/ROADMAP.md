@@ -41,9 +41,9 @@
 
 ## Milestone 4 - Navigation Command Model
 
-- Convert route match into bounded course correction.
-- Add command age, confidence gates, acceleration/yaw-rate limits.
-- Define failsafe behavior for stale or low-confidence matches.
+- Convert route match into bounded course correction. Initial `BoundedNavigator` converts direction error into bounded yaw-rate commands.
+- Add command age, confidence gates, acceleration/yaw-rate limits. Initial implementation gates by match age/confidence and clamps yaw-rate.
+- Define failsafe behavior for stale or low-confidence matches. Initial implementation returns invalid zero commands when health, age, validity, or confidence gates fail.
 
 ## Milestone 5 - MAVLink Integration
 

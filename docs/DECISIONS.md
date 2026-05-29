@@ -123,3 +123,21 @@ Impact:
 
 Risk:
 - This is not a calibrated bearing estimate. It is a coarse lateral visual mismatch signal and must be bounded and confidence-gated before flight use.
+
+## 2026-05-29 - Start Navigation With Bounded Yaw Commands
+
+Decision:
+- Start Milestone 4 with `BoundedNavigator`, converting valid route matches into bounded yaw-rate commands plus optional forward speed.
+- Gate commands on health state, camera/MAVLink/navigation link health, match validity, confidence, and match age.
+
+Why:
+- Navigation output must fail closed before any MAVLink integration exists.
+- Bounded yaw-rate commands are the smallest useful control output from the current route matcher.
+- Command age and confidence gates prevent stale or weak visual matches from reaching the command path.
+
+Impact:
+- The core now has a first complete path from replay frame to match to navigation command model in unit-testable pieces.
+- MAVLink integration can later consume `NavigationCommand` without owning confidence or stale-data policy.
+
+Risk:
+- The initial model is yaw-only and does not yet include acceleration limiting across successive commands. That remains a required Milestone 4 extension.

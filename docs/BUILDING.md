@@ -40,6 +40,7 @@ Validated on Windows with:
 
 Expected CTest coverage:
 
+- `bounded_navigator`
 - `gray8_resize_preprocessor`
 - `replay_frame_source`
 - `health_monitor`
