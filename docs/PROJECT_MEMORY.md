@@ -19,6 +19,7 @@
 - Ideas and research notes go to `notes/`.
 - Code changes are captured in detailed git commits.
 - Generated build artifacts should stay out of git; prefer reproducible scripts/docs for local validation.
+- Every completed task must be pushed to GitHub after the local commit and validation are complete.
 
 ## Session Startup Prompt
 
