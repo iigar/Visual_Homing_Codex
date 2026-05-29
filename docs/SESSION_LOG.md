@@ -40,3 +40,5 @@
 - Validated Milestone 3 completion using `.\scripts\test-core.ps1`: build passed and 7/7 CTest tests passed in Debug.
 - Started Milestone 4 with `BoundedNavigator`, converting route match direction error into bounded yaw-rate commands gated by health, confidence, validity, and match age.
 - Validated `BoundedNavigator` using `.\scripts\test-core.ps1`: build passed and 8/8 CTest tests passed in Debug.
+- Added yaw-rate slew limiting to `BoundedNavigator` so successive valid commands respect a configurable max yaw acceleration.
+- Validated yaw-rate slew limiting using `.\scripts\test-core.ps1`: build passed and 8/8 CTest tests passed in Debug.

@@ -38,6 +38,7 @@ int main() {
         .max_match_age_ms = 200.0,
         .yaw_gain = 2.0,
         .max_yaw_rate_radps = 0.30,
+        .max_yaw_accel_radps2 = 10.0,
         .forward_speed_mps = 4.0,
     });
 
@@ -50,7 +51,16 @@ int main() {
     assert(bounded.confidence > 0.849);
     assert(bounded.confidence < 0.851);
 
-    const auto negative = navigator.update(valid_match(950, -0.05, 0.95), ready_health(1000, 0.95));
+    vh::BoundedNavigator negative_navigator({
+        .minimum_confidence = 0.75,
+        .max_match_age_ms = 200.0,
+        .yaw_gain = 2.0,
+        .max_yaw_rate_radps = 0.30,
+        .max_yaw_accel_radps2 = 10.0,
+        .forward_speed_mps = 4.0,
+    });
+
+    const auto negative = negative_navigator.update(valid_match(950, -0.05, 0.95), ready_health(1000, 0.95));
     assert(negative.valid);
     assert(negative.yaw_rate_radps < -0.099);
     assert(negative.yaw_rate_radps > -0.101);
@@ -66,6 +76,35 @@ int main() {
     degraded.state = vh::HealthState::Degraded;
     const auto health_blocked = navigator.update(valid_match(950, 0.10, 0.95), degraded);
     assert(!health_blocked.valid);
+
+    vh::BoundedNavigator slew_limited({
+        .minimum_confidence = 0.75,
+        .max_match_age_ms = 200.0,
+        .yaw_gain = 10.0,
+        .max_yaw_rate_radps = 1.0,
+        .max_yaw_accel_radps2 = 0.5,
+        .forward_speed_mps = 0.0,
+    });
+
+    const auto first = slew_limited.update(valid_match(990, 0.10, 0.95), ready_health(1000, 0.95));
+    assert(first.valid);
+    assert(first.yaw_rate_radps > 0.99);
+    assert(first.yaw_rate_radps < 1.01);
+
+    const auto second = slew_limited.update(valid_match(1090, -0.10, 0.95), ready_health(1100, 0.95));
+    assert(second.valid);
+    assert(second.yaw_rate_radps > 0.949);
+    assert(second.yaw_rate_radps < 0.951);
+
+    auto degraded_after_slew = ready_health(1200, 0.95);
+    degraded_after_slew.state = vh::HealthState::Degraded;
+    const auto reset = slew_limited.update(valid_match(1190, -0.10, 0.95), degraded_after_slew);
+    assert(!reset.valid);
+
+    const auto after_reset = slew_limited.update(valid_match(1290, -0.10, 0.95), ready_health(1300, 0.95));
+    assert(after_reset.valid);
+    assert(after_reset.yaw_rate_radps < -0.99);
+    assert(after_reset.yaw_rate_radps > -1.01);
 
     bool rejected = false;
     try {
