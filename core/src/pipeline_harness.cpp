@@ -6,6 +6,7 @@
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/bounded_navigator.hpp"
+#include "visual_homing/dry_run_command_sink.hpp"
 #include "visual_homing/health_monitor.hpp"
 #include "visual_homing/replay_frame_source.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
@@ -120,8 +121,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     Gray8RouteMatcher matcher(std::move(route), {
         .window_radius = config.window_radius,
         .minimum_confidence = config.minimum_confidence,
-        .max_direction_shift_px = 2,
-        .radians_per_pixel = 0.02,
+        .max_direction_shift_px = config.max_direction_shift_px,
+        .radians_per_pixel = config.radians_per_pixel,
     });
     BoundedNavigator navigator({
         .minimum_confidence = config.navigator_minimum_confidence,
@@ -135,6 +136,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     HealthMonitor health(now());
     health.set_links(true, false, true);
+    DryRunCommandSink command_sink(&metrics);
+    command_sink.start();
 
     replay.start();
 
@@ -156,6 +159,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         snapshot.state = HealthState::Ready;
         snapshot.mavlink_ok = true;
         const auto command = navigator.update(match, snapshot);
+        command_sink.send(command);
 
         ++result.frames_processed;
         result.last_frame_age_ms = timing.frame_age_ms;
@@ -174,6 +178,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     }
 
     replay.stop();
+    command_sink.stop();
     metrics << "route_match_done frames_processed=" << result.frames_processed << "\n";
 
     return result;

@@ -141,3 +141,21 @@ Impact:
 
 Risk:
 - The initial model is yaw-only and does not yet include acceleration limiting across successive commands. That remains a required Milestone 4 extension.
+
+## 2026-05-29 - Prepare MAVLink With Dry-Run Command Sink
+
+Decision:
+- Add a no-MAVLink `DryRunCommandSink` before starting live MAVLink integration.
+- Keep command output single-writer and observable through logs/tests before any ArduPilot transport is connected.
+
+Why:
+- Navigation commands must be auditable before they can reach a flight controller.
+- A dry-run sink exercises the same `MavlinkBridge` interface without introducing MAVLink dependencies or live command risk.
+- Pipeline-level negative tests can verify that low-confidence or stale matches produce invalid commands in the output path.
+
+Impact:
+- Milestone 5 can start from a tested command-output boundary.
+- Live MAVLink work can focus on transport and ArduPilot protocol details instead of command policy.
+
+Risk:
+- Dry-run success does not validate MAVLink timing, modes, or ArduPilot acceptance behavior. Live output remains a separate gated step.

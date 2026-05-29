@@ -45,13 +45,14 @@
 - Add command age, confidence gates, acceleration/yaw-rate limits. Initial implementation gates by match age/confidence, clamps yaw-rate, and slew-limits yaw-rate changes between valid commands.
 - Define failsafe behavior for stale or low-confidence matches. Initial implementation returns invalid zero commands when health, age, validity, or confidence gates fail.
 - Integrate command generation with replay matching. Initial `--match-route` metrics include command validity and yaw-rate output, with relaxed offline age gating for replay timestamps.
-- Status: complete as a deterministic baseline; navigation commands are bounded, confidence/age/health gated, slew-limited, and validated in unit and replay harness tests.
+- Status: complete as a deterministic baseline; navigation commands are bounded, confidence/age/health gated, slew-limited, dry-run emitted, and validated in unit and replay harness tests.
 
 ## Milestone 5 - MAVLink Integration
 
 - Read ArduPilot heartbeat, attitude, altitude, and mode.
 - Send commands from a single writer.
 - Add dry-run and guided-command modes.
+- Start from `DryRunCommandSink`; do not add live ArduPilot output until dry-run command logs and safety gates are validated.
 
 ## Milestone 6 - Hardware Capture
 

@@ -98,6 +98,8 @@ int main() {
     match_config.target_height = 2;
     match_config.window_radius = 1;
     match_config.minimum_confidence = 0.9;
+    match_config.max_direction_shift_px = 1;
+    match_config.radians_per_pixel = 0.03;
     match_config.navigator_minimum_confidence = 0.9;
     match_config.navigator_max_match_age_ms = 1.0e12;
     match_config.navigator_yaw_gain = 2.0;
@@ -114,8 +116,30 @@ int main() {
     assert(match_output.find("direction_error_rad=") != std::string::npos);
     assert(match_output.find("valid=true") != std::string::npos);
     assert(match_output.find("command_valid=true") != std::string::npos);
+    assert(match_output.find("dry_run_command valid=true") != std::string::npos);
     assert(match_output.find("yaw_rate_radps=") != std::string::npos);
     assert(match_output.find("route_match_done frames_processed=2") != std::string::npos);
+
+    std::ostringstream low_confidence_metrics;
+    auto low_confidence_config = match_config;
+    low_confidence_config.minimum_confidence = 1.01;
+    low_confidence_config.navigator_minimum_confidence = 0.9;
+
+    const auto low_confidence_result = vh::match_replay_route(low_confidence_config, low_confidence_metrics);
+    assert(low_confidence_result.frames_processed == 2);
+
+    const auto low_confidence_output = low_confidence_metrics.str();
+    assert(low_confidence_output.find("valid=false") != std::string::npos);
+    assert(low_confidence_output.find("command_valid=false") != std::string::npos);
+    assert(low_confidence_output.find("dry_run_command valid=false") != std::string::npos);
+
+    std::ostringstream stale_metrics;
+    auto stale_config = match_config;
+    stale_config.navigator_max_match_age_ms = 0.0;
+
+    const auto stale_result = vh::match_replay_route(stale_config, stale_metrics);
+    assert(stale_result.frames_processed == 2);
+    assert(stale_metrics.str().find("command_valid=false") != std::string::npos);
 
     return 0;
 }

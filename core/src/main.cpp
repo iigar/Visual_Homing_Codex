@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc == 8 && std::string(argv[1]) == "--match-route") {
+    if ((argc == 8 || argc == 10) && std::string(argv[1]) == "--match-route") {
         try {
             vh::RouteMatchingConfig config;
             config.route_path = argv[2];
@@ -74,6 +74,10 @@ int main(int argc, char** argv) {
             config.target_height = std::stoi(argv[5]);
             config.window_radius = static_cast<std::size_t>(std::stoull(argv[6]));
             config.minimum_confidence = std::stod(argv[7]);
+            if (argc == 10) {
+                config.max_direction_shift_px = std::stoi(argv[8]);
+                config.radians_per_pixel = std::stod(argv[9]);
+            }
             const auto result = vh::match_replay_route(config, std::cout);
             return result.frames_processed > 0 ? 0 : 1;
         } catch (const std::exception& error) {
@@ -86,7 +90,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
-    std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence>\n";
+    std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }
