@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(VISUAL_HOMING_ENABLE_LIBCAMERA "Build the Raspberry Pi libcamera capture backend" OFF)
+
 add_executable(visual_homing_core
     src/main.cpp
 )
@@ -29,6 +31,10 @@ add_library(visual_homing_core_lib
 target_include_directories(visual_homing_core_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+if(VISUAL_HOMING_ENABLE_LIBCAMERA)
+    target_compile_definitions(visual_homing_core_lib PUBLIC VISUAL_HOMING_ENABLE_LIBCAMERA)
+endif()
 
 target_compile_options(visual_homing_core_lib PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>

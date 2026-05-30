@@ -216,3 +216,23 @@ Impact:
 
 Risk:
 - This does not capture real camera frames yet. The next hardware step must be done on Pi/libcamera-capable hardware and must preserve the fail-closed behavior on unsupported builds.
+
+## 2026-05-30 - Make Pi Builds Explicit And Scripted
+
+Decision:
+- Add `VISUAL_HOMING_ENABLE_LIBCAMERA` as an explicit CMake option, defaulting to `OFF`.
+- Add `scripts/bootstrap-pi.sh` to install expected Raspberry Pi OS build/camera packages and run validation.
+- Add `scripts/test-core-pi.sh` to configure `core/build-pi` in Release with the libcamera option enabled, build, and run CTest.
+
+Why:
+- Pi-specific dependencies should not leak into Windows or desktop replay-first builds.
+- A one-command Pi setup reduces manual setup drift and makes hardware validation reproducible.
+- Live capture can be introduced behind an explicit hardware flag without changing the validated desktop baseline.
+
+Impact:
+- Developers can bootstrap a Pi build path from the repository root.
+- `core/build-pi/` is ignored as a generated artifact.
+- Shell scripts are tracked with LF line endings for bash compatibility.
+
+Risk:
+- The scripts install packages but cannot prove camera runtime behavior until executed on real Pi hardware with a connected camera.

@@ -65,3 +65,6 @@
 - Started Milestone 6 with a fail-closed `PiCameraSource` boundary that implements `CameraSource`, validates capture dimensions/rate/format, and refuses to start when no libcamera backend is compiled in.
 - Added `PiCameraSource` tests for config validation, unsupported-backend startup failure, stopped state, and empty polling.
 - Validated the hardware-capture boundary using `.\scripts\test-core.ps1`: build passed and 12/12 CTest tests passed in Debug.
+- Added `VISUAL_HOMING_ENABLE_LIBCAMERA` CMake option with default `OFF` so desktop builds remain replay-first and Pi builds can explicitly request the hardware backend.
+- Added Raspberry Pi automation docs plus `scripts/bootstrap-pi.sh` and `scripts/test-core-pi.sh` for one-command package install, Release configuration, build, and CTest on Pi.
+- Validated the desktop/default path using `.\scripts\test-core.ps1`: build passed and 12/12 CTest tests passed in Debug.

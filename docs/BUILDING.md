@@ -30,6 +30,24 @@ Use `-Clean` to remove the previous build directory first:
 .\scripts\test-core.ps1 -Clean
 ```
 
+## Raspberry Pi
+
+The Pi build path is documented separately in `docs/PI_BUILDING.md`.
+
+The short version on Raspberry Pi OS is:
+
+```bash
+./scripts/bootstrap-pi.sh
+```
+
+For repeat builds after bootstrap:
+
+```bash
+./scripts/test-core-pi.sh
+```
+
+The Pi script uses `core/build-pi` and enables `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`. The backend still fails closed until the real libcamera capture implementation is added.
+
 ## Current Validation
 
 Validated on Windows with:
@@ -46,6 +64,8 @@ Expected CTest coverage:
 - `gray8_resize_preprocessor`
 - `replay_frame_source`
 - `health_monitor`
+- `mavlink_telemetry_adapter`
+- `pi_camera_source`
 - `pipeline_harness`
 - `route_signature`
 - `route_signature_recorder`
