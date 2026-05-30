@@ -115,6 +115,8 @@ int main() {
     assert(match_output.find("match_frame id=1 route_index=1") != std::string::npos);
     assert(match_output.find("direction_error_rad=") != std::string::npos);
     assert(match_output.find("valid=true") != std::string::npos);
+    assert(match_output.find("mavlink_ok=true") != std::string::npos);
+    assert(match_output.find("navigation_ok=true") != std::string::npos);
     assert(match_output.find("command_valid=true") != std::string::npos);
     assert(match_output.find("dry_run_command valid=true") != std::string::npos);
     assert(match_output.find("yaw_rate_radps=") != std::string::npos);
@@ -140,6 +142,28 @@ int main() {
     const auto stale_result = vh::match_replay_route(stale_config, stale_metrics);
     assert(stale_result.frames_processed == 2);
     assert(stale_metrics.str().find("command_valid=false") != std::string::npos);
+
+    std::ostringstream disarmed_metrics;
+    auto disarmed_config = match_config;
+    disarmed_config.dry_run_mavlink_armed = false;
+
+    const auto disarmed_result = vh::match_replay_route(disarmed_config, disarmed_metrics);
+    assert(disarmed_result.frames_processed == 2);
+    const auto disarmed_output = disarmed_metrics.str();
+    assert(disarmed_output.find("mavlink_ok=true") != std::string::npos);
+    assert(disarmed_output.find("navigation_ok=false") != std::string::npos);
+    assert(disarmed_output.find("command_valid=false") != std::string::npos);
+
+    std::ostringstream wrong_mode_metrics;
+    auto wrong_mode_config = match_config;
+    wrong_mode_config.dry_run_mavlink_mode = vh::FlightMode::Manual;
+
+    const auto wrong_mode_result = vh::match_replay_route(wrong_mode_config, wrong_mode_metrics);
+    assert(wrong_mode_result.frames_processed == 2);
+    const auto wrong_mode_output = wrong_mode_metrics.str();
+    assert(wrong_mode_output.find("mavlink_ok=true") != std::string::npos);
+    assert(wrong_mode_output.find("navigation_ok=false") != std::string::npos);
+    assert(wrong_mode_output.find("command_valid=false") != std::string::npos);
 
     return 0;
 }

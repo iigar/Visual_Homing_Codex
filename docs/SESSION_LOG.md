@@ -59,3 +59,6 @@
 - Extended `MavlinkTelemetryAdapter` with dry-run command permission gates: telemetry must be fresh, heartbeat must be present, vehicle must be armed, and mode must be `Guided` before health allows navigation commands.
 - Updated replay route matching scripted telemetry to model armed Guided state explicitly so command generation no longer depends on a manual health bypass.
 - Validated the permission-gate update using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.
+- Hardened replay route matching diagnostics by adding `mavlink_ok` and `navigation_ok` to per-frame match metrics.
+- Added pipeline harness coverage proving disarmed and wrong-mode dry-run telemetry keep MAVLink healthy but block navigation commands through `navigation_ok=false`.
+- Validated the hardening pass using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.

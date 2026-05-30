@@ -53,7 +53,7 @@
 - Send commands from a single writer. Initial dry-run bridge records command output through the same `MavlinkBridge` boundary.
 - Add dry-run and guided-command modes. Dry-run mode is implemented first; live guided-command output remains blocked.
 - Start from `DryRunCommandSink`; do not add live ArduPilot output until dry-run command logs and safety gates are validated.
-- Status: dry-run bridge and telemetry adapter are implemented; replay route matching now uses scripted heartbeat telemetry to drive MAVLink health, maps yaw/altitude into navigation estimates, and blocks commands unless telemetry is fresh, heartbeat is present, vehicle is armed, and mode is `Guided`. Live ArduPilot output remains blocked.
+- Status: dry-run bridge and telemetry adapter are implemented; replay route matching now uses scripted heartbeat telemetry to drive MAVLink health, maps yaw/altitude into navigation estimates, reports `mavlink_ok`/`navigation_ok` in match metrics, and blocks commands unless telemetry is fresh, heartbeat is present, vehicle is armed, and mode is `Guided`. Live ArduPilot output remains blocked.
 
 ## Milestone 6 - Hardware Capture
 

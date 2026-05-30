@@ -139,8 +139,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     std::vector<MavlinkTelemetry> telemetry_script(replay.size());
     for (auto& telemetry : telemetry_script) {
         telemetry.heartbeat_seen = true;
-        telemetry.armed = true;
-        telemetry.mode = FlightMode::Guided;
+        telemetry.armed = config.dry_run_mavlink_armed;
+        telemetry.mode = config.dry_run_mavlink_mode;
     }
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     HealthMonitor health(now());
@@ -185,6 +185,8 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
                 << " direction_error_rad=" << match.direction_error_rad
                 << " confidence=" << match.confidence
                 << " valid=" << (match.valid ? "true" : "false")
+                << " mavlink_ok=" << (snapshot.mavlink_ok ? "true" : "false")
+                << " navigation_ok=" << (snapshot.navigation_ok ? "true" : "false")
                 << " command_valid=" << (command.valid ? "true" : "false")
                 << " yaw_rate_radps=" << command.yaw_rate_radps
                 << " latency_ms=" << timing.processing_latency_ms

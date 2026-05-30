@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <iosfwd>
 
+#include "visual_homing/mavlink.hpp"
+
 namespace vh {
 
 struct PipelineConfig {
@@ -36,6 +38,8 @@ struct RouteMatchingConfig {
     double navigator_max_yaw_rate_radps = 0.35;
     double navigator_max_yaw_accel_radps2 = 1.0;
     double navigator_forward_speed_mps = 0.0;
+    bool dry_run_mavlink_armed = true;
+    FlightMode dry_run_mavlink_mode = FlightMode::Guided;
 };
 
 struct PipelineResult {
