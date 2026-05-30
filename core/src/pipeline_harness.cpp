@@ -2,12 +2,15 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/bounded_navigator.hpp"
 #include "visual_homing/dry_run_command_sink.hpp"
+#include "visual_homing/dry_run_mavlink_bridge.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/replay_frame_source.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
 #include "visual_homing/time.hpp"
@@ -133,11 +136,19 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         .forward_speed_mps = config.navigator_forward_speed_mps,
     });
     auto replay = ReplayFrameSource::load_manifest(config.manifest_path);
+    std::vector<MavlinkTelemetry> telemetry_script(replay.size());
+    for (auto& telemetry : telemetry_script) {
+        telemetry.heartbeat_seen = true;
+        telemetry.mode = FlightMode::Guided;
+    }
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     HealthMonitor health(now());
     health.set_links(true, false, true);
     DryRunCommandSink command_sink(&metrics);
+    DryRunMavlinkBridge mavlink_bridge(std::move(telemetry_script), &metrics);
+    MavlinkTelemetryAdapter telemetry_adapter({.max_telemetry_age_ms = 1.0e12, .navigation_confidence = 1.0});
     command_sink.start();
+    mavlink_bridge.start();
 
     replay.start();
 
@@ -153,11 +164,13 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         const auto processed = preprocessor.process(*frame);
         const auto match = matcher.match(processed);
         const auto processing_finished = now();
+        if (auto telemetry = mavlink_bridge.poll_telemetry()) {
+            telemetry_adapter.observe(*telemetry, processing_finished);
+        }
         const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
         health.set_route_match_confidence(match.confidence);
+        telemetry_adapter.apply_to_health(health, processing_finished, true, true);
         auto snapshot = health.snapshot(processing_finished);
-        snapshot.state = HealthState::Ready;
-        snapshot.mavlink_ok = true;
         const auto command = navigator.update(match, snapshot);
         command_sink.send(command);
 
@@ -178,6 +191,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     }
 
     replay.stop();
+    mavlink_bridge.stop();
     command_sink.stop();
     metrics << "route_match_done frames_processed=" << result.frames_processed << "\n";
 

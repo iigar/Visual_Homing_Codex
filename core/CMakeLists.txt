@@ -17,6 +17,7 @@ add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
+    src/mavlink_telemetry_adapter.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
     src/route_signature_recorder.cpp
@@ -120,6 +121,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME health_monitor COMMAND health_monitor_test)
+
+    add_executable(mavlink_telemetry_adapter_test
+        tests/mavlink_telemetry_adapter_test.cpp
+    )
+
+    target_link_libraries(mavlink_telemetry_adapter_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(mavlink_telemetry_adapter_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME mavlink_telemetry_adapter COMMAND mavlink_telemetry_adapter_test)
 
     add_executable(pipeline_harness_test
         tests/pipeline_harness_test.cpp

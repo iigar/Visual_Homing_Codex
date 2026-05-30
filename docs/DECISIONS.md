@@ -159,3 +159,22 @@ Impact:
 
 Risk:
 - Dry-run success does not validate MAVLink timing, modes, or ArduPilot acceptance behavior. Live output remains a separate gated step.
+
+## 2026-05-30 - Map Dry-Run MAVLink Telemetry Into Core State
+
+Decision:
+- Add `MavlinkTelemetryAdapter` as the boundary between MAVLink telemetry samples and core health/navigation state.
+- Treat heartbeat presence and telemetry freshness as the source of `mavlink_ok`.
+- Map attitude yaw and relative altitude into `NavigationEstimate` so route metadata and future navigation gates can consume telemetry without depending on a live transport.
+
+Why:
+- The previous replay match harness forced `mavlink_ok` manually, which bypassed the health gate that live MAVLink integration will need.
+- A separate adapter keeps dry-run telemetry handling deterministic and unit-testable before any ArduPilot command output exists.
+- Freshness gating gives a clear fail-closed behavior for stale or missing telemetry.
+
+Impact:
+- Replay route matching now polls `DryRunMavlinkBridge` telemetry and applies it to `HealthMonitor` before generating commands.
+- The core has a testable path from scripted heartbeat/mode/attitude/altitude data to health snapshots and navigation estimates.
+
+Risk:
+- Armed and flight-mode permissions are not yet enforced by the navigator. They remain the next Milestone 5 safety gate before live output is considered.

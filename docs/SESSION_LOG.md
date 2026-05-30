@@ -49,3 +49,10 @@
 - Validated the hardened baseline using `.\scripts\test-core.ps1`: build passed and 9/9 CTest tests passed in Debug.
 - Started Milestone 5 with `DryRunMavlinkBridge`, a no-live-output MAVLink boundary that scripts heartbeat/mode/attitude/altitude telemetry and records command output through a single writer.
 - Validated `DryRunMavlinkBridge` using `.\scripts\test-core.ps1`: build passed and 10/10 CTest tests passed in Debug.
+
+## 2026-05-30
+
+- Continued Milestone 5 by adding `MavlinkTelemetryAdapter` to convert dry-run MAVLink telemetry into health link state and `NavigationEstimate` values.
+- Wired replay route matching through `DryRunMavlinkBridge` telemetry polling instead of manually forcing `mavlink_ok` in the health snapshot.
+- Added deterministic tests for heartbeat-driven MAVLink health, stale telemetry rejection, health link application, and yaw/altitude mapping into navigation estimates.
+- Validated the core using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.
