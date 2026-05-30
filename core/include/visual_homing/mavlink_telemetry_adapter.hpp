@@ -12,6 +12,8 @@ namespace vh {
 struct MavlinkTelemetryAdapterConfig {
     double max_telemetry_age_ms = 500.0;
     double navigation_confidence = 1.0;
+    bool require_armed = true;
+    FlightMode required_mode = FlightMode::Guided;
 };
 
 class MavlinkTelemetryAdapter {
@@ -21,6 +23,7 @@ public:
     void observe(const MavlinkTelemetry& telemetry, Timestamp received_at);
     bool has_telemetry() const;
     bool mavlink_ok(Timestamp timestamp) const;
+    bool command_permission_ok(Timestamp timestamp) const;
     void apply_to_health(HealthMonitor& health, Timestamp timestamp, bool camera_ok, bool navigation_ok) const;
     std::optional<NavigationEstimate> navigation_estimate() const;
 

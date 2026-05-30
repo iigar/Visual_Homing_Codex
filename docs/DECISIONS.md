@@ -178,3 +178,22 @@ Impact:
 
 Risk:
 - Armed and flight-mode permissions are not yet enforced by the navigator. They remain the next Milestone 5 safety gate before live output is considered.
+
+## 2026-05-30 - Gate Dry-Run Commands On Armed Guided State
+
+Decision:
+- Extend `MavlinkTelemetryAdapter` with command-permission checks.
+- Require fresh heartbeat telemetry, armed state, and `Guided` mode before health is allowed to report navigation as OK.
+- Keep the actual command rejection inside the existing `BoundedNavigator` health gate rather than adding a second command policy path.
+
+Why:
+- MAVLink mode and armed state are transport-derived permissions, but the navigator already owns the final fail-closed command decision through `HealthSnapshot`.
+- Mapping permission failure to `navigation_ok=false` keeps command output invalid without adding live MAVLink behavior.
+- Dry-run replay now exercises the same permission concept that live ArduPilot output would need later.
+
+Impact:
+- Disarmed, wrong-mode, stale, or no-heartbeat telemetry blocks commands through the normal health gate.
+- Replay route matching scripts armed Guided dry-run telemetry explicitly for positive command tests.
+
+Risk:
+- Only `Guided` is accepted for now. Future ArduPilot integration may need a more nuanced allowed-mode policy, but that should remain explicit and tested.

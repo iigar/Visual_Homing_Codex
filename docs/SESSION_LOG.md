@@ -56,3 +56,6 @@
 - Wired replay route matching through `DryRunMavlinkBridge` telemetry polling instead of manually forcing `mavlink_ok` in the health snapshot.
 - Added deterministic tests for heartbeat-driven MAVLink health, stale telemetry rejection, health link application, and yaw/altitude mapping into navigation estimates.
 - Validated the core using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.
+- Extended `MavlinkTelemetryAdapter` with dry-run command permission gates: telemetry must be fresh, heartbeat must be present, vehicle must be armed, and mode must be `Guided` before health allows navigation commands.
+- Updated replay route matching scripted telemetry to model armed Guided state explicitly so command generation no longer depends on a manual health bypass.
+- Validated the permission-gate update using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.

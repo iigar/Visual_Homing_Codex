@@ -25,13 +25,23 @@ bool MavlinkTelemetryAdapter::mavlink_ok(Timestamp timestamp) const {
     return age_ms >= 0.0 && age_ms <= config_.max_telemetry_age_ms;
 }
 
+bool MavlinkTelemetryAdapter::command_permission_ok(Timestamp timestamp) const {
+    if (!mavlink_ok(timestamp)) {
+        return false;
+    }
+    if (config_.require_armed && !telemetry_->armed) {
+        return false;
+    }
+    return telemetry_->mode == config_.required_mode;
+}
+
 void MavlinkTelemetryAdapter::apply_to_health(
     HealthMonitor& health,
     Timestamp timestamp,
     bool camera_ok,
     bool navigation_ok) const {
     const bool link_ok = mavlink_ok(timestamp);
-    health.set_links(camera_ok, link_ok, navigation_ok && link_ok);
+    health.set_links(camera_ok, link_ok, navigation_ok && command_permission_ok(timestamp));
 }
 
 std::optional<NavigationEstimate> MavlinkTelemetryAdapter::navigation_estimate() const {

@@ -139,6 +139,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     std::vector<MavlinkTelemetry> telemetry_script(replay.size());
     for (auto& telemetry : telemetry_script) {
         telemetry.heartbeat_seen = true;
+        telemetry.armed = true;
         telemetry.mode = FlightMode::Guided;
     }
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);

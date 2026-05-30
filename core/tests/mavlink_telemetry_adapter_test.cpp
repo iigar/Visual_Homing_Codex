@@ -34,7 +34,9 @@ int main() {
     adapter.observe(telemetry, at_ms(20));
     assert(adapter.has_telemetry());
     assert(adapter.mavlink_ok(at_ms(90)));
+    assert(adapter.command_permission_ok(at_ms(90)));
     assert(!adapter.mavlink_ok(at_ms(121)));
+    assert(!adapter.command_permission_ok(at_ms(121)));
 
     adapter.apply_to_health(health, at_ms(90), true, true);
     snapshot = health.snapshot(at_ms(90));
@@ -52,9 +54,32 @@ int main() {
     telemetry.heartbeat_seen = false;
     adapter.observe(telemetry, at_ms(130));
     assert(!adapter.mavlink_ok(at_ms(130)));
+    assert(!adapter.command_permission_ok(at_ms(130)));
     const auto no_heartbeat_nav = adapter.navigation_estimate();
     assert(no_heartbeat_nav.has_value());
     assert(no_heartbeat_nav->confidence == 0.0);
+
+    telemetry.heartbeat_seen = true;
+    telemetry.armed = false;
+    telemetry.mode = vh::FlightMode::Guided;
+    adapter.observe(telemetry, at_ms(150));
+    assert(adapter.mavlink_ok(at_ms(150)));
+    assert(!adapter.command_permission_ok(at_ms(150)));
+    adapter.apply_to_health(health, at_ms(150), true, true);
+    snapshot = health.snapshot(at_ms(150));
+    assert(snapshot.mavlink_ok);
+    assert(!snapshot.navigation_ok);
+    assert(snapshot.state == vh::HealthState::Degraded);
+
+    telemetry.armed = true;
+    telemetry.mode = vh::FlightMode::Manual;
+    adapter.observe(telemetry, at_ms(160));
+    assert(adapter.mavlink_ok(at_ms(160)));
+    assert(!adapter.command_permission_ok(at_ms(160)));
+
+    telemetry.mode = vh::FlightMode::Guided;
+    adapter.observe(telemetry, at_ms(170));
+    assert(adapter.command_permission_ok(at_ms(170)));
 
     return 0;
 }
