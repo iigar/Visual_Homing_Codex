@@ -47,3 +47,5 @@
 - Completed Milestone 4 baseline: navigation commands are bounded, confidence/age/health gated, yaw slew-limited, and validated both directly and through replay matching.
 - Hardened the baseline before Milestone 5: parameterized matcher direction settings, added pipeline negative command tests, documented `.vhrs`, and added `DryRunCommandSink` as a no-MAVLink single-writer command sink.
 - Validated the hardened baseline using `.\scripts\test-core.ps1`: build passed and 9/9 CTest tests passed in Debug.
+- Started Milestone 5 with `DryRunMavlinkBridge`, a no-live-output MAVLink boundary that scripts heartbeat/mode/attitude/altitude telemetry and records command output through a single writer.
+- Validated `DryRunMavlinkBridge` using `.\scripts\test-core.ps1`: build passed and 10/10 CTest tests passed in Debug.

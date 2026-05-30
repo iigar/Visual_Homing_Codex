@@ -42,6 +42,7 @@ Expected CTest coverage:
 
 - `bounded_navigator`
 - `dry_run_command_sink`
+- `dry_run_mavlink_bridge`
 - `gray8_resize_preprocessor`
 - `replay_frame_source`
 - `health_monitor`

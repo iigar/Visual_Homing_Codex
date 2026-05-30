@@ -4,6 +4,7 @@
 
 #include "visual_homing/frame.hpp"
 #include "visual_homing/health.hpp"
+#include "visual_homing/mavlink.hpp"
 #include "visual_homing/navigation.hpp"
 #include "visual_homing/route.hpp"
 
@@ -47,6 +48,12 @@ public:
     virtual bool start() = 0;
     virtual void stop() = 0;
     virtual void send(const NavigationCommand& command) = 0;
+};
+
+class MavlinkTelemetrySource {
+public:
+    virtual ~MavlinkTelemetrySource() = default;
+    virtual std::optional<MavlinkTelemetry> poll_telemetry() = 0;
 };
 
 } // namespace vh

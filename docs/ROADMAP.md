@@ -49,9 +49,9 @@
 
 ## Milestone 5 - MAVLink Integration
 
-- Read ArduPilot heartbeat, attitude, altitude, and mode.
-- Send commands from a single writer.
-- Add dry-run and guided-command modes.
+- Read ArduPilot heartbeat, attitude, altitude, and mode. Initial dry-run telemetry source models heartbeat, armed state, mode, attitude, and relative altitude without live MAVLink.
+- Send commands from a single writer. Initial dry-run bridge records command output through the same `MavlinkBridge` boundary.
+- Add dry-run and guided-command modes. Dry-run mode is implemented first; live guided-command output remains blocked.
 - Start from `DryRunCommandSink`; do not add live ArduPilot output until dry-run command logs and safety gates are validated.
 
 ## Milestone 6 - Hardware Capture

@@ -6,8 +6,8 @@
 - Target hardware: Raspberry Pi Zero 2W class companion computer, Pi Camera or thermal camera, Matek H743 Slim V3 / ArduPilot flight controller.
 - Repository strategy: keep the imported baseline under `reference/` and build the new flight-critical system under `core/`.
 - Core implementation direction: C++ replay-first architecture with deterministic timing, bounded queues, and explicit health/failsafe state.
-- Current validated core baseline: replay pipeline plus route signature v1, coarse matching, and initial navigation command model has `ReplayFrameSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `PipelineHarness`, binary `VHRS` route signature writer/reader, `RouteSignatureRecorder`, `Gray8RouteMatcher`, `BoundedNavigator` with yaw-rate slew limiting, `DryRunCommandSink`, replay-to-route matching CLI with progress/confidence/direction error/command output, MSVC/CMake build support, and 9 passing CTest tests.
-- Near-term priority after hardening: prepare Milestone 5 MAVLink integration by adapting the dry-run single-writer command sink toward real MAVLink transport, still without live ArduPilot output first.
+- Current validated core baseline: replay pipeline plus route signature v1, coarse matching, initial navigation command model, and dry-run MAVLink boundary has `ReplayFrameSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `PipelineHarness`, binary `VHRS` route signature writer/reader, `RouteSignatureRecorder`, `Gray8RouteMatcher`, `BoundedNavigator` with yaw-rate slew limiting, `DryRunCommandSink`, `DryRunMavlinkBridge`, replay-to-route matching CLI with progress/confidence/direction error/command output, MSVC/CMake build support, and 10 passing CTest tests.
+- Near-term priority in Milestone 5: connect dry-run MAVLink telemetry into health/navigation snapshots, still without live ArduPilot output.
 - Python/reference code is useful for documentation, tools, diagnostics, UI concepts, and comparison, but should not become the new flight-critical scheduler.
 - Commit messages should be detailed and explain what changed, why, impact, validation, and risk.
 
