@@ -59,6 +59,7 @@ Validated on Windows with:
 Expected CTest coverage:
 
 - `bounded_navigator`
+- `camera_smoke`
 - `dry_run_command_sink`
 - `dry_run_mavlink_bridge`
 - `gray8_resize_preprocessor`

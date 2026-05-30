@@ -68,3 +68,6 @@
 - Added `VISUAL_HOMING_ENABLE_LIBCAMERA` CMake option with default `OFF` so desktop builds remain replay-first and Pi builds can explicitly request the hardware backend.
 - Added Raspberry Pi automation docs plus `scripts/bootstrap-pi.sh` and `scripts/test-core-pi.sh` for one-command package install, Release configuration, build, and CTest on Pi.
 - Validated the desktop/default path using `.\scripts\test-core.ps1`: build passed and 12/12 CTest tests passed in Debug.
+- Added `run_pi_camera_smoke` and CLI `--pi-camera-smoke <width> <height> <fps> <frames>` for future Pi camera validation while preserving fail-closed desktop behavior.
+- Added optional `VISUAL_HOMING_RUN_CAMERA_SMOKE=1` support to `scripts/test-core-pi.sh`.
+- Validated the camera smoke harness using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.

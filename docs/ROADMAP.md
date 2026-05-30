@@ -60,7 +60,7 @@
 - Add Pi camera source.
 - Add USB/thermal source.
 - Validate CPU, memory, frame drops, latency on Pi Zero 2W.
-- Status: started with a fail-closed `PiCameraSource` boundary and tests. Default desktop builds do not capture live frames and safely report the libcamera backend as unavailable. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`.
+- Status: started with a fail-closed `PiCameraSource` boundary, `--pi-camera-smoke` CLI, and tests. Default desktop builds do not capture live frames and safely report the libcamera backend as unavailable. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`.
 
 ## Milestone 7 - Flight Test Ladder
 

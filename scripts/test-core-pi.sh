@@ -42,3 +42,11 @@ cmake -S "${core_dir}" -B "${build_dir}" \
 
 cmake --build "${build_dir}"
 ctest --test-dir "${build_dir}" --output-on-failure
+
+if [[ "${VISUAL_HOMING_RUN_CAMERA_SMOKE:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --pi-camera-smoke \
+        "${VISUAL_HOMING_CAMERA_WIDTH:-320}" \
+        "${VISUAL_HOMING_CAMERA_HEIGHT:-240}" \
+        "${VISUAL_HOMING_CAMERA_FPS:-15}" \
+        "${VISUAL_HOMING_CAMERA_FRAMES:-30}"
+fi

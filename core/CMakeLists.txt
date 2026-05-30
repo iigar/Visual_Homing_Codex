@@ -14,6 +14,7 @@ add_executable(visual_homing_core
 
 add_library(visual_homing_core_lib
     src/bounded_navigator.cpp
+    src/camera_smoke.cpp
     src/dry_run_command_sink.cpp
     src/dry_run_mavlink_bridge.cpp
     src/gray8_resize_preprocessor.cpp
@@ -51,6 +52,19 @@ target_compile_options(visual_homing_core PRIVATE
 include(CTest)
 
 if(BUILD_TESTING)
+    add_executable(camera_smoke_test
+        tests/camera_smoke_test.cpp
+    )
+
+    target_link_libraries(camera_smoke_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(camera_smoke_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME camera_smoke COMMAND camera_smoke_test)
+
     add_executable(bounded_navigator_test
         tests/bounded_navigator_test.cpp
     )

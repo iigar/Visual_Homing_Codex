@@ -236,3 +236,21 @@ Impact:
 
 Risk:
 - The scripts install packages but cannot prove camera runtime behavior until executed on real Pi hardware with a connected camera.
+
+## 2026-05-30 - Add Camera Smoke As An Explicit Hardware Check
+
+Decision:
+- Add `run_pi_camera_smoke` and CLI `--pi-camera-smoke <width> <height> <fps> <frames>`.
+- Keep camera smoke optional in `scripts/test-core-pi.sh` through `VISUAL_HOMING_RUN_CAMERA_SMOKE=1`.
+
+Why:
+- CTest should remain hardware-independent by default.
+- A dedicated smoke command gives Pi validation a stable entry point once the real libcamera backend exists.
+- Optional execution avoids failing package/build validation on systems where a camera is not attached or backend work is not complete.
+
+Impact:
+- Desktop validation still passes without camera hardware.
+- Pi operators can run build/tests only, or opt into live camera smoke with explicit environment variables.
+
+Risk:
+- The smoke command only verifies capture availability and basic frame delivery; it does not validate visual matching quality or flight behavior.

@@ -3,6 +3,7 @@
 #include <exception>
 #include <string>
 
+#include "visual_homing/camera_smoke.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
 #include "visual_homing/time.hpp"
@@ -86,11 +87,27 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 6 && std::string(argv[1]) == "--pi-camera-smoke") {
+        try {
+            vh::CameraSmokeConfig config;
+            config.camera.width = std::stoi(argv[2]);
+            config.camera.height = std::stoi(argv[3]);
+            config.camera.frame_rate_hz = std::stoi(argv[4]);
+            config.frames_to_capture = static_cast<std::size_t>(std::stoull(argv[5]));
+            const auto result = vh::run_pi_camera_smoke(config, std::cout);
+            return result.started && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "pi_camera_smoke_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
+    std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames>\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

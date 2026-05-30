@@ -37,6 +37,31 @@ The script configures `core/build-pi` with:
 
 Then it builds the core and runs CTest.
 
+## Camera Smoke Test
+
+After a real libcamera backend is implemented and camera hardware is attached, run:
+
+```bash
+VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh
+```
+
+Optional camera smoke settings:
+
+```bash
+VISUAL_HOMING_CAMERA_WIDTH=320
+VISUAL_HOMING_CAMERA_HEIGHT=240
+VISUAL_HOMING_CAMERA_FPS=15
+VISUAL_HOMING_CAMERA_FRAMES=30
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames>
+```
+
+Until the real libcamera backend exists, this command fails closed and reports that camera capture is unavailable.
+
 ## Hardware Backend Policy
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.
