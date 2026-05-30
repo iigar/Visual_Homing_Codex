@@ -74,3 +74,4 @@
 - Tightened the Pi hardware build contract so `VISUAL_HOMING_ENABLE_LIBCAMERA=ON` requires `pkg-config` and the `libcamera` development package through CMake.
 - After first Pi bootstrap reached compilation but `cc1plus` was killed by the OS under parallel Ninja, changed `scripts/test-core-pi.sh` to default to `MinSizeRel` and one build job for Pi Zero 2W memory limits.
 - After the Pi `MinSizeRel` build exposed tests that depended on `assert` side effects, changed CMake test compilation to undefine `NDEBUG` for test executables so CTest keeps assertions active in release-like builds.
+- Validated the Raspberry Pi build path on `jtzero`: `scripts/test-core-pi.sh --clean` found `libcamera` 0.7.1, completed the C++ build on Pi hardware, and passed 13/13 CTest tests.
