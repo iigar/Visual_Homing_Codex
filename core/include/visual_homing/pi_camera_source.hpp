@@ -12,6 +12,7 @@ struct PiCameraConfig {
     int height = 240;
     int frame_rate_hz = 15;
     PixelFormat format = PixelFormat::Gray8;
+    bool enable_live_capture = false;
 };
 
 class PiCameraSource final : public CameraSource {

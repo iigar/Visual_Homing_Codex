@@ -78,3 +78,4 @@
 - Added the first libcamera-backed `PiCameraSource` implementation behind `VISUAL_HOMING_ENABLE_LIBCAMERA`, using CameraManager, Viewfinder stream configuration, FrameBufferAllocator, request completion callbacks, luma-plane copy into Gray8 `Frame`, and request reuse.
 - Updated camera smoke polling to wait by elapsed time instead of a fixed empty-poll count for asynchronous capture.
 - Validated the desktop/default non-libcamera path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
+- After Pi CTest opened the physical camera and segfaulted in `camera_smoke`/`pi_camera_source` tests, added runtime `enable_live_capture=false` by default so CTest remains offline and live capture is reached only through explicit `--pi-camera-smoke`.

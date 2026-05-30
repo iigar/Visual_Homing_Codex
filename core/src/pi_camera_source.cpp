@@ -330,6 +330,12 @@ bool PiCameraSource::start() {
     stop();
     last_error_.clear();
 
+    if (!config_.enable_live_capture) {
+        last_error_ = "PiCameraSource live capture is not enabled";
+        running_ = false;
+        return false;
+    }
+
 #ifdef VISUAL_HOMING_ENABLE_LIBCAMERA
     backend_ = std::make_unique<Backend>(config_);
     if (!backend_->start(last_error_)) {

@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
             config.camera.width = std::stoi(argv[2]);
             config.camera.height = std::stoi(argv[3]);
             config.camera.frame_rate_hz = std::stoi(argv[4]);
+            config.camera.enable_live_capture = true;
             config.frames_to_capture = static_cast<std::size_t>(std::stoull(argv[5]));
             const auto result = vh::run_pi_camera_smoke(config, std::cout);
             return result.started && result.frames_captured == config.frames_to_capture ? 0 : 2;

@@ -322,3 +322,22 @@ Impact:
 
 Risk:
 - The libcamera-enabled path still needs Pi-side compile/runtime validation and may require format/stride adjustments for specific camera pipelines.
+
+## 2026-05-30 - Keep Live Camera Capture Opt-In At Runtime
+
+Decision:
+- Add `PiCameraConfig::enable_live_capture`, defaulting to `false`.
+- Require both compile-time `VISUAL_HOMING_ENABLE_LIBCAMERA` and runtime `enable_live_capture=true` before `PiCameraSource::start()` touches live camera hardware.
+- Set `enable_live_capture=true` only from the explicit `--pi-camera-smoke` CLI path.
+
+Why:
+- CTest must remain deterministic and offline even on Pi hardware.
+- The libcamera-enabled build should be able to run unit tests without opening the physical camera.
+- Live camera access should be a deliberate hardware validation action.
+
+Impact:
+- `pi_camera_source_test` and `camera_smoke_test` keep exercising fail-closed behavior under CTest.
+- Optional Pi smoke still reaches the live backend through the CLI.
+
+Risk:
+- Future callers must explicitly enable live capture when they are truly operating in a hardware validation or live capture mode.
