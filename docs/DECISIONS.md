@@ -303,3 +303,22 @@ Impact:
 
 Risk:
 - Test binaries differ slightly from production optimization flags, but this is appropriate because tests must enforce invariants.
+
+## 2026-05-30 - Implement Initial Libcamera Capture Behind PiCameraSource
+
+Decision:
+- Implement the first libcamera backend behind `PiCameraSource` when `VISUAL_HOMING_ENABLE_LIBCAMERA` is enabled.
+- Use libcamera `CameraManager`, a single Viewfinder stream, `FrameBufferAllocator`, request completion callbacks, and request reuse.
+- Request YUV420 from libcamera and copy the first luma plane into the core `Frame` as Gray8.
+
+Why:
+- The core wants Gray8 frames and deterministic preprocessing, so using the luma plane gives the smallest useful live camera path.
+- Keeping the backend behind the existing compile flag preserves the fail-closed desktop baseline.
+- Reusing requests matches libcamera's capture model and avoids per-frame allocation in the live path.
+
+Impact:
+- `--pi-camera-smoke` can now exercise real camera capture on Pi hardware once compiled with libcamera.
+- The callback copies frame bytes into a bounded two-frame queue; if the consumer lags, older frames are dropped.
+
+Risk:
+- The libcamera-enabled path still needs Pi-side compile/runtime validation and may require format/stride adjustments for specific camera pipelines.

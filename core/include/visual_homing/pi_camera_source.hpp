@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "visual_homing/interfaces.hpp"
@@ -16,6 +17,7 @@ struct PiCameraConfig {
 class PiCameraSource final : public CameraSource {
 public:
     explicit PiCameraSource(PiCameraConfig config = {});
+    ~PiCameraSource() override;
 
     bool start() override;
     void stop() override;
@@ -26,9 +28,12 @@ public:
     const std::string& last_error() const;
 
 private:
+    struct Backend;
+
     PiCameraConfig config_;
     bool running_ = false;
     std::string last_error_;
+    std::unique_ptr<Backend> backend_;
 };
 
 } // namespace vh

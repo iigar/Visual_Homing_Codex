@@ -1,7 +1,9 @@
 #include "visual_homing/camera_smoke.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 
 #include "visual_homing/time.hpp"
 
@@ -28,6 +30,8 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
     }
 
     const auto started_at = now();
+    const auto timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
+        / static_cast<double>(config.camera.frame_rate_hz));
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             ++result.frames_captured;
@@ -36,9 +40,10 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
                     << " bytes=" << frame->data.size() << "\n";
         } else {
             ++result.empty_polls;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
 
-        if (result.empty_polls > config.frames_to_capture * 10U) {
+        if (milliseconds_between(started_at, now()) > timeout_ms) {
             break;
         }
     }

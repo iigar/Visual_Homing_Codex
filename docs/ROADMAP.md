@@ -60,7 +60,7 @@
 - Add Pi camera source.
 - Add USB/thermal source.
 - Validate CPU, memory, frame drops, latency on Pi Zero 2W.
-- Status: started with a fail-closed `PiCameraSource` boundary, `--pi-camera-smoke` CLI, and tests. Default desktop builds do not capture live frames and safely report the libcamera backend as unavailable. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing.
+- Status: in progress with `PiCameraSource`, initial libcamera backend, `--pi-camera-smoke` CLI, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing; next validation is live `VISUAL_HOMING_RUN_CAMERA_SMOKE=1` on Pi hardware.
 
 ## Milestone 7 - Flight Test Ladder
 
