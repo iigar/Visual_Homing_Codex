@@ -34,7 +34,10 @@ target_include_directories(visual_homing_core_lib PUBLIC
 )
 
 if(VISUAL_HOMING_ENABLE_LIBCAMERA)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBCAMERA REQUIRED IMPORTED_TARGET libcamera)
     target_compile_definitions(visual_homing_core_lib PUBLIC VISUAL_HOMING_ENABLE_LIBCAMERA)
+    target_link_libraries(visual_homing_core_lib PUBLIC PkgConfig::LIBCAMERA)
 endif()
 
 target_compile_options(visual_homing_core_lib PRIVATE

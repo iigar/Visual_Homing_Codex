@@ -254,3 +254,19 @@ Impact:
 
 Risk:
 - The smoke command only verifies capture availability and basic frame delivery; it does not validate visual matching quality or flight behavior.
+
+## 2026-05-30 - Require Libcamera Package Discovery For Hardware Builds
+
+Decision:
+- When `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`, require CMake `PkgConfig` discovery of the `libcamera` package and link the core target against `PkgConfig::LIBCAMERA`.
+
+Why:
+- The hardware flag should prove the Pi build environment has the camera development package available.
+- Failing at configure time is clearer than compiling a nominal hardware build with missing backend prerequisites.
+
+Impact:
+- Default desktop builds remain unaffected because the option defaults to `OFF`.
+- Pi builds now validate that `libcamera-dev` and `pkg-config` are installed before backend work proceeds.
+
+Risk:
+- This path still needs to be executed on real Raspberry Pi hardware; local Windows validation only covers the default `OFF` path.

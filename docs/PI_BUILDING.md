@@ -37,6 +37,8 @@ The script configures `core/build-pi` with:
 
 Then it builds the core and runs CTest.
 
+When `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`, CMake requires `pkg-config` and the `libcamera` development package. The bootstrap script installs both before configuring the build.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:
@@ -66,7 +68,7 @@ Until the real libcamera backend exists, this command fails closed and reports t
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.
 - Desktop and CI-style builds should leave it `OFF`.
-- Pi builds may set it `ON`.
+- Pi builds may set it `ON`; when enabled, CMake requires the `libcamera` pkg-config module.
 - Until the libcamera backend is implemented, `PiCameraSource` remains fail-closed and reports that capture is unavailable.
 - Live loops must not do disk I/O.
 - Every live frame must carry a monotonic timestamp from the core clock at capture receipt.

@@ -71,3 +71,4 @@
 - Added `run_pi_camera_smoke` and CLI `--pi-camera-smoke <width> <height> <fps> <frames>` for future Pi camera validation while preserving fail-closed desktop behavior.
 - Added optional `VISUAL_HOMING_RUN_CAMERA_SMOKE=1` support to `scripts/test-core-pi.sh`.
 - Validated the camera smoke harness using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
+- Tightened the Pi hardware build contract so `VISUAL_HOMING_ENABLE_LIBCAMERA=ON` requires `pkg-config` and the `libcamera` development package through CMake.
