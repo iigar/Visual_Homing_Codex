@@ -46,16 +46,19 @@ struct PiCameraSource::Backend {
             return false;
         }
 
-        const auto cameras = manager->cameras();
-        if (cameras.empty()) {
-            error = "libcamera found no cameras";
-            stop();
-            return false;
+        {
+            auto cameras = manager->cameras();
+            if (cameras.empty()) {
+                error = "libcamera found no cameras";
+                stop();
+                return false;
+            }
+            camera = cameras.front();
+            cameras.clear();
         }
 
-        camera = manager->get(cameras.front()->id());
         if (!camera) {
-            error = "libcamera could not acquire first camera by id";
+            error = "libcamera could not select first camera";
             stop();
             return false;
         }
@@ -206,6 +209,8 @@ struct PiCameraSource::Backend {
             camera_acquired = false;
         }
         camera.reset();
+        camera_config.reset();
+        stream = nullptr;
 
         if (manager) {
             manager->stop();

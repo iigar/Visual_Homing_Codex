@@ -23,6 +23,13 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
             << " requested_frames=" << config.frames_to_capture << "\n";
 
     result.started = source.start();
+    metrics << "camera_smoke_backend_start_result started=" << (result.started ? "true" : "false")
+            << " running=" << (source.running() ? "true" : "false");
+    if (!source.last_error().empty()) {
+        metrics << " error=" << source.last_error();
+    }
+    metrics << "\n";
+
     if (!result.started) {
         metrics << "camera_smoke_unavailable error=" << source.last_error() << "\n";
         metrics << "camera_smoke_done started=false frames_captured=0 empty_polls=0\n";
