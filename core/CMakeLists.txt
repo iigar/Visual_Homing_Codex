@@ -18,6 +18,7 @@ add_library(visual_homing_core_lib
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
     src/mavlink_telemetry_adapter.cpp
+    src/pi_camera_source.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
     src/route_signature_recorder.cpp
@@ -147,6 +148,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME pipeline_harness COMMAND pipeline_harness_test)
+
+    add_executable(pi_camera_source_test
+        tests/pi_camera_source_test.cpp
+    )
+
+    target_link_libraries(pi_camera_source_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(pi_camera_source_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME pi_camera_source COMMAND pi_camera_source_test)
 
     add_executable(route_signature_test
         tests/route_signature_test.cpp

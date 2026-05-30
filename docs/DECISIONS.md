@@ -197,3 +197,22 @@ Impact:
 
 Risk:
 - Only `Guided` is accepted for now. Future ArduPilot integration may need a more nuanced allowed-mode policy, but that should remain explicit and tested.
+
+## 2026-05-30 - Start Hardware Capture With A Fail-Closed Pi Camera Boundary
+
+Decision:
+- Add `PiCameraSource` as the first Milestone 6 hardware capture boundary implementing `CameraSource`.
+- Validate dimensions, frame rate, and initial Gray8 output format in the constructor.
+- Keep the desktop/default backend fail-closed: without a compiled libcamera implementation, `start()` returns false, `running()` remains false, and `poll()` returns no frame.
+
+Why:
+- The core needs a stable camera-source contract before hardware-specific code is added.
+- Desktop CI/local testing must keep working without Pi hardware or libcamera packages.
+- A fail-closed source prevents accidental assumptions that live capture is available before hardware validation.
+
+Impact:
+- Future Pi camera work has a concrete class and tests to extend.
+- Replay remains the only active capture path in the validated desktop baseline.
+
+Risk:
+- This does not capture real camera frames yet. The next hardware step must be done on Pi/libcamera-capable hardware and must preserve the fail-closed behavior on unsupported builds.

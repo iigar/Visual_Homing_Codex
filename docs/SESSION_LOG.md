@@ -62,3 +62,6 @@
 - Hardened replay route matching diagnostics by adding `mavlink_ok` and `navigation_ok` to per-frame match metrics.
 - Added pipeline harness coverage proving disarmed and wrong-mode dry-run telemetry keep MAVLink healthy but block navigation commands through `navigation_ok=false`.
 - Validated the hardening pass using `.\scripts\test-core.ps1`: build passed and 11/11 CTest tests passed in Debug.
+- Started Milestone 6 with a fail-closed `PiCameraSource` boundary that implements `CameraSource`, validates capture dimensions/rate/format, and refuses to start when no libcamera backend is compiled in.
+- Added `PiCameraSource` tests for config validation, unsupported-backend startup failure, stopped state, and empty polling.
+- Validated the hardware-capture boundary using `.\scripts\test-core.ps1`: build passed and 12/12 CTest tests passed in Debug.
