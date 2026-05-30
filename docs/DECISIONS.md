@@ -270,3 +270,20 @@ Impact:
 
 Risk:
 - This path still needs to be executed on real Raspberry Pi hardware; local Windows validation only covers the default `OFF` path.
+
+## 2026-05-30 - Keep Pi Builds Memory-Conservative By Default
+
+Decision:
+- Default `scripts/test-core-pi.sh` to `MinSizeRel` and `VISUAL_HOMING_BUILD_JOBS=1`.
+- Allow overrides through `VISUAL_HOMING_PI_BUILD_TYPE` and `VISUAL_HOMING_BUILD_JOBS`.
+
+Why:
+- Pi Zero 2W class hardware can run out of RAM during parallel C++ compilation, especially with libcamera headers and optimized builds.
+- A slower one-job build is preferable to nondeterministic OS kills during setup.
+
+Impact:
+- Pi bootstrap is more likely to complete on constrained hardware.
+- Larger Pi boards can still opt into higher parallelism explicitly.
+
+Risk:
+- Pi builds take longer by default, but this is acceptable for reproducible setup.

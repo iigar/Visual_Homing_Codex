@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 core_dir="${repo_root}/core"
 build_dir="${core_dir}/build-pi"
+build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
+build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 
 clean=0
 for arg in "$@"; do
@@ -37,10 +39,10 @@ fi
 
 cmake -S "${core_dir}" -B "${build_dir}" \
     "${generator_args[@]}" \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE="${build_type}" \
     -DVISUAL_HOMING_ENABLE_LIBCAMERA=ON
 
-cmake --build "${build_dir}"
+cmake --build "${build_dir}" --parallel "${build_jobs}"
 ctest --test-dir "${build_dir}" --output-on-failure
 
 if [[ "${VISUAL_HOMING_RUN_CAMERA_SMOKE:-0}" == "1" ]]; then

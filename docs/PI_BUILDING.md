@@ -31,13 +31,29 @@ Run:
 The script configures `core/build-pi` with:
 
 ```bash
--DCMAKE_BUILD_TYPE=Release
+-DCMAKE_BUILD_TYPE=MinSizeRel
 -DVISUAL_HOMING_ENABLE_LIBCAMERA=ON
 ```
 
 Then it builds the core and runs CTest.
 
 When `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`, CMake requires `pkg-config` and the `libcamera` development package. The bootstrap script installs both before configuring the build.
+
+The default Pi build is intentionally conservative for Pi Zero 2W memory limits:
+
+```bash
+VISUAL_HOMING_PI_BUILD_TYPE=MinSizeRel
+VISUAL_HOMING_BUILD_JOBS=1
+```
+
+If a larger Pi has enough RAM, `VISUAL_HOMING_BUILD_JOBS` may be increased.
+
+If a previous parallel build was killed by the OS, rerun:
+
+```bash
+git pull
+./scripts/test-core-pi.sh --clean
+```
 
 ## Camera Smoke Test
 
