@@ -287,3 +287,19 @@ Impact:
 
 Risk:
 - Pi builds take longer by default, but this is acceptable for reproducible setup.
+
+## 2026-05-30 - Keep Assertions Active In CTest Builds
+
+Decision:
+- Undefine `NDEBUG` for CTest executable targets even when the core is configured as `Release`, `MinSizeRel`, or another release-like build type.
+
+Why:
+- The tests intentionally use `assert` for compact deterministic checks.
+- Pi uses `MinSizeRel` to reduce compile memory pressure, which would normally disable `assert` and can hide checks or skip side effects inside assertions.
+
+Impact:
+- The production library and CLI still build with the selected build type.
+- Test executables keep assertions active across desktop and Pi configurations.
+
+Risk:
+- Test binaries differ slightly from production optimization flags, but this is appropriate because tests must enforce invariants.

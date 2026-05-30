@@ -55,6 +55,11 @@ target_compile_options(visual_homing_core PRIVATE
 include(CTest)
 
 if(BUILD_TESTING)
+    add_compile_options(
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-UNDEBUG>
+        $<$<CXX_COMPILER_ID:MSVC>:/UNDEBUG>
+    )
+
     add_executable(camera_smoke_test
         tests/camera_smoke_test.cpp
     )
