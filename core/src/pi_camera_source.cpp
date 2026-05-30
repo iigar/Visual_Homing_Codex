@@ -91,15 +91,16 @@ struct PiCameraSource::Backend {
 
         actual_width = static_cast<int>(stream_config.size.width);
         actual_height = static_cast<int>(stream_config.size.height);
-        stream = stream_config.stream();
-        if (!stream) {
-            error = "libcamera returned no stream after validation";
+
+        if (camera->configure(camera_config.get()) < 0) {
+            error = "libcamera camera configure failed";
             stop();
             return false;
         }
 
-        if (camera->configure(camera_config.get()) < 0) {
-            error = "libcamera camera configure failed";
+        stream = camera_config->at(0).stream();
+        if (!stream) {
+            error = "libcamera returned no stream after configure";
             stop();
             return false;
         }
