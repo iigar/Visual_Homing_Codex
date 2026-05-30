@@ -79,3 +79,4 @@
 - Updated camera smoke polling to wait by elapsed time instead of a fixed empty-poll count for asynchronous capture.
 - Validated the desktop/default non-libcamera path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
 - After Pi CTest opened the physical camera and segfaulted in `camera_smoke`/`pi_camera_source` tests, added runtime `enable_live_capture=false` by default so CTest remains offline and live capture is reached only through explicit `--pi-camera-smoke`.
+- Validated live Pi camera capture on `jtzero` using `VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13 and `--pi-camera-smoke 320 240 15 30` captured 30 Gray8 frames from the IMX219 camera, each 320x240 / 76800 bytes.
