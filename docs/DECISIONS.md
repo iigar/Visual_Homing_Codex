@@ -396,3 +396,22 @@ Impact:
 
 Risk:
 - Local artifacts can accumulate over time. They remain outside git and can be manually deleted when no longer needed.
+
+## 2026-05-31 - Self-Match Route Artifacts Before Perturbation Checks
+
+Decision:
+- Add `RouteSelfMatchSummary`, `self_match_route_signature`, `self_match_route_signature_file`, and CLI `--self-match-route <route.vhrs> [minimum_confidence]`.
+- Make Pi live route recording automatically inspect and self-match the written route artifact.
+- Add optional `VISUAL_HOMING_SELF_MATCH_ROUTE=1` for checking an existing route artifact without opening camera hardware.
+
+Why:
+- After structural inspection passes, the next cheapest check is proving that each route entry can match back through the baseline matcher with high confidence and monotonic progress.
+- Self-match catches matcher/format integration problems before adding noisy perturbation checks or flight-test preparation.
+- Keeping this offline preserves replay-first validation and avoids coupling to live camera timing.
+
+Impact:
+- Desktop validation now includes a focused route artifact self-match test.
+- Pi route artifacts can be checked for matcher compatibility with one script flag.
+
+Risk:
+- Self-match is an optimistic lower-bound check; it does not prove robustness to lighting, motion blur, viewpoint changes, or route reversal.

@@ -127,6 +127,22 @@ The inspector reports version, entry count, frame id range, timestamp range, sig
 
 The default route artifact path is `artifacts/visual_homing_live_route.vhrs`. The `artifacts/` directory is intentionally ignored by git.
 
+## Route Self-Match
+
+Self-match an existing route artifact without touching camera hardware:
+
+```bash
+VISUAL_HOMING_SELF_MATCH_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]
+```
+
+Live route recording through `scripts/test-core-pi.sh` also runs self-match automatically after recording and inspection. The self-match check feeds each `VHRS` entry back through `Gray8RouteMatcher` and reports checked entries, valid matches, exact index matches, minimum/average confidence, last progress, monotonic progress, and pass/fail status.
+
 ## Hardware Backend Policy
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.

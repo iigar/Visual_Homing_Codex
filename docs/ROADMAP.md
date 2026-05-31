@@ -30,7 +30,7 @@
 - Add route metadata: frame id, time, altitude band, coarse heading hint. Initial recorder maps Gray8 preprocessed frames and navigation estimates into route signature entries.
 - Keep format versioned and stream-friendly.
 - Add writer/reader tests that round-trip metadata and payload bytes before matching logic begins.
-- Status: route signature v1 writer/reader, route inspection summary, `RouteSignatureRecorder`, and replay-to-route CLI recording path are implemented and validated with round-trip and summary tests.
+- Status: route signature v1 writer/reader, route inspection summary, route self-match artifact check, `RouteSignatureRecorder`, and replay-to-route CLI recording path are implemented and validated with round-trip, summary, and self-match tests.
 
 ## Milestone 3 - Coarse Route Matching
 
@@ -60,7 +60,7 @@
 - Add Pi camera source.
 - Add USB/thermal source.
 - Validate CPU, memory, frame drops, latency on Pi Zero 2W.
-- Status: in progress with `PiCameraSource`, initial libcamera backend, live camera pipeline smoke, live route recording, route inspection, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing. Live IMX219 pipeline smoke is validated on `jtzero`: 320x240 Gray8 frames preprocess to 32x24 in about 0.9 ms with effective FPS about 15.9. Live route recording and inspection are validated on `jtzero`: 120 live IMX219 frames produced 120 `VHRS` entries at effective FPS about 15.2, and inspection reported 32x24 Gray8 entries, 92160 total payload bytes, monotonic timestamps, uniform dimensions, and uniform payload size.
+- Status: in progress with `PiCameraSource`, initial libcamera backend, live camera pipeline smoke, live route recording, route inspection, route self-match, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing. Live IMX219 pipeline smoke is validated on `jtzero`: 320x240 Gray8 frames preprocess to 32x24 in about 0.9 ms with effective FPS about 15.9. Live route recording and inspection are validated on `jtzero`: 120 live IMX219 frames produced 120 `VHRS` entries at effective FPS about 15.2, and inspection reported 32x24 Gray8 entries, 92160 total payload bytes, monotonic timestamps, uniform dimensions, and uniform payload size. Route self-match is implemented and awaits Pi validation against the live artifact.
 
 ## Milestone 7 - Flight Test Ladder
 

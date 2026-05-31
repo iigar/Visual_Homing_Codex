@@ -24,6 +24,7 @@ add_library(visual_homing_core_lib
     src/pi_camera_source.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
+    src/route_artifact_check.cpp
     src/route_signature_recorder.cpp
     src/route_signature.cpp
     src/system_clock.cpp
@@ -215,6 +216,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_signature_recorder COMMAND route_signature_recorder_test)
+
+    add_executable(route_artifact_check_test
+        tests/route_artifact_check_test.cpp
+    )
+
+    target_link_libraries(route_artifact_check_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(route_artifact_check_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME route_artifact_check COMMAND route_artifact_check_test)
 
     add_executable(gray8_route_matcher_test
         tests/gray8_route_matcher_test.cpp

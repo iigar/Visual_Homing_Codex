@@ -6,6 +6,7 @@
 #include "visual_homing/camera_smoke.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
+#include "visual_homing/route_artifact_check.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/time.hpp"
 
@@ -156,6 +157,29 @@ int main(int argc, char** argv) {
         }
     }
 
+    if ((argc == 3 || argc == 4) && std::string(argv[1]) == "--self-match-route") {
+        try {
+            vh::RouteSelfMatchConfig config;
+            if (argc == 4) {
+                config.minimum_confidence = std::stod(argv[3]);
+            }
+            const auto summary = vh::self_match_route_signature_file(argv[2], config);
+            std::cout << "route_self_match path=" << argv[2]
+                      << " entries_checked=" << summary.entries_checked
+                      << " valid_matches=" << summary.valid_matches
+                      << " exact_index_matches=" << summary.exact_index_matches
+                      << " minimum_confidence_seen=" << summary.minimum_confidence_seen
+                      << " average_confidence=" << summary.average_confidence
+                      << " last_progress=" << summary.last_progress
+                      << " progress_monotonic=" << (summary.progress_monotonic ? "true" : "false")
+                      << " passed=" << (summary.passed ? "true" : "false") << "\n";
+            return summary.passed ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "self_match_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
@@ -164,6 +188,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
+    std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

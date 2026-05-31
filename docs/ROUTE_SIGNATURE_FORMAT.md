@@ -49,3 +49,13 @@ visual_homing_core --inspect-route <route.vhrs>
 ```
 
 The inspector reads the file through the normal `VHRS` reader and reports entry count, frame and timestamp ranges, signature dimensions, payload byte totals, monotonic timestamp status, dimension/payload uniformity, and Gray8-only status.
+
+## Self-Match Check
+
+Route files can also be self-matched offline:
+
+```bash
+visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]
+```
+
+The self-match check feeds each route entry payload back through the baseline `Gray8RouteMatcher` using a small sequential window. It reports checked entries, valid matches, exact index matches, minimum and average confidence, last progress, monotonic progress status, and pass/fail status.
