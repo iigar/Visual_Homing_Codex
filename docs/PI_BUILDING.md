@@ -233,6 +233,22 @@ The inspector reports version, entry count, frame id range, timestamp range, sig
 
 The default route artifact path is `artifacts/visual_homing_live_route.vhrs`. The `artifacts/` directory is intentionally ignored by git.
 
+## Route Validation
+
+Run the full offline validation chain on an existing route artifact without touching camera hardware:
+
+```bash
+VISUAL_HOMING_VALIDATE_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
+This runs route inspection, self-match, perturbation checks, and distinctiveness diagnostics against `VISUAL_HOMING_ROUTE_OUTPUT`. It respects the same optional controls as the individual checks:
+
+```bash
+VISUAL_HOMING_SELF_MATCH_MIN_CONFIDENCE=0.99
+VISUAL_HOMING_PERTURB_MIN_CONFIDENCE=0.90
+VISUAL_HOMING_ROUTE_EDGE_TRIM=3
+```
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

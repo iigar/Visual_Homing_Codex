@@ -698,3 +698,20 @@ Impact:
 
 Risk:
 - A fixed default may not be optimal for every camera or exposure condition. It is logged, configurable, and should be revisited after more field captures.
+
+## 2026-06-01 - Add One-Flag Offline Route Validation
+
+Decision:
+- Add `VISUAL_HOMING_VALIDATE_ROUTE=1` to the Pi test script.
+- Run inspection, self-match, perturbation, and distinctiveness checks on the selected route artifact.
+
+Why:
+- Operators should not need to remember four separate environment flags to validate an existing `VHRS` route after recording or copying artifacts.
+- The convenience mode keeps route validation offline and avoids opening camera hardware.
+
+Impact:
+- Bench and field iteration can validate the current route artifact with one command.
+- Individual check flags remain available for targeted diagnostics.
+
+Risk:
+- The convenience flag still uses heuristic route-quality thresholds. Passing it remains an artifact-quality signal, not flight authorization.

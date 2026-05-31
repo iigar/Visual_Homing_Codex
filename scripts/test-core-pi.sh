@@ -92,7 +92,7 @@ if [[ "${VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${active_camera_profile}"
 fi
 
-if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
+if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
     mkdir -p "$(dirname "${route_output}")"
 fi
 
@@ -153,6 +153,23 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${route_warmup_frames}"
     fi
 
+    "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
+    "${build_dir}/visual_homing_core" --self-match-route \
+        "${route_output}" \
+        "${VISUAL_HOMING_SELF_MATCH_MIN_CONFIDENCE:-0.99}"
+    "${build_dir}/visual_homing_core" --perturb-route \
+        "${route_output}" \
+        "${VISUAL_HOMING_PERTURB_MIN_CONFIDENCE:-0.90}"
+    if [[ -n "${VISUAL_HOMING_ROUTE_EDGE_TRIM:-}" ]]; then
+        "${build_dir}/visual_homing_core" --route-distinctiveness \
+            "${route_output}" \
+            "${VISUAL_HOMING_ROUTE_EDGE_TRIM}"
+    else
+        "${build_dir}/visual_homing_core" --route-distinctiveness "${route_output}"
+    fi
+fi
+
+if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
     "${build_dir}/visual_homing_core" --self-match-route \
         "${route_output}" \
