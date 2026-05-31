@@ -62,6 +62,7 @@ int main() {
     assert(repetitive_distinctiveness.minimum_adjacent_mean_abs_diff == 0.0);
     assert(repetitive_distinctiveness.minimum_nearest_mean_abs_diff == 0.0);
     assert(repetitive_distinctiveness.warning);
+    assert(!repetitive_distinctiveness.quality_pass);
 
     vh::RouteSignatureFile textured_route;
     vh::RouteSignatureEntry textured;
@@ -110,6 +111,22 @@ int main() {
     assert(textured_distinctiveness.ambiguous_nearest_entries == 0);
     assert(textured_distinctiveness.minimum_payload_range == 150.0);
     assert(!textured_distinctiveness.warning);
+    assert(!textured_distinctiveness.quality_pass);
+
+    vh::RouteSignatureFile quality_route;
+    quality_route.entries.push_back(entry(0, {0, 0, 10, 10}));
+    quality_route.entries.push_back(entry(1, {40, 40, 50, 50}));
+    quality_route.entries.push_back(entry(2, {90, 90, 100, 100}));
+    quality_route.entries.push_back(entry(3, {150, 150, 160, 160}));
+    const auto quality_summary = vh::analyze_route_distinctiveness(quality_route);
+    assert(quality_summary.low_texture_entries == 0);
+    assert(quality_summary.exact_duplicate_entries == 0);
+    assert(quality_summary.ambiguous_nearest_entries == 0);
+    assert(quality_summary.low_texture_fraction == 0.0);
+    assert(quality_summary.ambiguous_nearest_fraction == 0.0);
+    assert(quality_summary.average_nearest_mean_abs_diff >= 5.0);
+    assert(!quality_summary.warning);
+    assert(quality_summary.quality_pass);
 
     const auto repetitive_perturbation = vh::perturbation_check_route_signature(repetitive_route, {
         .minimum_confidence = 0.90,

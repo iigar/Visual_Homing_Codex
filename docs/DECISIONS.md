@@ -472,3 +472,22 @@ Impact:
 
 Risk:
 - The thresholds are heuristic and should not be treated as flight permission gates. They are intended to guide route capture quality and future test planning.
+
+## 2026-05-31 - Add Route-Quality Policy To Distinctiveness Diagnostics
+
+Decision:
+- Extend route distinctiveness output with low-texture fraction, ambiguous nearest-neighbor fraction, and `quality_pass`.
+- Start with conservative offline policy defaults: low-texture fraction `<= 0.05`, ambiguous nearest-neighbor fraction `<= 0.10`, average nearest mean absolute byte difference `>= 5.0`, and no exact duplicate entries.
+- Keep this policy as an artifact-quality gate for bench/field route capture, not as a live flight or MAVLink command gate.
+
+Why:
+- The static table capture and the hand-carried bench route proved that raw diagnostic metrics are useful but need an operator-facing pass/fail summary.
+- The hand-carried bench route had 8/180 ambiguous nearest entries and average nearest mean absolute byte difference about 7.44, so it should pass an initial route-quality policy while the static table captures should fail.
+- This is still Gray8 route-signature distinctiveness, not keypoint feature detection; it evaluates whether compact route signatures are distinguishable enough for the current matcher baseline.
+
+Impact:
+- Pi route validation now prints both detailed diagnostics and a single `quality_pass` value.
+- Operators can quickly tell whether a captured route artifact is suitable for bench replay/field-test planning.
+
+Risk:
+- The thresholds are empirical and should be revisited after real outdoor route captures. A passing artifact still does not authorize live MAVLink output or flight testing by itself.

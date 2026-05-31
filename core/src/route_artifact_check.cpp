@@ -230,8 +230,15 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
     if (route.entries.empty()) {
         throw std::invalid_argument("Route distinctiveness analysis requires at least one route entry");
     }
-    if (config.low_texture_range_threshold < 0.0 || config.ambiguous_mean_abs_diff_threshold < 0.0) {
+    if (config.low_texture_range_threshold < 0.0
+        || config.ambiguous_mean_abs_diff_threshold < 0.0
+        || config.maximum_low_texture_fraction < 0.0
+        || config.maximum_ambiguous_nearest_fraction < 0.0
+        || config.minimum_average_nearest_mean_abs_diff < 0.0) {
         throw std::invalid_argument("Route distinctiveness thresholds must be non-negative");
+    }
+    if (config.maximum_low_texture_fraction > 1.0 || config.maximum_ambiguous_nearest_fraction > 1.0) {
+        throw std::invalid_argument("Route distinctiveness fraction thresholds must be <= 1.0");
     }
 
     RouteDistinctivenessSummary summary;
@@ -248,6 +255,8 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
         }
     }
     summary.average_payload_range = range_sum / static_cast<double>(summary.entries_checked);
+    summary.low_texture_fraction = static_cast<double>(summary.low_texture_entries)
+        / static_cast<double>(summary.entries_checked);
 
     if (route.entries.size() >= 2) {
         summary.minimum_adjacent_mean_abs_diff = std::numeric_limits<double>::max();
@@ -282,10 +291,16 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
         }
         summary.average_nearest_mean_abs_diff = nearest_sum / static_cast<double>(summary.entries_checked);
     }
+    summary.ambiguous_nearest_fraction = static_cast<double>(summary.ambiguous_nearest_entries)
+        / static_cast<double>(summary.entries_checked);
 
     summary.warning = summary.low_texture_entries > 0
         || summary.exact_duplicate_entries > 0
         || summary.ambiguous_nearest_entries > 0;
+    summary.quality_pass = summary.low_texture_fraction <= config.maximum_low_texture_fraction
+        && summary.ambiguous_nearest_fraction <= config.maximum_ambiguous_nearest_fraction
+        && summary.average_nearest_mean_abs_diff >= config.minimum_average_nearest_mean_abs_diff
+        && (config.allow_exact_duplicates || summary.exact_duplicate_entries == 0);
     return summary;
 }
 

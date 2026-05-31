@@ -173,7 +173,14 @@ The underlying CLI is:
 ./core/build-pi/visual_homing_core --route-distinctiveness <route.vhrs>
 ```
 
-Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, and nearest-neighbor mean absolute byte difference. This is an offline diagnostic, not a pass/fail flight gate; `warning=true` means the route may be visually repetitive even when self-match and perturbation checks pass.
+Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. This is an offline diagnostic, not a flight gate; `warning=true` means the route has some repetitive or low-texture samples, while `quality_pass=false` means the current artifact should not be used as a good bench/field-test route without recapture or explicit operator review.
+
+Default route-quality policy:
+
+- low-texture entry fraction must be `<= 0.05`;
+- ambiguous nearest-neighbor entry fraction must be `<= 0.10`;
+- average nearest mean absolute byte difference must be `>= 5.0`;
+- exact duplicate entries are rejected.
 
 ## Hardware Backend Policy
 

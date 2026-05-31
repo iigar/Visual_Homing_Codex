@@ -214,13 +214,16 @@ int main(int argc, char** argv) {
                       << " low_texture_entries=" << summary.low_texture_entries
                       << " exact_duplicate_entries=" << summary.exact_duplicate_entries
                       << " ambiguous_nearest_entries=" << summary.ambiguous_nearest_entries
+                      << " low_texture_fraction=" << summary.low_texture_fraction
+                      << " ambiguous_nearest_fraction=" << summary.ambiguous_nearest_fraction
                       << " minimum_payload_range=" << summary.minimum_payload_range
                       << " average_payload_range=" << summary.average_payload_range
                       << " minimum_adjacent_mean_abs_diff=" << summary.minimum_adjacent_mean_abs_diff
                       << " average_adjacent_mean_abs_diff=" << summary.average_adjacent_mean_abs_diff
                       << " minimum_nearest_mean_abs_diff=" << summary.minimum_nearest_mean_abs_diff
                       << " average_nearest_mean_abs_diff=" << summary.average_nearest_mean_abs_diff
-                      << " warning=" << (summary.warning ? "true" : "false") << "\n";
+                      << " warning=" << (summary.warning ? "true" : "false")
+                      << " quality_pass=" << (summary.quality_pass ? "true" : "false") << "\n";
             return 0;
         } catch (const std::exception& error) {
             std::cerr << "route_distinctiveness_error=" << error.what() << "\n";

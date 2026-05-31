@@ -49,6 +49,10 @@ struct RoutePerturbationCheckSummary {
 struct RouteDistinctivenessConfig {
     double low_texture_range_threshold = 4.0;
     double ambiguous_mean_abs_diff_threshold = 2.0;
+    double maximum_low_texture_fraction = 0.05;
+    double maximum_ambiguous_nearest_fraction = 0.10;
+    double minimum_average_nearest_mean_abs_diff = 5.0;
+    bool allow_exact_duplicates = false;
 };
 
 struct RouteDistinctivenessSummary {
@@ -57,6 +61,8 @@ struct RouteDistinctivenessSummary {
     std::uint64_t low_texture_entries = 0;
     std::uint64_t exact_duplicate_entries = 0;
     std::uint64_t ambiguous_nearest_entries = 0;
+    double low_texture_fraction = 0.0;
+    double ambiguous_nearest_fraction = 0.0;
     double minimum_payload_range = 0.0;
     double average_payload_range = 0.0;
     double minimum_adjacent_mean_abs_diff = 0.0;
@@ -64,6 +70,7 @@ struct RouteDistinctivenessSummary {
     double minimum_nearest_mean_abs_diff = 0.0;
     double average_nearest_mean_abs_diff = 0.0;
     bool warning = false;
+    bool quality_pass = false;
 };
 
 RouteSelfMatchSummary self_match_route_signature(

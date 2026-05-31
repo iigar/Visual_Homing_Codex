@@ -78,4 +78,11 @@ Route files can be analyzed for basic visual distinctiveness:
 visual_homing_core --route-distinctiveness <route.vhrs>
 ```
 
-The diagnostic reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, and nearest-neighbor mean absolute byte difference. It is an offline diagnostic, not a flight permission gate. A warning means the route may be visually repetitive even when self-match and perturbation checks pass.
+The diagnostic reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. It is an offline diagnostic, not a flight permission gate. A warning means the route may contain repetitive samples even when self-match and perturbation checks pass. `quality_pass=false` means the artifact does not satisfy the current bench/field route-quality policy.
+
+Current route-quality policy:
+
+- low-texture entry fraction must be `<= 0.05`;
+- ambiguous nearest-neighbor entry fraction must be `<= 0.10`;
+- average nearest mean absolute byte difference must be `>= 5.0`;
+- exact duplicate entries are not allowed.
