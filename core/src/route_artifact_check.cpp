@@ -91,10 +91,30 @@ double payload_range(const std::vector<std::uint8_t>& payload) {
     return static_cast<double>(*max_it) - static_cast<double>(*min_it);
 }
 
-void append_sample_frame_id(std::vector<std::uint64_t>& frame_ids, std::uint64_t frame_id) {
+double route_time_ms(std::uint64_t timestamp_ns, std::uint64_t first_timestamp_ns) {
+    if (timestamp_ns >= first_timestamp_ns) {
+        return static_cast<double>(timestamp_ns - first_timestamp_ns) / 1'000'000.0;
+    }
+    return -static_cast<double>(first_timestamp_ns - timestamp_ns) / 1'000'000.0;
+}
+
+RouteDistinctivenessSample make_sample(
+    const RouteSignatureEntry& entry,
+    std::uint64_t first_timestamp_ns) {
+    return {
+        .frame_id = entry.frame_id,
+        .timestamp_ns = entry.timestamp_ns,
+        .route_time_ms = route_time_ms(entry.timestamp_ns, first_timestamp_ns),
+    };
+}
+
+void append_sample(
+    std::vector<RouteDistinctivenessSample>& samples,
+    const RouteSignatureEntry& entry,
+    std::uint64_t first_timestamp_ns) {
     constexpr std::size_t max_sample_ids = 8;
-    if (frame_ids.size() < max_sample_ids) {
-        frame_ids.push_back(frame_id);
+    if (samples.size() < max_sample_ids) {
+        samples.push_back(make_sample(entry, first_timestamp_ns));
     }
 }
 
@@ -255,9 +275,14 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
     RouteDistinctivenessSummary summary;
     const auto begin_index = static_cast<std::size_t>(config.edge_trim_entries);
     const auto end_index = route.entries.size() - static_cast<std::size_t>(config.edge_trim_entries);
+    const auto first_timestamp_ns = route.entries.front().timestamp_ns;
     summary.entries_ignored_at_start = config.edge_trim_entries;
     summary.entries_ignored_at_end = config.edge_trim_entries;
     summary.entries_checked = static_cast<std::uint64_t>(end_index - begin_index);
+    summary.first_evaluated_frame_id = route.entries[begin_index].frame_id;
+    summary.last_evaluated_frame_id = route.entries[end_index - 1].frame_id;
+    summary.first_evaluated_route_time_ms = route_time_ms(route.entries[begin_index].timestamp_ns, first_timestamp_ns);
+    summary.last_evaluated_route_time_ms = route_time_ms(route.entries[end_index - 1].timestamp_ns, first_timestamp_ns);
     summary.minimum_payload_range = std::numeric_limits<double>::max();
 
     double range_sum = 0.0;
@@ -268,7 +293,7 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
         range_sum += range;
         if (range <= config.low_texture_range_threshold) {
             ++summary.low_texture_entries;
-            append_sample_frame_id(summary.low_texture_frame_ids, entry.frame_id);
+            append_sample(summary.low_texture_samples, entry, first_timestamp_ns);
         }
     }
     summary.average_payload_range = range_sum / static_cast<double>(summary.entries_checked);
@@ -301,11 +326,11 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
             nearest_sum += nearest;
             if (nearest == 0.0) {
                 ++summary.exact_duplicate_entries;
-                append_sample_frame_id(summary.exact_duplicate_frame_ids, route.entries[index].frame_id);
+                append_sample(summary.exact_duplicate_samples, route.entries[index], first_timestamp_ns);
             }
             if (nearest <= config.ambiguous_mean_abs_diff_threshold) {
                 ++summary.ambiguous_nearest_entries;
-                append_sample_frame_id(summary.ambiguous_nearest_frame_ids, route.entries[index].frame_id);
+                append_sample(summary.ambiguous_nearest_samples, route.entries[index], first_timestamp_ns);
             }
         }
         summary.average_nearest_mean_abs_diff = nearest_sum / static_cast<double>(summary.entries_checked);

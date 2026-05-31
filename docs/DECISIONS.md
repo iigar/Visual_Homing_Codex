@@ -650,7 +650,7 @@ Risk:
 Decision:
 - Add an optional `edge_trim_entries` value to route distinctiveness analysis and the `--route-distinctiveness <route.vhrs> [edge_trim_entries]` CLI.
 - Expose the same setting in Pi validation through `VISUAL_HOMING_ROUTE_EDGE_TRIM`.
-- Report how many entries were ignored at the start and end.
+- Report how many entries were ignored at the start and end, plus the evaluated frame/time span and sample times in `frame_id@route_time_ms` format.
 
 Why:
 - A 240-frame hand-carried `jtzero` route showed that the only route-quality failures were startup frames `0,1,2`.

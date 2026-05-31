@@ -78,9 +78,9 @@ Route files can be analyzed for basic visual distinctiveness:
 visual_homing_core --route-distinctiveness <route.vhrs> [edge_trim_entries]
 ```
 
-The diagnostic reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. It is an offline diagnostic, not a flight permission gate. A warning means the route may contain repetitive samples even when self-match and perturbation checks pass. `quality_pass=false` means the artifact does not satisfy the current bench/field route-quality policy.
+The diagnostic reports the evaluated frame/time span, low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. It is an offline diagnostic, not a flight permission gate. A warning means the route may contain repetitive samples even when self-match and perturbation checks pass. `quality_pass=false` means the artifact does not satisfy the current bench/field route-quality policy.
 
-The optional edge trim ignores the first and last N entries during distinctiveness scoring without changing the file. It is intended for startup/shutdown pauses that are visible in the sample frame id lists.
+The optional edge trim ignores the first and last N entries during distinctiveness scoring without changing the file. It is intended for startup/shutdown pauses that are visible in the sample lists. Sample entries use `frame_id@route_time_ms` format, where `route_time_ms` is relative to the first `VHRS` timestamp.
 
 Current route-quality policy:
 

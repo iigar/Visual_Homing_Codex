@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <exception>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -57,18 +58,26 @@ void log_profile_hardware_config(const char* prefix, const vh::CameraProfileReco
            << " vertical_fov_rad=" << record.profile.vertical_fov_rad << "\n";
 }
 
-std::string join_frame_ids(const std::vector<std::uint64_t>& frame_ids) {
-    if (frame_ids.empty()) {
+std::string join_distinctiveness_samples(const std::vector<vh::RouteDistinctivenessSample>& samples) {
+    if (samples.empty()) {
         return "none";
     }
 
     std::ostringstream output;
-    for (std::size_t index = 0; index < frame_ids.size(); ++index) {
+    for (std::size_t index = 0; index < samples.size(); ++index) {
         if (index != 0) {
             output << ",";
         }
-        output << frame_ids[index];
+        output << samples[index].frame_id << "@"
+               << std::fixed << std::setprecision(3) << samples[index].route_time_ms
+               << "ms";
     }
+    return output.str();
+}
+
+std::string format_route_time_ms(double route_time_ms) {
+    std::ostringstream output;
+    output << std::fixed << std::setprecision(3) << route_time_ms;
     return output.str();
 }
 
@@ -481,6 +490,10 @@ int main(int argc, char** argv) {
                       << " entries_checked=" << summary.entries_checked
                       << " entries_ignored_at_start=" << summary.entries_ignored_at_start
                       << " entries_ignored_at_end=" << summary.entries_ignored_at_end
+                      << " first_evaluated_frame_id=" << summary.first_evaluated_frame_id
+                      << " last_evaluated_frame_id=" << summary.last_evaluated_frame_id
+                      << " first_evaluated_route_time_ms=" << format_route_time_ms(summary.first_evaluated_route_time_ms)
+                      << " last_evaluated_route_time_ms=" << format_route_time_ms(summary.last_evaluated_route_time_ms)
                       << " adjacent_pairs_checked=" << summary.adjacent_pairs_checked
                       << " low_texture_entries=" << summary.low_texture_entries
                       << " exact_duplicate_entries=" << summary.exact_duplicate_entries
@@ -493,9 +506,9 @@ int main(int argc, char** argv) {
                       << " average_adjacent_mean_abs_diff=" << summary.average_adjacent_mean_abs_diff
                       << " minimum_nearest_mean_abs_diff=" << summary.minimum_nearest_mean_abs_diff
                       << " average_nearest_mean_abs_diff=" << summary.average_nearest_mean_abs_diff
-                      << " low_texture_frame_ids=" << join_frame_ids(summary.low_texture_frame_ids)
-                      << " exact_duplicate_frame_ids=" << join_frame_ids(summary.exact_duplicate_frame_ids)
-                      << " ambiguous_nearest_frame_ids=" << join_frame_ids(summary.ambiguous_nearest_frame_ids)
+                      << " low_texture_samples=" << join_distinctiveness_samples(summary.low_texture_samples)
+                      << " exact_duplicate_samples=" << join_distinctiveness_samples(summary.exact_duplicate_samples)
+                      << " ambiguous_nearest_samples=" << join_distinctiveness_samples(summary.ambiguous_nearest_samples)
                       << " warning=" << (summary.warning ? "true" : "false")
                       << " quality_pass=" << (summary.quality_pass ? "true" : "false") << "\n";
             return 0;

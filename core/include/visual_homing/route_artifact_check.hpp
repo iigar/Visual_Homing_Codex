@@ -57,10 +57,20 @@ struct RouteDistinctivenessConfig {
     std::uint64_t edge_trim_entries = 0;
 };
 
+struct RouteDistinctivenessSample {
+    std::uint64_t frame_id = 0;
+    std::uint64_t timestamp_ns = 0;
+    double route_time_ms = 0.0;
+};
+
 struct RouteDistinctivenessSummary {
     std::uint64_t entries_checked = 0;
     std::uint64_t entries_ignored_at_start = 0;
     std::uint64_t entries_ignored_at_end = 0;
+    std::uint64_t first_evaluated_frame_id = 0;
+    std::uint64_t last_evaluated_frame_id = 0;
+    double first_evaluated_route_time_ms = 0.0;
+    double last_evaluated_route_time_ms = 0.0;
     std::uint64_t adjacent_pairs_checked = 0;
     std::uint64_t low_texture_entries = 0;
     std::uint64_t exact_duplicate_entries = 0;
@@ -73,9 +83,9 @@ struct RouteDistinctivenessSummary {
     double average_adjacent_mean_abs_diff = 0.0;
     double minimum_nearest_mean_abs_diff = 0.0;
     double average_nearest_mean_abs_diff = 0.0;
-    std::vector<std::uint64_t> low_texture_frame_ids;
-    std::vector<std::uint64_t> exact_duplicate_frame_ids;
-    std::vector<std::uint64_t> ambiguous_nearest_frame_ids;
+    std::vector<RouteDistinctivenessSample> low_texture_samples;
+    std::vector<RouteDistinctivenessSample> exact_duplicate_samples;
+    std::vector<RouteDistinctivenessSample> ambiguous_nearest_samples;
     bool warning = false;
     bool quality_pass = false;
 };

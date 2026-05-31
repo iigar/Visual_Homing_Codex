@@ -260,9 +260,9 @@ The underlying CLI is:
 ./core/build-pi/visual_homing_core --route-distinctiveness <route.vhrs> [edge_trim_entries]
 ```
 
-Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. This is an offline diagnostic, not a flight gate; `warning=true` means the route has some repetitive or low-texture samples, while `quality_pass=false` means the current artifact should not be used as a good bench/field-test route without recapture or explicit operator review.
+Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports the evaluated frame/time span, low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. This is an offline diagnostic, not a flight gate; `warning=true` means the route has some repetitive or low-texture samples, while `quality_pass=false` means the current artifact should not be used as a good bench/field-test route without recapture or explicit operator review.
 
-The diagnostic also prints small sample lists for `low_texture_frame_ids`, `exact_duplicate_frame_ids`, and `ambiguous_nearest_frame_ids`. These are the first affected route frame ids and are intended to show whether a failure came from start/end pauses, a short flat segment, or repeated visual content throughout the route.
+The diagnostic also prints small sample lists for `low_texture_samples`, `exact_duplicate_samples`, and `ambiguous_nearest_samples`. Entries use `frame_id@route_time_ms` format, where `route_time_ms` is relative to the first `VHRS` timestamp. These samples are intended to show whether a failure came from start/end pauses, a short flat segment, or repeated visual content throughout the route.
 
 If the sample lists show only deliberate start/end pauses, rerun the diagnostic with an explicit edge trim:
 
@@ -270,7 +270,7 @@ If the sample lists show only deliberate start/end pauses, rerun the diagnostic 
 VISUAL_HOMING_ROUTE_EDGE_TRIM=3 VISUAL_HOMING_ROUTE_DISTINCTIVENESS=1 ./scripts/test-core-pi.sh
 ```
 
-The trim is diagnostic only: it does not modify the `VHRS` artifact. It evaluates route quality after ignoring the first and last N route entries and reports `entries_ignored_at_start` plus `entries_ignored_at_end`.
+The trim is diagnostic only: it does not modify the `VHRS` artifact. It evaluates route quality after ignoring the first and last N route entries and reports `entries_ignored_at_start`, `entries_ignored_at_end`, `first_evaluated_frame_id`, `last_evaluated_frame_id`, `first_evaluated_route_time_ms`, and `last_evaluated_route_time_ms`.
 
 Default route-quality policy:
 
