@@ -510,3 +510,22 @@ Impact:
 
 Risk:
 - This delays visible flight-test progress, but it lowers integration risk and keeps live MAVLink command output blocked until the surrounding telemetry and safety model is credible.
+
+## 2026-05-31 - Start Camera Profiles With FOV-Derived Angular Scale
+
+Decision:
+- Add an in-core `CameraProfile` model with camera id, sensor type, pixel format, capture size, target size, horizontal/vertical FOV, and route-quality thresholds.
+- Add profile validation and derived angular scale values for capture and target pixels.
+- Document profile fields in `docs/CAMERA_PROFILES.md`.
+
+Why:
+- StabX-like longer-distance behavior needs per-camera FOV and preprocessing assumptions instead of ad hoc direction scaling.
+- Different visible-light and thermal cameras require different FOV, normalization, and threshold profiles.
+- FOV-derived angular scale is a prerequisite for replacing manual `radians_per_pixel` settings in route matching and future hold/return modes.
+
+Impact:
+- The core now has a typed place for camera calibration assumptions.
+- Existing matcher behavior is unchanged until profile-derived values are explicitly wired into match configs.
+
+Risk:
+- The first profile model is in-code only. Profile file loading, operator UI/templates, thermal normalization, and real telemetry integration remain pending.

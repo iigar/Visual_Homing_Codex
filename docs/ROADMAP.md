@@ -73,7 +73,7 @@
 - Log camera frames together with flight-controller attitude/altitude snapshots for replay analysis.
 - Add altitude-aware route metadata policy: altitude bands, heading hints, attitude snapshot, and scale/height assumptions.
 - Keep live MAVLink command output blocked; this milestone is read-only telemetry plus calibration.
-- Status: planned before flight-test ladder work.
+- Status: started with an in-core `CameraProfile` model, profile validation, FOV-derived angular scale, unit tests, and initial camera profile documentation. Read-only real MAVLink telemetry, profile file loading, thermal normalization, and altitude-aware metadata remain pending.
 
 ## Milestone 6.6 - Baseline Review, Weak-Point Audit, And Safety/Security Hardening
 
