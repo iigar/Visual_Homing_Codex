@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc == 6 && std::string(argv[1]) == "--pi-camera-smoke") {
+    if ((argc == 6 || argc == 8) && std::string(argv[1]) == "--pi-camera-smoke") {
         try {
             vh::CameraSmokeConfig config;
             config.camera.width = std::stoi(argv[2]);
@@ -95,6 +95,10 @@ int main(int argc, char** argv) {
             config.camera.frame_rate_hz = std::stoi(argv[4]);
             config.camera.enable_live_capture = true;
             config.frames_to_capture = static_cast<std::size_t>(std::stoull(argv[5]));
+            if (argc == 8) {
+                config.target_width = std::stoi(argv[6]);
+                config.target_height = std::stoi(argv[7]);
+            }
             const auto result = vh::run_pi_camera_smoke(config, std::cout);
             return result.started && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
@@ -108,7 +112,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
-    std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames>\n";
+    std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

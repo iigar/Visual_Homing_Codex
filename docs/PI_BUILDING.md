@@ -70,15 +70,17 @@ VISUAL_HOMING_CAMERA_WIDTH=320
 VISUAL_HOMING_CAMERA_HEIGHT=240
 VISUAL_HOMING_CAMERA_FPS=15
 VISUAL_HOMING_CAMERA_FRAMES=30
+VISUAL_HOMING_CAMERA_TARGET_WIDTH=32
+VISUAL_HOMING_CAMERA_TARGET_HEIGHT=24
 ```
 
 The underlying CLI is:
 
 ```bash
-./core/build-pi/visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames>
+./core/build-pi/visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]
 ```
 
-Until the real libcamera backend exists, this command fails closed and reports that camera capture is unavailable.
+The smoke command captures live camera frames, preprocesses them to the target Gray8 size, and reports frame age, processing latency, empty polls, elapsed time, and effective FPS.
 
 ## Hardware Backend Policy
 

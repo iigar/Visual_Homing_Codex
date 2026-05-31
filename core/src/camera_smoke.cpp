@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <thread>
 
+#include "visual_homing/gray8_resize_preprocessor.hpp"
+#include "visual_homing/health_monitor.hpp"
 #include "visual_homing/time.hpp"
 
 namespace vh {
@@ -13,13 +15,20 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
     if (config.frames_to_capture == 0) {
         throw std::invalid_argument("Camera smoke frames_to_capture must be positive");
     }
+    if (config.target_width <= 0 || config.target_height <= 0) {
+        throw std::invalid_argument("Camera smoke target dimensions must be positive");
+    }
 
     PiCameraSource source(config.camera);
+    Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
+    HealthMonitor health(now());
+    health.set_links(true, false, true);
     CameraSmokeResult result;
 
     metrics << "camera_smoke_start width=" << config.camera.width
             << " height=" << config.camera.height
             << " fps=" << config.camera.frame_rate_hz
+            << " target=" << config.target_width << "x" << config.target_height
             << " requested_frames=" << config.frames_to_capture << "\n";
 
     result.started = source.start();
@@ -41,10 +50,24 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
         / static_cast<double>(config.camera.frame_rate_hz));
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
+            const auto processing_started = now();
+            const auto processed = preprocessor.process(*frame);
+            const auto processing_finished = now();
+            const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
+            const auto snapshot = health.snapshot(processing_finished);
+
             ++result.frames_captured;
+            result.last_frame_age_ms = timing.frame_age_ms;
+            result.last_processing_latency_ms = timing.processing_latency_ms;
+
             metrics << "camera_frame id=" << frame->id
                     << " size=" << frame->width << "x" << frame->height
-                    << " bytes=" << frame->data.size() << "\n";
+                    << " bytes=" << frame->data.size()
+                    << " processed=" << processed.width << "x" << processed.height
+                    << " processed_bytes=" << processed.data.size()
+                    << " age_ms=" << timing.frame_age_ms
+                    << " latency_ms=" << timing.processing_latency_ms
+                    << " frames_seen=" << snapshot.frames_seen << "\n";
         } else {
             ++result.empty_polls;
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -56,10 +79,17 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
     }
 
     source.stop();
+    result.elapsed_ms = milliseconds_between(started_at, now());
+    result.effective_fps = result.elapsed_ms > 0.0
+        ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
+        : 0.0;
     metrics << "camera_smoke_done started=true"
             << " frames_captured=" << result.frames_captured
             << " empty_polls=" << result.empty_polls
-            << " elapsed_ms=" << milliseconds_between(started_at, now()) << "\n";
+            << " last_age_ms=" << result.last_frame_age_ms
+            << " last_latency_ms=" << result.last_processing_latency_ms
+            << " elapsed_ms=" << result.elapsed_ms
+            << " effective_fps=" << result.effective_fps << "\n";
     return result;
 }
 

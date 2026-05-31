@@ -80,3 +80,5 @@
 - Validated the desktop/default non-libcamera path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
 - After Pi CTest opened the physical camera and segfaulted in `camera_smoke`/`pi_camera_source` tests, added runtime `enable_live_capture=false` by default so CTest remains offline and live capture is reached only through explicit `--pi-camera-smoke`.
 - Validated live Pi camera capture on `jtzero` using `VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13 and `--pi-camera-smoke 320 240 15 30` captured 30 Gray8 frames from the IMX219 camera, each 320x240 / 76800 bytes.
+- Extended camera smoke into a live camera pipeline smoke: `PiCameraSource -> Gray8ResizePreprocessor -> HealthMonitor -> metrics`, reporting processed size, frame age, processing latency, empty polls, elapsed time, and effective FPS.
+- Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
