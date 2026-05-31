@@ -152,6 +152,69 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 3 && std::string(argv[1]) == "--list-camera-profiles") {
+        try {
+            const auto records = vh::list_camera_profile_directory(argv[2]);
+            std::cout << "camera_profiles directory=" << argv[2]
+                      << " count=" << records.size() << "\n";
+            for (const auto& record : records) {
+                const auto scale = vh::derive_camera_angular_scale(record.profile);
+                std::cout << "camera_profile path=" << record.path
+                          << " id=" << record.profile.id
+                          << " sensor_type=" << vh::to_string(record.profile.sensor_type)
+                          << " pixel_format=" << vh::to_string(record.profile.pixel_format)
+                          << " capture=" << record.profile.capture_width << "x" << record.profile.capture_height
+                          << " target=" << record.profile.target_width << "x" << record.profile.target_height
+                          << " horizontal_fov_rad=" << record.profile.horizontal_fov_rad
+                          << " vertical_fov_rad=" << record.profile.vertical_fov_rad
+                          << " radians_per_target_pixel_x=" << scale.radians_per_target_pixel_x
+                          << "\n";
+            }
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "list_camera_profiles_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 4 && std::string(argv[1]) == "--get-active-camera-profile") {
+        try {
+            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            std::cout << "active_camera_profile directory=" << argv[2]
+                      << " state_path=" << argv[3]
+                      << " path=" << record.path
+                      << " id=" << record.profile.id
+                      << " sensor_type=" << vh::to_string(record.profile.sensor_type)
+                      << " pixel_format=" << vh::to_string(record.profile.pixel_format)
+                      << " capture=" << record.profile.capture_width << "x" << record.profile.capture_height
+                      << " target=" << record.profile.target_width << "x" << record.profile.target_height
+                      << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "get_active_camera_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 5 && std::string(argv[1]) == "--set-active-camera-profile") {
+        try {
+            const auto record = vh::set_active_camera_profile(argv[2], argv[3], argv[4]);
+            std::cout << "active_camera_profile_set directory=" << argv[2]
+                      << " state_path=" << argv[3]
+                      << " path=" << record.path
+                      << " id=" << record.profile.id
+                      << " sensor_type=" << vh::to_string(record.profile.sensor_type)
+                      << " pixel_format=" << vh::to_string(record.profile.pixel_format)
+                      << " capture=" << record.profile.capture_width << "x" << record.profile.capture_height
+                      << " target=" << record.profile.target_width << "x" << record.profile.target_height
+                      << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "set_active_camera_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if ((argc == 6 || argc == 8) && std::string(argv[1]) == "--pi-camera-smoke") {
         try {
             vh::CameraSmokeConfig config;
@@ -302,6 +365,9 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <profile_id> <capture_width> <capture_height> <horizontal_fov_rad> <vertical_fov_rad>\n";
     std::cout << "usage: visual_homing_core --match-route-profile <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <camera.profile>\n";
     std::cout << "usage: visual_homing_core --inspect-camera-profile <camera.profile>\n";
+    std::cout << "usage: visual_homing_core --list-camera-profiles <profile_dir>\n";
+    std::cout << "usage: visual_homing_core --get-active-camera-profile <profile_dir> <active_profile_state>\n";
+    std::cout << "usage: visual_homing_core --set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

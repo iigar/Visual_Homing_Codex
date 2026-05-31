@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "visual_homing/frame.hpp"
 
@@ -36,9 +37,19 @@ struct CameraAngularScale {
     double radians_per_target_pixel_y = 0.0;
 };
 
+struct CameraProfileRecord {
+    std::string path;
+    CameraProfile profile;
+};
+
 CameraAngularScale derive_camera_angular_scale(const CameraProfile& profile);
 void validate_camera_profile(const CameraProfile& profile);
 CameraProfile load_camera_profile_file(const std::string& path);
+std::vector<CameraProfileRecord> list_camera_profile_directory(const std::string& directory_path);
+CameraProfileRecord load_camera_profile_by_id(const std::string& directory_path, const std::string& profile_id);
+std::string load_active_camera_profile_id(const std::string& active_profile_path);
+CameraProfileRecord load_active_camera_profile(const std::string& directory_path, const std::string& active_profile_path);
+CameraProfileRecord set_active_camera_profile(const std::string& directory_path, const std::string& active_profile_path, const std::string& profile_id);
 std::string to_string(CameraSensorType sensor_type);
 std::string to_string(PixelFormat pixel_format);
 

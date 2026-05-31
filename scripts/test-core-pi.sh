@@ -8,7 +8,9 @@ build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 artifact_dir="${repo_root}/artifacts"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
+camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
+active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
 
 clean=0
 for arg in "$@"; do
@@ -50,6 +52,23 @@ ctest --test-dir "${build_dir}" --output-on-failure
 
 if [[ "${VISUAL_HOMING_INSPECT_CAMERA_PROFILE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --inspect-camera-profile "${camera_profile}"
+fi
+
+if [[ "${VISUAL_HOMING_LIST_CAMERA_PROFILES:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --list-camera-profiles "${camera_profile_dir}"
+fi
+
+if [[ -n "${VISUAL_HOMING_SET_CAMERA_PROFILE_ID:-}" ]]; then
+    "${build_dir}/visual_homing_core" --set-active-camera-profile \
+        "${camera_profile_dir}" \
+        "${active_camera_profile}" \
+        "${VISUAL_HOMING_SET_CAMERA_PROFILE_ID}"
+fi
+
+if [[ "${VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --get-active-camera-profile \
+        "${camera_profile_dir}" \
+        "${active_camera_profile}"
 fi
 
 if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then

@@ -83,6 +83,37 @@ The underlying CLI is:
 
 Profile inspection reports profile id, sensor type, pixel format, capture/target dimensions, FOV values, derived radians-per-pixel values, and route-quality thresholds. The IMX219 profile currently contains placeholder FOV values until measured for the exact lens and crop mode.
 
+List available profiles:
+
+```bash
+VISUAL_HOMING_LIST_CAMERA_PROFILES=1 ./scripts/test-core-pi.sh
+```
+
+Set the active profile after validating it:
+
+```bash
+VISUAL_HOMING_SET_CAMERA_PROFILE_ID=imx219-visible-wide ./scripts/test-core-pi.sh
+```
+
+Read the active profile:
+
+```bash
+VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
+```
+
+The default active-profile state path is ignored by git:
+
+```bash
+artifacts/active_camera_profile.txt
+```
+
+Override the profile directory or active-profile state file with:
+
+```bash
+VISUAL_HOMING_CAMERA_PROFILE_DIR=/path/to/camera_profiles
+VISUAL_HOMING_ACTIVE_CAMERA_PROFILE=/path/to/active_camera_profile.txt
+```
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

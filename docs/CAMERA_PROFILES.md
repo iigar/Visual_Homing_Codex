@@ -66,6 +66,21 @@ Inspect a profile without touching camera hardware:
 visual_homing_core --inspect-camera-profile <camera.profile>
 ```
 
+List all valid profiles in a directory:
+
+```bash
+visual_homing_core --list-camera-profiles <profile_dir>
+```
+
+The active profile is stored as a small operator-state file containing the selected profile id. The setter validates that the requested profile exists and can be loaded before writing the active state:
+
+```bash
+visual_homing_core --set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>
+visual_homing_core --get-active-camera-profile <profile_dir> <active_profile_state>
+```
+
+The active profile state should be untracked local state, for example `artifacts/active_camera_profile.txt`, not a committed file.
+
 `--match-route` can use a camera profile inline for replay matching:
 
 ```bash
@@ -131,6 +146,7 @@ Planned flow:
 
 - The Pi stores profile files under a deterministic config directory, for example `config/camera_profiles/`.
 - The core validates profile contents before using them for capture, route matching, or route-quality policy.
+- The Pi stores the active profile id in an untracked state file after validating the selected profile.
 - A small Pi API exposes available profiles and the active profile:
   - `GET /api/camera-profiles`;
   - `GET /api/camera-profiles/current`;

@@ -588,3 +588,23 @@ Impact:
 
 Risk:
 - The first tracked IMX219 FOV values are placeholders until measured for the exact lens/crop mode. They are calibration templates, not final flight calibration.
+
+## 2026-05-31 - Store Active Camera Profile As Validated Local State
+
+Decision:
+- Add a core camera profile registry layer that lists valid `.profile` files from a directory.
+- Store the active camera profile as a local state file containing only the selected profile id.
+- Allow setting the active id only after the referenced profile exists and passes strict loading/validation.
+
+Why:
+- Future Android profile selection needs a simple Pi-owned state model that can be exposed through API endpoints without making Android the source of calibration truth.
+- Keeping the active selection separate from committed profile templates avoids local operator choices changing git-tracked calibration files.
+- Validating before writing active state prevents stale or misspelled profile ids from becoming the selected runtime configuration.
+
+Impact:
+- The CLI now supports profile listing, active-profile selection, and active-profile inspection.
+- The Pi script exposes the same operations through environment flags.
+- Future Pi API work can wrap these core functions directly.
+
+Risk:
+- The active state file is still local filesystem state. API work must preserve the same validation path and avoid introducing a parallel configuration store.

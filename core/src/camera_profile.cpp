@@ -1,10 +1,13 @@
 #include "visual_homing/camera_profile.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace vh {
 namespace {
@@ -230,6 +233,100 @@ CameraProfile load_camera_profile_file(const std::string& path) {
 
     validate_camera_profile(profile);
     return profile;
+}
+
+std::vector<CameraProfileRecord> list_camera_profile_directory(const std::string& directory_path) {
+    namespace fs = std::filesystem;
+
+    if (!fs::exists(directory_path)) {
+        throw std::runtime_error("Camera profile directory does not exist: " + directory_path);
+    }
+    if (!fs::is_directory(directory_path)) {
+        throw std::runtime_error("Camera profile path is not a directory: " + directory_path);
+    }
+
+    std::vector<CameraProfileRecord> records;
+    for (const auto& entry : fs::directory_iterator(directory_path)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != ".profile") {
+            continue;
+        }
+
+        const auto path = entry.path().string();
+        records.push_back(CameraProfileRecord{
+            .path = path,
+            .profile = load_camera_profile_file(path),
+        });
+    }
+
+    std::sort(records.begin(), records.end(), [](const auto& left, const auto& right) {
+        if (left.profile.id == right.profile.id) {
+            return left.path < right.path;
+        }
+        return left.profile.id < right.profile.id;
+    });
+
+    return records;
+}
+
+CameraProfileRecord load_camera_profile_by_id(const std::string& directory_path, const std::string& profile_id) {
+    if (trim(profile_id).empty()) {
+        throw std::invalid_argument("Camera profile id must not be empty");
+    }
+
+    const auto records = list_camera_profile_directory(directory_path);
+    for (const auto& record : records) {
+        if (record.profile.id == profile_id) {
+            return record;
+        }
+    }
+
+    throw std::runtime_error("Camera profile id not found: " + profile_id);
+}
+
+std::string load_active_camera_profile_id(const std::string& active_profile_path) {
+    std::ifstream input(active_profile_path);
+    if (!input) {
+        throw std::runtime_error("Could not open active camera profile file for read: " + active_profile_path);
+    }
+
+    std::string id;
+    std::getline(input, id);
+    id = trim(id);
+    if (id.empty()) {
+        throw std::invalid_argument("Active camera profile id must not be empty: " + active_profile_path);
+    }
+
+    return id;
+}
+
+CameraProfileRecord load_active_camera_profile(const std::string& directory_path, const std::string& active_profile_path) {
+    return load_camera_profile_by_id(directory_path, load_active_camera_profile_id(active_profile_path));
+}
+
+CameraProfileRecord set_active_camera_profile(const std::string& directory_path,
+                                              const std::string& active_profile_path,
+                                              const std::string& profile_id) {
+    namespace fs = std::filesystem;
+
+    const auto record = load_camera_profile_by_id(directory_path, profile_id);
+    const auto parent = fs::path(active_profile_path).parent_path();
+    if (!parent.empty()) {
+        fs::create_directories(parent);
+    }
+
+    std::ofstream output(active_profile_path, std::ios::trunc);
+    if (!output) {
+        throw std::runtime_error("Could not open active camera profile file for write: " + active_profile_path);
+    }
+    output << record.profile.id << "\n";
+    if (!output) {
+        throw std::runtime_error("Could not write active camera profile file: " + active_profile_path);
+    }
+
+    return record;
 }
 
 } // namespace vh

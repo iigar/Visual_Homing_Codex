@@ -94,6 +94,60 @@ int main() {
     }
     assert(rejected_unknown_key);
 
+    const auto registry_dir = std::filesystem::temp_directory_path() / "visual_homing_camera_profile_registry";
+    std::filesystem::create_directories(registry_dir);
+    const auto registry_profile_a = registry_dir / "b.profile";
+    const auto registry_profile_b = registry_dir / "a.profile";
+    const auto ignored_file = registry_dir / "ignored.txt";
+    {
+        std::ofstream output(registry_profile_a);
+        output << "id = z-profile\n";
+        output << "capture_width = 320\n";
+        output << "capture_height = 240\n";
+        output << "target_width = 32\n";
+        output << "target_height = 24\n";
+        output << "horizontal_fov_rad = 1.1\n";
+        output << "vertical_fov_rad = 0.8\n";
+    }
+    {
+        std::ofstream output(registry_profile_b);
+        output << "id = a-profile\n";
+        output << "capture_width = 160\n";
+        output << "capture_height = 120\n";
+        output << "target_width = 16\n";
+        output << "target_height = 12\n";
+        output << "horizontal_fov_rad = 0.9\n";
+        output << "vertical_fov_rad = 0.6\n";
+    }
+    {
+        std::ofstream output(ignored_file);
+        output << "id = ignored\n";
+    }
+
+    const auto records = vh::list_camera_profile_directory(registry_dir.string());
+    assert(records.size() == 2);
+    assert(records[0].profile.id == "a-profile");
+    assert(records[1].profile.id == "z-profile");
+
+    const auto selected = vh::load_camera_profile_by_id(registry_dir.string(), "z-profile");
+    assert(selected.profile.id == "z-profile");
+    assert(selected.profile.target_width == 32);
+
+    const auto active_path = registry_dir / "active_camera_profile.txt";
+    const auto active_set = vh::set_active_camera_profile(registry_dir.string(), active_path.string(), "a-profile");
+    assert(active_set.profile.id == "a-profile");
+    assert(vh::load_active_camera_profile_id(active_path.string()) == "a-profile");
+    const auto active_loaded = vh::load_active_camera_profile(registry_dir.string(), active_path.string());
+    assert(active_loaded.profile.id == "a-profile");
+
+    bool rejected_missing_profile = false;
+    try {
+        (void)vh::set_active_camera_profile(registry_dir.string(), active_path.string(), "missing-profile");
+    } catch (const std::runtime_error&) {
+        rejected_missing_profile = true;
+    }
+    assert(rejected_missing_profile);
+
     bool rejected_empty_id = false;
     try {
         auto invalid = profile;
