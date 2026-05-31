@@ -247,13 +247,22 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
     if (config.maximum_low_texture_fraction > 1.0 || config.maximum_ambiguous_nearest_fraction > 1.0) {
         throw std::invalid_argument("Route distinctiveness fraction thresholds must be <= 1.0");
     }
+    const auto route_entry_count = static_cast<std::uint64_t>(route.entries.size());
+    if (config.edge_trim_entries >= (route_entry_count + 1) / 2) {
+        throw std::invalid_argument("Route distinctiveness edge trim would remove all route entries");
+    }
 
     RouteDistinctivenessSummary summary;
-    summary.entries_checked = static_cast<std::uint64_t>(route.entries.size());
+    const auto begin_index = static_cast<std::size_t>(config.edge_trim_entries);
+    const auto end_index = route.entries.size() - static_cast<std::size_t>(config.edge_trim_entries);
+    summary.entries_ignored_at_start = config.edge_trim_entries;
+    summary.entries_ignored_at_end = config.edge_trim_entries;
+    summary.entries_checked = static_cast<std::uint64_t>(end_index - begin_index);
     summary.minimum_payload_range = std::numeric_limits<double>::max();
 
     double range_sum = 0.0;
-    for (const auto& entry : route.entries) {
+    for (std::size_t index = begin_index; index < end_index; ++index) {
+        const auto& entry = route.entries[index];
         const auto range = payload_range(entry.payload);
         summary.minimum_payload_range = std::min(summary.minimum_payload_range, range);
         range_sum += range;
@@ -266,10 +275,10 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
     summary.low_texture_fraction = static_cast<double>(summary.low_texture_entries)
         / static_cast<double>(summary.entries_checked);
 
-    if (route.entries.size() >= 2) {
+    if (summary.entries_checked >= 2) {
         summary.minimum_adjacent_mean_abs_diff = std::numeric_limits<double>::max();
         double adjacent_sum = 0.0;
-        for (std::size_t index = 1; index < route.entries.size(); ++index) {
+        for (std::size_t index = begin_index + 1; index < end_index; ++index) {
             const auto diff = mean_abs_diff_bytes(route.entries[index - 1].payload, route.entries[index].payload);
             summary.minimum_adjacent_mean_abs_diff = std::min(summary.minimum_adjacent_mean_abs_diff, diff);
             adjacent_sum += diff;
@@ -279,9 +288,9 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
 
         summary.minimum_nearest_mean_abs_diff = std::numeric_limits<double>::max();
         double nearest_sum = 0.0;
-        for (std::size_t index = 0; index < route.entries.size(); ++index) {
+        for (std::size_t index = begin_index; index < end_index; ++index) {
             double nearest = std::numeric_limits<double>::max();
-            for (std::size_t candidate = 0; candidate < route.entries.size(); ++candidate) {
+            for (std::size_t candidate = begin_index; candidate < end_index; ++candidate) {
                 if (candidate == index) {
                     continue;
                 }

@@ -54,6 +54,8 @@ int main() {
 
     const auto repetitive_distinctiveness = vh::analyze_route_distinctiveness(repetitive_route);
     assert(repetitive_distinctiveness.entries_checked == 3);
+    assert(repetitive_distinctiveness.entries_ignored_at_start == 0);
+    assert(repetitive_distinctiveness.entries_ignored_at_end == 0);
     assert(repetitive_distinctiveness.adjacent_pairs_checked == 2);
     assert(repetitive_distinctiveness.low_texture_entries == 3);
     assert(repetitive_distinctiveness.exact_duplicate_entries == 2);
@@ -69,6 +71,26 @@ int main() {
     assert(repetitive_distinctiveness.minimum_nearest_mean_abs_diff == 0.0);
     assert(repetitive_distinctiveness.warning);
     assert(!repetitive_distinctiveness.quality_pass);
+
+    vh::RouteSignatureFile edge_duplicate_route;
+    edge_duplicate_route.entries.push_back(entry(0, {20, 20, 20, 20}));
+    edge_duplicate_route.entries.push_back(entry(1, {20, 20, 20, 20}));
+    edge_duplicate_route.entries.push_back(entry(2, {0, 0, 10, 10}));
+    edge_duplicate_route.entries.push_back(entry(3, {60, 60, 70, 70}));
+    edge_duplicate_route.entries.push_back(entry(4, {120, 120, 130, 130}));
+    edge_duplicate_route.entries.push_back(entry(5, {180, 180, 190, 190}));
+    edge_duplicate_route.entries.push_back(entry(6, {200, 200, 200, 200}));
+    edge_duplicate_route.entries.push_back(entry(7, {200, 200, 200, 200}));
+    const auto trimmed_distinctiveness = vh::analyze_route_distinctiveness(edge_duplicate_route, {
+        .edge_trim_entries = 2,
+    });
+    assert(trimmed_distinctiveness.entries_checked == 4);
+    assert(trimmed_distinctiveness.entries_ignored_at_start == 2);
+    assert(trimmed_distinctiveness.entries_ignored_at_end == 2);
+    assert(trimmed_distinctiveness.low_texture_entries == 0);
+    assert(trimmed_distinctiveness.exact_duplicate_entries == 0);
+    assert(trimmed_distinctiveness.ambiguous_nearest_entries == 0);
+    assert(trimmed_distinctiveness.quality_pass);
 
     vh::RouteSignatureFile textured_route;
     vh::RouteSignatureEntry textured;

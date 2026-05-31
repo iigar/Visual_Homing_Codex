@@ -54,10 +54,13 @@ struct RouteDistinctivenessConfig {
     double maximum_ambiguous_nearest_fraction = 0.10;
     double minimum_average_nearest_mean_abs_diff = 5.0;
     bool allow_exact_duplicates = false;
+    std::uint64_t edge_trim_entries = 0;
 };
 
 struct RouteDistinctivenessSummary {
     std::uint64_t entries_checked = 0;
+    std::uint64_t entries_ignored_at_start = 0;
+    std::uint64_t entries_ignored_at_end = 0;
     std::uint64_t adjacent_pairs_checked = 0;
     std::uint64_t low_texture_entries = 0;
     std::uint64_t exact_duplicate_entries = 0;

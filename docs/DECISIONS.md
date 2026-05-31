@@ -644,3 +644,21 @@ Impact:
 
 Risk:
 - The sample ids are diagnostic hints, not a full visualization. Deeper analysis may still require exporting or visualizing route frames later.
+
+## 2026-05-31 - Allow Explicit Edge Trim For Route Quality Diagnostics
+
+Decision:
+- Add an optional `edge_trim_entries` value to route distinctiveness analysis and the `--route-distinctiveness <route.vhrs> [edge_trim_entries]` CLI.
+- Expose the same setting in Pi validation through `VISUAL_HOMING_ROUTE_EDGE_TRIM`.
+- Report how many entries were ignored at the start and end.
+
+Why:
+- A 240-frame hand-carried `jtzero` route showed that the only route-quality failures were startup frames `0,1,2`.
+- Operators need a way to evaluate the useful part of a route without hiding the original full-artifact diagnostics or rewriting the `VHRS` file.
+
+Impact:
+- Route quality can now distinguish global visual ambiguity from short operator-controlled start/end pauses.
+- The default no-trim path remains unchanged.
+
+Risk:
+- Trimming can make a weak artifact look better if overused. It must remain explicit in logs and should be limited to known start/end handling, not used to mask mid-route ambiguity.

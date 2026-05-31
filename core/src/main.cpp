@@ -470,11 +470,17 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc == 3 && std::string(argv[1]) == "--route-distinctiveness") {
+    if ((argc == 3 || argc == 4) && std::string(argv[1]) == "--route-distinctiveness") {
         try {
-            const auto summary = vh::analyze_route_distinctiveness_file(argv[2]);
+            vh::RouteDistinctivenessConfig config;
+            if (argc == 4) {
+                config.edge_trim_entries = static_cast<std::uint64_t>(std::stoull(argv[3]));
+            }
+            const auto summary = vh::analyze_route_distinctiveness_file(argv[2], config);
             std::cout << "route_distinctiveness path=" << argv[2]
                       << " entries_checked=" << summary.entries_checked
+                      << " entries_ignored_at_start=" << summary.entries_ignored_at_start
+                      << " entries_ignored_at_end=" << summary.entries_ignored_at_end
                       << " adjacent_pairs_checked=" << summary.adjacent_pairs_checked
                       << " low_texture_entries=" << summary.low_texture_entries
                       << " exact_duplicate_entries=" << summary.exact_duplicate_entries
@@ -519,7 +525,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";
-    std::cout << "usage: visual_homing_core --route-distinctiveness <route.vhrs>\n";
+    std::cout << "usage: visual_homing_core --route-distinctiveness <route.vhrs> [edge_trim_entries]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }
