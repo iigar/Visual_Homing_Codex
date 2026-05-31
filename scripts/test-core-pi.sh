@@ -7,10 +7,30 @@ build_dir="${core_dir}/build-pi"
 build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 artifact_dir="${repo_root}/artifacts"
+log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
+run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+run_started_epoch="$(date +%s)"
+run_log_file="${VISUAL_HOMING_RUN_LOG:-${log_dir}/test-core-pi-${run_log_stamp}.log}"
+
+if [[ "${VISUAL_HOMING_DISABLE_RUN_LOG:-0}" != "1" ]]; then
+    mkdir -p "$(dirname "${run_log_file}")"
+    exec > >(tee -a "${run_log_file}") 2>&1
+fi
+
+finish_log() {
+    local status="$?"
+    local finished_epoch
+    finished_epoch="$(date +%s)"
+    echo "pi_test_run_done wall_time_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ") exit_code=${status} elapsed_s=$((finished_epoch - run_started_epoch)) log_path=${run_log_file}"
+}
+trap finish_log EXIT
+
+echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output}"
 
 clean=0
 for arg in "$@"; do

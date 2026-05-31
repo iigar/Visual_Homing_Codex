@@ -1,5 +1,7 @@
 #include <iostream>
+#include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <exception>
 #include <iomanip>
 #include <sstream>
@@ -81,11 +83,25 @@ std::string format_route_time_ms(double route_time_ms) {
     return output.str();
 }
 
+std::string wall_time_utc_iso8601() {
+    const auto now = std::chrono::system_clock::now();
+    const auto now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm utc{};
+#if defined(_WIN32)
+    gmtime_s(&utc, &now_time);
+#else
+    gmtime_r(&now_time, &utc);
+#endif
+    std::ostringstream output;
+    output << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+    return output.str();
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
     const auto started = vh::now();
-    std::cout << "Visual Homing Core boot\n";
+    std::cout << "Visual Homing Core boot wall_time_utc=" << wall_time_utc_iso8601() << "\n";
 
     if (argc == 3 && std::string(argv[1]) == "--replay") {
         try {

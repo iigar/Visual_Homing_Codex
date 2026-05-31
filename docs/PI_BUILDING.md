@@ -39,6 +39,22 @@ Then it builds the core and runs CTest.
 
 When `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`, CMake requires `pkg-config` and the `libcamera` development package. The bootstrap script installs both before configuring the build.
 
+Each script run writes the full console output to a timestamped artifact log:
+
+```bash
+artifacts/logs/test-core-pi-<UTC>.log
+```
+
+The script also prints `pi_test_run_start` and `pi_test_run_done` lines with UTC wall-clock time, elapsed seconds, exit code, route artifact path, and log path. Override or disable this with:
+
+```bash
+VISUAL_HOMING_RUN_LOG=/path/to/run.log
+VISUAL_HOMING_LOG_DIR=/path/to/logs
+VISUAL_HOMING_DISABLE_RUN_LOG=1
+```
+
+The core executable also prints `wall_time_utc` on each `Visual Homing Core boot` line. This wall-clock time is for operator log correlation; route diagnostics still use monotonic route time from the `VHRS` entries for frame-level chronology.
+
 The default Pi build is intentionally conservative for Pi Zero 2W memory limits:
 
 ```bash

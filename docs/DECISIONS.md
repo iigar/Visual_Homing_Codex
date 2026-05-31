@@ -662,3 +662,21 @@ Impact:
 
 Risk:
 - Trimming can make a weak artifact look better if overused. It must remain explicit in logs and should be limited to known start/end handling, not used to mask mid-route ambiguity.
+
+## 2026-06-01 - Persist Pi Run Logs With Wall-Clock Time
+
+Decision:
+- Make `scripts/test-core-pi.sh` tee every run to `artifacts/logs/test-core-pi-<UTC>.log` by default.
+- Print `pi_test_run_start` and `pi_test_run_done` lines with UTC wall-clock time, elapsed seconds, exit code, route path, and log path.
+- Add `wall_time_utc` to the core boot line for every CLI invocation.
+
+Why:
+- Route-relative timestamps explain frame chronology inside a `VHRS` artifact, but they do not show when an operator ran a command.
+- Pi storage is expected to be 32-64 GB, so preserving text logs is cheap and useful for comparing field/bench attempts.
+
+Impact:
+- Pi validation runs now leave a persistent operator log without changing command usage.
+- Wall-clock logs and route-relative diagnostics can be correlated when investigating route quality or camera behavior.
+
+Risk:
+- Logs can accumulate over time. They live under ignored `artifacts/` by default and can be deleted locally when no longer needed.
