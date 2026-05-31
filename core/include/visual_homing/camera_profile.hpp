@@ -50,6 +50,9 @@ CameraProfileRecord load_camera_profile_by_id(const std::string& directory_path,
 std::string load_active_camera_profile_id(const std::string& active_profile_path);
 CameraProfileRecord load_active_camera_profile(const std::string& directory_path, const std::string& active_profile_path);
 CameraProfileRecord set_active_camera_profile(const std::string& directory_path, const std::string& active_profile_path, const std::string& profile_id);
+std::string camera_profile_record_json(const CameraProfileRecord& record, bool active);
+std::string camera_profile_registry_json(const std::vector<CameraProfileRecord>& records, const std::string& active_profile_id);
+std::string active_camera_profile_json(const CameraProfileRecord& record);
 std::string to_string(CameraSensorType sensor_type);
 std::string to_string(PixelFormat pixel_format);
 

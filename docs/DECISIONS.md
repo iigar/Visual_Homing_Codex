@@ -715,3 +715,20 @@ Impact:
 
 Risk:
 - The convenience flag still uses heuristic route-quality thresholds. Passing it remains an artifact-quality signal, not flight authorization.
+
+## 2026-06-01 - Add Machine-Readable Camera Profile Registry Commands
+
+Decision:
+- Add JSON-output core commands for listing camera profiles, getting the active profile, and setting the active profile.
+- Expose those commands through `scripts/test-core-pi.sh` with `VISUAL_HOMING_API_LIST_CAMERA_PROFILES`, `VISUAL_HOMING_API_GET_ACTIVE_CAMERA_PROFILE`, and `VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID`.
+
+Why:
+- Android profile selection needs a stable machine-readable contract before UI work should depend on it.
+- The deterministic core already owns profile validation and active-state writes, so a later Pi HTTP service should wrap this behavior rather than reimplement calibration rules.
+
+Impact:
+- The future endpoints `GET /api/camera-profiles`, `GET /api/camera-profiles/current`, and `POST /api/camera-profiles/current` now have a concrete payload source.
+- Operators can validate the API-shaped profile payload on the Pi without camera hardware.
+
+Risk:
+- This is not yet an HTTP server. It is the core-side contract and JSON payload layer that a later Pi service can expose over the network.

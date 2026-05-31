@@ -103,7 +103,11 @@ std::string wall_time_utc_iso8601() {
 
 int main(int argc, char** argv) {
     const auto started = vh::now();
-    std::cout << "Visual Homing Core boot wall_time_utc=" << wall_time_utc_iso8601() << "\n";
+    const std::string command = argc > 1 ? argv[1] : "";
+    const bool api_command = command.rfind("--api-", 0) == 0;
+    if (!api_command) {
+        std::cout << "Visual Homing Core boot wall_time_utc=" << wall_time_utc_iso8601() << "\n";
+    }
 
     if (argc == 3 && std::string(argv[1]) == "--replay") {
         try {
@@ -301,6 +305,45 @@ int main(int argc, char** argv) {
             return 0;
         } catch (const std::exception& error) {
             std::cerr << "set_active_camera_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 4 && std::string(argv[1]) == "--api-list-camera-profiles") {
+        try {
+            const auto records = vh::list_camera_profile_directory(argv[2]);
+            std::string active_profile_id;
+            try {
+                active_profile_id = vh::load_active_camera_profile_id(argv[3]);
+            } catch (const std::exception&) {
+                active_profile_id.clear();
+            }
+            std::cout << vh::camera_profile_registry_json(records, active_profile_id) << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "api_list_camera_profiles_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 4 && std::string(argv[1]) == "--api-get-active-camera-profile") {
+        try {
+            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            std::cout << vh::active_camera_profile_json(record) << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "api_get_active_camera_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 5 && std::string(argv[1]) == "--api-set-active-camera-profile") {
+        try {
+            const auto record = vh::set_active_camera_profile(argv[2], argv[3], argv[4]);
+            std::cout << vh::active_camera_profile_json(record) << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "api_set_active_camera_profile_error=" << error.what() << "\n";
             return 1;
         }
     }
@@ -553,6 +596,9 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --list-camera-profiles <profile_dir>\n";
     std::cout << "usage: visual_homing_core --get-active-camera-profile <profile_dir> <active_profile_state>\n";
     std::cout << "usage: visual_homing_core --set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>\n";
+    std::cout << "usage: visual_homing_core --api-list-camera-profiles <profile_dir> <active_profile_state>\n";
+    std::cout << "usage: visual_homing_core --api-get-active-camera-profile <profile_dir> <active_profile_state>\n";
+    std::cout << "usage: visual_homing_core --api-set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>\n";

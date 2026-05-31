@@ -4,6 +4,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -86,6 +87,40 @@ PixelFormat parse_pixel_format(const std::string& value) {
         return PixelFormat::Thermal16;
     }
     throw std::invalid_argument("Invalid CameraProfile pixel_format: " + value);
+}
+
+std::string json_escape(const std::string& value) {
+    std::ostringstream output;
+    for (const char character : value) {
+        switch (character) {
+        case '\\':
+            output << "\\\\";
+            break;
+        case '"':
+            output << "\\\"";
+            break;
+        case '\n':
+            output << "\\n";
+            break;
+        case '\r':
+            output << "\\r";
+            break;
+        case '\t':
+            output << "\\t";
+            break;
+        default:
+            if (static_cast<unsigned char>(character) < 0x20) {
+                output << "\\u"
+                       << std::hex << std::setw(4) << std::setfill('0')
+                       << static_cast<int>(static_cast<unsigned char>(character))
+                       << std::dec << std::setfill(' ');
+            } else {
+                output << character;
+            }
+            break;
+        }
+    }
+    return output.str();
 }
 
 } // namespace
@@ -327,6 +362,64 @@ CameraProfileRecord set_active_camera_profile(const std::string& directory_path,
     }
 
     return record;
+}
+
+std::string camera_profile_record_json(const CameraProfileRecord& record, bool active) {
+    const auto scale = derive_camera_angular_scale(record.profile);
+
+    std::ostringstream output;
+    output << "{"
+           << "\"id\":\"" << json_escape(record.profile.id) << "\","
+           << "\"path\":\"" << json_escape(record.path) << "\","
+           << "\"active\":" << (active ? "true" : "false") << ","
+           << "\"sensor_type\":\"" << to_string(record.profile.sensor_type) << "\","
+           << "\"pixel_format\":\"" << to_string(record.profile.pixel_format) << "\","
+           << "\"capture_width\":" << record.profile.capture_width << ","
+           << "\"capture_height\":" << record.profile.capture_height << ","
+           << "\"target_width\":" << record.profile.target_width << ","
+           << "\"target_height\":" << record.profile.target_height << ","
+           << "\"horizontal_fov_rad\":" << record.profile.horizontal_fov_rad << ","
+           << "\"vertical_fov_rad\":" << record.profile.vertical_fov_rad << ","
+           << "\"radians_per_capture_pixel_x\":" << scale.radians_per_capture_pixel_x << ","
+           << "\"radians_per_capture_pixel_y\":" << scale.radians_per_capture_pixel_y << ","
+           << "\"radians_per_target_pixel_x\":" << scale.radians_per_target_pixel_x << ","
+           << "\"radians_per_target_pixel_y\":" << scale.radians_per_target_pixel_y << ","
+           << "\"low_texture_range_threshold\":" << record.profile.low_texture_range_threshold << ","
+           << "\"ambiguous_mean_abs_diff_threshold\":" << record.profile.ambiguous_mean_abs_diff_threshold << ","
+           << "\"maximum_low_texture_fraction\":" << record.profile.maximum_low_texture_fraction << ","
+           << "\"maximum_ambiguous_nearest_fraction\":" << record.profile.maximum_ambiguous_nearest_fraction << ","
+           << "\"minimum_average_nearest_mean_abs_diff\":" << record.profile.minimum_average_nearest_mean_abs_diff
+           << "}";
+    return output.str();
+}
+
+std::string camera_profile_registry_json(const std::vector<CameraProfileRecord>& records, const std::string& active_profile_id) {
+    std::ostringstream output;
+    output << "{"
+           << "\"active_profile_id\":";
+    if (active_profile_id.empty()) {
+        output << "null";
+    } else {
+        output << "\"" << json_escape(active_profile_id) << "\"";
+    }
+    output << ",\"profiles\":[";
+    for (std::size_t index = 0; index < records.size(); ++index) {
+        if (index != 0) {
+            output << ",";
+        }
+        output << camera_profile_record_json(records[index], records[index].profile.id == active_profile_id);
+    }
+    output << "]}";
+    return output.str();
+}
+
+std::string active_camera_profile_json(const CameraProfileRecord& record) {
+    std::ostringstream output;
+    output << "{"
+           << "\"active_profile_id\":\"" << json_escape(record.profile.id) << "\","
+           << "\"profile\":" << camera_profile_record_json(record, true)
+           << "}";
+    return output.str();
 }
 
 } // namespace vh

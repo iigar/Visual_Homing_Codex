@@ -117,6 +117,16 @@ Read the active profile:
 VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
 ```
 
+Run the machine-readable profile API payload commands for future Android/Pi integration:
+
+```bash
+VISUAL_HOMING_API_LIST_CAMERA_PROFILES=1 ./scripts/test-core-pi.sh
+VISUAL_HOMING_API_GET_ACTIVE_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
+VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID=imx219-visible-wide ./scripts/test-core-pi.sh
+```
+
+These commands output JSON from the same validated profile registry and active-profile state used by the human-readable commands. They do not open camera hardware and do not grant flight permission.
+
 The default active-profile state path is ignored by git:
 
 ```bash

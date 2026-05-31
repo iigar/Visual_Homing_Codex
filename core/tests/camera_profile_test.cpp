@@ -140,6 +140,17 @@ int main() {
     const auto active_loaded = vh::load_active_camera_profile(registry_dir.string(), active_path.string());
     assert(active_loaded.profile.id == "a-profile");
 
+    const auto registry_json = vh::camera_profile_registry_json(records, "a-profile");
+    assert(registry_json.find("\"active_profile_id\":\"a-profile\"") != std::string::npos);
+    assert(registry_json.find("\"id\":\"a-profile\"") != std::string::npos);
+    assert(registry_json.find("\"active\":true") != std::string::npos);
+    assert(registry_json.find("\"radians_per_target_pixel_x\":") != std::string::npos);
+
+    const auto active_json = vh::active_camera_profile_json(active_loaded);
+    assert(active_json.find("\"active_profile_id\":\"a-profile\"") != std::string::npos);
+    assert(active_json.find("\"profile\":{") != std::string::npos);
+    assert(active_json.find("\"active\":true") != std::string::npos);
+
     bool rejected_missing_profile = false;
     try {
         (void)vh::set_active_camera_profile(registry_dir.string(), active_path.string(), "missing-profile");

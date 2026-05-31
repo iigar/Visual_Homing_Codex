@@ -81,6 +81,16 @@ visual_homing_core --get-active-camera-profile <profile_dir> <active_profile_sta
 
 The active profile state should be untracked local state, for example `artifacts/active_camera_profile.txt`, not a committed file.
 
+The core also exposes machine-readable JSON forms intended for the future Pi HTTP API wrapper and Android selector:
+
+```bash
+visual_homing_core --api-list-camera-profiles <profile_dir> <active_profile_state>
+visual_homing_core --api-get-active-camera-profile <profile_dir> <active_profile_state>
+visual_homing_core --api-set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>
+```
+
+These commands use the same strict profile registry and active-state validation as the human-readable CLI. `--api-list-camera-profiles` reports `active_profile_id` as `null` if no active state file exists yet, so an app can list supported profiles before the first selection.
+
 `--match-route` can use a camera profile inline for replay matching:
 
 ```bash
@@ -158,7 +168,7 @@ Planned flow:
 - The Pi stores profile files under a deterministic config directory, for example `config/camera_profiles/`.
 - The core validates profile contents before using them for capture, route matching, or route-quality policy.
 - The Pi stores the active profile id in an untracked state file after validating the selected profile.
-- A small Pi API exposes available profiles and the active profile:
+- A small Pi API exposes available profiles and the active profile. The current core provides JSON payload commands for this contract, while the later Pi service can map them to:
   - `GET /api/camera-profiles`;
   - `GET /api/camera-profiles/current`;
   - `POST /api/camera-profiles/current`.
