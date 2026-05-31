@@ -60,7 +60,7 @@
 - Add Pi camera source.
 - Add USB/thermal source.
 - Validate CPU, memory, frame drops, latency on Pi Zero 2W.
-- Status: in progress with `PiCameraSource`, initial libcamera backend, live camera pipeline smoke, live route recording, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing. Live IMX219 pipeline smoke is validated on `jtzero`: 320x240 Gray8 frames preprocess to 32x24 in about 0.9 ms with effective FPS about 15.9. Live route recording is implemented and awaits Pi validation.
+- Status: in progress with `PiCameraSource`, initial libcamera backend, live camera pipeline smoke, live route recording, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 13/13 CTest tests passing. Live IMX219 pipeline smoke is validated on `jtzero`: 320x240 Gray8 frames preprocess to 32x24 in about 0.9 ms with effective FPS about 15.9. Live route recording is validated on `jtzero`: 120 live IMX219 frames produced 120 `VHRS` entries at effective FPS about 15.2.
 
 ## Milestone 7 - Flight Test Ladder
 

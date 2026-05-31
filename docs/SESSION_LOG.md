@@ -89,3 +89,4 @@
 - Added live camera route recording through `record_live_camera_route` and CLI `--record-live-route`, using `PiCameraSource -> Gray8ResizePreprocessor -> HealthMonitor -> RouteSignatureRecorder -> VHRS`.
 - Added `VISUAL_HOMING_RECORD_LIVE_ROUTE=1` support to `scripts/test-core-pi.sh` so Pi validation can build, run CTest, and optionally write a live route file.
 - Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
+- Validated live route recording on `jtzero` using `VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13, 120 live IMX219 frames were preprocessed to 32x24 / 768 bytes, 120 `VHRS` entries were written to `/tmp/visual_homing_live_route.vhrs`, last latency was ~1.48 ms, frame age stayed mostly around 0.5-2.6 ms with a late 4.19 ms sample, and effective FPS was ~15.19.
