@@ -68,12 +68,13 @@
 - Capture profile fields: camera id/name, sensor type, pixel format, capture size, target resize, horizontal/vertical FOV, crop policy, exposure/normalization hints, matcher thresholds, route-quality thresholds, and derived radians-per-pixel values.
 - Add FOV-aware direction-error conversion using camera profile data instead of ad hoc `radians_per_pixel`.
 - Add profile documentation/template so different visible-light and thermal cameras can be configured repeatably.
+- Add Pi-owned camera profile files plus an API contract for companion UI selection; Android may use the reference Kotlin/Compose codebase, but the active profile must be stored and validated on the Pi/core side.
 - Add thermal profile placeholder and thermal normalization policy; the `VHRS` format already reserves `Thermal16`, but matching/preprocessing still needs an implementation.
 - Add read-only real MAVLink telemetry transport before any live command output: heartbeat, armed, mode, roll, pitch, yaw, relative altitude, and freshness metrics.
 - Log camera frames together with flight-controller attitude/altitude snapshots for replay analysis.
 - Add altitude-aware route metadata policy: altitude bands, heading hints, attitude snapshot, and scale/height assumptions.
 - Keep live MAVLink command output blocked; this milestone is read-only telemetry plus calibration.
-- Status: started with an in-core `CameraProfile` model, profile validation, FOV-derived angular scale, unit tests, initial camera profile documentation, and replay route matching support for inline profile/FOV-derived direction scaling. Read-only real MAVLink telemetry, profile file loading, thermal normalization, and altitude-aware metadata remain pending.
+- Status: started with an in-core `CameraProfile` model, profile validation, FOV-derived angular scale, unit tests, initial camera profile documentation, replay route matching support for inline profile/FOV-derived direction scaling, and a documented Android/Pi ownership model for future profile selection. Read-only real MAVLink telemetry, profile file loading, Pi API endpoints for active profile selection, thermal normalization, and altitude-aware metadata remain pending.
 
 ## Milestone 6.6 - Baseline Review, Weak-Point Audit, And Safety/Security Hardening
 

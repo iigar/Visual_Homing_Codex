@@ -72,3 +72,19 @@ Thermal profiles are not enough by themselves. Thermal capture needs determinist
 - FOV-derived radians-per-pixel should replace ad hoc direction scaling.
 - Camera profiles are configuration/calibration data, not live flight permission.
 - A route artifact can pass camera/profile validation and still be rejected by route-quality or confidence gates.
+
+## Companion App Selection
+
+The Android companion app should treat camera profiles as Pi-owned configuration, not as phone-owned flight state.
+
+Planned flow:
+
+- The Pi stores profile files under a deterministic config directory, for example `config/camera_profiles/`.
+- The core validates profile contents before using them for capture, route matching, or route-quality policy.
+- A small Pi API exposes available profiles and the active profile:
+  - `GET /api/camera-profiles`;
+  - `GET /api/camera-profiles/current`;
+  - `POST /api/camera-profiles/current`.
+- The Android app shows the available profiles in Settings and sends only the selected profile id to the Pi.
+
+The reference Android codebase under `reference/` is a useful starting point because it already has Kotlin/Compose screens, Retrofit API plumbing, Pi URL preferences, and a Settings screen. The old APK artifact should not be treated as a maintainable base. The production path should reuse source patterns from the reference app only after the Pi profile-file and API contract exists.

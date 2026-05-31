@@ -548,3 +548,23 @@ Impact:
 
 Risk:
 - Inline CLI profiles are a bridge, not the final operator experience. Profile file loading and validation remain required before field workflows.
+
+## 2026-05-31 - Keep Camera Profile Selection Pi-Owned
+
+Decision:
+- Store supported camera profiles as Pi/core-owned configuration files rather than Android-owned state.
+- Expose profile selection through future Pi API endpoints for listing available profiles, reading the active profile, and setting the active profile.
+- Reuse source patterns from the reference Android Kotlin/Compose app for a future Settings selector, but do not use the old APK artifact as a maintainable base.
+
+Why:
+- Camera profiles affect route matching, direction scaling, route-quality thresholds, and future thermal/altitude behavior, so they must be validated where the deterministic core runs.
+- Android should be a companion UI for operator selection, not the source of flight-critical calibration truth.
+- The reference Android codebase already has useful Retrofit, preferences, and Settings-screen structure, so reusing source ideas is cheaper than starting from a blank app after the Pi API contract exists.
+
+Impact:
+- Milestone 6.5 should add profile file loading and profile-selection API before serious Android work.
+- The Android app can later show a profile dropdown/list and submit only a selected profile id.
+- Active camera profile state remains reproducible on the Pi and visible to scripts, replay tools, and logs.
+
+Risk:
+- UI work before the Pi API exists could create a second configuration path. Keep Android profile selection blocked on Pi-owned profile file loading and API validation.
