@@ -262,6 +262,8 @@ The underlying CLI is:
 
 Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and route-quality policy fields. This is an offline diagnostic, not a flight gate; `warning=true` means the route has some repetitive or low-texture samples, while `quality_pass=false` means the current artifact should not be used as a good bench/field-test route without recapture or explicit operator review.
 
+The diagnostic also prints small sample lists for `low_texture_frame_ids`, `exact_duplicate_frame_ids`, and `ambiguous_nearest_frame_ids`. These are the first affected route frame ids and are intended to show whether a failure came from start/end pauses, a short flat segment, or repeated visual content throughout the route.
+
 Default route-quality policy:
 
 - low-texture entry fraction must be `<= 0.05`;

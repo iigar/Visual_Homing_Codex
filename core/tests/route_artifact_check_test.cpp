@@ -58,6 +58,12 @@ int main() {
     assert(repetitive_distinctiveness.low_texture_entries == 3);
     assert(repetitive_distinctiveness.exact_duplicate_entries == 2);
     assert(repetitive_distinctiveness.ambiguous_nearest_entries == 3);
+    assert(repetitive_distinctiveness.low_texture_frame_ids.size() == 3);
+    assert(repetitive_distinctiveness.low_texture_frame_ids[0] == 0);
+    assert(repetitive_distinctiveness.exact_duplicate_frame_ids.size() == 2);
+    assert(repetitive_distinctiveness.exact_duplicate_frame_ids[0] == 0);
+    assert(repetitive_distinctiveness.ambiguous_nearest_frame_ids.size() == 3);
+    assert(repetitive_distinctiveness.ambiguous_nearest_frame_ids[2] == 2);
     assert(repetitive_distinctiveness.minimum_payload_range == 0.0);
     assert(repetitive_distinctiveness.minimum_adjacent_mean_abs_diff == 0.0);
     assert(repetitive_distinctiveness.minimum_nearest_mean_abs_diff == 0.0);
@@ -109,6 +115,9 @@ int main() {
     assert(textured_distinctiveness.low_texture_entries == 0);
     assert(textured_distinctiveness.exact_duplicate_entries == 0);
     assert(textured_distinctiveness.ambiguous_nearest_entries == 0);
+    assert(textured_distinctiveness.low_texture_frame_ids.empty());
+    assert(textured_distinctiveness.exact_duplicate_frame_ids.empty());
+    assert(textured_distinctiveness.ambiguous_nearest_frame_ids.empty());
     assert(textured_distinctiveness.minimum_payload_range == 150.0);
     assert(!textured_distinctiveness.warning);
     assert(!textured_distinctiveness.quality_pass);

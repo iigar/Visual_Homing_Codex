@@ -91,6 +91,13 @@ double payload_range(const std::vector<std::uint8_t>& payload) {
     return static_cast<double>(*max_it) - static_cast<double>(*min_it);
 }
 
+void append_sample_frame_id(std::vector<std::uint64_t>& frame_ids, std::uint64_t frame_id) {
+    constexpr std::size_t max_sample_ids = 8;
+    if (frame_ids.size() < max_sample_ids) {
+        frame_ids.push_back(frame_id);
+    }
+}
+
 } // namespace
 
 RouteSelfMatchSummary self_match_route_signature(
@@ -252,6 +259,7 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
         range_sum += range;
         if (range <= config.low_texture_range_threshold) {
             ++summary.low_texture_entries;
+            append_sample_frame_id(summary.low_texture_frame_ids, entry.frame_id);
         }
     }
     summary.average_payload_range = range_sum / static_cast<double>(summary.entries_checked);
@@ -284,9 +292,11 @@ RouteDistinctivenessSummary analyze_route_distinctiveness(
             nearest_sum += nearest;
             if (nearest == 0.0) {
                 ++summary.exact_duplicate_entries;
+                append_sample_frame_id(summary.exact_duplicate_frame_ids, route.entries[index].frame_id);
             }
             if (nearest <= config.ambiguous_mean_abs_diff_threshold) {
                 ++summary.ambiguous_nearest_entries;
+                append_sample_frame_id(summary.ambiguous_nearest_frame_ids, route.entries[index].frame_id);
             }
         }
         summary.average_nearest_mean_abs_diff = nearest_sum / static_cast<double>(summary.entries_checked);

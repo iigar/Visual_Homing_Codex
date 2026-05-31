@@ -1,7 +1,9 @@
 #include <iostream>
 #include <cstdint>
 #include <exception>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "visual_homing/camera_profile.hpp"
 #include "visual_homing/camera_smoke.hpp"
@@ -53,6 +55,21 @@ void log_profile_hardware_config(const char* prefix, const vh::CameraProfileReco
            << " target=" << record.profile.target_width << "x" << record.profile.target_height
            << " horizontal_fov_rad=" << record.profile.horizontal_fov_rad
            << " vertical_fov_rad=" << record.profile.vertical_fov_rad << "\n";
+}
+
+std::string join_frame_ids(const std::vector<std::uint64_t>& frame_ids) {
+    if (frame_ids.empty()) {
+        return "none";
+    }
+
+    std::ostringstream output;
+    for (std::size_t index = 0; index < frame_ids.size(); ++index) {
+        if (index != 0) {
+            output << ",";
+        }
+        output << frame_ids[index];
+    }
+    return output.str();
 }
 
 } // namespace
@@ -470,6 +487,9 @@ int main(int argc, char** argv) {
                       << " average_adjacent_mean_abs_diff=" << summary.average_adjacent_mean_abs_diff
                       << " minimum_nearest_mean_abs_diff=" << summary.minimum_nearest_mean_abs_diff
                       << " average_nearest_mean_abs_diff=" << summary.average_nearest_mean_abs_diff
+                      << " low_texture_frame_ids=" << join_frame_ids(summary.low_texture_frame_ids)
+                      << " exact_duplicate_frame_ids=" << join_frame_ids(summary.exact_duplicate_frame_ids)
+                      << " ambiguous_nearest_frame_ids=" << join_frame_ids(summary.ambiguous_nearest_frame_ids)
                       << " warning=" << (summary.warning ? "true" : "false")
                       << " quality_pass=" << (summary.quality_pass ? "true" : "false") << "\n";
             return 0;

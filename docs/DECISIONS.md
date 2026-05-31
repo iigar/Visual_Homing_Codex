@@ -627,3 +627,20 @@ Impact:
 
 Risk:
 - Profile-backed capture still does not imply flight permission. Live MAVLink command output remains blocked, and profile values, especially FOV, still require real calibration.
+
+## 2026-05-31 - Report Sample Frame IDs For Route Distinctiveness Failures
+
+Decision:
+- Extend route distinctiveness output with bounded sample frame id lists for low-texture, exact-duplicate, and ambiguous-nearest entries.
+- Keep the lists small so Pi logs remain readable.
+
+Why:
+- Aggregate counts explain that a route failed quality policy, but not where the issue occurred.
+- Sample frame ids help distinguish start/end pauses from repeated visual content in the middle of a route.
+
+Impact:
+- Operators can rerun route recording with clearer feedback about which part of the route caused `quality_pass=false`.
+- The route-quality policy itself is unchanged.
+
+Risk:
+- The sample ids are diagnostic hints, not a full visualization. Deeper analysis may still require exporting or visualizing route frames later.

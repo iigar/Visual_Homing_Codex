@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <vector>
 
 #include "visual_homing/route_signature.hpp"
 
@@ -69,6 +70,9 @@ struct RouteDistinctivenessSummary {
     double average_adjacent_mean_abs_diff = 0.0;
     double minimum_nearest_mean_abs_diff = 0.0;
     double average_nearest_mean_abs_diff = 0.0;
+    std::vector<std::uint64_t> low_texture_frame_ids;
+    std::vector<std::uint64_t> exact_duplicate_frame_ids;
+    std::vector<std::uint64_t> ambiguous_nearest_frame_ids;
     bool warning = false;
     bool quality_pass = false;
 };
