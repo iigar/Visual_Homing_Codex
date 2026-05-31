@@ -6,6 +6,7 @@
 #include "visual_homing/camera_smoke.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
+#include "visual_homing/route_signature.hpp"
 #include "visual_homing/time.hpp"
 
 int main(int argc, char** argv) {
@@ -130,6 +131,31 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 3 && std::string(argv[1]) == "--inspect-route") {
+        try {
+            const auto summary = vh::inspect_route_signature_file(argv[2]);
+            std::cout << "route_inspect path=" << argv[2]
+                      << " version=" << summary.version
+                      << " entries=" << summary.entry_count
+                      << " first_frame_id=" << summary.first_frame_id
+                      << " last_frame_id=" << summary.last_frame_id
+                      << " first_timestamp_ns=" << summary.first_timestamp_ns
+                      << " last_timestamp_ns=" << summary.last_timestamp_ns
+                      << " size=" << summary.width << "x" << summary.height
+                      << " min_payload_bytes=" << summary.min_payload_bytes
+                      << " max_payload_bytes=" << summary.max_payload_bytes
+                      << " total_payload_bytes=" << summary.total_payload_bytes
+                      << " timestamps_monotonic=" << (summary.timestamps_monotonic ? "true" : "false")
+                      << " uniform_dimensions=" << (summary.uniform_dimensions ? "true" : "false")
+                      << " uniform_payload_size=" << (summary.uniform_payload_size ? "true" : "false")
+                      << " all_gray8=" << (summary.all_gray8 ? "true" : "false") << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "inspect_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
@@ -137,6 +163,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
+    std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

@@ -90,3 +90,7 @@
 - Added `VISUAL_HOMING_RECORD_LIVE_ROUTE=1` support to `scripts/test-core-pi.sh` so Pi validation can build, run CTest, and optionally write a live route file.
 - Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
 - Validated live route recording on `jtzero` using `VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13, 120 live IMX219 frames were preprocessed to 32x24 / 768 bytes, 120 `VHRS` entries were written to `/tmp/visual_homing_live_route.vhrs`, last latency was ~1.48 ms, frame age stayed mostly around 0.5-2.6 ms with a late 4.19 ms sample, and effective FPS was ~15.19.
+- Added offline route inspection through `summarize_route_signature`, `inspect_route_signature_file`, and CLI `--inspect-route <route.vhrs>`, reporting entry count, frame/timestamp ranges, dimensions, payload totals, monotonic timestamps, uniform dimensions/payloads, and Gray8-only status.
+- Updated `scripts/test-core-pi.sh` so live route recording automatically inspects the written route and `VISUAL_HOMING_INSPECT_ROUTE=1` can inspect an existing route artifact.
+- Tightened `scripts/test-core.ps1` so configure, build, and CTest non-zero exit codes fail the helper instead of allowing stale test binaries to mask a failed build.
+- Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.

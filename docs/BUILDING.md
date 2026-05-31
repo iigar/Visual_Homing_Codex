@@ -46,7 +46,7 @@ For repeat builds after bootstrap:
 ./scripts/test-core-pi.sh
 ```
 
-The Pi script uses `core/build-pi` and enables `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`. The backend still fails closed until the real libcamera capture implementation is added.
+The Pi script uses `core/build-pi` and enables `VISUAL_HOMING_ENABLE_LIBCAMERA=ON`. Live camera access remains runtime opt-in through explicit hardware validation commands.
 
 ## Current Validation
 
@@ -77,3 +77,5 @@ Latest validation command:
 ```powershell
 .\scripts\test-core.ps1 -Clean
 ```
+
+The helper checks exit codes after configure, build, and CTest so stale test binaries cannot hide a failed build.

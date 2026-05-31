@@ -360,3 +360,22 @@ Impact:
 
 Risk:
 - A recorded live route proves capture and serialization, not visual homing quality. The next step must validate the route with offline reader/matcher checks before any flight-test ladder work.
+
+## 2026-05-31 - Add Offline Route Inspection Before More Live Work
+
+Decision:
+- Add `summarize_route_signature`, `inspect_route_signature_file`, and CLI `--inspect-route <route.vhrs>`.
+- Make `scripts/test-core-pi.sh` inspect the route file immediately after optional live route recording.
+- Keep inspection offline and dependency-free through the existing `VHRS` reader.
+
+Why:
+- Live route recording needs a cheap artifact check before route matching or flight-test planning.
+- Header, entry count, dimensions, timestamps, payload sizes, and Gray8 status catch malformed recordings early.
+- The same inspection path works for replay-generated and live-generated route files.
+
+Impact:
+- Pi validation can now prove that a recorded `VHRS` file is readable and internally consistent.
+- Desktop tests cover summary behavior, including non-monotonic timestamps and mixed entry shapes.
+
+Risk:
+- Inspection only validates file structure and basic invariants; it does not prove route match quality.

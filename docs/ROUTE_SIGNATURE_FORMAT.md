@@ -39,3 +39,13 @@ All integer fields are little-endian. Floating-point fields are IEEE-754 32-bit 
 - The current recorder writes Gray8 preprocessed frames only.
 - The reader preserves the pixel format field for future formats, but matching currently accepts Gray8 only.
 - Format extensions must either use reserved fields compatibly or bump the version.
+
+## Inspection
+
+Route files can be inspected offline:
+
+```bash
+visual_homing_core --inspect-route <route.vhrs>
+```
+
+The inspector reads the file through the normal `VHRS` reader and reports entry count, frame and timestamp ranges, signature dimensions, payload byte totals, monotonic timestamp status, dimension/payload uniformity, and Gray8-only status.

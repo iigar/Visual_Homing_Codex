@@ -26,7 +26,27 @@ struct RouteSignatureFile {
     std::vector<RouteSignatureEntry> entries;
 };
 
+struct RouteSignatureSummary {
+    std::uint16_t version = route_signature_format_version;
+    std::uint64_t entry_count = 0;
+    std::uint64_t first_frame_id = 0;
+    std::uint64_t last_frame_id = 0;
+    std::uint64_t first_timestamp_ns = 0;
+    std::uint64_t last_timestamp_ns = 0;
+    std::uint16_t width = 0;
+    std::uint16_t height = 0;
+    std::uint64_t min_payload_bytes = 0;
+    std::uint64_t max_payload_bytes = 0;
+    std::uint64_t total_payload_bytes = 0;
+    bool timestamps_monotonic = true;
+    bool uniform_dimensions = true;
+    bool uniform_payload_size = true;
+    bool all_gray8 = true;
+};
+
 void write_route_signature_file(const std::filesystem::path& path, const RouteSignatureFile& route);
 RouteSignatureFile read_route_signature_file(const std::filesystem::path& path);
+RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route);
+RouteSignatureSummary inspect_route_signature_file(const std::filesystem::path& path);
 
 } // namespace vh

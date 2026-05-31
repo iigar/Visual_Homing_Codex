@@ -14,6 +14,19 @@ if (-not (Test-Path -LiteralPath $devShell)) {
     throw "Visual Studio developer shell not found: $devShell"
 }
 
+function Invoke-Checked {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Command,
+        [string[]]$Arguments
+    )
+
+    & $Command @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command failed with exit code ${LASTEXITCODE}: $Command $Arguments"
+    }
+}
+
 if ($Clean -and (Test-Path -LiteralPath $buildDir)) {
     $resolved = Resolve-Path -LiteralPath $buildDir
     if (-not ($resolved.Path.StartsWith((Resolve-Path -LiteralPath $coreDir).Path))) {
@@ -24,6 +37,6 @@ if ($Clean -and (Test-Path -LiteralPath $buildDir)) {
 
 & $devShell
 
-cmake -S $coreDir -B $buildDir
-cmake --build $buildDir --config $Configuration
-ctest --test-dir $buildDir -C $Configuration --output-on-failure
+Invoke-Checked "cmake" @("-S", $coreDir, "-B", $buildDir)
+Invoke-Checked "cmake" @("--build", $buildDir, "--config", $Configuration)
+Invoke-Checked "ctest" @("--test-dir", $buildDir, "-C", $Configuration, "--output-on-failure")

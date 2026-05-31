@@ -105,7 +105,25 @@ The underlying CLI is:
 ./core/build-pi/visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]
 ```
 
+When live route recording succeeds through `scripts/test-core-pi.sh`, the script automatically inspects the written file with `--inspect-route`.
+
 This path is still a hardware validation/recording mode, not a flight loop. It intentionally writes to disk after collecting live frames and should not be used inside future realtime command loops.
+
+## Route Inspection
+
+Inspect an existing route file without touching camera hardware:
+
+```bash
+VISUAL_HOMING_INSPECT_ROUTE=1 VISUAL_HOMING_ROUTE_OUTPUT=/tmp/visual_homing_live_route.vhrs ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --inspect-route <route.vhrs>
+```
+
+The inspector reports version, entry count, frame id range, timestamp range, signature dimensions, payload byte totals, monotonic timestamp status, dimension/payload uniformity, and whether all entries are Gray8.
 
 ## Hardware Backend Policy
 

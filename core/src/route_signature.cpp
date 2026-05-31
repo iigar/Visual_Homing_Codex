@@ -1,5 +1,6 @@
 #include "visual_homing/route_signature.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <fstream>
@@ -227,6 +228,57 @@ RouteSignatureFile read_route_signature_file(const std::filesystem::path& path) 
     }
 
     return route;
+}
+
+RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route) {
+    RouteSignatureSummary summary;
+    summary.version = route.version;
+    summary.entry_count = static_cast<std::uint64_t>(route.entries.size());
+
+    if (route.entries.empty()) {
+        return summary;
+    }
+
+    const auto& first = route.entries.front();
+    summary.first_frame_id = first.frame_id;
+    summary.last_frame_id = route.entries.back().frame_id;
+    summary.first_timestamp_ns = first.timestamp_ns;
+    summary.last_timestamp_ns = route.entries.back().timestamp_ns;
+    summary.width = first.width;
+    summary.height = first.height;
+    summary.min_payload_bytes = static_cast<std::uint64_t>(first.payload.size());
+    summary.max_payload_bytes = static_cast<std::uint64_t>(first.payload.size());
+
+    auto previous_timestamp = first.timestamp_ns;
+    const auto expected_payload_size = first.payload.size();
+    for (std::size_t index = 0; index < route.entries.size(); ++index) {
+        const auto& entry = route.entries[index];
+        const auto payload_size = static_cast<std::uint64_t>(entry.payload.size());
+        summary.min_payload_bytes = std::min(summary.min_payload_bytes, payload_size);
+        summary.max_payload_bytes = std::max(summary.max_payload_bytes, payload_size);
+        summary.total_payload_bytes += payload_size;
+
+        if (index > 0 && entry.timestamp_ns < previous_timestamp) {
+            summary.timestamps_monotonic = false;
+        }
+        previous_timestamp = entry.timestamp_ns;
+
+        if (entry.width != summary.width || entry.height != summary.height) {
+            summary.uniform_dimensions = false;
+        }
+        if (entry.payload.size() != expected_payload_size) {
+            summary.uniform_payload_size = false;
+        }
+        if (entry.format != PixelFormat::Gray8) {
+            summary.all_gray8 = false;
+        }
+    }
+
+    return summary;
+}
+
+RouteSignatureSummary inspect_route_signature_file(const std::filesystem::path& path) {
+    return summarize_route_signature(read_route_signature_file(path));
 }
 
 } // namespace vh

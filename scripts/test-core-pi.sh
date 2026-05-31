@@ -6,6 +6,7 @@ core_dir="${repo_root}/core"
 build_dir="${core_dir}/build-pi"
 build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
+route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-/tmp/visual_homing_live_route.vhrs}"
 
 clean=0
 for arg in "$@"; do
@@ -61,9 +62,15 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
         "${VISUAL_HOMING_CAMERA_HEIGHT:-240}" \
         "${VISUAL_HOMING_CAMERA_FPS:-15}" \
         "${VISUAL_HOMING_CAMERA_FRAMES:-120}" \
-        "${VISUAL_HOMING_ROUTE_OUTPUT:-/tmp/visual_homing_live_route.vhrs}" \
+        "${route_output}" \
         "${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-32}" \
         "${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-24}" \
         "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
         "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}"
+
+    "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
+fi
+
+if [[ "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
 fi
