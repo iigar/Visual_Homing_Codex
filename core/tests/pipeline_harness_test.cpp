@@ -111,6 +111,7 @@ int main() {
 
     const auto match_output = match_metrics.str();
     assert(match_output.find("route_match_start frames_available=2") != std::string::npos);
+    assert(match_output.find("radians_per_pixel=0.03") != std::string::npos);
     assert(match_output.find("match_frame id=0 route_index=0") != std::string::npos);
     assert(match_output.find("match_frame id=1 route_index=1") != std::string::npos);
     assert(match_output.find("direction_error_rad=") != std::string::npos);
@@ -121,6 +122,27 @@ int main() {
     assert(match_output.find("dry_run_command valid=true") != std::string::npos);
     assert(match_output.find("yaw_rate_radps=") != std::string::npos);
     assert(match_output.find("route_match_done frames_processed=2") != std::string::npos);
+
+    std::ostringstream profile_match_metrics;
+    auto profile_match_config = match_config;
+    vh::CameraProfile profile;
+    profile.id = "pipeline-profile";
+    profile.capture_width = 4;
+    profile.capture_height = 4;
+    profile.target_width = profile_match_config.target_width;
+    profile.target_height = profile_match_config.target_height;
+    profile.horizontal_fov_rad = 0.12;
+    profile.vertical_fov_rad = 0.10;
+    profile_match_config.radians_per_pixel = 0.001;
+    profile_match_config.camera_profile = profile;
+
+    const auto profile_match_result = vh::match_replay_route(profile_match_config, profile_match_metrics);
+    assert(profile_match_result.frames_processed == 2);
+
+    const auto profile_match_output = profile_match_metrics.str();
+    assert(profile_match_output.find("camera_profile=pipeline-profile") != std::string::npos);
+    assert(profile_match_output.find("radians_per_pixel=0.06") != std::string::npos);
+    assert(profile_match_output.find("profile_target=2x2") != std::string::npos);
 
     std::ostringstream low_confidence_metrics;
     auto low_confidence_config = match_config;

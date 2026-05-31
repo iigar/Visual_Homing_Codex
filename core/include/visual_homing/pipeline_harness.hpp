@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <iosfwd>
+#include <optional>
 
+#include "visual_homing/camera_profile.hpp"
 #include "visual_homing/mavlink.hpp"
 
 namespace vh {
@@ -32,6 +34,7 @@ struct RouteMatchingConfig {
     double minimum_confidence = 0.0;
     int max_direction_shift_px = 2;
     double radians_per_pixel = 0.02;
+    std::optional<CameraProfile> camera_profile;
     double navigator_minimum_confidence = 0.70;
     double navigator_max_match_age_ms = 1.0e12;
     double navigator_yaw_gain = 1.0;

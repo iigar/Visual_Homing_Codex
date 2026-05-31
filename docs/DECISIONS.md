@@ -529,3 +529,22 @@ Impact:
 
 Risk:
 - The first profile model is in-code only. Profile file loading, operator UI/templates, thermal normalization, and real telemetry integration remain pending.
+
+## 2026-05-31 - Use Camera Profile FOV For Replay Direction Scaling
+
+Decision:
+- Allow `RouteMatchingConfig` to carry an optional `CameraProfile`.
+- When present, derive horizontal `radians_per_pixel` from `horizontal_fov_rad / target_width`.
+- Add an inline profile/FOV form to `--match-route` while preserving the legacy explicit `radians_per_pixel` form.
+
+Why:
+- Direction-error scale should come from camera calibration, not a magic number.
+- Keeping the legacy form avoids breaking existing tests and diagnostics while M6.5 profile loading is still pending.
+- Inline CLI support lets replay tests validate profile-derived scaling before adding config files or UI templates.
+
+Impact:
+- Replay route matching can now report and use profile-derived angular scale.
+- Future camera profile files can plug into the same `RouteMatchingConfig` path.
+
+Risk:
+- Inline CLI profiles are a bridge, not the final operator experience. Profile file loading and validation remain required before field workflows.

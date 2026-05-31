@@ -24,6 +24,14 @@ The core derives:
 - radians per capture pixel on X/Y axes;
 - radians per target pixel on X/Y axes.
 
+`--match-route` can use a camera profile inline for replay matching:
+
+```bash
+visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <profile_id> <capture_width> <capture_height> <horizontal_fov_rad> <vertical_fov_rad>
+```
+
+In that form, the matcher uses `horizontal_fov_rad / target_width` for horizontal direction-error scaling. The older `radians_per_pixel` CLI remains available for compatibility and focused tests.
+
 ## Example Visible Camera Profile
 
 ```text

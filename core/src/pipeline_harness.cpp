@@ -120,12 +120,18 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         throw std::invalid_argument("Route matching target dimensions must be positive");
     }
 
+    double radians_per_pixel = config.radians_per_pixel;
+    if (config.camera_profile) {
+        const auto scale = derive_camera_angular_scale(*config.camera_profile);
+        radians_per_pixel = scale.radians_per_target_pixel_x;
+    }
+
     auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcher matcher(std::move(route), {
         .window_radius = config.window_radius,
         .minimum_confidence = config.minimum_confidence,
         .max_direction_shift_px = config.max_direction_shift_px,
-        .radians_per_pixel = config.radians_per_pixel,
+        .radians_per_pixel = radians_per_pixel,
     });
     BoundedNavigator navigator({
         .minimum_confidence = config.navigator_minimum_confidence,
@@ -158,7 +164,15 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
             << " route=" << config.route_path.string()
             << " target=" << config.target_width << "x" << config.target_height
             << " window_radius=" << config.window_radius
-            << " minimum_confidence=" << config.minimum_confidence << "\n";
+            << " minimum_confidence=" << config.minimum_confidence
+            << " radians_per_pixel=" << radians_per_pixel;
+    if (config.camera_profile) {
+        metrics << " camera_profile=" << config.camera_profile->id
+                << " profile_target=" << config.camera_profile->target_width << "x" << config.camera_profile->target_height
+                << " horizontal_fov_rad=" << config.camera_profile->horizontal_fov_rad
+                << " vertical_fov_rad=" << config.camera_profile->vertical_fov_rad;
+    }
+    metrics << "\n";
 
     while (const auto frame = replay.poll()) {
         const auto processing_started = now();

@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 8 || argc == 10) && std::string(argv[1]) == "--match-route") {
+    if ((argc == 8 || argc == 10 || argc == 14) && std::string(argv[1]) == "--match-route") {
         try {
             vh::RouteMatchingConfig config;
             config.route_path = argv[2];
@@ -80,6 +80,18 @@ int main(int argc, char** argv) {
             if (argc == 10) {
                 config.max_direction_shift_px = std::stoi(argv[8]);
                 config.radians_per_pixel = std::stod(argv[9]);
+            }
+            if (argc == 14) {
+                config.max_direction_shift_px = std::stoi(argv[8]);
+                vh::CameraProfile profile;
+                profile.id = argv[9];
+                profile.capture_width = std::stoi(argv[10]);
+                profile.capture_height = std::stoi(argv[11]);
+                profile.target_width = config.target_width;
+                profile.target_height = config.target_height;
+                profile.horizontal_fov_rad = std::stod(argv[12]);
+                profile.vertical_fov_rad = std::stod(argv[13]);
+                config.camera_profile = profile;
             }
             const auto result = vh::match_replay_route(config, std::cout);
             return result.frames_processed > 0 ? 0 : 1;
@@ -236,6 +248,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
+    std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <profile_id> <capture_width> <capture_height> <horizontal_fov_rad> <vertical_fov_rad>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
