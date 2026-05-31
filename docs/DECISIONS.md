@@ -341,3 +341,22 @@ Impact:
 
 Risk:
 - Future callers must explicitly enable live capture when they are truly operating in a hardware validation or live capture mode.
+
+## 2026-05-31 - Record Live Routes Through Explicit Hardware Mode
+
+Decision:
+- Add `record_live_camera_route` and CLI `--record-live-route` as an explicit Pi camera hardware validation path.
+- Reuse `PiCameraSource`, `Gray8ResizePreprocessor`, `HealthMonitor`, `RouteSignatureRecorder`, and `VHRS` v1 instead of inventing a separate live route file path.
+- Keep live route recording outside CTest by default and opt in from `scripts/test-core-pi.sh` with `VISUAL_HOMING_RECORD_LIVE_ROUTE=1`.
+
+Why:
+- After live camera preprocessing passed on `jtzero`, the next useful hardware artifact is an actual `VHRS` route file recorded from the camera.
+- Recording routes through the same recorder used by replay keeps offline matching and route inspection deterministic.
+- Disk writes are acceptable in this explicit recording tool, but must stay out of future realtime command loops.
+
+Impact:
+- Pi operators can build, run CTest, and optionally capture a live route signature with one script.
+- Desktop/default builds still fail closed because runtime live capture remains disabled unless an explicit hardware CLI enables it.
+
+Risk:
+- A recorded live route proves capture and serialization, not visual homing quality. The next step must validate the route with offline reader/matcher checks before any flight-test ladder work.

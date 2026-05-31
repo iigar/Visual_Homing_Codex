@@ -7,6 +7,7 @@
 
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/route_signature_recorder.hpp"
 #include "visual_homing/time.hpp"
 
 namespace vh {
@@ -86,6 +87,107 @@ CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostr
     metrics << "camera_smoke_done started=true"
             << " frames_captured=" << result.frames_captured
             << " empty_polls=" << result.empty_polls
+            << " last_age_ms=" << result.last_frame_age_ms
+            << " last_latency_ms=" << result.last_processing_latency_ms
+            << " elapsed_ms=" << result.elapsed_ms
+            << " effective_fps=" << result.effective_fps << "\n";
+    return result;
+}
+
+LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics) {
+    if (config.frames_to_capture == 0) {
+        throw std::invalid_argument("Live route recording frames_to_capture must be positive");
+    }
+    if (config.target_width <= 0 || config.target_height <= 0) {
+        throw std::invalid_argument("Live route recording target dimensions must be positive");
+    }
+    if (config.route_output_path.empty()) {
+        throw std::invalid_argument("Live route recording output path must not be empty");
+    }
+
+    PiCameraSource source(config.camera);
+    Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
+    RouteSignatureRecorder recorder;
+    HealthMonitor health(now());
+    health.set_links(true, false, true);
+    LiveRouteRecordingResult result;
+
+    metrics << "live_route_record_start width=" << config.camera.width
+            << " height=" << config.camera.height
+            << " fps=" << config.camera.frame_rate_hz
+            << " target=" << config.target_width << "x" << config.target_height
+            << " requested_frames=" << config.frames_to_capture
+            << " output=" << config.route_output_path.string() << "\n";
+
+    result.started = source.start();
+    metrics << "live_route_backend_start_result started=" << (result.started ? "true" : "false")
+            << " running=" << (source.running() ? "true" : "false");
+    if (!source.last_error().empty()) {
+        metrics << " error=" << source.last_error();
+    }
+    metrics << "\n";
+
+    if (!result.started) {
+        metrics << "live_route_unavailable error=" << source.last_error() << "\n";
+        metrics << "live_route_record_done started=false frames_captured=0 entries=0 empty_polls=0 route_written=false\n";
+        return result;
+    }
+
+    const auto started_at = now();
+    const auto timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
+        / static_cast<double>(config.camera.frame_rate_hz));
+    while (result.frames_captured < config.frames_to_capture) {
+        if (auto frame = source.poll()) {
+            const auto processing_started = now();
+            const auto processed = preprocessor.process(*frame);
+            const auto processing_finished = now();
+            const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
+
+            NavigationEstimate nav;
+            nav.timestamp = processed.timestamp;
+            nav.altitude_m = config.altitude_m;
+            nav.course_error_rad = config.heading_hint_rad;
+            nav.confidence = 1.0;
+            recorder.observe(processed, nav);
+
+            ++result.frames_captured;
+            result.route_entries = static_cast<std::uint64_t>(recorder.route().entries.size());
+            result.last_frame_age_ms = timing.frame_age_ms;
+            result.last_processing_latency_ms = timing.processing_latency_ms;
+
+            metrics << "live_route_frame id=" << processed.id
+                    << " size=" << processed.width << "x" << processed.height
+                    << " bytes=" << processed.data.size()
+                    << " age_ms=" << timing.frame_age_ms
+                    << " latency_ms=" << timing.processing_latency_ms
+                    << " entries=" << result.route_entries << "\n";
+        } else {
+            ++result.empty_polls;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+
+        if (milliseconds_between(started_at, now()) > timeout_ms) {
+            break;
+        }
+    }
+
+    source.stop();
+    result.elapsed_ms = milliseconds_between(started_at, now());
+    result.effective_fps = result.elapsed_ms > 0.0
+        ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
+        : 0.0;
+
+    if (!recorder.route().entries.empty()) {
+        recorder.write_to(config.route_output_path);
+        result.route_written = true;
+        result.route_entries = static_cast<std::uint64_t>(recorder.route().entries.size());
+    }
+
+    metrics << "live_route_record_done started=true"
+            << " frames_captured=" << result.frames_captured
+            << " entries=" << result.route_entries
+            << " empty_polls=" << result.empty_polls
+            << " route_written=" << (result.route_written ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms

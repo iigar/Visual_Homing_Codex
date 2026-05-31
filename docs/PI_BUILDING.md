@@ -82,12 +82,37 @@ The underlying CLI is:
 
 The smoke command captures live camera frames, preprocesses them to the target Gray8 size, and reports frame age, processing latency, empty polls, elapsed time, and effective FPS.
 
+## Live Route Recording
+
+After camera smoke passes, a live route signature can be recorded from the same Pi camera path:
+
+```bash
+VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
+Optional live route settings:
+
+```bash
+VISUAL_HOMING_ROUTE_OUTPUT=/tmp/visual_homing_live_route.vhrs
+VISUAL_HOMING_CAMERA_FRAMES=120
+VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
+VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]
+```
+
+This path is still a hardware validation/recording mode, not a flight loop. It intentionally writes to disk after collecting live frames and should not be used inside future realtime command loops.
+
 ## Hardware Backend Policy
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.
 - Desktop and CI-style builds should leave it `OFF`.
 - Pi builds may set it `ON`; when enabled, CMake requires the `libcamera` pkg-config module.
-- Until the libcamera backend is implemented, `PiCameraSource` remains fail-closed and reports that capture is unavailable.
+- Live capture remains runtime opt-in through explicit camera smoke or live route recording commands.
 - Live loops must not do disk I/O.
 - Every live frame must carry a monotonic timestamp from the core clock at capture receipt.
 - Live ArduPilot command output remains blocked; camera validation is separate from flight command validation.

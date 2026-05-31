@@ -83,3 +83,9 @@
 - Extended camera smoke into a live camera pipeline smoke: `PiCameraSource -> Gray8ResizePreprocessor -> HealthMonitor -> metrics`, reporting processed size, frame age, processing latency, empty polls, elapsed time, and effective FPS.
 - Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
 - Validated live camera pipeline smoke on `jtzero` using `VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13, 30 live IMX219 frames were captured at 320x240, preprocessed to 32x24 / 768 bytes, last latency was ~0.87 ms, frame age stayed around 0.6-2.0 ms, and effective FPS was ~15.9.
+
+## 2026-05-31
+
+- Added live camera route recording through `record_live_camera_route` and CLI `--record-live-route`, using `PiCameraSource -> Gray8ResizePreprocessor -> HealthMonitor -> RouteSignatureRecorder -> VHRS`.
+- Added `VISUAL_HOMING_RECORD_LIVE_ROUTE=1` support to `scripts/test-core-pi.sh` so Pi validation can build, run CTest, and optionally write a live route file.
+- Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.

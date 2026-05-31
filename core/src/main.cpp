@@ -107,12 +107,36 @@ int main(int argc, char** argv) {
         }
     }
 
+    if ((argc == 10 || argc == 11) && std::string(argv[1]) == "--record-live-route") {
+        try {
+            vh::LiveRouteRecordingConfig config;
+            config.camera.width = std::stoi(argv[2]);
+            config.camera.height = std::stoi(argv[3]);
+            config.camera.frame_rate_hz = std::stoi(argv[4]);
+            config.camera.enable_live_capture = true;
+            config.frames_to_capture = static_cast<std::size_t>(std::stoull(argv[5]));
+            config.route_output_path = argv[6];
+            config.target_width = std::stoi(argv[7]);
+            config.target_height = std::stoi(argv[8]);
+            config.altitude_m = std::stod(argv[9]);
+            if (argc == 11) {
+                config.heading_hint_rad = std::stod(argv[10]);
+            }
+            const auto result = vh::record_live_camera_route(config, std::cout);
+            return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "record_live_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
+    std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }
