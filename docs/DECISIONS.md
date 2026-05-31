@@ -680,3 +680,21 @@ Impact:
 
 Risk:
 - Logs can accumulate over time. They live under ignored `artifacts/` by default and can be deleted locally when no longer needed.
+
+## 2026-06-01 - Drop Live Route Warmup Frames Before Recording
+
+Decision:
+- Add `warmup_frames` to live route recording configuration and optional CLI arguments.
+- Default `scripts/test-core-pi.sh` to `VISUAL_HOMING_ROUTE_WARMUP_FRAMES=3` for live route recording.
+- Log each dropped warmup frame and report `warmup_frames_dropped` in the recording summary.
+
+Why:
+- Pi validation showed that the first route frames can be low-texture/exact-duplicate startup samples even when the useful route body is distinctive.
+- Dropping a few initial camera frames keeps new `VHRS` artifacts cleaner without relying on diagnostic edge trim afterward.
+
+Impact:
+- New Pi-recorded routes should no longer include the known startup frames by default.
+- Operators can set `VISUAL_HOMING_ROUTE_WARMUP_FRAMES=0` to reproduce raw startup behavior for diagnostics.
+
+Risk:
+- A fixed default may not be optimal for every camera or exposure condition. It is logged, configurable, and should be revisited after more field captures.

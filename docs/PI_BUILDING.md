@@ -184,9 +184,12 @@ Optional live route settings:
 ```bash
 VISUAL_HOMING_ROUTE_OUTPUT=artifacts/visual_homing_live_route.vhrs
 VISUAL_HOMING_CAMERA_FRAMES=120
+VISUAL_HOMING_ROUTE_WARMUP_FRAMES=3
 VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
 VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
 ```
+
+`VISUAL_HOMING_ROUTE_WARMUP_FRAMES` defaults to `3` in the Pi script. Warmup frames are captured and logged as `live_route_warmup_frame`, but they are not preprocessed into the route and are not written to the `VHRS` artifact. Set it to `0` to preserve raw startup behavior for diagnostics.
 
 To record using a profile file for capture and target dimensions:
 
@@ -203,9 +206,9 @@ VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./sc
 The underlying CLI is:
 
 ```bash
-./core/build-pi/visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]
-./core/build-pi/visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
-./core/build-pi/visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
+./core/build-pi/visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad [warmup_frames]]
+./core/build-pi/visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]
+./core/build-pi/visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]
 ```
 
 When live route recording succeeds through `scripts/test-core-pi.sh`, the script automatically inspects the written file with `--inspect-route`.

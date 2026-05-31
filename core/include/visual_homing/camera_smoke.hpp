@@ -32,6 +32,7 @@ struct LiveRouteRecordingConfig {
     int target_width = 32;
     int target_height = 24;
     std::size_t frames_to_capture = 120;
+    std::size_t warmup_frames = 0;
     double altitude_m = 0.0;
     double heading_hint_rad = 0.0;
 };
@@ -39,6 +40,7 @@ struct LiveRouteRecordingConfig {
 struct LiveRouteRecordingResult {
     bool started = false;
     bool route_written = false;
+    std::uint64_t warmup_frames_dropped = 0;
     std::uint64_t frames_captured = 0;
     std::uint64_t route_entries = 0;
     std::uint64_t empty_polls = 0;

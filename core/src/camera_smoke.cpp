@@ -117,6 +117,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " fps=" << config.camera.frame_rate_hz
             << " target=" << config.target_width << "x" << config.target_height
             << " requested_frames=" << config.frames_to_capture
+            << " warmup_frames=" << config.warmup_frames
             << " output=" << config.route_output_path.string() << "\n";
 
     result.started = source.start();
@@ -129,13 +130,32 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
 
     if (!result.started) {
         metrics << "live_route_unavailable error=" << source.last_error() << "\n";
-        metrics << "live_route_record_done started=false frames_captured=0 entries=0 empty_polls=0 route_written=false\n";
+        metrics << "live_route_record_done started=false warmup_frames_dropped=0 frames_captured=0 entries=0 empty_polls=0 route_written=false\n";
         return result;
     }
 
     const auto started_at = now();
-    const auto timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
+    const auto requested_source_frames = config.frames_to_capture + config.warmup_frames;
+    const auto timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
+    while (result.warmup_frames_dropped < config.warmup_frames) {
+        if (auto frame = source.poll()) {
+            ++result.warmup_frames_dropped;
+            metrics << "live_route_warmup_frame id=" << frame->id
+                    << " size=" << frame->width << "x" << frame->height
+                    << " bytes=" << frame->data.size()
+                    << " dropped=" << result.warmup_frames_dropped
+                    << "/" << config.warmup_frames << "\n";
+        } else {
+            ++result.empty_polls;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+
+        if (milliseconds_between(started_at, now()) > timeout_ms) {
+            break;
+        }
+    }
+
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -184,6 +204,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
     }
 
     metrics << "live_route_record_done started=true"
+            << " warmup_frames_dropped=" << result.warmup_frames_dropped
             << " frames_captured=" << result.frames_captured
             << " entries=" << result.route_entries
             << " empty_polls=" << result.empty_polls

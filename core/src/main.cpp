@@ -35,7 +35,8 @@ vh::LiveRouteRecordingConfig live_route_config_from_profile(const vh::CameraProf
                                                             std::size_t frames,
                                                             const std::string& output_path,
                                                             double altitude_m,
-                                                            double heading_hint_rad) {
+                                                            double heading_hint_rad,
+                                                            std::size_t warmup_frames) {
     vh::LiveRouteRecordingConfig config;
     config.camera.width = profile.capture_width;
     config.camera.height = profile.capture_height;
@@ -45,6 +46,7 @@ vh::LiveRouteRecordingConfig live_route_config_from_profile(const vh::CameraProf
     config.route_output_path = output_path;
     config.target_width = profile.target_width;
     config.target_height = profile.target_height;
+    config.warmup_frames = warmup_frames;
     config.altitude_m = altitude_m;
     config.heading_hint_rad = heading_hint_rad;
     return config;
@@ -358,7 +360,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 10 || argc == 11) && std::string(argv[1]) == "--record-live-route") {
+    if ((argc == 10 || argc == 11 || argc == 12) && std::string(argv[1]) == "--record-live-route") {
         try {
             vh::LiveRouteRecordingConfig config;
             config.camera.width = std::stoi(argv[2]);
@@ -373,6 +375,10 @@ int main(int argc, char** argv) {
             if (argc == 11) {
                 config.heading_hint_rad = std::stod(argv[10]);
             }
+            if (argc == 12) {
+                config.heading_hint_rad = std::stod(argv[10]);
+                config.warmup_frames = static_cast<std::size_t>(std::stoull(argv[11]));
+            }
             const auto result = vh::record_live_camera_route(config, std::cout);
             return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
@@ -381,7 +387,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 7 || argc == 8) && std::string(argv[1]) == "--record-live-route-profile") {
+    if ((argc == 7 || argc == 8 || argc == 9) && std::string(argv[1]) == "--record-live-route-profile") {
         try {
             vh::CameraProfileRecord record{
                 .path = argv[2],
@@ -394,7 +400,8 @@ int main(int argc, char** argv) {
                 static_cast<std::size_t>(std::stoull(argv[4])),
                 argv[5],
                 std::stod(argv[6]),
-                argc == 8 ? std::stod(argv[7]) : 0.0);
+                argc >= 8 ? std::stod(argv[7]) : 0.0,
+                argc == 9 ? static_cast<std::size_t>(std::stoull(argv[8])) : 0);
             const auto result = vh::record_live_camera_route(config, std::cout);
             return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
@@ -403,7 +410,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 8 || argc == 9) && std::string(argv[1]) == "--record-live-route-active-profile") {
+    if ((argc == 8 || argc == 9 || argc == 10) && std::string(argv[1]) == "--record-live-route-active-profile") {
         try {
             const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
             log_profile_hardware_config("live_route_active_profile", record, std::cout);
@@ -413,7 +420,8 @@ int main(int argc, char** argv) {
                 static_cast<std::size_t>(std::stoull(argv[5])),
                 argv[6],
                 std::stod(argv[7]),
-                argc == 9 ? std::stod(argv[8]) : 0.0);
+                argc >= 9 ? std::stod(argv[8]) : 0.0,
+                argc == 10 ? static_cast<std::size_t>(std::stoull(argv[9])) : 0);
             const auto result = vh::record_live_camera_route(config, std::cout);
             return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
@@ -548,9 +556,9 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>\n";
-    std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
-    std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]\n";
-    std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]\n";
+    std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
+    std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
+    std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";

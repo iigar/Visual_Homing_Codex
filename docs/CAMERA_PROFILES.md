@@ -102,8 +102,8 @@ Hardware validation commands can also consume profile files so capture and prepr
 ```bash
 visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>
 visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>
-visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
-visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
+visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]
+visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]
 ```
 
 These commands still only enable explicit hardware validation/recording modes. A selected profile is calibration input, not live flight permission.

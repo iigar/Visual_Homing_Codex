@@ -9,6 +9,7 @@ build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 artifact_dir="${repo_root}/artifacts"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
+route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -30,7 +31,7 @@ finish_log() {
 }
 trap finish_log EXIT
 
-echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output}"
+echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
 
 clean=0
 for arg in "$@"; do
@@ -127,7 +128,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_CAMERA_FRAMES:-120}" \
             "${route_output}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
-            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}"
+            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
+            "${route_warmup_frames}"
     elif [[ "${VISUAL_HOMING_USE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-profile \
             "${camera_profile}" \
@@ -135,7 +137,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_CAMERA_FRAMES:-120}" \
             "${route_output}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
-            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}"
+            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
+            "${route_warmup_frames}"
     else
         "${build_dir}/visual_homing_core" --record-live-route \
             "${VISUAL_HOMING_CAMERA_WIDTH:-320}" \
@@ -146,7 +149,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-32}" \
             "${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-24}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
-            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}"
+            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
+            "${route_warmup_frames}"
     fi
 
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
