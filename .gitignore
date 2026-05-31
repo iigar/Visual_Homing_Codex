@@ -3,6 +3,7 @@ build/
 core/build/
 core/build-pi/
 cmake-build-*/
+artifacts/
 
 # CMake generated files
 CMakeCache.txt

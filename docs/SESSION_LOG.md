@@ -94,3 +94,4 @@
 - Updated `scripts/test-core-pi.sh` so live route recording automatically inspects the written route and `VISUAL_HOMING_INSPECT_ROUTE=1` can inspect an existing route artifact.
 - Tightened `scripts/test-core.ps1` so configure, build, and CTest non-zero exit codes fail the helper instead of allowing stale test binaries to mask a failed build.
 - Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
+- After `jtzero` inspection showed `/tmp/visual_homing_live_route.vhrs` was no longer present, changed the default Pi route artifact path to ignored persistent `artifacts/visual_homing_live_route.vhrs` and made the Pi script create the parent directory before recording or inspection.

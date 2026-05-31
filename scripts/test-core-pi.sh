@@ -6,7 +6,8 @@ core_dir="${repo_root}/core"
 build_dir="${core_dir}/build-pi"
 build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
-route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-/tmp/visual_homing_live_route.vhrs}"
+artifact_dir="${repo_root}/artifacts"
+route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
 
 clean=0
 for arg in "$@"; do
@@ -45,6 +46,10 @@ cmake -S "${core_dir}" -B "${build_dir}" \
 
 cmake --build "${build_dir}" --parallel "${build_jobs}"
 ctest --test-dir "${build_dir}" --output-on-failure
+
+if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" ]]; then
+    mkdir -p "$(dirname "${route_output}")"
+fi
 
 if [[ "${VISUAL_HOMING_RUN_CAMERA_SMOKE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --pi-camera-smoke \

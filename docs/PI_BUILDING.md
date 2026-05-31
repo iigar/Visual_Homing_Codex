@@ -93,7 +93,7 @@ VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh
 Optional live route settings:
 
 ```bash
-VISUAL_HOMING_ROUTE_OUTPUT=/tmp/visual_homing_live_route.vhrs
+VISUAL_HOMING_ROUTE_OUTPUT=artifacts/visual_homing_live_route.vhrs
 VISUAL_HOMING_CAMERA_FRAMES=120
 VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
 VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
@@ -114,7 +114,7 @@ This path is still a hardware validation/recording mode, not a flight loop. It i
 Inspect an existing route file without touching camera hardware:
 
 ```bash
-VISUAL_HOMING_INSPECT_ROUTE=1 VISUAL_HOMING_ROUTE_OUTPUT=/tmp/visual_homing_live_route.vhrs ./scripts/test-core-pi.sh
+VISUAL_HOMING_INSPECT_ROUTE=1 ./scripts/test-core-pi.sh
 ```
 
 The underlying CLI is:
@@ -124,6 +124,8 @@ The underlying CLI is:
 ```
 
 The inspector reports version, entry count, frame id range, timestamp range, signature dimensions, payload byte totals, monotonic timestamp status, dimension/payload uniformity, and whether all entries are Gray8.
+
+The default route artifact path is `artifacts/visual_homing_live_route.vhrs`. The `artifacts/` directory is intentionally ignored by git.
 
 ## Hardware Backend Policy
 

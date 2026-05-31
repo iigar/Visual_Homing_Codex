@@ -379,3 +379,20 @@ Impact:
 
 Risk:
 - Inspection only validates file structure and basic invariants; it does not prove route match quality.
+
+## 2026-05-31 - Keep Hardware Artifacts Persistent But Untracked
+
+Decision:
+- Default Pi live route artifacts to `artifacts/visual_homing_live_route.vhrs` instead of `/tmp/visual_homing_live_route.vhrs`.
+- Ignore `artifacts/` in git.
+- Let the Pi script create the parent directory before recording or inspecting.
+
+Why:
+- `/tmp` can lose the route file between sessions, reboots, or cleanup, which makes later offline inspection fail even when recording previously succeeded.
+- Route artifacts should persist locally for repeated inspection and matching, but they should not be committed.
+
+Impact:
+- Operators can run `VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh` once and then rerun `VISUAL_HOMING_INSPECT_ROUTE=1 ./scripts/test-core-pi.sh` against the default artifact path.
+
+Risk:
+- Local artifacts can accumulate over time. They remain outside git and can be manually deleted when no longer needed.
