@@ -415,3 +415,22 @@ Impact:
 
 Risk:
 - Self-match is an optimistic lower-bound check; it does not prove robustness to lighting, motion blur, viewpoint changes, or route reversal.
+
+## 2026-05-31 - Add Deterministic Route Perturbation Checks
+
+Decision:
+- Extend route artifact checks with `perturbation_check_route_signature`, `perturbation_check_route_signature_file`, and CLI `--perturb-route <route.vhrs> [minimum_confidence]`.
+- Check brightness offset, small deterministic byte noise, one-pixel horizontal shift, and malformed-payload rejection.
+- Run perturbation checks automatically after live route recording and expose `VISUAL_HOMING_PERTURB_ROUTE=1` for existing artifacts.
+
+Why:
+- Self-match proves format/matcher compatibility but does not exercise tolerance to small visual changes.
+- Deterministic perturbations give a cheap offline baseline for brightness/noise/shift behavior before using real flight logs.
+- Malformed payload rejection keeps the fail-closed boundary visible in artifact validation.
+
+Impact:
+- Desktop validation covers perturbation checks in CTest and direct CLI.
+- Pi artifacts can now be checked for basic robustness without opening camera hardware.
+
+Risk:
+- Synthetic perturbations are not a substitute for real viewpoint, motion blur, exposure, or terrain variation testing.

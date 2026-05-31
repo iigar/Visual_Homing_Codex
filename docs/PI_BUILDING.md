@@ -143,6 +143,22 @@ The underlying CLI is:
 
 Live route recording through `scripts/test-core-pi.sh` also runs self-match automatically after recording and inspection. The self-match check feeds each `VHRS` entry back through `Gray8RouteMatcher` and reports checked entries, valid matches, exact index matches, minimum/average confidence, last progress, monotonic progress, and pass/fail status.
 
+## Route Perturbation Check
+
+Run deterministic perturbation checks on an existing route artifact without touching camera hardware:
+
+```bash
+VISUAL_HOMING_PERTURB_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]
+```
+
+Live route recording through `scripts/test-core-pi.sh` also runs perturbation checks automatically after recording, inspection, and self-match. The perturbation check applies a brightness offset, small deterministic byte noise, and a one-pixel horizontal shift to route entries, then reports valid-match counts and minimum confidence for each case. It also verifies that a malformed payload is rejected. The default minimum perturbation confidence is `0.90` and can be overridden with `VISUAL_HOMING_PERTURB_MIN_CONFIDENCE`.
+
 ## Hardware Backend Policy
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.

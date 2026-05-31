@@ -59,3 +59,13 @@ visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]
 ```
 
 The self-match check feeds each route entry payload back through the baseline `Gray8RouteMatcher` using a small sequential window. It reports checked entries, valid matches, exact index matches, minimum and average confidence, last progress, monotonic progress status, and pass/fail status.
+
+## Perturbation Check
+
+Route files can be checked against deterministic perturbations:
+
+```bash
+visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]
+```
+
+The perturbation check applies brightness offset, small deterministic byte noise, and horizontal shift cases to route entries, then reports valid-match counts and minimum confidence for each case. It also verifies malformed-payload rejection through the matcher boundary.

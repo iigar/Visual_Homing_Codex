@@ -180,6 +180,31 @@ int main(int argc, char** argv) {
         }
     }
 
+    if ((argc == 3 || argc == 4) && std::string(argv[1]) == "--perturb-route") {
+        try {
+            vh::RoutePerturbationCheckConfig config;
+            if (argc == 4) {
+                config.minimum_confidence = std::stod(argv[3]);
+            }
+            const auto summary = vh::perturbation_check_route_signature_file(argv[2], config);
+            std::cout << "route_perturb_check path=" << argv[2]
+                      << " entries_checked=" << summary.entries_checked
+                      << " brightness_valid_matches=" << summary.brightness_valid_matches
+                      << " noise_valid_matches=" << summary.noise_valid_matches
+                      << " shift_valid_matches=" << summary.shift_valid_matches
+                      << " shift_direction_matches=" << summary.shift_direction_matches
+                      << " minimum_brightness_confidence=" << summary.minimum_brightness_confidence
+                      << " minimum_noise_confidence=" << summary.minimum_noise_confidence
+                      << " minimum_shift_confidence=" << summary.minimum_shift_confidence
+                      << " malformed_rejected=" << (summary.malformed_rejected ? "true" : "false")
+                      << " passed=" << (summary.passed ? "true" : "false") << "\n";
+            return summary.passed ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "perturb_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
@@ -189,6 +214,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
+    std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

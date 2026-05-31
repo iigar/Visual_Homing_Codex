@@ -42,6 +42,45 @@ int main() {
     assert(file_summary.passed);
     assert(file_summary.entries_checked == 3);
 
+    vh::RouteSignatureFile textured_route;
+    vh::RouteSignatureEntry textured;
+    textured.frame_id = 10;
+    textured.timestamp_ns = 2000;
+    textured.width = 4;
+    textured.height = 2;
+    textured.format = vh::PixelFormat::Gray8;
+    textured.payload = {
+        10, 40, 90, 160,
+        10, 40, 90, 160,
+    };
+    textured_route.entries.push_back(textured);
+
+    const auto perturbation = vh::perturbation_check_route_signature(textured_route, {
+        .minimum_confidence = 0.85,
+        .brightness_delta = 8,
+        .noise_delta = 3,
+        .shift_px = 1,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+    assert(perturbation.entries_checked == 1);
+    assert(perturbation.brightness_valid_matches == 1);
+    assert(perturbation.noise_valid_matches == 1);
+    assert(perturbation.shift_valid_matches == 1);
+    assert(perturbation.shift_direction_matches == 1);
+    assert(perturbation.minimum_brightness_confidence > 0.96);
+    assert(perturbation.minimum_noise_confidence > 0.98);
+    assert(perturbation.minimum_shift_confidence > 0.85);
+    assert(perturbation.malformed_rejected);
+    assert(perturbation.passed);
+
+    const auto perturbation_path = std::filesystem::temp_directory_path() / "visual_homing_route_artifact_perturbation_test.vhrs";
+    vh::write_route_signature_file(perturbation_path, textured_route);
+    const auto file_perturbation = vh::perturbation_check_route_signature_file(
+        perturbation_path,
+        {.minimum_confidence = 0.85});
+    assert(file_perturbation.passed);
+
     bool rejected_empty = false;
     try {
         vh::RouteSignatureFile empty;
@@ -50,6 +89,15 @@ int main() {
         rejected_empty = true;
     }
     assert(rejected_empty);
+
+    bool rejected_empty_perturbation = false;
+    try {
+        vh::RouteSignatureFile empty;
+        (void)vh::perturbation_check_route_signature(empty);
+    } catch (const std::invalid_argument&) {
+        rejected_empty_perturbation = true;
+    }
+    assert(rejected_empty_perturbation);
 
     return 0;
 }
