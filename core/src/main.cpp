@@ -11,6 +11,52 @@
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/time.hpp"
 
+namespace {
+
+vh::CameraSmokeConfig camera_smoke_config_from_profile(const vh::CameraProfile& profile, int fps, std::size_t frames) {
+    vh::CameraSmokeConfig config;
+    config.camera.width = profile.capture_width;
+    config.camera.height = profile.capture_height;
+    config.camera.frame_rate_hz = fps;
+    config.camera.enable_live_capture = true;
+    config.target_width = profile.target_width;
+    config.target_height = profile.target_height;
+    config.frames_to_capture = frames;
+    return config;
+}
+
+vh::LiveRouteRecordingConfig live_route_config_from_profile(const vh::CameraProfile& profile,
+                                                            int fps,
+                                                            std::size_t frames,
+                                                            const std::string& output_path,
+                                                            double altitude_m,
+                                                            double heading_hint_rad) {
+    vh::LiveRouteRecordingConfig config;
+    config.camera.width = profile.capture_width;
+    config.camera.height = profile.capture_height;
+    config.camera.frame_rate_hz = fps;
+    config.camera.enable_live_capture = true;
+    config.frames_to_capture = frames;
+    config.route_output_path = output_path;
+    config.target_width = profile.target_width;
+    config.target_height = profile.target_height;
+    config.altitude_m = altitude_m;
+    config.heading_hint_rad = heading_hint_rad;
+    return config;
+}
+
+void log_profile_hardware_config(const char* prefix, const vh::CameraProfileRecord& record, std::ostream& output) {
+    output << prefix
+           << " profile_path=" << record.path
+           << " profile_id=" << record.profile.id
+           << " capture=" << record.profile.capture_width << "x" << record.profile.capture_height
+           << " target=" << record.profile.target_width << "x" << record.profile.target_height
+           << " horizontal_fov_rad=" << record.profile.horizontal_fov_rad
+           << " vertical_fov_rad=" << record.profile.vertical_fov_rad << "\n";
+}
+
+} // namespace
+
 int main(int argc, char** argv) {
     const auto started = vh::now();
     std::cout << "Visual Homing Core boot\n";
@@ -235,6 +281,41 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 5 && std::string(argv[1]) == "--pi-camera-smoke-profile") {
+        try {
+            vh::CameraProfileRecord record{
+                .path = argv[2],
+                .profile = vh::load_camera_profile_file(argv[2]),
+            };
+            log_profile_hardware_config("camera_smoke_profile", record, std::cout);
+            const auto config = camera_smoke_config_from_profile(
+                record.profile,
+                std::stoi(argv[3]),
+                static_cast<std::size_t>(std::stoull(argv[4])));
+            const auto result = vh::run_pi_camera_smoke(config, std::cout);
+            return result.started && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "pi_camera_smoke_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 6 && std::string(argv[1]) == "--pi-camera-smoke-active-profile") {
+        try {
+            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            log_profile_hardware_config("camera_smoke_active_profile", record, std::cout);
+            const auto config = camera_smoke_config_from_profile(
+                record.profile,
+                std::stoi(argv[4]),
+                static_cast<std::size_t>(std::stoull(argv[5])));
+            const auto result = vh::run_pi_camera_smoke(config, std::cout);
+            return result.started && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "pi_camera_smoke_active_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if ((argc == 10 || argc == 11) && std::string(argv[1]) == "--record-live-route") {
         try {
             vh::LiveRouteRecordingConfig config;
@@ -254,6 +335,47 @@ int main(int argc, char** argv) {
             return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
             std::cerr << "record_live_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if ((argc == 7 || argc == 8) && std::string(argv[1]) == "--record-live-route-profile") {
+        try {
+            vh::CameraProfileRecord record{
+                .path = argv[2],
+                .profile = vh::load_camera_profile_file(argv[2]),
+            };
+            log_profile_hardware_config("live_route_profile", record, std::cout);
+            const auto config = live_route_config_from_profile(
+                record.profile,
+                std::stoi(argv[3]),
+                static_cast<std::size_t>(std::stoull(argv[4])),
+                argv[5],
+                std::stod(argv[6]),
+                argc == 8 ? std::stod(argv[7]) : 0.0);
+            const auto result = vh::record_live_camera_route(config, std::cout);
+            return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "record_live_route_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if ((argc == 8 || argc == 9) && std::string(argv[1]) == "--record-live-route-active-profile") {
+        try {
+            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            log_profile_hardware_config("live_route_active_profile", record, std::cout);
+            const auto config = live_route_config_from_profile(
+                record.profile,
+                std::stoi(argv[4]),
+                static_cast<std::size_t>(std::stoull(argv[5])),
+                argv[6],
+                std::stod(argv[7]),
+                argc == 9 ? std::stod(argv[8]) : 0.0);
+            const auto result = vh::record_live_camera_route(config, std::cout);
+            return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "record_live_route_active_profile_error=" << error.what() << "\n";
             return 1;
         }
     }
@@ -369,7 +491,11 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --get-active-camera-profile <profile_dir> <active_profile_state>\n";
     std::cout << "usage: visual_homing_core --set-active-camera-profile <profile_dir> <active_profile_state> <profile_id>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
+    std::cout << "usage: visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>\n";
+    std::cout << "usage: visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
+    std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]\n";
+    std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";

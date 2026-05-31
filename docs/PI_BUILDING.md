@@ -133,10 +133,24 @@ VISUAL_HOMING_CAMERA_TARGET_WIDTH=32
 VISUAL_HOMING_CAMERA_TARGET_HEIGHT=24
 ```
 
+To use a profile file for capture and target dimensions:
+
+```bash
+VISUAL_HOMING_USE_CAMERA_PROFILE=1 VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh
+```
+
+To use the active profile selected by `VISUAL_HOMING_SET_CAMERA_PROFILE_ID`:
+
+```bash
+VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh
+```
+
 The underlying CLI is:
 
 ```bash
 ./core/build-pi/visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]
+./core/build-pi/visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>
+./core/build-pi/visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>
 ```
 
 The smoke command captures live camera frames, preprocesses them to the target Gray8 size, and reports frame age, processing latency, empty polls, elapsed time, and effective FPS.
@@ -158,10 +172,24 @@ VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
 VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
 ```
 
+To record using a profile file for capture and target dimensions:
+
+```bash
+VISUAL_HOMING_USE_CAMERA_PROFILE=1 VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
+To record using the active profile:
+
+```bash
+VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh
+```
+
 The underlying CLI is:
 
 ```bash
 ./core/build-pi/visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]
+./core/build-pi/visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
+./core/build-pi/visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad]
 ```
 
 When live route recording succeeds through `scripts/test-core-pi.sh`, the script automatically inspects the written file with `--inspect-route`.

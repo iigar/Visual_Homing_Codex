@@ -608,3 +608,22 @@ Impact:
 
 Risk:
 - The active state file is still local filesystem state. API work must preserve the same validation path and avoid introducing a parallel configuration store.
+
+## 2026-05-31 - Use Camera Profiles For Hardware Validation Dimensions
+
+Decision:
+- Add profile-backed camera smoke and live route recording CLI forms.
+- Allow hardware validation to use either a specific profile file or the active profile state for capture and target dimensions.
+- Keep the older manual-dimension commands for compatibility and diagnostics.
+
+Why:
+- Once profiles exist, capture size and preprocessing target size should come from the same validated calibration source used by matching and future Android selection.
+- Active-profile hardware validation proves that operator selection can affect real Pi capture paths before adding a network API.
+- Preserving manual commands keeps low-level camera troubleshooting possible if a profile is wrong.
+
+Impact:
+- Pi operators can run smoke/record using `VISUAL_HOMING_USE_CAMERA_PROFILE=1` or `VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1`.
+- The future Android selector can target the active profile state and expect profile-backed hardware capture to use the same selection.
+
+Risk:
+- Profile-backed capture still does not imply flight permission. Live MAVLink command output remains blocked, and profile values, especially FOV, still require real calibration.
