@@ -568,3 +568,23 @@ Impact:
 
 Risk:
 - UI work before the Pi API exists could create a second configuration path. Keep Android profile selection blocked on Pi-owned profile file loading and API validation.
+
+## 2026-05-31 - Use Strict Key-Value Camera Profile Files
+
+Decision:
+- Add dependency-free camera profile loading from strict `key = value` text files.
+- Reject unknown keys, malformed lines, invalid enum values, missing required fields, and invalid numeric ranges.
+- Track an initial `config/camera_profiles/imx219-visible-wide.profile` template and expose `--inspect-camera-profile` plus `--match-route-profile`.
+
+Why:
+- Pi Zero 2W class hardware and the flight-critical core benefit from a small parser with no JSON/YAML dependency.
+- A strict format prevents misspelled profile fields from being silently ignored.
+- Profile files provide the stable Pi-owned configuration layer needed before adding Android profile selection APIs.
+
+Impact:
+- Operators can validate a camera profile without touching camera hardware.
+- Replay route matching can now use profile files directly instead of inline profile arguments.
+- Future Pi API endpoints can list and select these files without inventing another profile representation.
+
+Risk:
+- The first tracked IMX219 FOV values are placeholders until measured for the exact lens/crop mode. They are calibration templates, not final flight calibration.

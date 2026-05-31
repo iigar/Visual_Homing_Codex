@@ -38,5 +38,8 @@ struct CameraAngularScale {
 
 CameraAngularScale derive_camera_angular_scale(const CameraProfile& profile);
 void validate_camera_profile(const CameraProfile& profile);
+CameraProfile load_camera_profile_file(const std::string& path);
+std::string to_string(CameraSensorType sensor_type);
+std::string to_string(PixelFormat pixel_format);
 
 } // namespace vh

@@ -1,4 +1,6 @@
 #include <cassert>
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 #include "visual_homing/camera_profile.hpp"
@@ -23,6 +25,8 @@ int main() {
     profile.vertical_fov_rad = 0.9;
 
     vh::validate_camera_profile(profile);
+    assert(vh::to_string(profile.sensor_type) == "Visible");
+    assert(vh::to_string(profile.pixel_format) == "Gray8");
     const auto scale = vh::derive_camera_angular_scale(profile);
     assert(close_to(scale.radians_per_capture_pixel_x, 1.2 / 320.0));
     assert(close_to(scale.radians_per_capture_pixel_y, 0.9 / 240.0));
@@ -38,6 +42,57 @@ int main() {
     thermal.target_width = 32;
     thermal.target_height = 24;
     vh::validate_camera_profile(thermal);
+    assert(vh::to_string(thermal.sensor_type) == "Thermal");
+    assert(vh::to_string(thermal.pixel_format) == "Thermal16");
+
+    const auto profile_path = std::filesystem::temp_directory_path() / "visual_homing_camera_profile_test.profile";
+    {
+        std::ofstream output(profile_path);
+        output << "# Visual Homing camera profile\n";
+        output << "id = file-imx219\n";
+        output << "sensor_type = Visible\n";
+        output << "pixel_format = Gray8\n";
+        output << "capture_width = 320\n";
+        output << "capture_height = 240\n";
+        output << "target_width = 32\n";
+        output << "target_height = 24\n";
+        output << "horizontal_fov_rad = 1.1\n";
+        output << "vertical_fov_rad = 0.8\n";
+        output << "maximum_ambiguous_nearest_fraction = 0.2\n";
+    }
+
+    const auto loaded = vh::load_camera_profile_file(profile_path.string());
+    assert(loaded.id == "file-imx219");
+    assert(loaded.sensor_type == vh::CameraSensorType::Visible);
+    assert(loaded.pixel_format == vh::PixelFormat::Gray8);
+    assert(loaded.capture_width == 320);
+    assert(loaded.capture_height == 240);
+    assert(loaded.target_width == 32);
+    assert(loaded.target_height == 24);
+    assert(close_to(loaded.horizontal_fov_rad, 1.1));
+    assert(close_to(loaded.vertical_fov_rad, 0.8));
+    assert(close_to(loaded.maximum_ambiguous_nearest_fraction, 0.2));
+
+    const auto invalid_profile_path = std::filesystem::temp_directory_path() / "visual_homing_camera_profile_invalid.profile";
+    {
+        std::ofstream output(invalid_profile_path);
+        output << "id = bad-profile\n";
+        output << "capture_width = 320\n";
+        output << "capture_height = 240\n";
+        output << "target_width = 32\n";
+        output << "target_height = 24\n";
+        output << "horizontal_fov_rad = 1.1\n";
+        output << "vertical_fov_rad = 0.8\n";
+        output << "unexpected_key = nope\n";
+    }
+
+    bool rejected_unknown_key = false;
+    try {
+        (void)vh::load_camera_profile_file(invalid_profile_path.string());
+    } catch (const std::invalid_argument&) {
+        rejected_unknown_key = true;
+    }
+    assert(rejected_unknown_key);
 
     bool rejected_empty_id = false;
     try {

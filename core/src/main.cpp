@@ -3,6 +3,7 @@
 #include <exception>
 #include <string>
 
+#include "visual_homing/camera_profile.hpp"
 #include "visual_homing/camera_smoke.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
@@ -97,6 +98,56 @@ int main(int argc, char** argv) {
             return result.frames_processed > 0 ? 0 : 1;
         } catch (const std::exception& error) {
             std::cerr << "match_route_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 10 && std::string(argv[1]) == "--match-route-profile") {
+        try {
+            vh::RouteMatchingConfig config;
+            config.route_path = argv[2];
+            config.manifest_path = argv[3];
+            config.target_width = std::stoi(argv[4]);
+            config.target_height = std::stoi(argv[5]);
+            config.window_radius = static_cast<std::size_t>(std::stoull(argv[6]));
+            config.minimum_confidence = std::stod(argv[7]);
+            config.max_direction_shift_px = std::stoi(argv[8]);
+            auto profile = vh::load_camera_profile_file(argv[9]);
+            if (profile.target_width != config.target_width || profile.target_height != config.target_height) {
+                throw std::invalid_argument("Camera profile target dimensions must match --match-route-profile target dimensions");
+            }
+            config.camera_profile = profile;
+            const auto result = vh::match_replay_route(config, std::cout);
+            return result.frames_processed > 0 ? 0 : 1;
+        } catch (const std::exception& error) {
+            std::cerr << "match_route_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 3 && std::string(argv[1]) == "--inspect-camera-profile") {
+        try {
+            const auto profile = vh::load_camera_profile_file(argv[2]);
+            const auto scale = vh::derive_camera_angular_scale(profile);
+            std::cout << "camera_profile path=" << argv[2]
+                      << " id=" << profile.id
+                      << " sensor_type=" << vh::to_string(profile.sensor_type)
+                      << " pixel_format=" << vh::to_string(profile.pixel_format)
+                      << " capture=" << profile.capture_width << "x" << profile.capture_height
+                      << " target=" << profile.target_width << "x" << profile.target_height
+                      << " horizontal_fov_rad=" << profile.horizontal_fov_rad
+                      << " vertical_fov_rad=" << profile.vertical_fov_rad
+                      << " radians_per_capture_pixel_x=" << scale.radians_per_capture_pixel_x
+                      << " radians_per_capture_pixel_y=" << scale.radians_per_capture_pixel_y
+                      << " radians_per_target_pixel_x=" << scale.radians_per_target_pixel_x
+                      << " radians_per_target_pixel_y=" << scale.radians_per_target_pixel_y
+                      << " maximum_low_texture_fraction=" << profile.maximum_low_texture_fraction
+                      << " maximum_ambiguous_nearest_fraction=" << profile.maximum_ambiguous_nearest_fraction
+                      << " minimum_average_nearest_mean_abs_diff=" << profile.minimum_average_nearest_mean_abs_diff
+                      << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "inspect_camera_profile_error=" << error.what() << "\n";
             return 1;
         }
     }
@@ -249,6 +300,8 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-route <manifest.csv> <route.vhrs> <width> <height> <altitude_m> <heading_hint_rad>\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> [max_direction_shift_px radians_per_pixel]\n";
     std::cout << "usage: visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <profile_id> <capture_width> <capture_height> <horizontal_fov_rad> <vertical_fov_rad>\n";
+    std::cout << "usage: visual_homing_core --match-route-profile <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <camera.profile>\n";
+    std::cout << "usage: visual_homing_core --inspect-camera-profile <camera.profile>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke <width> <height> <fps> <frames> [target_width target_height]\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad]\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

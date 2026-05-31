@@ -55,6 +55,34 @@ git pull
 ./scripts/test-core-pi.sh --clean
 ```
 
+## Camera Profile Inspection
+
+Validate the default tracked camera profile without touching camera hardware:
+
+```bash
+VISUAL_HOMING_INSPECT_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
+```
+
+The default profile path is:
+
+```bash
+config/camera_profiles/imx219-visible-wide.profile
+```
+
+Override it with:
+
+```bash
+VISUAL_HOMING_CAMERA_PROFILE=/path/to/camera.profile
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --inspect-camera-profile <camera.profile>
+```
+
+Profile inspection reports profile id, sensor type, pixel format, capture/target dimensions, FOV values, derived radians-per-pixel values, and route-quality thresholds. The IMX219 profile currently contains placeholder FOV values until measured for the exact lens and crop mode.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

@@ -71,6 +71,7 @@ Expected CTest coverage:
 - `pipeline_harness`
 - `route_signature`
 - `route_signature_recorder`
+- `route_artifact_check`
 - `gray8_route_matcher`
 
 Latest validation command:

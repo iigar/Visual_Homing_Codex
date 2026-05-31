@@ -24,6 +24,48 @@ The core derives:
 - radians per capture pixel on X/Y axes;
 - radians per target pixel on X/Y axes.
 
+## File Format
+
+Camera profile files use a strict dependency-free `key = value` text format. Blank lines and `#` comments are ignored. Unknown keys, malformed lines, invalid enum values, missing required fields, and invalid numeric ranges are rejected.
+
+Required keys:
+
+```text
+id = imx219-visible-wide
+capture_width = 320
+capture_height = 240
+target_width = 32
+target_height = 24
+horizontal_fov_rad = 1.08
+vertical_fov_rad = 0.83
+```
+
+Optional keys:
+
+```text
+sensor_type = Visible
+pixel_format = Gray8
+low_texture_range_threshold = 4.0
+ambiguous_mean_abs_diff_threshold = 2.0
+maximum_low_texture_fraction = 0.05
+maximum_ambiguous_nearest_fraction = 0.10
+minimum_average_nearest_mean_abs_diff = 5.0
+```
+
+Supported `sensor_type` values are `Visible`, `Thermal`, and `Other`. Supported `pixel_format` values are `Gray8`, `Bgr8`, and `Thermal16`.
+
+The first tracked profile template is:
+
+```text
+config/camera_profiles/imx219-visible-wide.profile
+```
+
+Inspect a profile without touching camera hardware:
+
+```bash
+visual_homing_core --inspect-camera-profile <camera.profile>
+```
+
 `--match-route` can use a camera profile inline for replay matching:
 
 ```bash
@@ -31,6 +73,14 @@ visual_homing_core --match-route <route.vhrs> <manifest.csv> <width> <height> <w
 ```
 
 In that form, the matcher uses `horizontal_fov_rad / target_width` for horizontal direction-error scaling. The older `radians_per_pixel` CLI remains available for compatibility and focused tests.
+
+Replay matching can also load a profile file directly:
+
+```bash
+visual_homing_core --match-route-profile <route.vhrs> <manifest.csv> <width> <height> <window_radius> <minimum_confidence> <max_direction_shift_px> <camera.profile>
+```
+
+The profile `target_width` and `target_height` must match the CLI target dimensions.
 
 ## Example Visible Camera Profile
 
