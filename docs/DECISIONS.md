@@ -434,3 +434,22 @@ Impact:
 
 Risk:
 - Synthetic perturbations are not a substitute for real viewpoint, motion blur, exposure, or terrain variation testing.
+
+## 2026-05-31 - Use Stateless Matching For Route Artifact Checks
+
+Decision:
+- Run route self-match and perturbation artifact checks with full-route stateless matching instead of the normal stateful route window.
+- Keep exact index matches and monotonic progress as diagnostics for route distinctiveness.
+- Gate artifact-check pass/fail on high-confidence valid matches for all checked entries plus malformed-payload rejection for perturbation checks.
+
+Why:
+- A low-texture live `jtzero` route exposed that a stateful artifact-check window can lock onto an earlier ambiguous entry and then exclude later exact entries.
+- Artifact checks validate whether the stored signatures remain matchable under controlled offline cases; they should not fail solely because repeated frames are ambiguous.
+- The normal stateful route window remains relevant for route-following behavior, but artifact validation needs to separate file/matcher health from route distinctiveness.
+
+Impact:
+- Repetitive live route artifacts can pass self-match and perturbation checks when every entry is still high-confidence matchable.
+- Exact index and progress monotonicity still show when a route lacks visual distinctiveness and can inform later field-test gating.
+
+Risk:
+- Passing stateless artifact checks does not prove that sequential route following will disambiguate repetitive terrain. Route distinctiveness needs a later dedicated metric before flight-test expansion.

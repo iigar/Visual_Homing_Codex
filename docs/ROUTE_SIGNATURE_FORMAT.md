@@ -58,7 +58,7 @@ Route files can also be self-matched offline:
 visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]
 ```
 
-The self-match check feeds each route entry payload back through the baseline `Gray8RouteMatcher` using a small sequential window. It reports checked entries, valid matches, exact index matches, minimum and average confidence, last progress, monotonic progress status, and pass/fail status.
+The self-match check feeds each route entry payload back through the baseline `Gray8RouteMatcher` using stateless full-route matching so repetitive low-texture route entries cannot pin the checker to an earlier ambiguous window. It reports checked entries, valid matches, exact index matches, minimum and average confidence, last progress, monotonic progress status, and pass/fail status. Exact index and progress monotonicity are route-distinctiveness diagnostics; the pass gate is high-confidence valid matching for all entries.
 
 ## Perturbation Check
 
