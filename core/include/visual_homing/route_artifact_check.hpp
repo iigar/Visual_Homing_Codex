@@ -46,6 +46,26 @@ struct RoutePerturbationCheckSummary {
     bool passed = false;
 };
 
+struct RouteDistinctivenessConfig {
+    double low_texture_range_threshold = 4.0;
+    double ambiguous_mean_abs_diff_threshold = 2.0;
+};
+
+struct RouteDistinctivenessSummary {
+    std::uint64_t entries_checked = 0;
+    std::uint64_t adjacent_pairs_checked = 0;
+    std::uint64_t low_texture_entries = 0;
+    std::uint64_t exact_duplicate_entries = 0;
+    std::uint64_t ambiguous_nearest_entries = 0;
+    double minimum_payload_range = 0.0;
+    double average_payload_range = 0.0;
+    double minimum_adjacent_mean_abs_diff = 0.0;
+    double average_adjacent_mean_abs_diff = 0.0;
+    double minimum_nearest_mean_abs_diff = 0.0;
+    double average_nearest_mean_abs_diff = 0.0;
+    bool warning = false;
+};
+
 RouteSelfMatchSummary self_match_route_signature(
     const RouteSignatureFile& route,
     const RouteSelfMatchConfig& config = {});
@@ -58,5 +78,11 @@ RoutePerturbationCheckSummary perturbation_check_route_signature(
 RoutePerturbationCheckSummary perturbation_check_route_signature_file(
     const std::filesystem::path& path,
     const RoutePerturbationCheckConfig& config = {});
+RouteDistinctivenessSummary analyze_route_distinctiveness(
+    const RouteSignatureFile& route,
+    const RouteDistinctivenessConfig& config = {});
+RouteDistinctivenessSummary analyze_route_distinctiveness_file(
+    const std::filesystem::path& path,
+    const RouteDistinctivenessConfig& config = {});
 
 } // namespace vh

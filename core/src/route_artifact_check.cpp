@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -63,6 +64,31 @@ Frame perturbed_frame(
     auto frame = frame_from_entry(entry);
     frame.data = std::move(data);
     return frame;
+}
+
+double mean_abs_diff_bytes(
+    const std::vector<std::uint8_t>& left,
+    const std::vector<std::uint8_t>& right) {
+    if (left.size() != right.size()) {
+        throw std::runtime_error("Route distinctiveness requires equal payload sizes");
+    }
+    if (left.empty()) {
+        throw std::runtime_error("Route distinctiveness requires non-empty payloads");
+    }
+
+    std::uint64_t sum = 0;
+    for (std::size_t index = 0; index < left.size(); ++index) {
+        sum += static_cast<std::uint64_t>(std::abs(static_cast<int>(left[index]) - static_cast<int>(right[index])));
+    }
+    return static_cast<double>(sum) / static_cast<double>(left.size());
+}
+
+double payload_range(const std::vector<std::uint8_t>& payload) {
+    if (payload.empty()) {
+        throw std::runtime_error("Route distinctiveness requires non-empty payloads");
+    }
+    const auto [min_it, max_it] = std::minmax_element(payload.begin(), payload.end());
+    return static_cast<double>(*max_it) - static_cast<double>(*min_it);
 }
 
 } // namespace
@@ -196,6 +222,77 @@ RoutePerturbationCheckSummary perturbation_check_route_signature_file(
     const std::filesystem::path& path,
     const RoutePerturbationCheckConfig& config) {
     return perturbation_check_route_signature(read_route_signature_file(path), config);
+}
+
+RouteDistinctivenessSummary analyze_route_distinctiveness(
+    const RouteSignatureFile& route,
+    const RouteDistinctivenessConfig& config) {
+    if (route.entries.empty()) {
+        throw std::invalid_argument("Route distinctiveness analysis requires at least one route entry");
+    }
+    if (config.low_texture_range_threshold < 0.0 || config.ambiguous_mean_abs_diff_threshold < 0.0) {
+        throw std::invalid_argument("Route distinctiveness thresholds must be non-negative");
+    }
+
+    RouteDistinctivenessSummary summary;
+    summary.entries_checked = static_cast<std::uint64_t>(route.entries.size());
+    summary.minimum_payload_range = std::numeric_limits<double>::max();
+
+    double range_sum = 0.0;
+    for (const auto& entry : route.entries) {
+        const auto range = payload_range(entry.payload);
+        summary.minimum_payload_range = std::min(summary.minimum_payload_range, range);
+        range_sum += range;
+        if (range <= config.low_texture_range_threshold) {
+            ++summary.low_texture_entries;
+        }
+    }
+    summary.average_payload_range = range_sum / static_cast<double>(summary.entries_checked);
+
+    if (route.entries.size() >= 2) {
+        summary.minimum_adjacent_mean_abs_diff = std::numeric_limits<double>::max();
+        double adjacent_sum = 0.0;
+        for (std::size_t index = 1; index < route.entries.size(); ++index) {
+            const auto diff = mean_abs_diff_bytes(route.entries[index - 1].payload, route.entries[index].payload);
+            summary.minimum_adjacent_mean_abs_diff = std::min(summary.minimum_adjacent_mean_abs_diff, diff);
+            adjacent_sum += diff;
+            ++summary.adjacent_pairs_checked;
+        }
+        summary.average_adjacent_mean_abs_diff = adjacent_sum / static_cast<double>(summary.adjacent_pairs_checked);
+
+        summary.minimum_nearest_mean_abs_diff = std::numeric_limits<double>::max();
+        double nearest_sum = 0.0;
+        for (std::size_t index = 0; index < route.entries.size(); ++index) {
+            double nearest = std::numeric_limits<double>::max();
+            for (std::size_t candidate = 0; candidate < route.entries.size(); ++candidate) {
+                if (candidate == index) {
+                    continue;
+                }
+                nearest = std::min(nearest, mean_abs_diff_bytes(route.entries[index].payload, route.entries[candidate].payload));
+            }
+
+            summary.minimum_nearest_mean_abs_diff = std::min(summary.minimum_nearest_mean_abs_diff, nearest);
+            nearest_sum += nearest;
+            if (nearest == 0.0) {
+                ++summary.exact_duplicate_entries;
+            }
+            if (nearest <= config.ambiguous_mean_abs_diff_threshold) {
+                ++summary.ambiguous_nearest_entries;
+            }
+        }
+        summary.average_nearest_mean_abs_diff = nearest_sum / static_cast<double>(summary.entries_checked);
+    }
+
+    summary.warning = summary.low_texture_entries > 0
+        || summary.exact_duplicate_entries > 0
+        || summary.ambiguous_nearest_entries > 0;
+    return summary;
+}
+
+RouteDistinctivenessSummary analyze_route_distinctiveness_file(
+    const std::filesystem::path& path,
+    const RouteDistinctivenessConfig& config) {
+    return analyze_route_distinctiveness(read_route_signature_file(path), config);
 }
 
 } // namespace vh

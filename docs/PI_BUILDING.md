@@ -159,6 +159,22 @@ The underlying CLI is:
 
 Live route recording through `scripts/test-core-pi.sh` also runs perturbation checks automatically after recording, inspection, and self-match. The perturbation check applies a brightness offset, small deterministic byte noise, and a one-pixel horizontal shift to route entries, then reports valid-match counts and minimum confidence for each case. It also verifies that a malformed payload is rejected. The default minimum perturbation confidence is `0.90` and can be overridden with `VISUAL_HOMING_PERTURB_MIN_CONFIDENCE`.
 
+## Route Distinctiveness Diagnostic
+
+Run lightweight distinctiveness diagnostics on an existing route artifact without touching camera hardware:
+
+```bash
+VISUAL_HOMING_ROUTE_DISTINCTIVENESS=1 ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --route-distinctiveness <route.vhrs>
+```
+
+Live route recording through `scripts/test-core-pi.sh` also runs this diagnostic automatically after perturbation checks. It reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, and nearest-neighbor mean absolute byte difference. This is an offline diagnostic, not a pass/fail flight gate; `warning=true` means the route may be visually repetitive even when self-match and perturbation checks pass.
+
 ## Hardware Backend Policy
 
 - `VISUAL_HOMING_ENABLE_LIBCAMERA` defaults to `OFF`.

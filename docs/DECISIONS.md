@@ -453,3 +453,22 @@ Impact:
 
 Risk:
 - Passing stateless artifact checks does not prove that sequential route following will disambiguate repetitive terrain. Route distinctiveness needs a later dedicated metric before flight-test expansion.
+
+## 2026-05-31 - Add Offline Route Distinctiveness Diagnostics
+
+Decision:
+- Add `analyze_route_distinctiveness`, file/CLI `--route-distinctiveness <route.vhrs>`, and `VISUAL_HOMING_ROUTE_DISTINCTIVENESS=1` Pi script support.
+- Report low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, nearest-neighbor mean absolute byte difference, and a warning flag.
+- Run the diagnostic automatically after live route recording, inspection, self-match, and perturbation checks.
+
+Why:
+- Self-match and perturbation checks can pass on visually repetitive routes because every frame remains matchable, but that does not prove route progress is distinguishable.
+- A lightweight offline diagnostic gives operators early feedback about low-texture or duplicate route signatures before moving toward bench replay or field-test planning.
+- Keeping this outside the live camera/command loop avoids extra Pi realtime load and disk I/O in future flight-critical paths.
+
+Impact:
+- Pi validation can now surface repetitive route artifacts without blocking the existing artifact pass/fail checks.
+- The diagnostic is cheap for current route sizes because it compares compact 32x24 Gray8 payloads offline.
+
+Risk:
+- The thresholds are heuristic and should not be treated as flight permission gates. They are intended to guide route capture quality and future test planning.

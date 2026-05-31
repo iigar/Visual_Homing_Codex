@@ -69,3 +69,13 @@ visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]
 ```
 
 The perturbation check applies brightness offset, small deterministic byte noise, and horizontal shift cases to route entries, then reports valid-match counts and minimum confidence for each case. It also verifies malformed-payload rejection through the matcher boundary.
+
+## Distinctiveness Diagnostic
+
+Route files can be analyzed for basic visual distinctiveness:
+
+```bash
+visual_homing_core --route-distinctiveness <route.vhrs>
+```
+
+The diagnostic reports low-texture entries, exact duplicate entries, ambiguous nearest-neighbor entries, payload range, adjacent mean absolute byte difference, and nearest-neighbor mean absolute byte difference. It is an offline diagnostic, not a flight permission gate. A warning means the route may be visually repetitive even when self-match and perturbation checks pass.

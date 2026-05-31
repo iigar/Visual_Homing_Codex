@@ -205,6 +205,29 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 3 && std::string(argv[1]) == "--route-distinctiveness") {
+        try {
+            const auto summary = vh::analyze_route_distinctiveness_file(argv[2]);
+            std::cout << "route_distinctiveness path=" << argv[2]
+                      << " entries_checked=" << summary.entries_checked
+                      << " adjacent_pairs_checked=" << summary.adjacent_pairs_checked
+                      << " low_texture_entries=" << summary.low_texture_entries
+                      << " exact_duplicate_entries=" << summary.exact_duplicate_entries
+                      << " ambiguous_nearest_entries=" << summary.ambiguous_nearest_entries
+                      << " minimum_payload_range=" << summary.minimum_payload_range
+                      << " average_payload_range=" << summary.average_payload_range
+                      << " minimum_adjacent_mean_abs_diff=" << summary.minimum_adjacent_mean_abs_diff
+                      << " average_adjacent_mean_abs_diff=" << summary.average_adjacent_mean_abs_diff
+                      << " minimum_nearest_mean_abs_diff=" << summary.minimum_nearest_mean_abs_diff
+                      << " average_nearest_mean_abs_diff=" << summary.average_nearest_mean_abs_diff
+                      << " warning=" << (summary.warning ? "true" : "false") << "\n";
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "route_distinctiveness_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     std::cout << "Realtime C++ core skeleton ready\n";
     std::cout << "usage: visual_homing_core --replay <manifest.csv>\n";
     std::cout << "usage: visual_homing_core --pipeline <manifest.csv> <width> <height>\n";
@@ -215,6 +238,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";
+    std::cout << "usage: visual_homing_core --route-distinctiveness <route.vhrs>\n";
     std::cout << "uptime_ms=" << vh::milliseconds_between(started, vh::now()) << "\n";
     return 0;
 }

@@ -52,6 +52,17 @@ int main() {
     assert(repetitive_summary.exact_index_matches < 3);
     assert(repetitive_summary.minimum_confidence_seen > 0.999);
 
+    const auto repetitive_distinctiveness = vh::analyze_route_distinctiveness(repetitive_route);
+    assert(repetitive_distinctiveness.entries_checked == 3);
+    assert(repetitive_distinctiveness.adjacent_pairs_checked == 2);
+    assert(repetitive_distinctiveness.low_texture_entries == 3);
+    assert(repetitive_distinctiveness.exact_duplicate_entries == 2);
+    assert(repetitive_distinctiveness.ambiguous_nearest_entries == 3);
+    assert(repetitive_distinctiveness.minimum_payload_range == 0.0);
+    assert(repetitive_distinctiveness.minimum_adjacent_mean_abs_diff == 0.0);
+    assert(repetitive_distinctiveness.minimum_nearest_mean_abs_diff == 0.0);
+    assert(repetitive_distinctiveness.warning);
+
     vh::RouteSignatureFile textured_route;
     vh::RouteSignatureEntry textured;
     textured.frame_id = 10;
@@ -90,6 +101,15 @@ int main() {
         perturbation_path,
         {.minimum_confidence = 0.85});
     assert(file_perturbation.passed);
+
+    const auto textured_distinctiveness = vh::analyze_route_distinctiveness(textured_route);
+    assert(textured_distinctiveness.entries_checked == 1);
+    assert(textured_distinctiveness.adjacent_pairs_checked == 0);
+    assert(textured_distinctiveness.low_texture_entries == 0);
+    assert(textured_distinctiveness.exact_duplicate_entries == 0);
+    assert(textured_distinctiveness.ambiguous_nearest_entries == 0);
+    assert(textured_distinctiveness.minimum_payload_range == 150.0);
+    assert(!textured_distinctiveness.warning);
 
     const auto repetitive_perturbation = vh::perturbation_check_route_signature(repetitive_route, {
         .minimum_confidence = 0.90,

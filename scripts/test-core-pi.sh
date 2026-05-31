@@ -47,7 +47,7 @@ cmake -S "${core_dir}" -B "${build_dir}" \
 cmake --build "${build_dir}" --parallel "${build_jobs}"
 ctest --test-dir "${build_dir}" --output-on-failure
 
-if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" ]]; then
+if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
     mkdir -p "$(dirname "${route_output}")"
 fi
 
@@ -80,6 +80,7 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --perturb-route \
         "${route_output}" \
         "${VISUAL_HOMING_PERTURB_MIN_CONFIDENCE:-0.90}"
+    "${build_dir}/visual_homing_core" --route-distinctiveness "${route_output}"
 fi
 
 if [[ "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" ]]; then
@@ -96,4 +97,8 @@ if [[ "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --perturb-route \
         "${route_output}" \
         "${VISUAL_HOMING_PERTURB_MIN_CONFIDENCE:-0.90}"
+fi
+
+if [[ "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --route-distinctiveness "${route_output}"
 fi
