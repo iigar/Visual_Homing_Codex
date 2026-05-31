@@ -491,3 +491,22 @@ Impact:
 
 Risk:
 - The thresholds are empirical and should be revisited after real outdoor route captures. A passing artifact still does not authorize live MAVLink output or flight testing by itself.
+
+## 2026-05-31 - Insert Calibration And Review Milestones Before Flight Tests
+
+Decision:
+- Add Milestone 6.5 before the flight-test ladder for camera profiles, FOV-aware direction conversion, read-only real MAVLink telemetry, altitude-aware route metadata, and thermal profile preparation.
+- Add Milestone 6.6 before the flight-test ladder for baseline review, weak-point audit, safety boundary review, and security/operational hardening.
+- Save a complete Claude Code handoff prompt in `docs/CLAUDE_CODE_PROMPT.md` so parallel/alternate implementations keep the same replay-first, StabX-like, safety-oriented direction.
+
+Why:
+- The long-term target is StabX-like coarse GPS-denied return over large distances, not a short-range toy matcher.
+- Long-distance behavior needs camera/FOV profiles, ArduPilot attitude/altitude telemetry, altitude/scale-aware metadata, thermal/visible camera profiles, route segmentation, reacquire behavior, and confidence gates.
+- A review/security pass before Milestone 7 reduces the chance that hidden safety or operational weaknesses get carried into bench/field testing.
+
+Impact:
+- Milestone 7 is not the immediate next engineering step after Milestone 6 closure.
+- The next work should first make camera calibration and read-only flight-controller telemetry explicit, then review the system before any flight-test ladder expansion.
+
+Risk:
+- This delays visible flight-test progress, but it lowers integration risk and keeps live MAVLink command output blocked until the surrounding telemetry and safety model is credible.

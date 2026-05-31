@@ -62,6 +62,28 @@
 - Validate CPU, memory, frame drops, latency on Pi Zero 2W.
 - Status: in progress with `PiCameraSource`, initial libcamera backend, live camera pipeline smoke, live route recording, route inspection, stateless route self-match, stateless route perturbation checks, offline route distinctiveness diagnostics, route-quality policy, and tests. Default desktop builds fail closed without live capture. Pi automation exists through `VISUAL_HOMING_ENABLE_LIBCAMERA`, `docs/PI_BUILDING.md`, `scripts/bootstrap-pi.sh`, and `scripts/test-core-pi.sh`; enabling libcamera requires CMake pkg-config discovery of `libcamera`. The Pi build path is validated on `jtzero` with libcamera 0.7.1 and 14/14 CTest tests passing. Live IMX219 pipeline smoke is validated on `jtzero`: 320x240 Gray8 frames preprocess to 32x24 in about 0.9 ms with effective FPS about 15.9. Live route recording, inspection, self-match, perturbation checks, distinctiveness diagnostics, and route-quality policy are validated on `jtzero`: a 180-frame hand-carried bench route recorded at effective FPS ~15.42, inspection passed, self-match reported 180/180 exact valid matches with confidence 1.0, perturbation checks passed, distinctiveness improved to 8/180 ambiguous nearest entries with average nearest mean absolute byte difference ~7.44, and `quality_pass=true`. Static table captures correctly report poor distinctiveness and remain useful as negative route-quality examples.
 
+## Milestone 6.5 - Camera Profiles And Read-Only Flight Telemetry
+
+- Add explicit camera profiles instead of hard-coded camera assumptions.
+- Capture profile fields: camera id/name, sensor type, pixel format, capture size, target resize, horizontal/vertical FOV, crop policy, exposure/normalization hints, matcher thresholds, route-quality thresholds, and derived radians-per-pixel values.
+- Add FOV-aware direction-error conversion using camera profile data instead of ad hoc `radians_per_pixel`.
+- Add profile documentation/template so different visible-light and thermal cameras can be configured repeatably.
+- Add thermal profile placeholder and thermal normalization policy; the `VHRS` format already reserves `Thermal16`, but matching/preprocessing still needs an implementation.
+- Add read-only real MAVLink telemetry transport before any live command output: heartbeat, armed, mode, roll, pitch, yaw, relative altitude, and freshness metrics.
+- Log camera frames together with flight-controller attitude/altitude snapshots for replay analysis.
+- Add altitude-aware route metadata policy: altitude bands, heading hints, attitude snapshot, and scale/height assumptions.
+- Keep live MAVLink command output blocked; this milestone is read-only telemetry plus calibration.
+- Status: planned before flight-test ladder work.
+
+## Milestone 6.6 - Baseline Review, Weak-Point Audit, And Safety/Security Hardening
+
+- Perform a code review of the completed replay/camera/route/matching/navigation/MAVLink dry-run baseline.
+- Search explicitly for weak points: unbounded state, timing assumptions, stale data handling, low-confidence behavior, route ambiguity, malformed input handling, thread-safety, single-writer command output, and disk I/O near future live loops.
+- Review safety boundaries: fail-closed behavior, health transitions, permission gates, route-quality gates, and live-output blockers.
+- Review security and operational hardening: artifact parsing robustness, path handling, dependency assumptions, install/bootstrap scripts, web/UI boundaries if reintroduced, log privacy, and unauthenticated network surfaces.
+- Update roadmap/decisions with findings, residual risks, and required fixes before Milestone 7.
+- Status: planned before flight-test ladder work.
+
 ## Milestone 7 - Flight Test Ladder
 
 - Bench replay.
