@@ -82,3 +82,4 @@
 - Validated live Pi camera capture on `jtzero` using `VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13 and `--pi-camera-smoke 320 240 15 30` captured 30 Gray8 frames from the IMX219 camera, each 320x240 / 76800 bytes.
 - Extended camera smoke into a live camera pipeline smoke: `PiCameraSource -> Gray8ResizePreprocessor -> HealthMonitor -> metrics`, reporting processed size, frame age, processing latency, empty polls, elapsed time, and effective FPS.
 - Validated the default desktop path using `.\scripts\test-core.ps1`: build passed and 13/13 CTest tests passed in Debug.
+- Validated live camera pipeline smoke on `jtzero` using `VISUAL_HOMING_RUN_CAMERA_SMOKE=1 ./scripts/test-core-pi.sh --clean`: CTest passed 13/13, 30 live IMX219 frames were captured at 320x240, preprocessed to 32x24 / 768 bytes, last latency was ~0.87 ms, frame age stayed around 0.6-2.0 ms, and effective FPS was ~15.9.
