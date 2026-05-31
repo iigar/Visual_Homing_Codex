@@ -75,7 +75,7 @@ RouteSelfMatchSummary self_match_route_signature(
     }
 
     Gray8RouteMatcher matcher(route, {
-        .window_radius = 1,
+        .window_radius = 0,
         .minimum_confidence = config.minimum_confidence,
         .max_direction_shift_px = config.max_direction_shift_px,
         .radians_per_pixel = config.radians_per_pixel,
@@ -108,8 +108,7 @@ RouteSelfMatchSummary self_match_route_signature(
 
     summary.average_confidence = confidence_sum / static_cast<double>(summary.entries_checked);
     summary.passed = summary.valid_matches == summary.entries_checked
-        && summary.minimum_confidence_seen >= config.minimum_confidence
-        && summary.progress_monotonic;
+        && summary.minimum_confidence_seen >= config.minimum_confidence;
     return summary;
 }
 
@@ -133,7 +132,7 @@ RoutePerturbationCheckSummary perturbation_check_route_signature(
     }
 
     Gray8RouteMatcher matcher(route, {
-        .window_radius = 1,
+        .window_radius = 0,
         .minimum_confidence = config.minimum_confidence,
         .max_direction_shift_px = config.max_direction_shift_px,
         .radians_per_pixel = config.radians_per_pixel,

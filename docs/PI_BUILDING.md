@@ -141,7 +141,7 @@ The underlying CLI is:
 ./core/build-pi/visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]
 ```
 
-Live route recording through `scripts/test-core-pi.sh` also runs self-match automatically after recording and inspection. The self-match check feeds each `VHRS` entry back through `Gray8RouteMatcher` and reports checked entries, valid matches, exact index matches, minimum/average confidence, last progress, monotonic progress, and pass/fail status.
+Live route recording through `scripts/test-core-pi.sh` also runs self-match automatically after recording and inspection. The self-match check feeds each `VHRS` entry back through `Gray8RouteMatcher` and reports checked entries, valid matches, exact index matches, minimum/average confidence, last progress, monotonic progress, and pass/fail status. Exact index matches and progress monotonicity are diagnostics for route distinctiveness; high-confidence valid matches are the self-match pass gate.
 
 ## Route Perturbation Check
 

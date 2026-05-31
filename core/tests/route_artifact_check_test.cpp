@@ -42,6 +42,16 @@ int main() {
     assert(file_summary.passed);
     assert(file_summary.entries_checked == 3);
 
+    vh::RouteSignatureFile repetitive_route;
+    repetitive_route.entries.push_back(entry(0, {20, 20, 20, 20}));
+    repetitive_route.entries.push_back(entry(1, {20, 20, 20, 20}));
+    repetitive_route.entries.push_back(entry(2, {21, 20, 20, 20}));
+    const auto repetitive_summary = vh::self_match_route_signature(repetitive_route);
+    assert(repetitive_summary.passed);
+    assert(repetitive_summary.valid_matches == 3);
+    assert(repetitive_summary.exact_index_matches < 3);
+    assert(repetitive_summary.minimum_confidence_seen > 0.999);
+
     vh::RouteSignatureFile textured_route;
     vh::RouteSignatureEntry textured;
     textured.frame_id = 10;
@@ -80,6 +90,20 @@ int main() {
         perturbation_path,
         {.minimum_confidence = 0.85});
     assert(file_perturbation.passed);
+
+    const auto repetitive_perturbation = vh::perturbation_check_route_signature(repetitive_route, {
+        .minimum_confidence = 0.90,
+        .brightness_delta = 8,
+        .noise_delta = 3,
+        .shift_px = 1,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+    assert(repetitive_perturbation.passed);
+    assert(repetitive_perturbation.brightness_valid_matches == 3);
+    assert(repetitive_perturbation.noise_valid_matches == 3);
+    assert(repetitive_perturbation.shift_valid_matches == 3);
+    assert(repetitive_perturbation.malformed_rejected);
 
     bool rejected_empty = false;
     try {
