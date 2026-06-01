@@ -13,6 +13,8 @@ const char* flight_mode_name(FlightMode mode) {
         return "manual";
     case FlightMode::Stabilize:
         return "stabilize";
+    case FlightMode::AltHold:
+        return "alt_hold";
     case FlightMode::Guided:
         return "guided";
     case FlightMode::Auto:

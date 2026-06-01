@@ -38,6 +38,8 @@ FlightMode ardupilot_custom_mode_to_flight_mode(std::uint32_t custom_mode) {
     switch (custom_mode) {
     case 0:
         return FlightMode::Stabilize;
+    case 2:
+        return FlightMode::AltHold;
     case 3:
         return FlightMode::Auto;
     case 4:
@@ -107,6 +109,8 @@ std::string to_string(FlightMode mode) {
         return "Manual";
     case FlightMode::Stabilize:
         return "Stabilize";
+    case FlightMode::AltHold:
+        return "AltHold";
     case FlightMode::Guided:
         return "Guided";
     case FlightMode::Auto:

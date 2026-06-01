@@ -77,6 +77,11 @@ int main() {
     assert(adapter.mavlink_ok(at_ms(160)));
     assert(!adapter.command_permission_ok(at_ms(160)));
 
+    telemetry.mode = vh::FlightMode::AltHold;
+    adapter.observe(telemetry, at_ms(165));
+    assert(adapter.mavlink_ok(at_ms(165)));
+    assert(!adapter.command_permission_ok(at_ms(165)));
+
     telemetry.mode = vh::FlightMode::Guided;
     adapter.observe(telemetry, at_ms(170));
     assert(adapter.command_permission_ok(at_ms(170)));

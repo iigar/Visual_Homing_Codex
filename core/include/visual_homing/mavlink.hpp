@@ -8,6 +8,7 @@ enum class FlightMode {
     Unknown,
     Manual,
     Stabilize,
+    AltHold,
     Guided,
     Auto,
     Rtl,

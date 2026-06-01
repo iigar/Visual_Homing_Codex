@@ -158,6 +158,8 @@ The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `
 
 The heartbeat output includes raw `heartbeat_custom_mode`, `heartbeat_type`, `heartbeat_autopilot`, `heartbeat_base_mode`, `heartbeat_system_status`, and `heartbeat_mavlink_version` fields so unsupported vehicle mode mappings can be diagnosed without changing wiring.
 
+For ArduCopter, `heartbeat_custom_mode=2` is reported as `mode=AltHold`. It remains a telemetry label only; the command-permission gate still requires armed `Guided` mode.
+
 Capture a short read-only MAVLink byte dump from a POSIX serial device and immediately inspect it:
 
 ```bash

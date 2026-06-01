@@ -122,6 +122,19 @@ int main() {
     assert(summary.latest.relative_altitude_m == 42.5);
     assert(vh::to_string(summary.latest.mode) == "Guided");
 
+    std::vector<unsigned char> alt_hold_heartbeat;
+    append_u32(alt_hold_heartbeat, 2);
+    alt_hold_heartbeat.push_back(2);
+    alt_hold_heartbeat.push_back(3);
+    alt_hold_heartbeat.push_back(81);
+    alt_hold_heartbeat.push_back(3);
+    alt_hold_heartbeat.push_back(3);
+    const auto alt_hold = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(0, alt_hold_heartbeat));
+    assert(alt_hold.heartbeat_custom_mode == 2);
+    assert(!alt_hold.latest.armed);
+    assert(alt_hold.latest.mode == vh::FlightMode::AltHold);
+    assert(vh::to_string(alt_hold.latest.mode) == "AltHold");
+
     const auto malformed = vh::inspect_mavlink_telemetry_bytes(std::string(1, static_cast<char>(0xFE)));
     assert(malformed.malformed_frames == 1);
     assert(malformed.frames_seen == 0);
