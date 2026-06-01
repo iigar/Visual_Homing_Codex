@@ -168,6 +168,11 @@ if [[ "${VISUAL_HOMING_RUN_CAMERA_SMOKE:-0}" == "1" ]]; then
 fi
 
 if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
+    route_telemetry_args=()
+    if [[ "${VISUAL_HOMING_ROUTE_USE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
+        route_telemetry_args=("${mavlink_telemetry_input}")
+    fi
+
     if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-active-profile \
             "${camera_profile_dir}" \
@@ -177,7 +182,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${route_output}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
-            "${route_warmup_frames}"
+            "${route_warmup_frames}" \
+            "${route_telemetry_args[@]}"
     elif [[ "${VISUAL_HOMING_USE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-profile \
             "${camera_profile}" \
@@ -186,7 +192,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${route_output}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
-            "${route_warmup_frames}"
+            "${route_warmup_frames}" \
+            "${route_telemetry_args[@]}"
     else
         "${build_dir}/visual_homing_core" --record-live-route \
             "${VISUAL_HOMING_CAMERA_WIDTH:-320}" \
@@ -198,7 +205,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-24}" \
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
-            "${route_warmup_frames}"
+            "${route_warmup_frames}" \
+            "${route_telemetry_args[@]}"
     fi
 
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"

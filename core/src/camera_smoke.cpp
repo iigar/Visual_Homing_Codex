@@ -118,7 +118,19 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " target=" << config.target_width << "x" << config.target_height
             << " requested_frames=" << config.frames_to_capture
             << " warmup_frames=" << config.warmup_frames
+            << " telemetry_snapshot=" << (config.use_telemetry_snapshot ? "true" : "false")
             << " output=" << config.route_output_path.string() << "\n";
+
+    if (config.use_telemetry_snapshot) {
+        metrics << "live_route_telemetry_snapshot"
+                << " heartbeat_seen=" << (config.telemetry_snapshot.heartbeat_seen ? "true" : "false")
+                << " armed=" << (config.telemetry_snapshot.armed ? "true" : "false")
+                << " relative_altitude_m=" << config.telemetry_snapshot.relative_altitude_m
+                << " roll_rad=" << config.telemetry_snapshot.roll_rad
+                << " pitch_rad=" << config.telemetry_snapshot.pitch_rad
+                << " yaw_rad=" << config.telemetry_snapshot.yaw_rad << "\n";
+        result.used_telemetry_snapshot = true;
+    }
 
     result.started = source.start();
     metrics << "live_route_backend_start_result started=" << (result.started ? "true" : "false")
@@ -165,8 +177,12 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
 
             NavigationEstimate nav;
             nav.timestamp = processed.timestamp;
-            nav.altitude_m = config.altitude_m;
-            nav.course_error_rad = config.heading_hint_rad;
+            nav.altitude_m = config.use_telemetry_snapshot
+                ? config.telemetry_snapshot.relative_altitude_m
+                : config.altitude_m;
+            nav.course_error_rad = config.use_telemetry_snapshot
+                ? config.telemetry_snapshot.yaw_rad
+                : config.heading_hint_rad;
             nav.confidence = 1.0;
             recorder.observe(processed, nav);
 
@@ -209,6 +225,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " entries=" << result.route_entries
             << " empty_polls=" << result.empty_polls
             << " route_written=" << (result.route_written ? "true" : "false")
+            << " telemetry_snapshot=" << (result.used_telemetry_snapshot ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms

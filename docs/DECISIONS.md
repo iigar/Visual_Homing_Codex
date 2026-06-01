@@ -784,3 +784,20 @@ Impact:
 
 Risk:
 - This is still a bounded capture validator, not a continuous freshness monitor. CRC validation and live telemetry buffering remain future work.
+
+## 2026-06-01 - Attach Read-Only MAVLink Snapshot To Live Route Recording
+
+Decision:
+- Allow live route recording commands to accept a validated MAVLink telemetry capture file.
+- When enabled, use the latest decoded relative altitude as route altitude metadata and latest yaw as the route heading hint for recorded entries.
+
+Why:
+- Route artifacts need flight-controller context before altitude-aware matching and scale policies can be designed.
+- A run-level snapshot is a low-risk bridge from offline MAVLink validation to future continuous telemetry buffering.
+
+Impact:
+- Pi route captures can now carry real FC-derived altitude/heading baseline data without changing the `VHRS` format.
+- `VISUAL_HOMING_ROUTE_USE_MAVLINK_TELEMETRY=1` makes `scripts/test-core-pi.sh` pass the current captured telemetry artifact into live route recording.
+
+Risk:
+- The snapshot is not per-frame telemetry and may become stale during a moving capture. It is logged explicitly and should be replaced by continuous frame-correlated telemetry before flight use.

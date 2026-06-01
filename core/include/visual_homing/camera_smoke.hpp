@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iosfwd>
 
+#include "visual_homing/mavlink.hpp"
 #include "visual_homing/pi_camera_source.hpp"
 
 namespace vh {
@@ -35,6 +36,8 @@ struct LiveRouteRecordingConfig {
     std::size_t warmup_frames = 0;
     double altitude_m = 0.0;
     double heading_hint_rad = 0.0;
+    bool use_telemetry_snapshot = false;
+    MavlinkTelemetry telemetry_snapshot{};
 };
 
 struct LiveRouteRecordingResult {
@@ -48,6 +51,7 @@ struct LiveRouteRecordingResult {
     double last_processing_latency_ms = 0.0;
     double elapsed_ms = 0.0;
     double effective_fps = 0.0;
+    bool used_telemetry_snapshot = false;
 };
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
