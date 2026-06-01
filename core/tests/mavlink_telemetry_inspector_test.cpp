@@ -122,6 +122,22 @@ int main() {
     assert(summary.latest.relative_altitude_m == 42.5);
     assert(vh::to_string(summary.latest.mode) == "Guided");
 
+    const auto validation = vh::validate_mavlink_telemetry(summary, {});
+    assert(validation.passed);
+    assert(validation.heartbeat_passed);
+    assert(validation.attitude_passed);
+    assert(validation.global_position_int_passed);
+    assert(validation.malformed_passed);
+
+    vh::MavlinkTelemetryValidationConfig strict_validation_config;
+    strict_validation_config.minimum_heartbeat_messages = 2;
+    const auto strict_validation = vh::validate_mavlink_telemetry(summary, strict_validation_config);
+    assert(!strict_validation.passed);
+    assert(!strict_validation.heartbeat_passed);
+    assert(strict_validation.attitude_passed);
+    assert(strict_validation.global_position_int_passed);
+    assert(strict_validation.malformed_passed);
+
     std::vector<unsigned char> alt_hold_heartbeat;
     append_u32(alt_hold_heartbeat, 2);
     alt_hold_heartbeat.push_back(2);

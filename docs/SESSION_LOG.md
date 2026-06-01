@@ -126,3 +126,4 @@
 - Added a read-only POSIX serial MAVLink telemetry capture path that opens the configured device read-only, records raw bytes to `artifacts/mavlink_telemetry.bin`, and immediately runs the existing offline inspector without sending MAVLink commands.
 - Extended MAVLink telemetry inspection logs with raw heartbeat fields (`custom_mode`, vehicle type, autopilot, base mode, system status, MAVLink version) so unknown coarse-mode mappings can be diagnosed from Pi captures.
 - Validated read-only MAVLink capture on `jtzero`: `/dev/serial0` at 115200 baud captured MAVLink2 heartbeat, attitude, and global-position/relative-altitude messages; ArduCopter `custom_mode=2` is now labeled as `AltHold` while command permission remains restricted to armed `Guided`.
+- Added a strict read-only MAVLink telemetry validation gate so Pi smoke runs can fail when a capture lacks heartbeat, attitude, global-position/relative-altitude messages, or contains malformed frames.

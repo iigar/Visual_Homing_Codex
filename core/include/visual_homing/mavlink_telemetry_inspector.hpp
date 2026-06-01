@@ -25,8 +25,26 @@ struct MavlinkTelemetryInspectionSummary {
     MavlinkTelemetry latest{};
 };
 
+struct MavlinkTelemetryValidationConfig {
+    std::uint64_t minimum_heartbeat_messages = 1;
+    std::uint64_t minimum_attitude_messages = 1;
+    std::uint64_t minimum_global_position_int_messages = 1;
+    std::uint64_t maximum_malformed_frames = 0;
+};
+
+struct MavlinkTelemetryValidationResult {
+    bool passed = false;
+    bool heartbeat_passed = false;
+    bool attitude_passed = false;
+    bool global_position_int_passed = false;
+    bool malformed_passed = false;
+};
+
 MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::string& bytes);
 MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(const std::string& path);
+MavlinkTelemetryValidationResult validate_mavlink_telemetry(
+    const MavlinkTelemetryInspectionSummary& summary,
+    const MavlinkTelemetryValidationConfig& config);
 std::string to_string(FlightMode mode);
 
 } // namespace vh

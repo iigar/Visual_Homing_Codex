@@ -17,6 +17,10 @@ mavlink_telemetry_input="${VISUAL_HOMING_MAVLINK_TELEMETRY_INPUT:-${artifact_dir
 mavlink_telemetry_device="${VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE:-/dev/ttyAMA0}"
 mavlink_telemetry_baud="${VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD:-57600}"
 mavlink_telemetry_duration_ms="${VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS:-1000}"
+mavlink_min_heartbeat_messages="${VISUAL_HOMING_MAVLINK_MIN_HEARTBEAT_MESSAGES:-1}"
+mavlink_min_attitude_messages="${VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES:-1}"
+mavlink_min_global_position_int_messages="${VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES:-1}"
+mavlink_max_malformed_frames="${VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES:-0}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
@@ -125,6 +129,15 @@ fi
 
 if [[ "${VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --inspect-mavlink-telemetry "${mavlink_telemetry_input}"
+fi
+
+if [[ "${VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --validate-mavlink-telemetry \
+        "${mavlink_telemetry_input}" \
+        "${mavlink_min_heartbeat_messages}" \
+        "${mavlink_min_attitude_messages}" \
+        "${mavlink_min_global_position_int_messages}" \
+        "${mavlink_max_malformed_frames}"
 fi
 
 if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then

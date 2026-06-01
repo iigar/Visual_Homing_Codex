@@ -87,6 +87,68 @@ std::string format_route_time_ms(double route_time_ms) {
     return output.str();
 }
 
+void print_mavlink_telemetry_inspection(const std::string& path,
+                                        const vh::MavlinkTelemetryInspectionSummary& summary,
+                                        std::ostream& output) {
+    output << "mavlink_telemetry_inspect path=" << path
+           << " bytes_read=" << summary.bytes_read
+           << " frames_seen=" << summary.frames_seen
+           << " mavlink1_frames=" << summary.mavlink1_frames
+           << " mavlink2_frames=" << summary.mavlink2_frames
+           << " malformed_frames=" << summary.malformed_frames
+           << " heartbeat_messages=" << summary.heartbeat_messages
+           << " attitude_messages=" << summary.attitude_messages
+           << " global_position_int_messages=" << summary.global_position_int_messages
+           << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
+           << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
+           << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
+           << " heartbeat_base_mode=" << static_cast<int>(summary.heartbeat_base_mode)
+           << " heartbeat_system_status=" << static_cast<int>(summary.heartbeat_system_status)
+           << " heartbeat_mavlink_version=" << static_cast<int>(summary.heartbeat_mavlink_version)
+           << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
+           << " armed=" << (summary.latest.armed ? "true" : "false")
+           << " mode=" << vh::to_string(summary.latest.mode)
+           << " roll_rad=" << summary.latest.roll_rad
+           << " pitch_rad=" << summary.latest.pitch_rad
+           << " yaw_rad=" << summary.latest.yaw_rad
+           << " relative_altitude_m=" << summary.latest.relative_altitude_m
+           << "\n";
+}
+
+void print_mavlink_telemetry_validation(const std::string& path,
+                                        const vh::MavlinkTelemetryInspectionSummary& summary,
+                                        const vh::MavlinkTelemetryValidationConfig& config,
+                                        const vh::MavlinkTelemetryValidationResult& result,
+                                        std::ostream& output) {
+    output << "mavlink_telemetry_validate path=" << path
+           << " min_heartbeat_messages=" << config.minimum_heartbeat_messages
+           << " min_attitude_messages=" << config.minimum_attitude_messages
+           << " min_global_position_int_messages=" << config.minimum_global_position_int_messages
+           << " max_malformed_frames=" << config.maximum_malformed_frames
+           << " heartbeat_messages=" << summary.heartbeat_messages
+           << " attitude_messages=" << summary.attitude_messages
+           << " global_position_int_messages=" << summary.global_position_int_messages
+           << " malformed_frames=" << summary.malformed_frames
+           << " heartbeat_passed=" << (result.heartbeat_passed ? "true" : "false")
+           << " attitude_passed=" << (result.attitude_passed ? "true" : "false")
+           << " global_position_int_passed=" << (result.global_position_int_passed ? "true" : "false")
+           << " malformed_passed=" << (result.malformed_passed ? "true" : "false")
+           << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
+           << " mode=" << vh::to_string(summary.latest.mode)
+           << " relative_altitude_m=" << summary.latest.relative_altitude_m
+           << " passed=" << (result.passed ? "true" : "false")
+           << "\n";
+}
+
+vh::MavlinkTelemetryValidationConfig mavlink_validation_config_from_args(char** argv, int first_index) {
+    vh::MavlinkTelemetryValidationConfig config;
+    config.minimum_heartbeat_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index]));
+    config.minimum_attitude_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index + 1]));
+    config.minimum_global_position_int_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index + 2]));
+    config.maximum_malformed_frames = static_cast<std::uint64_t>(std::stoull(argv[first_index + 3]));
+    return config;
+}
+
 std::string wall_time_utc_iso8601() {
     const auto now = std::chrono::system_clock::now();
     const auto now_time = std::chrono::system_clock::to_time_t(now);
@@ -478,32 +540,24 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string(argv[1]) == "--inspect-mavlink-telemetry") {
         try {
             const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
-            std::cout << "mavlink_telemetry_inspect path=" << argv[2]
-                      << " bytes_read=" << summary.bytes_read
-                      << " frames_seen=" << summary.frames_seen
-                      << " mavlink1_frames=" << summary.mavlink1_frames
-                      << " mavlink2_frames=" << summary.mavlink2_frames
-                      << " malformed_frames=" << summary.malformed_frames
-                      << " heartbeat_messages=" << summary.heartbeat_messages
-                      << " attitude_messages=" << summary.attitude_messages
-                      << " global_position_int_messages=" << summary.global_position_int_messages
-                      << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
-                      << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
-                      << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
-                      << " heartbeat_base_mode=" << static_cast<int>(summary.heartbeat_base_mode)
-                      << " heartbeat_system_status=" << static_cast<int>(summary.heartbeat_system_status)
-                      << " heartbeat_mavlink_version=" << static_cast<int>(summary.heartbeat_mavlink_version)
-                      << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
-                      << " armed=" << (summary.latest.armed ? "true" : "false")
-                      << " mode=" << vh::to_string(summary.latest.mode)
-                      << " roll_rad=" << summary.latest.roll_rad
-                      << " pitch_rad=" << summary.latest.pitch_rad
-                      << " yaw_rad=" << summary.latest.yaw_rad
-                      << " relative_altitude_m=" << summary.latest.relative_altitude_m
-                      << "\n";
+            print_mavlink_telemetry_inspection(argv[2], summary, std::cout);
             return summary.frames_seen > 0 && summary.malformed_frames == 0 ? 0 : 2;
         } catch (const std::exception& error) {
             std::cerr << "inspect_mavlink_telemetry_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
+    if (argc == 7 && std::string(argv[1]) == "--validate-mavlink-telemetry") {
+        try {
+            const auto config = mavlink_validation_config_from_args(argv, 3);
+            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
+            print_mavlink_telemetry_inspection(argv[2], summary, std::cout);
+            const auto result = vh::validate_mavlink_telemetry(summary, config);
+            print_mavlink_telemetry_validation(argv[2], summary, config, result, std::cout);
+            return result.passed ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "validate_mavlink_telemetry_error=" << error.what() << "\n";
             return 1;
         }
     }
@@ -527,29 +581,7 @@ int main(int argc, char** argv) {
                       << " elapsed_ms=" << capture.elapsed_ms
                       << "\n";
             const auto summary = vh::inspect_mavlink_telemetry_file(config.output_path);
-            std::cout << "mavlink_telemetry_inspect path=" << config.output_path
-                      << " bytes_read=" << summary.bytes_read
-                      << " frames_seen=" << summary.frames_seen
-                      << " mavlink1_frames=" << summary.mavlink1_frames
-                      << " mavlink2_frames=" << summary.mavlink2_frames
-                      << " malformed_frames=" << summary.malformed_frames
-                      << " heartbeat_messages=" << summary.heartbeat_messages
-                      << " attitude_messages=" << summary.attitude_messages
-                      << " global_position_int_messages=" << summary.global_position_int_messages
-                      << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
-                      << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
-                      << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
-                      << " heartbeat_base_mode=" << static_cast<int>(summary.heartbeat_base_mode)
-                      << " heartbeat_system_status=" << static_cast<int>(summary.heartbeat_system_status)
-                      << " heartbeat_mavlink_version=" << static_cast<int>(summary.heartbeat_mavlink_version)
-                      << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
-                      << " armed=" << (summary.latest.armed ? "true" : "false")
-                      << " mode=" << vh::to_string(summary.latest.mode)
-                      << " roll_rad=" << summary.latest.roll_rad
-                      << " pitch_rad=" << summary.latest.pitch_rad
-                      << " yaw_rad=" << summary.latest.yaw_rad
-                      << " relative_altitude_m=" << summary.latest.relative_altitude_m
-                      << "\n";
+            print_mavlink_telemetry_inspection(config.output_path, summary, std::cout);
             return capture.bytes_captured > 0 ? 0 : 2;
         } catch (const std::exception& error) {
             std::cerr << "capture_mavlink_telemetry_error=" << error.what() << "\n";

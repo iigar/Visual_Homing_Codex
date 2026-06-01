@@ -767,3 +767,20 @@ Impact:
 
 Risk:
 - Serial device setup still depends on Pi/ArduPilot wiring, baud rate, and OS permissions. This path does not yet provide continuous telemetry freshness into the live navigation loop.
+
+## 2026-06-01 - Add Read-Only MAVLink Telemetry Smoke Validation
+
+Decision:
+- Add `--validate-mavlink-telemetry` and `VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY=1`.
+- Gate captured telemetry on minimum heartbeat, attitude, and global-position message counts plus a maximum malformed-frame count.
+
+Why:
+- A serial capture that only receives bytes is not enough to prove the Pi is receiving useful flight-controller telemetry.
+- The field workflow needs a simple pass/fail signal for device, baud, wiring, and stream-rate configuration before continuous telemetry integration.
+
+Impact:
+- Operators can combine capture and validation in one Pi test run, and the script will fail closed if the capture lacks the required telemetry classes.
+- Thresholds remain configurable for slower stream rates or targeted diagnostics.
+
+Risk:
+- This is still a bounded capture validator, not a continuous freshness monitor. CRC validation and live telemetry buffering remain future work.

@@ -184,6 +184,19 @@ The underlying CLI is:
 
 This capture path opens the serial device read-only and writes the raw received bytes to disk for diagnostics. It still does not send MAVLink messages and does not enable live command output.
 
+For a strict read-only telemetry smoke test, validate the captured dump after capture:
+
+```bash
+VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE=/dev/serial0 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD=115200 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS=5000 \
+VISUAL_HOMING_CAPTURE_MAVLINK_TELEMETRY=1 \
+VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY=1 \
+./scripts/test-core-pi.sh
+```
+
+By default this requires at least one `HEARTBEAT`, one `ATTITUDE`, one `GLOBAL_POSITION_INT`, and zero malformed frames. Override the thresholds with `VISUAL_HOMING_MAVLINK_MIN_HEARTBEAT_MESSAGES`, `VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES`, `VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES`, and `VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES`.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

@@ -197,4 +197,20 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(const std::stri
     return inspect_mavlink_telemetry_bytes(bytes);
 }
 
+MavlinkTelemetryValidationResult validate_mavlink_telemetry(
+    const MavlinkTelemetryInspectionSummary& summary,
+    const MavlinkTelemetryValidationConfig& config) {
+    MavlinkTelemetryValidationResult result;
+    result.heartbeat_passed = summary.heartbeat_messages >= config.minimum_heartbeat_messages;
+    result.attitude_passed = summary.attitude_messages >= config.minimum_attitude_messages;
+    result.global_position_int_passed =
+        summary.global_position_int_messages >= config.minimum_global_position_int_messages;
+    result.malformed_passed = summary.malformed_frames <= config.maximum_malformed_frames;
+    result.passed = result.heartbeat_passed &&
+                    result.attitude_passed &&
+                    result.global_position_int_passed &&
+                    result.malformed_passed;
+    return result;
+}
+
 } // namespace vh
