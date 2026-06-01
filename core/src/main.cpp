@@ -487,6 +487,12 @@ int main(int argc, char** argv) {
                       << " heartbeat_messages=" << summary.heartbeat_messages
                       << " attitude_messages=" << summary.attitude_messages
                       << " global_position_int_messages=" << summary.global_position_int_messages
+                      << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
+                      << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
+                      << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
+                      << " heartbeat_base_mode=" << static_cast<int>(summary.heartbeat_base_mode)
+                      << " heartbeat_system_status=" << static_cast<int>(summary.heartbeat_system_status)
+                      << " heartbeat_mavlink_version=" << static_cast<int>(summary.heartbeat_mavlink_version)
                       << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
                       << " armed=" << (summary.latest.armed ? "true" : "false")
                       << " mode=" << vh::to_string(summary.latest.mode)
@@ -530,6 +536,12 @@ int main(int argc, char** argv) {
                       << " heartbeat_messages=" << summary.heartbeat_messages
                       << " attitude_messages=" << summary.attitude_messages
                       << " global_position_int_messages=" << summary.global_position_int_messages
+                      << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
+                      << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
+                      << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
+                      << " heartbeat_base_mode=" << static_cast<int>(summary.heartbeat_base_mode)
+                      << " heartbeat_system_status=" << static_cast<int>(summary.heartbeat_system_status)
+                      << " heartbeat_mavlink_version=" << static_cast<int>(summary.heartbeat_mavlink_version)
                       << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
                       << " armed=" << (summary.latest.armed ? "true" : "false")
                       << " mode=" << vh::to_string(summary.latest.mode)

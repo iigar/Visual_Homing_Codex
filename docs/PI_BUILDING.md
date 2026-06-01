@@ -156,6 +156,8 @@ The underlying CLI is:
 
 The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `ATTITUDE`, and `GLOBAL_POSITION_INT` payloads for heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude. It does not validate MAVLink CRC yet and does not open a live device; it is a read-only diagnostic layer before adding serial transport.
 
+The heartbeat output includes raw `heartbeat_custom_mode`, `heartbeat_type`, `heartbeat_autopilot`, `heartbeat_base_mode`, `heartbeat_system_status`, and `heartbeat_mavlink_version` fields so unsupported vehicle mode mappings can be diagnosed without changing wiring.
+
 Capture a short read-only MAVLink byte dump from a POSIX serial device and immediately inspect it:
 
 ```bash

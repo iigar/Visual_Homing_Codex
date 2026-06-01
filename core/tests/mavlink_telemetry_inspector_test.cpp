@@ -107,6 +107,12 @@ int main() {
     assert(summary.heartbeat_messages == 1);
     assert(summary.attitude_messages == 1);
     assert(summary.global_position_int_messages == 1);
+    assert(summary.heartbeat_custom_mode == 4);
+    assert(summary.heartbeat_type == 2);
+    assert(summary.heartbeat_autopilot == 3);
+    assert(summary.heartbeat_base_mode == 128);
+    assert(summary.heartbeat_system_status == 4);
+    assert(summary.heartbeat_mavlink_version == 3);
     assert(summary.latest.heartbeat_seen);
     assert(summary.latest.armed);
     assert(summary.latest.mode == vh::FlightMode::Guided);

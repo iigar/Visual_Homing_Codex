@@ -63,6 +63,12 @@ void inspect_payload(std::uint32_t message_id,
         const auto custom_mode = read_u32_le(payload);
         const auto base_mode = payload[6];
         ++summary.heartbeat_messages;
+        summary.heartbeat_custom_mode = custom_mode;
+        summary.heartbeat_type = payload[4];
+        summary.heartbeat_autopilot = payload[5];
+        summary.heartbeat_base_mode = base_mode;
+        summary.heartbeat_system_status = payload[7];
+        summary.heartbeat_mavlink_version = payload[8];
         summary.latest.heartbeat_seen = true;
         summary.latest.armed = (base_mode & mav_mode_flag_safety_armed) != 0;
         summary.latest.mode = ardupilot_custom_mode_to_flight_mode(custom_mode);

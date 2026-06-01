@@ -124,3 +124,4 @@
 - Added machine-readable JSON camera profile registry commands for the future Pi API/Android selector: list profiles, get active profile, and set active profile through the same validated Pi-owned profile state.
 - Added an initial read-only MAVLink telemetry byte-stream inspector for MAVLink v1/v2 framing that extracts heartbeat, armed state, coarse mode, attitude, and relative altitude from captured bytes without opening a serial port or sending commands.
 - Added a read-only POSIX serial MAVLink telemetry capture path that opens the configured device read-only, records raw bytes to `artifacts/mavlink_telemetry.bin`, and immediately runs the existing offline inspector without sending MAVLink commands.
+- Extended MAVLink telemetry inspection logs with raw heartbeat fields (`custom_mode`, vehicle type, autopilot, base mode, system status, MAVLink version) so unknown coarse-mode mappings can be diagnosed from Pi captures.
