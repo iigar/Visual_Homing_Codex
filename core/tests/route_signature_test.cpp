@@ -67,9 +67,15 @@ int main() {
     assert(summary.min_payload_bytes == 4);
     assert(summary.max_payload_bytes == 4);
     assert(summary.total_payload_bytes == 8);
+    assert(summary.min_altitude_band_m == 120);
+    assert(summary.max_altitude_band_m == 125);
+    assert(std::fabs(summary.min_heading_hint_rad - -0.5F) < 0.0001F);
+    assert(std::fabs(summary.max_heading_hint_rad - 0.25F) < 0.0001F);
     assert(summary.timestamps_monotonic);
     assert(summary.uniform_dimensions);
     assert(summary.uniform_payload_size);
+    assert(!summary.uniform_altitude_band);
+    assert(!summary.uniform_heading_hint);
     assert(summary.all_gray8);
 
     auto mixed_route = loaded;
@@ -81,6 +87,8 @@ int main() {
     assert(!mixed_summary.timestamps_monotonic);
     assert(!mixed_summary.uniform_dimensions);
     assert(!mixed_summary.uniform_payload_size);
+    assert(!mixed_summary.uniform_altitude_band);
+    assert(!mixed_summary.uniform_heading_hint);
     assert(!mixed_summary.all_gray8);
     assert(mixed_summary.min_payload_bytes == 4);
     assert(mixed_summary.max_payload_bytes == 5);

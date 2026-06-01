@@ -213,6 +213,8 @@ VISUAL_HOMING_RECORD_LIVE_ROUTE=1 \
 
 The recorder validates `artifacts/mavlink_telemetry.bin` again before recording and writes the snapshot relative altitude into each route entry's altitude band. The snapshot yaw is stored as `heading_hint_rad`. This is still a run-level baseline, not continuous per-frame telemetry.
 
+`route_inspect` reports `min_altitude_band_m`, `max_altitude_band_m`, `min_heading_hint_rad`, `max_heading_hint_rad`, `uniform_altitude_band`, and `uniform_heading_hint` so the recorded route artifact can be checked after capture.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

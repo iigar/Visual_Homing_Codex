@@ -248,15 +248,25 @@ RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route)
     summary.height = first.height;
     summary.min_payload_bytes = static_cast<std::uint64_t>(first.payload.size());
     summary.max_payload_bytes = static_cast<std::uint64_t>(first.payload.size());
+    summary.min_altitude_band_m = first.altitude_band_m;
+    summary.max_altitude_band_m = first.altitude_band_m;
+    summary.min_heading_hint_rad = first.heading_hint_rad;
+    summary.max_heading_hint_rad = first.heading_hint_rad;
 
     auto previous_timestamp = first.timestamp_ns;
     const auto expected_payload_size = first.payload.size();
+    const auto expected_altitude_band_m = first.altitude_band_m;
+    const auto expected_heading_hint_rad = first.heading_hint_rad;
     for (std::size_t index = 0; index < route.entries.size(); ++index) {
         const auto& entry = route.entries[index];
         const auto payload_size = static_cast<std::uint64_t>(entry.payload.size());
         summary.min_payload_bytes = std::min(summary.min_payload_bytes, payload_size);
         summary.max_payload_bytes = std::max(summary.max_payload_bytes, payload_size);
         summary.total_payload_bytes += payload_size;
+        summary.min_altitude_band_m = std::min(summary.min_altitude_band_m, entry.altitude_band_m);
+        summary.max_altitude_band_m = std::max(summary.max_altitude_band_m, entry.altitude_band_m);
+        summary.min_heading_hint_rad = std::min(summary.min_heading_hint_rad, entry.heading_hint_rad);
+        summary.max_heading_hint_rad = std::max(summary.max_heading_hint_rad, entry.heading_hint_rad);
 
         if (index > 0 && entry.timestamp_ns < previous_timestamp) {
             summary.timestamps_monotonic = false;
@@ -268,6 +278,12 @@ RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route)
         }
         if (entry.payload.size() != expected_payload_size) {
             summary.uniform_payload_size = false;
+        }
+        if (entry.altitude_band_m != expected_altitude_band_m) {
+            summary.uniform_altitude_band = false;
+        }
+        if (entry.heading_hint_rad != expected_heading_hint_rad) {
+            summary.uniform_heading_hint = false;
         }
         if (entry.format != PixelFormat::Gray8) {
             summary.all_gray8 = false;

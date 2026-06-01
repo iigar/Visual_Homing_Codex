@@ -644,9 +644,15 @@ int main(int argc, char** argv) {
                       << " min_payload_bytes=" << summary.min_payload_bytes
                       << " max_payload_bytes=" << summary.max_payload_bytes
                       << " total_payload_bytes=" << summary.total_payload_bytes
+                      << " min_altitude_band_m=" << summary.min_altitude_band_m
+                      << " max_altitude_band_m=" << summary.max_altitude_band_m
+                      << " min_heading_hint_rad=" << summary.min_heading_hint_rad
+                      << " max_heading_hint_rad=" << summary.max_heading_hint_rad
                       << " timestamps_monotonic=" << (summary.timestamps_monotonic ? "true" : "false")
                       << " uniform_dimensions=" << (summary.uniform_dimensions ? "true" : "false")
                       << " uniform_payload_size=" << (summary.uniform_payload_size ? "true" : "false")
+                      << " uniform_altitude_band=" << (summary.uniform_altitude_band ? "true" : "false")
+                      << " uniform_heading_hint=" << (summary.uniform_heading_hint ? "true" : "false")
                       << " all_gray8=" << (summary.all_gray8 ? "true" : "false") << "\n";
             return 0;
         } catch (const std::exception& error) {

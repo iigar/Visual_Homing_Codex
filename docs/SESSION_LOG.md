@@ -128,3 +128,4 @@
 - Validated read-only MAVLink capture on `jtzero`: `/dev/serial0` at 115200 baud captured MAVLink2 heartbeat, attitude, and global-position/relative-altitude messages; ArduCopter `custom_mode=2` is now labeled as `AltHold` while command permission remains restricted to armed `Guided`.
 - Added a strict read-only MAVLink telemetry validation gate so Pi smoke runs can fail when a capture lacks heartbeat, attitude, global-position/relative-altitude messages, or contains malformed frames.
 - Wired validated MAVLink telemetry snapshots into live route recording so route entries can carry FC-derived relative-altitude bands and yaw-based heading hints from the current capture artifact while continuous telemetry buffering remains pending.
+- Extended route inspection summaries with altitude-band and heading-hint ranges plus uniformity flags so recorded `VHRS` metadata can be audited from Pi logs.
