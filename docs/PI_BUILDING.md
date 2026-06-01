@@ -289,6 +289,14 @@ VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
 VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
 ```
 
+Before live route recording starts, the Pi script prints a large operator cue, emits terminal bell characters, and counts down for `5` seconds by default. Tune or disable it with:
+
+```bash
+VISUAL_HOMING_OPERATOR_CUE=1
+VISUAL_HOMING_OPERATOR_CUE_SECONDS=5
+VISUAL_HOMING_OPERATOR_CUE_BELL=1
+```
+
 `VISUAL_HOMING_ROUTE_WARMUP_FRAMES` defaults to `3` in the Pi script. Warmup frames are captured and logged as `live_route_warmup_frame`, but they are not preprocessed into the route and are not written to the `VHRS` artifact. Set it to `0` to preserve raw startup behavior for diagnostics.
 
 To record using a profile file for capture and target dimensions:
@@ -384,6 +392,8 @@ The underlying CLI is:
 The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, forward and reverse progress regressions, rollback totals, confidence summary, effective FPS, and `passed`.
 
 `VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any` checks recognition only and is the default. Use `forward` when repeating the recorded route direction and `reverse` when testing a return pass back along the route. Directional modes tolerate small live matcher jumps by default; set both tolerance values to zero for strict monotonic testing.
+
+Live route matching uses the same operator cue countdown as live recording before camera matching starts.
 
 Optional controls:
 

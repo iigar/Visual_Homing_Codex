@@ -29,6 +29,8 @@ mavlink_min_attitude_messages="${VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES:-1}
 mavlink_min_global_position_int_messages="${VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES:-1}"
 mavlink_max_malformed_frames="${VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES:-0}"
 route_telemetry_warmup_ms="${VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS:-1500}"
+operator_cue_seconds="${VISUAL_HOMING_OPERATOR_CUE_SECONDS:-5}"
+operator_cue_bell="${VISUAL_HOMING_OPERATOR_CUE_BELL:-1}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
@@ -48,6 +50,39 @@ finish_log() {
 trap finish_log EXIT
 
 echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
+
+operator_cue() {
+    local phase="$1"
+    local details="$2"
+
+    if [[ "${VISUAL_HOMING_OPERATOR_CUE:-1}" != "1" ]]; then
+        return
+    fi
+
+    echo ""
+    echo "###############################################################################"
+    echo "### VISUAL_HOMING_OPERATOR_CUE phase=${phase}"
+    echo "### ${details}"
+    echo "###############################################################################"
+    echo "operator_cue phase=${phase} details=\"${details}\" countdown_s=${operator_cue_seconds} wall_time_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+    local remaining="${operator_cue_seconds}"
+    while (( remaining > 0 )); do
+        if [[ "${operator_cue_bell}" == "1" ]]; then
+            printf '\a'
+        fi
+        echo "operator_cue_countdown phase=${phase} starts_in_s=${remaining}"
+        sleep 1
+        remaining=$((remaining - 1))
+    done
+
+    if [[ "${operator_cue_bell}" == "1" ]]; then
+        printf '\a\a'
+    fi
+    echo "operator_cue_go phase=${phase} wall_time_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    echo "###############################################################################"
+    echo ""
+}
 
 clean=0
 for arg in "$@"; do
@@ -181,6 +216,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
         route_telemetry_args=("${mavlink_telemetry_input}")
     fi
 
+    operator_cue "record_live_route" "Route recording starts after this countdown; route_output=${route_output}"
+
     if [[ "${VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
         if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" != "1" ]]; then
             echo "VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
@@ -258,6 +295,7 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         echo "VISUAL_HOMING_MATCH_LIVE_ROUTE=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
         exit 2
     fi
+    operator_cue "match_live_route" "Live route matching starts after this countdown; expected_progress=${live_route_match_expected_progress} route_output=${route_output}"
     "${build_dir}/visual_homing_core" --match-live-route-active-profile \
         "${camera_profile_dir}" \
         "${active_camera_profile}" \
