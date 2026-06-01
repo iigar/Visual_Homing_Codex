@@ -801,3 +801,20 @@ Impact:
 
 Risk:
 - The snapshot is not per-frame telemetry and may become stale during a moving capture. It is logged explicitly and should be replaced by continuous frame-correlated telemetry before flight use.
+
+## 2026-06-01 - Start Live Read-Only MAVLink Telemetry Buffer For Route Recording
+
+Decision:
+- Add a read-only MAVLink telemetry stream that opens the configured serial device in a background thread during active route recording.
+- Let live route recording use the latest validated telemetry summary for altitude band and heading hint once heartbeat, attitude, and global-position messages have been observed.
+
+Why:
+- A pre-captured telemetry snapshot proves wiring and metadata plumbing, but it cannot track changing altitude or yaw during a moving route capture.
+- The next safe step is a read-only live buffer that can feed metadata while preserving the command-output block.
+
+Impact:
+- `VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1` records route metadata from live serial telemetry during camera capture.
+- The recorder logs stream byte/frame/message counts and falls back to configured route metadata until the live telemetry summary validates.
+
+Risk:
+- The current buffer reparses accumulated bytes for snapshots and is intended for short bench captures, not long-running flight loops. CRC validation, bounded buffer pruning, and timestamp-aligned per-frame telemetry remain future work.

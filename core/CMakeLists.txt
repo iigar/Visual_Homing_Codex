@@ -24,6 +24,7 @@ add_library(visual_homing_core_lib
     src/mavlink_telemetry_adapter.cpp
     src/mavlink_telemetry_capture.cpp
     src/mavlink_telemetry_inspector.cpp
+    src/mavlink_telemetry_stream.cpp
     src/pi_camera_source.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp

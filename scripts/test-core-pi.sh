@@ -173,7 +173,23 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
         route_telemetry_args=("${mavlink_telemetry_input}")
     fi
 
-    if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
+    if [[ "${VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
+        if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" != "1" ]]; then
+            echo "VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
+            exit 2
+        fi
+        "${build_dir}/visual_homing_core" --record-live-route-active-profile-live-telemetry \
+            "${camera_profile_dir}" \
+            "${active_camera_profile}" \
+            "${VISUAL_HOMING_CAMERA_FPS:-15}" \
+            "${VISUAL_HOMING_CAMERA_FRAMES:-120}" \
+            "${route_output}" \
+            "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
+            "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
+            "${route_warmup_frames}" \
+            "${mavlink_telemetry_device}" \
+            "${mavlink_telemetry_baud}"
+    elif [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-active-profile \
             "${camera_profile_dir}" \
             "${active_camera_profile}" \

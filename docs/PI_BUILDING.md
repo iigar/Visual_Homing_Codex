@@ -215,6 +215,19 @@ The recorder validates `artifacts/mavlink_telemetry.bin` again before recording 
 
 `route_inspect` reports `min_altitude_band_m`, `max_altitude_band_m`, `min_heading_hint_rad`, `max_heading_hint_rad`, `uniform_altitude_band`, and `uniform_heading_hint` so the recorded route artifact can be checked after capture.
 
+For a first live read-only telemetry buffer during route recording, skip the pre-captured snapshot and read the serial stream while camera frames are recorded:
+
+```bash
+VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE=/dev/serial0 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD=115200 \
+VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1 \
+VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 \
+VISUAL_HOMING_RECORD_LIVE_ROUTE=1 \
+./scripts/test-core-pi.sh
+```
+
+This starts a background read-only serial stream for the route-recording duration. Each frame uses the latest validated telemetry for altitude band and heading hint when heartbeat, attitude, and global-position messages have all been seen; otherwise it falls back to the configured route altitude/heading values. Live command output remains blocked.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

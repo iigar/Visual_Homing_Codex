@@ -129,3 +129,4 @@
 - Added a strict read-only MAVLink telemetry validation gate so Pi smoke runs can fail when a capture lacks heartbeat, attitude, global-position/relative-altitude messages, or contains malformed frames.
 - Wired validated MAVLink telemetry snapshots into live route recording so route entries can carry FC-derived relative-altitude bands and yaw-based heading hints from the current capture artifact while continuous telemetry buffering remains pending.
 - Extended route inspection summaries with altitude-band and heading-hint ranges plus uniformity flags so recorded `VHRS` metadata can be audited from Pi logs.
+- Added an initial live read-only MAVLink telemetry stream for active-profile route recording; it runs during camera capture, logs serial telemetry counts, and feeds altitude/heading metadata once the live summary validates.
