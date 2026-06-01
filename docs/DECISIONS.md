@@ -827,6 +827,7 @@ Risk:
 Decision:
 - Add a live camera route-matching path that reads an existing `VHRS` route artifact and matches current camera frames without writing or replacing the route.
 - Expose it through `--match-live-route-active-profile` and `VISUAL_HOMING_MATCH_LIVE_ROUTE=1`.
+- Support explicit expected progress modes: `any` for recognition-only bench passes, `forward` for repeating the recorded route direction, and `reverse` for return-direction checks.
 
 Why:
 - After a route passes distinctiveness diagnostics, the next bench step is proving that a repeat pass can recover route index/progress from live frames.
@@ -835,6 +836,7 @@ Why:
 Impact:
 - The live matcher logs per-frame route index, progress, confidence, validity, FOV-derived direction error, and final pass/fail metrics.
 - The Pi workflow can now separate capture validation from follow/match validation.
+- A repeat pass with high confidence but hand-carried backtracking can pass recognition mode while still exposing forward/reverse progress regressions for diagnosis.
 
 Risk:
 - This is still a read-only matching diagnostic. It does not command the flight controller, does not use live MAVLink freshness in the match gate, and does not yet implement route reacquisition or long-running bounded matcher state.

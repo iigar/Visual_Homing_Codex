@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <iosfwd>
+#include <string>
 
 #include "visual_homing/mavlink.hpp"
 #include "visual_homing/mavlink_telemetry_stream.hpp"
@@ -77,6 +78,7 @@ struct LiveRouteMatchingConfig {
     double minimum_confidence = 0.80;
     int max_direction_shift_px = 0;
     double radians_per_pixel = 0.0;
+    std::string expected_progress = "any";
 };
 
 struct LiveRouteMatchingResult {
@@ -85,12 +87,15 @@ struct LiveRouteMatchingResult {
     std::uint64_t frames_captured = 0;
     std::uint64_t valid_matches = 0;
     std::uint64_t progress_regressions = 0;
+    std::uint64_t reverse_progress_regressions = 0;
     std::uint64_t empty_polls = 0;
     double minimum_confidence_seen = 0.0;
     double average_confidence = 0.0;
     double first_progress = 0.0;
     double last_progress = 0.0;
     bool progress_monotonic = true;
+    bool reverse_progress_monotonic = true;
+    bool directional_progress_passed = true;
     double last_frame_age_ms = 0.0;
     double last_processing_latency_ms = 0.0;
     double elapsed_ms = 0.0;

@@ -13,6 +13,7 @@ route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
 live_route_match_window_radius="${VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS:-30}"
 live_route_match_min_confidence="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE:-0.75}"
 live_route_match_max_direction_shift_px="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX:-4}"
+live_route_match_expected_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS:-any}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -260,7 +261,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${route_warmup_frames}" \
         "${live_route_match_window_radius}" \
         "${live_route_match_min_confidence}" \
-        "${live_route_match_max_direction_shift_px}"
+        "${live_route_match_max_direction_shift_px}" \
+        "${live_route_match_expected_progress}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

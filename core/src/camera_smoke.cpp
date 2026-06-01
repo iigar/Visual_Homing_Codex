@@ -346,6 +346,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.route_path.empty()) {
         throw std::invalid_argument("Live route matching route path must not be empty");
     }
+    if (config.expected_progress != "any" && config.expected_progress != "forward" && config.expected_progress != "reverse") {
+        throw std::invalid_argument("Live route matching expected_progress must be one of: any, forward, reverse");
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcherConfig matcher_config;
@@ -372,7 +375,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " window_radius=" << config.window_radius
             << " minimum_confidence=" << config.minimum_confidence
             << " max_direction_shift_px=" << config.max_direction_shift_px
-            << " radians_per_pixel=" << config.radians_per_pixel << "\n";
+            << " radians_per_pixel=" << config.radians_per_pixel
+            << " expected_progress=" << config.expected_progress << "\n";
 
     result.started = source.start();
     metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
@@ -439,6 +443,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++result.progress_regressions;
                     result.progress_monotonic = false;
                 }
+                if (last_valid_progress && match.progress > *last_valid_progress) {
+                    ++result.reverse_progress_regressions;
+                    result.reverse_progress_monotonic = false;
+                }
                 last_valid_progress = match.progress;
             }
 
@@ -470,22 +478,34 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.average_confidence = result.frames_captured > 0
         ? confidence_sum / static_cast<double>(result.frames_captured)
         : 0.0;
+    if (config.expected_progress == "forward") {
+        result.directional_progress_passed = result.progress_monotonic;
+    } else if (config.expected_progress == "reverse") {
+        result.directional_progress_passed = result.reverse_progress_monotonic;
+    } else {
+        result.directional_progress_passed = true;
+    }
+
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
         && result.valid_matches == result.frames_captured
-        && result.progress_monotonic;
+        && result.directional_progress_passed;
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
             << " frames_captured=" << result.frames_captured
             << " valid_matches=" << result.valid_matches
             << " progress_regressions=" << result.progress_regressions
+            << " reverse_progress_regressions=" << result.reverse_progress_regressions
             << " empty_polls=" << result.empty_polls
             << " minimum_confidence_seen=" << result.minimum_confidence_seen
             << " average_confidence=" << result.average_confidence
             << " first_progress=" << result.first_progress
             << " last_progress=" << result.last_progress
             << " progress_monotonic=" << (result.progress_monotonic ? "true" : "false")
+            << " reverse_progress_monotonic=" << (result.reverse_progress_monotonic ? "true" : "false")
+            << " expected_progress=" << config.expected_progress
+            << " directional_progress_passed=" << (result.directional_progress_passed ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms

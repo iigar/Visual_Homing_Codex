@@ -360,10 +360,12 @@ VISUAL_HOMING_MATCH_LIVE_ROUTE=1 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 ./scr
 The underlying CLI is:
 
 ```bash
-./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px>
+./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse]
 ```
 
-The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, progress regressions, confidence summary, monotonic progress, effective FPS, and `passed`.
+The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, forward and reverse progress regressions, confidence summary, effective FPS, and `passed`.
+
+`VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any` checks recognition only and is the default. Use `forward` when repeating the recorded route direction and `reverse` when testing a return pass back along the route.
 
 Optional controls:
 
@@ -371,6 +373,7 @@ Optional controls:
 VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=30
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE=0.75
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX=4
+VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any
 ```
 
 ## Route Self-Match
