@@ -130,3 +130,4 @@
 - Wired validated MAVLink telemetry snapshots into live route recording so route entries can carry FC-derived relative-altitude bands and yaw-based heading hints from the current capture artifact while continuous telemetry buffering remains pending.
 - Extended route inspection summaries with altitude-band and heading-hint ranges plus uniformity flags so recorded `VHRS` metadata can be audited from Pi logs.
 - Added an initial live read-only MAVLink telemetry stream for active-profile route recording; it runs during camera capture, logs serial telemetry counts, and feeds altitude/heading metadata once the live summary validates.
+- Added fail-closed live telemetry warmup before route frames are recorded so explicitly telemetry-backed routes do not mix fallback heading/altitude metadata into early entries.

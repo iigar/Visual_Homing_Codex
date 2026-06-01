@@ -578,7 +578,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc == 12 && std::string(argv[1]) == "--record-live-route-active-profile-live-telemetry") {
+    if ((argc == 12 || argc == 13) && std::string(argv[1]) == "--record-live-route-active-profile-live-telemetry") {
         try {
             const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
             log_profile_hardware_config("live_route_active_profile", record, std::cout);
@@ -593,6 +593,9 @@ int main(int argc, char** argv) {
             config.use_live_telemetry_stream = true;
             config.telemetry_stream.device_path = argv[10];
             config.telemetry_stream.baud_rate = std::stoi(argv[11]);
+            if (argc == 13) {
+                config.telemetry_warmup_timeout_ms = static_cast<std::uint64_t>(std::stoull(argv[12]));
+            }
             const auto result = vh::record_live_camera_route(config, std::cout);
             return result.started && result.route_written && result.frames_captured == config.frames_to_capture ? 0 : 2;
         } catch (const std::exception& error) {
@@ -791,7 +794,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
-    std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate>\n";
+    std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

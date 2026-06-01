@@ -74,6 +74,7 @@ int main() {
 
     const auto route_output = route_metrics.str();
     assert(route_output.find("live_route_record_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
+    assert(route_output.find("telemetry_warmup_timeout_ms=1500") != std::string::npos);
     assert(route_output.find("live_route_unavailable error=") != std::string::npos);
     assert(route_output.find("live_route_record_done started=false warmup_frames_dropped=0 frames_captured=0 entries=0 empty_polls=0 route_written=false") != std::string::npos);
 

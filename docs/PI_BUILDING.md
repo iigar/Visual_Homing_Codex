@@ -228,6 +228,8 @@ VISUAL_HOMING_RECORD_LIVE_ROUTE=1 \
 
 This starts a background read-only serial stream for the route-recording duration. Each frame uses the latest validated telemetry for altitude band and heading hint when heartbeat, attitude, and global-position messages have all been seen; otherwise it falls back to the configured route altitude/heading values. Live command output remains blocked.
 
+The live telemetry route path waits up to `VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS` before recording camera frames; the default is `1500`. If heartbeat, attitude, and global-position telemetry are not valid before the timeout, the run fails closed instead of writing a mixed fallback/telemetry route.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

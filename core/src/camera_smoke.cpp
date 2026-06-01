@@ -122,6 +122,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " warmup_frames=" << config.warmup_frames
             << " telemetry_snapshot=" << (config.use_telemetry_snapshot ? "true" : "false")
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
+            << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
             << " output=" << config.route_output_path.string() << "\n";
 
     if (config.use_telemetry_snapshot) {
@@ -143,6 +144,46 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                 << " device=" << config.telemetry_stream.device_path
                 << " baud_rate=" << config.telemetry_stream.baud_rate
                 << " started=true\n";
+        const auto telemetry_warmup_started = now();
+        while (milliseconds_between(telemetry_warmup_started, now()) <
+               static_cast<double>(config.telemetry_warmup_timeout_ms)) {
+            const auto telemetry = telemetry_stream->snapshot();
+            const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+            result.telemetry_bytes_captured = telemetry.bytes_captured;
+            result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+            result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+            result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+            result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+            if (validation.passed) {
+                result.telemetry_warmup_passed = true;
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        result.telemetry_warmup_elapsed_ms = milliseconds_between(telemetry_warmup_started, now());
+        metrics << "live_route_telemetry_warmup"
+                << " timeout_ms=" << config.telemetry_warmup_timeout_ms
+                << " elapsed_ms=" << result.telemetry_warmup_elapsed_ms
+                << " passed=" << (result.telemetry_warmup_passed ? "true" : "false")
+                << " bytes_captured=" << result.telemetry_bytes_captured
+                << " frames_seen=" << result.telemetry_frames_seen
+                << " heartbeat_messages=" << result.telemetry_heartbeat_messages
+                << " attitude_messages=" << result.telemetry_attitude_messages
+                << " global_position_int_messages=" << result.telemetry_global_position_int_messages;
+        if (!telemetry_stream->last_error().empty()) {
+            metrics << " error=" << telemetry_stream->last_error();
+        }
+        metrics << "\n";
+        if (!result.telemetry_warmup_passed) {
+            telemetry_stream->stop();
+            metrics << "live_route_record_done started=false warmup_frames_dropped=0 frames_captured=0 entries=0 empty_polls=0 route_written=false"
+                    << " telemetry_snapshot=" << (result.used_telemetry_snapshot ? "true" : "false")
+                    << " live_telemetry_stream=true"
+                    << " telemetry_warmup_passed=false"
+                    << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+                    << " telemetry_frames_seen=" << result.telemetry_frames_seen << "\n";
+            return result;
+        }
     }
 
     result.started = source.start();
@@ -277,6 +318,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " route_written=" << (result.route_written ? "true" : "false")
             << " telemetry_snapshot=" << (result.used_telemetry_snapshot ? "true" : "false")
             << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
+            << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
             << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
             << " telemetry_frames_seen=" << result.telemetry_frames_seen
             << " last_age_ms=" << result.last_frame_age_ms

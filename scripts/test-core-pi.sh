@@ -21,6 +21,7 @@ mavlink_min_heartbeat_messages="${VISUAL_HOMING_MAVLINK_MIN_HEARTBEAT_MESSAGES:-
 mavlink_min_attitude_messages="${VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES:-1}"
 mavlink_min_global_position_int_messages="${VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES:-1}"
 mavlink_max_malformed_frames="${VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES:-0}"
+route_telemetry_warmup_ms="${VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS:-1500}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
@@ -188,7 +189,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
             "${route_warmup_frames}" \
             "${mavlink_telemetry_device}" \
-            "${mavlink_telemetry_baud}"
+            "${mavlink_telemetry_baud}" \
+            "${route_telemetry_warmup_ms}"
     elif [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-active-profile \
             "${camera_profile_dir}" \

@@ -41,6 +41,7 @@ struct LiveRouteRecordingConfig {
     MavlinkTelemetry telemetry_snapshot{};
     bool use_live_telemetry_stream = false;
     MavlinkTelemetryStreamConfig telemetry_stream{};
+    std::uint64_t telemetry_warmup_timeout_ms = 1500;
 };
 
 struct LiveRouteRecordingResult {
@@ -56,6 +57,8 @@ struct LiveRouteRecordingResult {
     double effective_fps = 0.0;
     bool used_telemetry_snapshot = false;
     bool used_live_telemetry_stream = false;
+    bool telemetry_warmup_passed = false;
+    double telemetry_warmup_elapsed_ms = 0.0;
     std::uint64_t telemetry_bytes_captured = 0;
     std::uint64_t telemetry_frames_seen = 0;
     std::uint64_t telemetry_heartbeat_messages = 0;
