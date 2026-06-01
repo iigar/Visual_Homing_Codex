@@ -113,6 +113,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
     health.set_links(true, false, true);
     LiveRouteRecordingResult result;
     std::optional<MavlinkTelemetryStream> telemetry_stream;
+    std::optional<MavlinkTelemetry> last_valid_live_telemetry;
 
     metrics << "live_route_record_start width=" << config.camera.width
             << " height=" << config.camera.height
@@ -156,6 +157,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
             if (validation.passed) {
                 result.telemetry_warmup_passed = true;
+                last_valid_live_telemetry = telemetry.inspection.latest;
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -246,8 +248,11 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                 result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
                 result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
                 if (validation.passed) {
-                    nav.altitude_m = telemetry.inspection.latest.relative_altitude_m;
-                    nav.course_error_rad = telemetry.inspection.latest.yaw_rad;
+                    last_valid_live_telemetry = telemetry.inspection.latest;
+                }
+                if (last_valid_live_telemetry) {
+                    nav.altitude_m = last_valid_live_telemetry->relative_altitude_m;
+                    nav.course_error_rad = last_valid_live_telemetry->yaw_rad;
                 }
             }
             nav.confidence = 1.0;

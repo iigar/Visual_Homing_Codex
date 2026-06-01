@@ -817,6 +817,7 @@ Impact:
 - `VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1` records route metadata from live serial telemetry during camera capture.
 - The recorder logs stream byte/frame/message counts and falls back to configured route metadata until the live telemetry summary validates.
 - The Pi script defaults `VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS=1500`; if telemetry does not validate before the timeout, the run fails closed without writing a mixed-metadata route.
+- After warmup, the recorder keeps the last valid telemetry snapshot so transient partial serial frames do not cause individual route entries to fall back to zero/default metadata.
 
 Risk:
 - The current buffer reparses accumulated bytes for snapshots and is intended for short bench captures, not long-running flight loops. CRC validation, bounded buffer pruning, and timestamp-aligned per-frame telemetry remain future work.
