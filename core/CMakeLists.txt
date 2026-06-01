@@ -22,6 +22,7 @@ add_library(visual_homing_core_lib
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
     src/mavlink_telemetry_adapter.cpp
+    src/mavlink_telemetry_capture.cpp
     src/mavlink_telemetry_inspector.cpp
     src/pi_camera_source.cpp
     src/pipeline_harness.cpp

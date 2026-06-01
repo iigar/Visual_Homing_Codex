@@ -10,6 +10,7 @@
 
 #include "visual_homing/camera_profile.hpp"
 #include "visual_homing/camera_smoke.hpp"
+#include "visual_homing/mavlink_telemetry_capture.hpp"
 #include "visual_homing/mavlink_telemetry_inspector.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
@@ -501,6 +502,49 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 6 && std::string(argv[1]) == "--capture-mavlink-telemetry") {
+        try {
+            vh::MavlinkTelemetryCaptureConfig config;
+            config.device_path = argv[2];
+            config.baud_rate = std::stoi(argv[3]);
+            config.duration_ms = static_cast<std::uint64_t>(std::stoull(argv[4]));
+            config.output_path = argv[5];
+            const auto capture = vh::capture_mavlink_telemetry_file(config);
+            std::cout << "mavlink_telemetry_capture"
+                      << " device=" << config.device_path
+                      << " baud_rate=" << config.baud_rate
+                      << " duration_ms=" << config.duration_ms
+                      << " output=" << capture.output_path
+                      << " supported=" << (capture.supported ? "true" : "false")
+                      << " opened=" << (capture.opened ? "true" : "false")
+                      << " bytes_captured=" << capture.bytes_captured
+                      << " elapsed_ms=" << capture.elapsed_ms
+                      << "\n";
+            const auto summary = vh::inspect_mavlink_telemetry_file(config.output_path);
+            std::cout << "mavlink_telemetry_inspect path=" << config.output_path
+                      << " bytes_read=" << summary.bytes_read
+                      << " frames_seen=" << summary.frames_seen
+                      << " mavlink1_frames=" << summary.mavlink1_frames
+                      << " mavlink2_frames=" << summary.mavlink2_frames
+                      << " malformed_frames=" << summary.malformed_frames
+                      << " heartbeat_messages=" << summary.heartbeat_messages
+                      << " attitude_messages=" << summary.attitude_messages
+                      << " global_position_int_messages=" << summary.global_position_int_messages
+                      << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
+                      << " armed=" << (summary.latest.armed ? "true" : "false")
+                      << " mode=" << vh::to_string(summary.latest.mode)
+                      << " roll_rad=" << summary.latest.roll_rad
+                      << " pitch_rad=" << summary.latest.pitch_rad
+                      << " yaw_rad=" << summary.latest.yaw_rad
+                      << " relative_altitude_m=" << summary.latest.relative_altitude_m
+                      << "\n";
+            return capture.bytes_captured > 0 ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "capture_mavlink_telemetry_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if (argc == 3 && std::string(argv[1]) == "--inspect-route") {
         try {
             const auto summary = vh::inspect_route_signature_file(argv[2]);
@@ -634,6 +678,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
+    std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";

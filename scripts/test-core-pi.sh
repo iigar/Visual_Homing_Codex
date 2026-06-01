@@ -14,6 +14,9 @@ camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/came
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
 mavlink_telemetry_input="${VISUAL_HOMING_MAVLINK_TELEMETRY_INPUT:-${artifact_dir}/mavlink_telemetry.bin}"
+mavlink_telemetry_device="${VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE:-/dev/ttyAMA0}"
+mavlink_telemetry_baud="${VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD:-57600}"
+mavlink_telemetry_duration_ms="${VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS:-1000}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
@@ -110,6 +113,14 @@ if [[ -n "${VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID:-}" ]]; then
         "${camera_profile_dir}" \
         "${active_camera_profile}" \
         "${VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID}"
+fi
+
+if [[ "${VISUAL_HOMING_CAPTURE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --capture-mavlink-telemetry \
+        "${mavlink_telemetry_device}" \
+        "${mavlink_telemetry_baud}" \
+        "${mavlink_telemetry_duration_ms}" \
+        "${mavlink_telemetry_input}"
 fi
 
 if [[ "${VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY:-0}" == "1" ]]; then

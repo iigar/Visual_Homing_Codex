@@ -156,6 +156,30 @@ The underlying CLI is:
 
 The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `ATTITUDE`, and `GLOBAL_POSITION_INT` payloads for heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude. It does not validate MAVLink CRC yet and does not open a live device; it is a read-only diagnostic layer before adding serial transport.
 
+Capture a short read-only MAVLink byte dump from a POSIX serial device and immediately inspect it:
+
+```bash
+VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE=/dev/ttyAMA0 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD=57600 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS=1000 \
+VISUAL_HOMING_CAPTURE_MAVLINK_TELEMETRY=1 \
+./scripts/test-core-pi.sh
+```
+
+The default output is:
+
+```bash
+artifacts/mavlink_telemetry.bin
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>
+```
+
+This capture path opens the serial device read-only and writes the raw received bytes to disk for diagnostics. It still does not send MAVLink messages and does not enable live command output.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:

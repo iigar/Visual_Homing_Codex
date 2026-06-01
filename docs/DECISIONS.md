@@ -750,3 +750,20 @@ Impact:
 
 Risk:
 - This first inspector does not validate MAVLink CRC and does not read from a live serial port yet. It is a parser/diagnostic foundation, not the final telemetry transport.
+
+## 2026-06-01 - Add Read-Only MAVLink Serial Byte Capture
+
+Decision:
+- Add a POSIX serial capture path that opens a configured MAVLink device read-only, records raw bytes for a bounded duration, and writes them to an ignored artifact file.
+- Run the existing MAVLink byte-stream inspector after capture.
+
+Why:
+- The Pi needs a safe way to prove telemetry wiring, baud rate, and frame parsing before continuous live telemetry is integrated with camera frames.
+- Capturing bytes first preserves field evidence in `artifacts/` and keeps the step auditable.
+
+Impact:
+- Operators can run a short read-only serial capture against `/dev/ttyAMA0`, `/dev/ttyS0`, `/dev/serial0`, or a USB telemetry adapter and inspect heartbeat/attitude/altitude fields.
+- The captured `.bin` can be replayed through `--inspect-mavlink-telemetry` later.
+
+Risk:
+- Serial device setup still depends on Pi/ArduPilot wiring, baud rate, and OS permissions. This path does not yet provide continuous telemetry freshness into the live navigation loop.
