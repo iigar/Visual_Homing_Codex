@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
+#include <string>
 #include <vector>
 
 #include "visual_homing/route_signature.hpp"
@@ -77,6 +79,28 @@ int main() {
     assert(!summary.uniform_altitude_band);
     assert(!summary.uniform_heading_hint);
     assert(summary.all_gray8);
+
+    const auto keyframe_dir = std::filesystem::temp_directory_path() / "visual_homing_route_signature_keyframes_test";
+    std::filesystem::remove_all(keyframe_dir);
+    const auto keyframes_written = vh::export_route_signature_keyframes_file(path, keyframe_dir);
+    assert(keyframes_written == 5);
+    assert(std::filesystem::exists(keyframe_dir / "start.pgm"));
+    assert(std::filesystem::exists(keyframe_dir / "025.pgm"));
+    assert(std::filesystem::exists(keyframe_dir / "050.pgm"));
+    assert(std::filesystem::exists(keyframe_dir / "075.pgm"));
+    assert(std::filesystem::exists(keyframe_dir / "end.pgm"));
+
+    std::ifstream start_keyframe(keyframe_dir / "start.pgm", std::ios::binary);
+    std::string header_line;
+    std::getline(start_keyframe, header_line);
+    assert(header_line == "P5");
+    std::getline(start_keyframe, header_line);
+    assert(header_line == "2 2");
+    std::getline(start_keyframe, header_line);
+    assert(header_line == "255");
+    std::vector<unsigned char> start_payload(4);
+    start_keyframe.read(reinterpret_cast<char*>(start_payload.data()), static_cast<std::streamsize>(start_payload.size()));
+    assert(start_payload == first.payload);
 
     auto mixed_route = loaded;
     mixed_route.entries[1].timestamp_ns = 999999999ULL;

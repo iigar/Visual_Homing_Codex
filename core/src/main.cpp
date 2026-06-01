@@ -742,6 +742,22 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 4 && std::string(argv[1]) == "--export-route-keyframes") {
+        try {
+            const auto keyframes_written = vh::export_route_signature_keyframes_file(argv[2], argv[3]);
+            std::cout << "route_keyframes_export"
+                      << " path=" << argv[2]
+                      << " output_dir=" << argv[3]
+                      << " keyframes_written=" << keyframes_written
+                      << " files=start.pgm,025.pgm,050.pgm,075.pgm,end.pgm"
+                      << "\n";
+            return keyframes_written > 0 ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "export_route_keyframes_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if ((argc == 3 || argc == 4) && std::string(argv[1]) == "--self-match-route") {
         try {
             vh::RouteSelfMatchConfig config;
@@ -854,6 +870,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
+    std::cout << "usage: visual_homing_core --export-route-keyframes <route.vhrs> <output_dir>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --route-distinctiveness <route.vhrs> [edge_trim_entries]\n";

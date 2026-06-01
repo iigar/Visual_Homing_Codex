@@ -9,6 +9,7 @@ build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 artifact_dir="${repo_root}/artifacts"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
+route_keyframe_dir="${VISUAL_HOMING_ROUTE_KEYFRAME_DIR:-${artifact_dir}/route_keyframes}"
 route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
 live_route_match_window_radius="${VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS:-30}"
 live_route_match_min_confidence="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE:-0.75}"
@@ -234,6 +235,9 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
     fi
 
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
+    "${build_dir}/visual_homing_core" --export-route-keyframes \
+        "${route_output}" \
+        "${route_keyframe_dir}"
     "${build_dir}/visual_homing_core" --self-match-route \
         "${route_output}" \
         "${VISUAL_HOMING_SELF_MATCH_MIN_CONFIDENCE:-0.99}"
@@ -288,6 +292,12 @@ fi
 
 if [[ "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
+fi
+
+if [[ "${VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --export-route-keyframes \
+        "${route_output}" \
+        "${route_keyframe_dir}"
 fi
 
 if [[ "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" ]]; then

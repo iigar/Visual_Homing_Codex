@@ -313,6 +313,18 @@ The underlying CLI is:
 
 When live route recording succeeds through `scripts/test-core-pi.sh`, the script automatically inspects the written file with `--inspect-route`.
 
+It also exports route orientation keyframes as binary Gray8 PGM files to `VISUAL_HOMING_ROUTE_KEYFRAME_DIR`, defaulting to `artifacts/route_keyframes`:
+
+```text
+start.pgm
+025.pgm
+050.pgm
+075.pgm
+end.pgm
+```
+
+Use these files to identify where the route began and ended before running forward or reverse live-match tests.
+
 This path is still a hardware validation/recording mode, not a flight loop. It intentionally writes to disk after collecting live frames and should not be used inside future realtime command loops.
 
 ## Route Inspection
@@ -332,6 +344,12 @@ The underlying CLI is:
 The inspector reports version, entry count, frame id range, timestamp range, signature dimensions, payload byte totals, monotonic timestamp status, dimension/payload uniformity, and whether all entries are Gray8.
 
 The default route artifact path is `artifacts/visual_homing_live_route.vhrs`. The `artifacts/` directory is intentionally ignored by git.
+
+Export keyframes from an existing route artifact without touching camera hardware:
+
+```bash
+VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES=1 ./scripts/test-core-pi.sh
+```
 
 ## Route Validation
 

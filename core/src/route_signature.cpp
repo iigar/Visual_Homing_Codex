@@ -121,6 +121,29 @@ void require_stream_ok(const std::ios& stream, const std::string& action) {
     }
 }
 
+void write_gray8_pgm(const std::filesystem::path& path, const RouteSignatureEntry& entry) {
+    if (entry.format != PixelFormat::Gray8) {
+        throw std::runtime_error("Route keyframes require Gray8 route entries");
+    }
+    if (entry.width == 0 || entry.height == 0) {
+        throw std::runtime_error("Route keyframe entry dimensions must be positive");
+    }
+    const auto expected_payload_size = static_cast<std::size_t>(entry.width) * static_cast<std::size_t>(entry.height);
+    if (entry.payload.size() != expected_payload_size) {
+        throw std::runtime_error("Route keyframe payload size does not match dimensions");
+    }
+
+    std::ofstream output(path, std::ios::binary);
+    if (!output) {
+        throw std::runtime_error("Could not open route keyframe for write: " + path.string());
+    }
+    output << "P5\n" << entry.width << " " << entry.height << "\n255\n";
+    output.write(reinterpret_cast<const char*>(entry.payload.data()), static_cast<std::streamsize>(entry.payload.size()));
+    if (!output) {
+        throw std::runtime_error("Failed to write route keyframe: " + path.string());
+    }
+}
+
 } // namespace
 
 void write_route_signature_file(const std::filesystem::path& path, const RouteSignatureFile& route) {
@@ -295,6 +318,47 @@ RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route)
 
 RouteSignatureSummary inspect_route_signature_file(const std::filesystem::path& path) {
     return summarize_route_signature(read_route_signature_file(path));
+}
+
+std::uint64_t write_route_signature_keyframes(const RouteSignatureFile& route, const std::filesystem::path& output_dir) {
+    if (route.entries.empty()) {
+        throw std::runtime_error("Cannot export keyframes from an empty route signature");
+    }
+    if (output_dir.empty()) {
+        throw std::runtime_error("Route keyframe output directory must not be empty");
+    }
+
+    std::filesystem::create_directories(output_dir);
+
+    struct KeyframeSelection {
+        const char* name;
+        std::size_t numerator;
+        std::size_t denominator;
+    };
+    constexpr std::array<KeyframeSelection, 5> selections{{
+        {"start", 0, 1},
+        {"025", 1, 4},
+        {"050", 1, 2},
+        {"075", 3, 4},
+        {"end", 1, 1},
+    }};
+
+    const auto last_index = route.entries.size() - 1;
+    std::uint64_t written = 0;
+    for (const auto& selection : selections) {
+        const auto index = selection.denominator == 1 && selection.numerator == 1
+            ? last_index
+            : (last_index * selection.numerator) / selection.denominator;
+        write_gray8_pgm(output_dir / (std::string(selection.name) + ".pgm"), route.entries[index]);
+        ++written;
+    }
+    return written;
+}
+
+std::uint64_t export_route_signature_keyframes_file(
+    const std::filesystem::path& route_path,
+    const std::filesystem::path& output_dir) {
+    return write_route_signature_keyframes(read_route_signature_file(route_path), output_dir);
 }
 
 } // namespace vh
