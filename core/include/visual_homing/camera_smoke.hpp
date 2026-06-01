@@ -66,7 +66,40 @@ struct LiveRouteRecordingResult {
     std::uint64_t telemetry_global_position_int_messages = 0;
 };
 
+struct LiveRouteMatchingConfig {
+    PiCameraConfig camera;
+    std::filesystem::path route_path;
+    int target_width = 32;
+    int target_height = 24;
+    std::size_t frames_to_capture = 120;
+    std::size_t warmup_frames = 0;
+    std::size_t window_radius = 12;
+    double minimum_confidence = 0.80;
+    int max_direction_shift_px = 0;
+    double radians_per_pixel = 0.0;
+};
+
+struct LiveRouteMatchingResult {
+    bool started = false;
+    std::uint64_t warmup_frames_dropped = 0;
+    std::uint64_t frames_captured = 0;
+    std::uint64_t valid_matches = 0;
+    std::uint64_t progress_regressions = 0;
+    std::uint64_t empty_polls = 0;
+    double minimum_confidence_seen = 0.0;
+    double average_confidence = 0.0;
+    double first_progress = 0.0;
+    double last_progress = 0.0;
+    bool progress_monotonic = true;
+    double last_frame_age_ms = 0.0;
+    double last_processing_latency_ms = 0.0;
+    double elapsed_ms = 0.0;
+    double effective_fps = 0.0;
+    bool passed = false;
+};
+
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
+LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics);
 
 } // namespace vh

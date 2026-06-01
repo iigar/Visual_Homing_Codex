@@ -349,6 +349,30 @@ VISUAL_HOMING_PERTURB_MIN_CONFIDENCE=0.90
 VISUAL_HOMING_ROUTE_EDGE_TRIM=3
 ```
 
+## Live Route Matching
+
+Match live camera frames against an existing route artifact without overwriting the route:
+
+```bash
+VISUAL_HOMING_MATCH_LIVE_ROUTE=1 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px>
+```
+
+The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, progress regressions, confidence summary, monotonic progress, effective FPS, and `passed`.
+
+Optional controls:
+
+```bash
+VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=30
+VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE=0.75
+VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX=4
+```
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

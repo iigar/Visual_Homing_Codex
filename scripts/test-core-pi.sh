@@ -10,6 +10,9 @@ artifact_dir="${repo_root}/artifacts"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
 route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
+live_route_match_window_radius="${VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS:-30}"
+live_route_match_min_confidence="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE:-0.75}"
+live_route_match_max_direction_shift_px="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX:-4}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -141,7 +144,7 @@ if [[ "${VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
         "${mavlink_max_malformed_frames}"
 fi
 
-if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
+if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then
     mkdir -p "$(dirname "${route_output}")"
 fi
 
@@ -241,6 +244,23 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
     else
         "${build_dir}/visual_homing_core" --route-distinctiveness "${route_output}"
     fi
+fi
+
+if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
+    if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" != "1" ]]; then
+        echo "VISUAL_HOMING_MATCH_LIVE_ROUTE=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
+        exit 2
+    fi
+    "${build_dir}/visual_homing_core" --match-live-route-active-profile \
+        "${camera_profile_dir}" \
+        "${active_camera_profile}" \
+        "${VISUAL_HOMING_CAMERA_FPS:-15}" \
+        "${VISUAL_HOMING_CAMERA_FRAMES:-120}" \
+        "${route_output}" \
+        "${route_warmup_frames}" \
+        "${live_route_match_window_radius}" \
+        "${live_route_match_min_confidence}" \
+        "${live_route_match_max_direction_shift_px}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

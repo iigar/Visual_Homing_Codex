@@ -5,6 +5,7 @@
 #include <string>
 
 #include "visual_homing/camera_smoke.hpp"
+#include "visual_homing/route_signature.hpp"
 
 int main() {
     std::ostringstream metrics;
@@ -99,6 +100,68 @@ int main() {
         rejected_route_output = true;
     }
     assert(rejected_route_output);
+
+    const auto match_route_path = std::filesystem::temp_directory_path() / "visual_homing_live_route_match_unavailable_test.vhrs";
+    std::filesystem::remove(match_route_path);
+    vh::RouteSignatureFile match_route;
+    vh::RouteSignatureEntry match_entry;
+    match_entry.frame_id = 1;
+    match_entry.timestamp_ns = 100;
+    match_entry.width = 16;
+    match_entry.height = 12;
+    match_entry.format = vh::PixelFormat::Gray8;
+    match_entry.payload.assign(16 * 12, 42);
+    match_route.entries.push_back(match_entry);
+    vh::write_route_signature_file(match_route_path, match_route);
+
+    std::ostringstream match_metrics;
+    vh::LiveRouteMatchingConfig match_config;
+    match_config.camera.width = 160;
+    match_config.camera.height = 120;
+    match_config.camera.frame_rate_hz = 10;
+    match_config.frames_to_capture = 3;
+    match_config.warmup_frames = 3;
+    match_config.route_path = match_route_path;
+    match_config.target_width = 16;
+    match_config.target_height = 12;
+    match_config.window_radius = 4;
+    match_config.minimum_confidence = 0.75;
+    match_config.max_direction_shift_px = 2;
+    match_config.radians_per_pixel = 0.01;
+
+    const auto match_result = vh::match_live_camera_route(match_config, match_metrics);
+    assert(!match_result.started);
+    assert(!match_result.passed);
+    assert(match_result.frames_captured == 0);
+    assert(match_result.valid_matches == 0);
+
+    const auto match_output = match_metrics.str();
+    assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
+    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01") != std::string::npos);
+    assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
+    assert(match_output.find("live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false") != std::string::npos);
+
+    bool rejected_match_frames = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.frames_to_capture = 0;
+        invalid.route_path = match_route_path;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_frames = true;
+    }
+    assert(rejected_match_frames);
+
+    bool rejected_match_route = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_route = true;
+    }
+    assert(rejected_match_route);
 
     return 0;
 }

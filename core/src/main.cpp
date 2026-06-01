@@ -54,6 +54,31 @@ vh::LiveRouteRecordingConfig live_route_config_from_profile(const vh::CameraProf
     return config;
 }
 
+vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::CameraProfile& profile,
+                                                                    int fps,
+                                                                    std::size_t frames,
+                                                                    const std::string& route_path,
+                                                                    std::size_t warmup_frames,
+                                                                    std::size_t window_radius,
+                                                                    double minimum_confidence,
+                                                                    int max_direction_shift_px) {
+    vh::LiveRouteMatchingConfig config;
+    config.camera.width = profile.capture_width;
+    config.camera.height = profile.capture_height;
+    config.camera.frame_rate_hz = fps;
+    config.camera.enable_live_capture = true;
+    config.frames_to_capture = frames;
+    config.route_path = route_path;
+    config.target_width = profile.target_width;
+    config.target_height = profile.target_height;
+    config.warmup_frames = warmup_frames;
+    config.window_radius = window_radius;
+    config.minimum_confidence = minimum_confidence;
+    config.max_direction_shift_px = max_direction_shift_px;
+    config.radians_per_pixel = vh::derive_camera_angular_scale(profile).radians_per_target_pixel_x;
+    return config;
+}
+
 void log_profile_hardware_config(const char* prefix, const vh::CameraProfileRecord& record, std::ostream& output) {
     output << prefix
            << " profile_path=" << record.path
@@ -604,6 +629,27 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 11 && std::string(argv[1]) == "--match-live-route-active-profile") {
+        try {
+            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
+            const auto config = live_route_matching_config_from_profile(
+                record.profile,
+                std::stoi(argv[4]),
+                static_cast<std::size_t>(std::stoull(argv[5])),
+                argv[6],
+                static_cast<std::size_t>(std::stoull(argv[7])),
+                static_cast<std::size_t>(std::stoull(argv[8])),
+                std::stod(argv[9]),
+                std::stoi(argv[10]));
+            const auto result = vh::match_live_camera_route(config, std::cout);
+            return result.passed ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "match_live_route_active_profile_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if (argc == 3 && std::string(argv[1]) == "--inspect-mavlink-telemetry") {
         try {
             const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
@@ -795,6 +841,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px>\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

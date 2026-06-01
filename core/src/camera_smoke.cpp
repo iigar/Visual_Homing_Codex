@@ -1,5 +1,6 @@
 #include "visual_homing/camera_smoke.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <optional>
@@ -7,7 +8,9 @@
 #include <thread>
 
 #include "visual_homing/gray8_resize_preprocessor.hpp"
+#include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
 #include "visual_homing/time.hpp"
 
@@ -330,6 +333,164 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms
             << " effective_fps=" << result.effective_fps << "\n";
+    return result;
+}
+
+LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics) {
+    if (config.frames_to_capture == 0) {
+        throw std::invalid_argument("Live route matching frames_to_capture must be positive");
+    }
+    if (config.target_width <= 0 || config.target_height <= 0) {
+        throw std::invalid_argument("Live route matching target dimensions must be positive");
+    }
+    if (config.route_path.empty()) {
+        throw std::invalid_argument("Live route matching route path must not be empty");
+    }
+
+    const auto route = read_route_signature_file(config.route_path);
+    Gray8RouteMatcherConfig matcher_config;
+    matcher_config.window_radius = config.window_radius;
+    matcher_config.minimum_confidence = config.minimum_confidence;
+    matcher_config.max_direction_shift_px = config.max_direction_shift_px;
+    matcher_config.radians_per_pixel = config.radians_per_pixel;
+
+    PiCameraSource source(config.camera);
+    Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
+    Gray8RouteMatcher matcher(route, matcher_config);
+    HealthMonitor health(now());
+    health.set_links(true, false, true);
+    LiveRouteMatchingResult result;
+
+    metrics << "live_route_match_start width=" << config.camera.width
+            << " height=" << config.camera.height
+            << " fps=" << config.camera.frame_rate_hz
+            << " target=" << config.target_width << "x" << config.target_height
+            << " requested_frames=" << config.frames_to_capture
+            << " warmup_frames=" << config.warmup_frames
+            << " route=" << config.route_path.string()
+            << " route_entries=" << route.entries.size()
+            << " window_radius=" << config.window_radius
+            << " minimum_confidence=" << config.minimum_confidence
+            << " max_direction_shift_px=" << config.max_direction_shift_px
+            << " radians_per_pixel=" << config.radians_per_pixel << "\n";
+
+    result.started = source.start();
+    metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
+            << " running=" << (source.running() ? "true" : "false");
+    if (!source.last_error().empty()) {
+        metrics << " error=" << source.last_error();
+    }
+    metrics << "\n";
+
+    if (!result.started) {
+        metrics << "live_route_match_unavailable error=" << source.last_error() << "\n";
+        metrics << "live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false\n";
+        return result;
+    }
+
+    const auto started_at = now();
+    const auto requested_source_frames = config.frames_to_capture + config.warmup_frames;
+    const auto timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
+        / static_cast<double>(config.camera.frame_rate_hz));
+    while (result.warmup_frames_dropped < config.warmup_frames) {
+        if (auto frame = source.poll()) {
+            ++result.warmup_frames_dropped;
+            metrics << "live_route_match_warmup_frame id=" << frame->id
+                    << " size=" << frame->width << "x" << frame->height
+                    << " bytes=" << frame->data.size()
+                    << " dropped=" << result.warmup_frames_dropped
+                    << "/" << config.warmup_frames << "\n";
+        } else {
+            ++result.empty_polls;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+
+        if (milliseconds_between(started_at, now()) > timeout_ms) {
+            break;
+        }
+    }
+
+    double confidence_sum = 0.0;
+    std::optional<double> last_valid_progress;
+    while (result.frames_captured < config.frames_to_capture) {
+        if (auto frame = source.poll()) {
+            const auto processing_started = now();
+            const auto processed = preprocessor.process(*frame);
+            const auto match = matcher.match(processed);
+            const auto processing_finished = now();
+            const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
+            health.set_route_match_confidence(match.confidence);
+
+            ++result.frames_captured;
+            confidence_sum += match.confidence;
+            result.minimum_confidence_seen = result.frames_captured == 1
+                ? match.confidence
+                : std::min(result.minimum_confidence_seen, match.confidence);
+            if (result.frames_captured == 1) {
+                result.first_progress = match.progress;
+            }
+            result.last_progress = match.progress;
+            result.last_frame_age_ms = timing.frame_age_ms;
+            result.last_processing_latency_ms = timing.processing_latency_ms;
+
+            if (match.valid) {
+                ++result.valid_matches;
+                if (last_valid_progress && match.progress < *last_valid_progress) {
+                    ++result.progress_regressions;
+                    result.progress_monotonic = false;
+                }
+                last_valid_progress = match.progress;
+            }
+
+            metrics << "live_route_match_frame id=" << processed.id
+                    << " size=" << processed.width << "x" << processed.height
+                    << " bytes=" << processed.data.size()
+                    << " route_index=" << match.route_index
+                    << " progress=" << match.progress
+                    << " confidence=" << match.confidence
+                    << " valid=" << (match.valid ? "true" : "false")
+                    << " direction_error_rad=" << match.direction_error_rad
+                    << " age_ms=" << timing.frame_age_ms
+                    << " latency_ms=" << timing.processing_latency_ms << "\n";
+        } else {
+            ++result.empty_polls;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+
+        if (milliseconds_between(started_at, now()) > timeout_ms) {
+            break;
+        }
+    }
+
+    source.stop();
+    result.elapsed_ms = milliseconds_between(started_at, now());
+    result.effective_fps = result.elapsed_ms > 0.0
+        ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
+        : 0.0;
+    result.average_confidence = result.frames_captured > 0
+        ? confidence_sum / static_cast<double>(result.frames_captured)
+        : 0.0;
+    result.passed = result.started
+        && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
+        && result.valid_matches == result.frames_captured
+        && result.progress_monotonic;
+
+    metrics << "live_route_match_done started=true"
+            << " warmup_frames_dropped=" << result.warmup_frames_dropped
+            << " frames_captured=" << result.frames_captured
+            << " valid_matches=" << result.valid_matches
+            << " progress_regressions=" << result.progress_regressions
+            << " empty_polls=" << result.empty_polls
+            << " minimum_confidence_seen=" << result.minimum_confidence_seen
+            << " average_confidence=" << result.average_confidence
+            << " first_progress=" << result.first_progress
+            << " last_progress=" << result.last_progress
+            << " progress_monotonic=" << (result.progress_monotonic ? "true" : "false")
+            << " last_age_ms=" << result.last_frame_age_ms
+            << " last_latency_ms=" << result.last_processing_latency_ms
+            << " elapsed_ms=" << result.elapsed_ms
+            << " effective_fps=" << result.effective_fps
+            << " passed=" << (result.passed ? "true" : "false") << "\n";
     return result;
 }
 

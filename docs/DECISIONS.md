@@ -821,3 +821,20 @@ Impact:
 
 Risk:
 - The current buffer reparses accumulated bytes for snapshots and is intended for short bench captures, not long-running flight loops. CRC validation, bounded buffer pruning, and timestamp-aligned per-frame telemetry remain future work.
+
+## 2026-06-01 - Add Read-Only Live Route Matching
+
+Decision:
+- Add a live camera route-matching path that reads an existing `VHRS` route artifact and matches current camera frames without writing or replacing the route.
+- Expose it through `--match-live-route-active-profile` and `VISUAL_HOMING_MATCH_LIVE_ROUTE=1`.
+
+Why:
+- After a route passes distinctiveness diagnostics, the next bench step is proving that a repeat pass can recover route index/progress from live frames.
+- The operator needs a command that cannot accidentally overwrite the current good route artifact.
+
+Impact:
+- The live matcher logs per-frame route index, progress, confidence, validity, FOV-derived direction error, and final pass/fail metrics.
+- The Pi workflow can now separate capture validation from follow/match validation.
+
+Risk:
+- This is still a read-only matching diagnostic. It does not command the flight controller, does not use live MAVLink freshness in the match gate, and does not yet implement route reacquisition or long-running bounded matcher state.
