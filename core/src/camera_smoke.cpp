@@ -346,6 +346,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.route_path.empty()) {
         throw std::invalid_argument("Live route matching route path must not be empty");
     }
+    if (config.max_progress_rollback < 0.0) {
+        throw std::invalid_argument("Live route matching max_progress_rollback must not be negative");
+    }
     if (config.expected_progress != "any" && config.expected_progress != "forward" && config.expected_progress != "reverse") {
         throw std::invalid_argument("Live route matching expected_progress must be one of: any, forward, reverse");
     }
@@ -376,7 +379,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " minimum_confidence=" << config.minimum_confidence
             << " max_direction_shift_px=" << config.max_direction_shift_px
             << " radians_per_pixel=" << config.radians_per_pixel
-            << " expected_progress=" << config.expected_progress << "\n";
+            << " expected_progress=" << config.expected_progress
+            << " max_progress_regressions=" << config.max_progress_regressions
+            << " max_progress_rollback=" << config.max_progress_rollback << "\n";
 
     result.started = source.start();
     metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
@@ -441,10 +446,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 ++result.valid_matches;
                 if (last_valid_progress && match.progress < *last_valid_progress) {
                     ++result.progress_regressions;
+                    result.progress_rollback += *last_valid_progress - match.progress;
                     result.progress_monotonic = false;
                 }
                 if (last_valid_progress && match.progress > *last_valid_progress) {
                     ++result.reverse_progress_regressions;
+                    result.reverse_progress_rollback += match.progress - *last_valid_progress;
                     result.reverse_progress_monotonic = false;
                 }
                 last_valid_progress = match.progress;
@@ -479,9 +486,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         ? confidence_sum / static_cast<double>(result.frames_captured)
         : 0.0;
     if (config.expected_progress == "forward") {
-        result.directional_progress_passed = result.progress_monotonic;
+        result.directional_progress_passed =
+            result.progress_regressions <= config.max_progress_regressions
+            && result.progress_rollback <= config.max_progress_rollback;
     } else if (config.expected_progress == "reverse") {
-        result.directional_progress_passed = result.reverse_progress_monotonic;
+        result.directional_progress_passed =
+            result.reverse_progress_regressions <= config.max_progress_regressions
+            && result.reverse_progress_rollback <= config.max_progress_rollback;
     } else {
         result.directional_progress_passed = true;
     }
@@ -497,6 +508,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " valid_matches=" << result.valid_matches
             << " progress_regressions=" << result.progress_regressions
             << " reverse_progress_regressions=" << result.reverse_progress_regressions
+            << " progress_rollback=" << result.progress_rollback
+            << " reverse_progress_rollback=" << result.reverse_progress_rollback
+            << " max_progress_regressions=" << config.max_progress_regressions
+            << " max_progress_rollback=" << config.max_progress_rollback
             << " empty_polls=" << result.empty_polls
             << " minimum_confidence_seen=" << result.minimum_confidence_seen
             << " average_confidence=" << result.average_confidence

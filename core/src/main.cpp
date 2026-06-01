@@ -62,7 +62,9 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
                                                                     std::size_t window_radius,
                                                                     double minimum_confidence,
                                                                     int max_direction_shift_px,
-                                                                    const std::string& expected_progress) {
+                                                                    const std::string& expected_progress,
+                                                                    std::uint64_t max_progress_regressions,
+                                                                    double max_progress_rollback) {
     vh::LiveRouteMatchingConfig config;
     config.camera.width = profile.capture_width;
     config.camera.height = profile.capture_height;
@@ -78,6 +80,8 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
     config.max_direction_shift_px = max_direction_shift_px;
     config.radians_per_pixel = vh::derive_camera_angular_scale(profile).radians_per_target_pixel_x;
     config.expected_progress = expected_progress;
+    config.max_progress_regressions = max_progress_regressions;
+    config.max_progress_rollback = max_progress_rollback;
     return config;
 }
 
@@ -631,7 +635,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 11 || argc == 12) && std::string(argv[1]) == "--match-live-route-active-profile") {
+    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14) && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
             const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
@@ -644,7 +648,9 @@ int main(int argc, char** argv) {
                 static_cast<std::size_t>(std::stoull(argv[8])),
                 std::stod(argv[9]),
                 std::stoi(argv[10]),
-                argc == 12 ? argv[11] : "any");
+                argc >= 12 ? argv[11] : "any",
+                argc >= 13 ? static_cast<std::uint64_t>(std::stoull(argv[12])) : 5,
+                argc >= 14 ? std::stod(argv[13]) : 0.25);
             const auto result = vh::match_live_camera_route(config, std::cout);
             return result.passed ? 0 : 2;
         } catch (const std::exception& error) {
@@ -844,7 +850,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms]\n";
-    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback]]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

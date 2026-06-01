@@ -79,6 +79,8 @@ struct LiveRouteMatchingConfig {
     int max_direction_shift_px = 0;
     double radians_per_pixel = 0.0;
     std::string expected_progress = "any";
+    std::uint64_t max_progress_regressions = 5;
+    double max_progress_rollback = 0.25;
 };
 
 struct LiveRouteMatchingResult {
@@ -89,6 +91,8 @@ struct LiveRouteMatchingResult {
     std::uint64_t progress_regressions = 0;
     std::uint64_t reverse_progress_regressions = 0;
     std::uint64_t empty_polls = 0;
+    double progress_rollback = 0.0;
+    double reverse_progress_rollback = 0.0;
     double minimum_confidence_seen = 0.0;
     double average_confidence = 0.0;
     double first_progress = 0.0;
