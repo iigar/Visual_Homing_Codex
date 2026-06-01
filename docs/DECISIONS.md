@@ -732,3 +732,21 @@ Impact:
 
 Risk:
 - This is not yet an HTTP server. It is the core-side contract and JSON payload layer that a later Pi service can expose over the network.
+
+## 2026-06-01 - Start Read-Only MAVLink Telemetry With Offline Byte Inspection
+
+Decision:
+- Add a dependency-free MAVLink v1/v2 byte-stream inspector for captured telemetry files.
+- Decode `HEARTBEAT`, `ATTITUDE`, and `GLOBAL_POSITION_INT` payloads into heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude.
+- Expose the inspector through `--inspect-mavlink-telemetry` and `VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY=1`.
+
+Why:
+- Milestone 6.5 needs real flight-controller telemetry before long-range visual return can be evaluated seriously.
+- Starting with captured bytes keeps the step read-only and testable before opening serial devices on the Pi.
+
+Impact:
+- The core can now parse the telemetry fields needed for future camera-frame/attitude/altitude correlation from MAVLink byte streams.
+- Live command output remains blocked; this path is inspection-only.
+
+Risk:
+- This first inspector does not validate MAVLink CRC and does not read from a live serial port yet. It is a parser/diagnostic foundation, not the final telemetry transport.

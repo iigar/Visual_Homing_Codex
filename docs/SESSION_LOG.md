@@ -122,3 +122,4 @@
 - Added live route warmup frame dropping: route recording now accepts `warmup_frames`, the Pi script defaults `VISUAL_HOMING_ROUTE_WARMUP_FRAMES=3`, dropped frames are logged as `live_route_warmup_frame`, and the final summary reports `warmup_frames_dropped`.
 - Added `VISUAL_HOMING_VALIDATE_ROUTE=1` to `scripts/test-core-pi.sh` as a convenience path for running inspect, self-match, perturbation checks, and distinctiveness diagnostics on the current route artifact without opening camera hardware.
 - Added machine-readable JSON camera profile registry commands for the future Pi API/Android selector: list profiles, get active profile, and set active profile through the same validated Pi-owned profile state.
+- Added an initial read-only MAVLink telemetry byte-stream inspector for MAVLink v1/v2 framing that extracts heartbeat, armed state, coarse mode, attitude, and relative altitude from captured bytes without opening a serial port or sending commands.

@@ -13,6 +13,7 @@ route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
+mavlink_telemetry_input="${VISUAL_HOMING_MAVLINK_TELEMETRY_INPUT:-${artifact_dir}/mavlink_telemetry.bin}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
@@ -109,6 +110,10 @@ if [[ -n "${VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID:-}" ]]; then
         "${camera_profile_dir}" \
         "${active_camera_profile}" \
         "${VISUAL_HOMING_API_SET_CAMERA_PROFILE_ID}"
+fi
+
+if [[ "${VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
+    "${build_dir}/visual_homing_core" --inspect-mavlink-telemetry "${mavlink_telemetry_input}"
 fi
 
 if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" || "${VISUAL_HOMING_INSPECT_ROUTE:-0}" == "1" || "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" || "${VISUAL_HOMING_PERTURB_ROUTE:-0}" == "1" || "${VISUAL_HOMING_ROUTE_DISTINCTIVENESS:-0}" == "1" ]]; then

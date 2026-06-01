@@ -10,6 +10,7 @@
 
 #include "visual_homing/camera_profile.hpp"
 #include "visual_homing/camera_smoke.hpp"
+#include "visual_homing/mavlink_telemetry_inspector.hpp"
 #include "visual_homing/pipeline_harness.hpp"
 #include "visual_homing/replay_frame_source.hpp"
 #include "visual_homing/route_artifact_check.hpp"
@@ -473,6 +474,33 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (argc == 3 && std::string(argv[1]) == "--inspect-mavlink-telemetry") {
+        try {
+            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
+            std::cout << "mavlink_telemetry_inspect path=" << argv[2]
+                      << " bytes_read=" << summary.bytes_read
+                      << " frames_seen=" << summary.frames_seen
+                      << " mavlink1_frames=" << summary.mavlink1_frames
+                      << " mavlink2_frames=" << summary.mavlink2_frames
+                      << " malformed_frames=" << summary.malformed_frames
+                      << " heartbeat_messages=" << summary.heartbeat_messages
+                      << " attitude_messages=" << summary.attitude_messages
+                      << " global_position_int_messages=" << summary.global_position_int_messages
+                      << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
+                      << " armed=" << (summary.latest.armed ? "true" : "false")
+                      << " mode=" << vh::to_string(summary.latest.mode)
+                      << " roll_rad=" << summary.latest.roll_rad
+                      << " pitch_rad=" << summary.latest.pitch_rad
+                      << " yaw_rad=" << summary.latest.yaw_rad
+                      << " relative_altitude_m=" << summary.latest.relative_altitude_m
+                      << "\n";
+            return summary.frames_seen > 0 && summary.malformed_frames == 0 ? 0 : 2;
+        } catch (const std::exception& error) {
+            std::cerr << "inspect_mavlink_telemetry_error=" << error.what() << "\n";
+            return 1;
+        }
+    }
+
     if (argc == 3 && std::string(argv[1]) == "--inspect-route") {
         try {
             const auto summary = vh::inspect_route_signature_file(argv[2]);
@@ -605,6 +633,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames]]\n";
+    std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --self-match-route <route.vhrs> [minimum_confidence]\n";
     std::cout << "usage: visual_homing_core --perturb-route <route.vhrs> [minimum_confidence]\n";

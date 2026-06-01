@@ -140,6 +140,22 @@ VISUAL_HOMING_CAMERA_PROFILE_DIR=/path/to/camera_profiles
 VISUAL_HOMING_ACTIVE_CAMERA_PROFILE=/path/to/active_camera_profile.txt
 ```
 
+## MAVLink Telemetry Inspection
+
+Inspect a captured MAVLink byte stream without opening a serial port and without sending any commands:
+
+```bash
+VISUAL_HOMING_MAVLINK_TELEMETRY_INPUT=artifacts/mavlink_telemetry.bin VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY=1 ./scripts/test-core-pi.sh
+```
+
+The underlying CLI is:
+
+```bash
+./core/build-pi/visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>
+```
+
+The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `ATTITUDE`, and `GLOBAL_POSITION_INT` payloads for heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude. It does not validate MAVLink CRC yet and does not open a live device; it is a read-only diagnostic layer before adding serial transport.
+
 ## Camera Smoke Test
 
 After a real libcamera backend is implemented and camera hardware is attached, run:
