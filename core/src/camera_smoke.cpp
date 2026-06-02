@@ -449,6 +449,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 : std::min(result.minimum_confidence_seen, match.confidence);
             if (result.frames_captured == 1) {
                 result.first_progress = match.progress;
+                result.min_progress_seen = match.progress;
+                result.max_progress_seen = match.progress;
+            } else {
+                result.min_progress_seen = std::min(result.min_progress_seen, match.progress);
+                result.max_progress_seen = std::max(result.max_progress_seen, match.progress);
             }
             result.last_progress = match.progress;
             result.last_frame_age_ms = timing.frame_age_ms;
@@ -512,11 +517,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.expected_progress == "forward") {
         result.endpoint_progress_passed =
             result.first_progress <= config.endpoint_start_progress
-            && result.last_progress >= config.endpoint_end_progress;
+            && result.max_progress_seen >= config.endpoint_end_progress;
     } else if (config.expected_progress == "reverse") {
         result.endpoint_progress_passed =
             result.first_progress >= config.endpoint_end_progress
-            && result.last_progress <= config.endpoint_start_progress;
+            && result.min_progress_seen <= config.endpoint_start_progress;
     } else {
         result.endpoint_progress_passed = true;
     }
@@ -545,6 +550,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " average_confidence=" << result.average_confidence
             << " first_progress=" << result.first_progress
             << " last_progress=" << result.last_progress
+            << " min_progress_seen=" << result.min_progress_seen
+            << " max_progress_seen=" << result.max_progress_seen
             << " progress_monotonic=" << (result.progress_monotonic ? "true" : "false")
             << " reverse_progress_monotonic=" << (result.reverse_progress_monotonic ? "true" : "false")
             << " expected_progress=" << config.expected_progress

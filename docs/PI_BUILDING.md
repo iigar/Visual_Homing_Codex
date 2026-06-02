@@ -414,7 +414,7 @@ The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS`
 
 `VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any` checks recognition only and is the default. Use `forward` when repeating the recorded route direction and `reverse` when testing a return pass back along the route. Directional modes tolerate small live matcher jumps by default; set both tolerance values to zero for strict monotonic testing.
 
-Manual field passes rarely start and stop at exact route endpoints. Set `VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS=1` to make pass/fail use endpoint zones instead of local monotonic progress. With the default endpoint thresholds, `forward` passes when progress starts at or below `0.15` and ends at or above `0.85`; `reverse` passes when progress starts at or above `0.85` and ends at or below `0.15`. The log still reports `directional_progress_passed` for local direction diagnostics, plus `endpoint_progress_passed` and `progress_gate_passed` for the actual selected gate.
+Manual field passes rarely start and stop at exact route endpoints. Set `VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS=1` to make pass/fail use endpoint zones instead of local monotonic progress. With the default endpoint thresholds, `forward` passes when progress starts at or below `0.15` and reaches at least `0.85`; `reverse` passes when progress starts at or above `0.85` and reaches at most `0.15`. The log still reports `directional_progress_passed` for local direction diagnostics, plus `min_progress_seen`, `max_progress_seen`, `endpoint_progress_passed`, and `progress_gate_passed` for the actual selected gate.
 
 Live route matching uses the same operator cue countdown as live recording before camera matching starts.
 

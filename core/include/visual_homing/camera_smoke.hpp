@@ -100,6 +100,8 @@ struct LiveRouteMatchingResult {
     double average_confidence = 0.0;
     double first_progress = 0.0;
     double last_progress = 0.0;
+    double min_progress_seen = 0.0;
+    double max_progress_seen = 0.0;
     bool progress_monotonic = true;
     bool reverse_progress_monotonic = true;
     bool directional_progress_passed = true;
