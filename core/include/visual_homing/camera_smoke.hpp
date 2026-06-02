@@ -81,6 +81,9 @@ struct LiveRouteMatchingConfig {
     std::string expected_progress = "any";
     std::uint64_t max_progress_regressions = 5;
     double max_progress_rollback = 0.25;
+    bool require_endpoint_progress = false;
+    double endpoint_start_progress = 0.15;
+    double endpoint_end_progress = 0.85;
 };
 
 struct LiveRouteMatchingResult {
@@ -100,6 +103,8 @@ struct LiveRouteMatchingResult {
     bool progress_monotonic = true;
     bool reverse_progress_monotonic = true;
     bool directional_progress_passed = true;
+    bool endpoint_progress_passed = true;
+    bool progress_gate_passed = true;
     double last_frame_age_ms = 0.0;
     double last_processing_latency_ms = 0.0;
     double elapsed_ms = 0.0;

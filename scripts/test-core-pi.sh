@@ -20,6 +20,9 @@ live_route_match_max_direction_shift_px="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DI
 live_route_match_expected_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS:-any}"
 live_route_match_max_progress_regressions="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS:-5}"
 live_route_match_max_progress_rollback="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK:-0.25}"
+live_route_match_require_endpoint_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS:-0}"
+live_route_match_endpoint_start_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_START_PROGRESS:-0.15}"
+live_route_match_endpoint_end_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_END_PROGRESS:-0.85}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -323,7 +326,10 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${live_route_match_expected_progress}" \
         "${live_route_match_max_progress_regressions}" \
         "${live_route_match_max_progress_rollback}" \
-        "${camera_target_override_args[@]}"
+        "${camera_target_override_args[@]}" \
+        "${live_route_match_require_endpoint_progress}" \
+        "${live_route_match_endpoint_start_progress}" \
+        "${live_route_match_endpoint_end_progress}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

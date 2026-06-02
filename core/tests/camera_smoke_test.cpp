@@ -140,7 +140,7 @@ int main() {
 
     const auto match_output = match_metrics.str();
     assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
-    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125") != std::string::npos);
+    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85") != std::string::npos);
     assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
     assert(match_output.find("live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false") != std::string::npos);
 
@@ -189,6 +189,31 @@ int main() {
         rejected_match_rollback = true;
     }
     assert(rejected_match_rollback);
+
+    bool rejected_match_endpoint_start = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_start_progress = 1.2;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_start = true;
+    }
+    assert(rejected_match_endpoint_start);
+
+    bool rejected_match_endpoint_order = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_start_progress = 0.9;
+        invalid.endpoint_end_progress = 0.8;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_order = true;
+    }
+    assert(rejected_match_endpoint_order);
 
     return 0;
 }

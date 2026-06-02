@@ -407,12 +407,14 @@ VISUAL_HOMING_MATCH_LIVE_ROUTE=1 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 ./scr
 The underlying CLI is:
 
 ```bash
-./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback]]]
+./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress]]]]
 ```
 
-The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, forward and reverse progress regressions, rollback totals, confidence summary, effective FPS, and `passed`.
+The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, forward and reverse progress regressions, rollback totals, endpoint progress, confidence summary, effective FPS, and `passed`.
 
 `VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any` checks recognition only and is the default. Use `forward` when repeating the recorded route direction and `reverse` when testing a return pass back along the route. Directional modes tolerate small live matcher jumps by default; set both tolerance values to zero for strict monotonic testing.
+
+Manual field passes rarely start and stop at exact route endpoints. Set `VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS=1` to make pass/fail use endpoint zones instead of local monotonic progress. With the default endpoint thresholds, `forward` passes when progress starts at or below `0.15` and ends at or above `0.85`; `reverse` passes when progress starts at or above `0.85` and ends at or below `0.15`. The log still reports `directional_progress_passed` for local direction diagnostics, plus `endpoint_progress_passed` and `progress_gate_passed` for the actual selected gate.
 
 Live route matching uses the same operator cue countdown as live recording before camera matching starts.
 
@@ -427,6 +429,9 @@ VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX=4
 VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS=5
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.25
+VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS=0
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_START_PROGRESS=0.15
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_END_PROGRESS=0.85
 ```
 
 If the route was recorded with a target override such as `64x48`, use the same `VISUAL_HOMING_CAMERA_TARGET_WIDTH` and `VISUAL_HOMING_CAMERA_TARGET_HEIGHT` values for live matching.

@@ -352,6 +352,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.expected_progress != "any" && config.expected_progress != "forward" && config.expected_progress != "reverse") {
         throw std::invalid_argument("Live route matching expected_progress must be one of: any, forward, reverse");
     }
+    if (config.endpoint_start_progress < 0.0 || config.endpoint_start_progress > 1.0) {
+        throw std::invalid_argument("Live route matching endpoint_start_progress must be in [0, 1]");
+    }
+    if (config.endpoint_end_progress < 0.0 || config.endpoint_end_progress > 1.0) {
+        throw std::invalid_argument("Live route matching endpoint_end_progress must be in [0, 1]");
+    }
+    if (config.endpoint_start_progress >= config.endpoint_end_progress) {
+        throw std::invalid_argument("Live route matching endpoint_start_progress must be less than endpoint_end_progress");
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcherConfig matcher_config;
@@ -381,7 +390,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " radians_per_pixel=" << config.radians_per_pixel
             << " expected_progress=" << config.expected_progress
             << " max_progress_regressions=" << config.max_progress_regressions
-            << " max_progress_rollback=" << config.max_progress_rollback << "\n";
+            << " max_progress_rollback=" << config.max_progress_rollback
+            << " require_endpoint_progress=" << (config.require_endpoint_progress ? "true" : "false")
+            << " endpoint_start_progress=" << config.endpoint_start_progress
+            << " endpoint_end_progress=" << config.endpoint_end_progress << "\n";
 
     result.started = source.start();
     metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
@@ -497,10 +509,26 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.directional_progress_passed = true;
     }
 
+    if (config.expected_progress == "forward") {
+        result.endpoint_progress_passed =
+            result.first_progress <= config.endpoint_start_progress
+            && result.last_progress >= config.endpoint_end_progress;
+    } else if (config.expected_progress == "reverse") {
+        result.endpoint_progress_passed =
+            result.first_progress >= config.endpoint_end_progress
+            && result.last_progress <= config.endpoint_start_progress;
+    } else {
+        result.endpoint_progress_passed = true;
+    }
+
+    result.progress_gate_passed = config.require_endpoint_progress
+        ? result.endpoint_progress_passed
+        : result.directional_progress_passed;
+
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
         && result.valid_matches == result.frames_captured
-        && result.directional_progress_passed;
+        && result.progress_gate_passed;
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
@@ -521,6 +549,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " reverse_progress_monotonic=" << (result.reverse_progress_monotonic ? "true" : "false")
             << " expected_progress=" << config.expected_progress
             << " directional_progress_passed=" << (result.directional_progress_passed ? "true" : "false")
+            << " endpoint_progress_passed=" << (result.endpoint_progress_passed ? "true" : "false")
+            << " progress_gate_passed=" << (result.progress_gate_passed ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms

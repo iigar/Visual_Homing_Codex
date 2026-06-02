@@ -65,7 +65,10 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
                                                                     int max_direction_shift_px,
                                                                     const std::string& expected_progress,
                                                                     std::uint64_t max_progress_regressions,
-                                                                    double max_progress_rollback) {
+                                                                    double max_progress_rollback,
+                                                                    bool require_endpoint_progress,
+                                                                    double endpoint_start_progress,
+                                                                    double endpoint_end_progress) {
     vh::LiveRouteMatchingConfig config;
     config.camera.width = profile.capture_width;
     config.camera.height = profile.capture_height;
@@ -83,7 +86,20 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
     config.expected_progress = expected_progress;
     config.max_progress_regressions = max_progress_regressions;
     config.max_progress_rollback = max_progress_rollback;
+    config.require_endpoint_progress = require_endpoint_progress;
+    config.endpoint_start_progress = endpoint_start_progress;
+    config.endpoint_end_progress = endpoint_end_progress;
     return config;
+}
+
+bool parse_bool_arg(const std::string& value) {
+    if (value == "1" || value == "true" || value == "TRUE" || value == "yes" || value == "YES") {
+        return true;
+    }
+    if (value == "0" || value == "false" || value == "FALSE" || value == "no" || value == "NO") {
+        return false;
+    }
+    throw std::invalid_argument("Boolean argument must be one of: 0, 1, true, false, yes, no");
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {
@@ -649,13 +665,14 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16) && std::string(argv[1]) == "--match-live-route-active-profile") {
+    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16 || argc == 17 || argc == 19) && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
             auto record = vh::load_active_camera_profile(argv[2], argv[3]);
-            if (argc == 16) {
+            if (argc == 16 || argc == 19) {
                 record.profile = profile_with_target_override(record.profile, std::stoi(argv[14]), std::stoi(argv[15]));
             }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
+            const auto endpoint_arg_offset = (argc == 17) ? 14 : ((argc == 19) ? 16 : 0);
             const auto config = live_route_matching_config_from_profile(
                 record.profile,
                 std::stoi(argv[4]),
@@ -667,7 +684,10 @@ int main(int argc, char** argv) {
                 std::stoi(argv[10]),
                 argc >= 12 ? argv[11] : "any",
                 argc >= 13 ? static_cast<std::uint64_t>(std::stoull(argv[12])) : 5,
-                argc >= 14 ? std::stod(argv[13]) : 0.25);
+                argc >= 14 ? std::stod(argv[13]) : 0.25,
+                endpoint_arg_offset != 0 ? parse_bool_arg(argv[endpoint_arg_offset]) : false,
+                endpoint_arg_offset != 0 ? std::stod(argv[endpoint_arg_offset + 1]) : 0.15,
+                endpoint_arg_offset != 0 ? std::stod(argv[endpoint_arg_offset + 2]) : 0.85);
             const auto result = vh::match_live_camera_route(config, std::cout);
             return result.passed ? 0 : 2;
         } catch (const std::exception& error) {
@@ -886,7 +906,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms]\n";
-    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback]]]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress]]]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
