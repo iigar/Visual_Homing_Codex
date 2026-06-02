@@ -10,7 +10,10 @@ artifact_dir="${repo_root}/artifacts"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
 route_keyframe_dir="${VISUAL_HOMING_ROUTE_KEYFRAME_DIR:-${artifact_dir}/route_keyframes}"
+route_keyframe_scale="${VISUAL_HOMING_ROUTE_KEYFRAME_SCALE:-1}"
 route_warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-3}"
+camera_target_width="${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-}"
+camera_target_height="${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-}"
 live_route_match_window_radius="${VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS:-30}"
 live_route_match_min_confidence="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE:-0.75}"
 live_route_match_max_direction_shift_px="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX:-4}"
@@ -50,6 +53,15 @@ finish_log() {
 trap finish_log EXIT
 
 echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
+
+camera_target_override_args=()
+if [[ -n "${camera_target_width}" || -n "${camera_target_height}" ]]; then
+    if [[ -z "${camera_target_width}" || -z "${camera_target_height}" ]]; then
+        echo "VISUAL_HOMING_CAMERA_TARGET_WIDTH and VISUAL_HOMING_CAMERA_TARGET_HEIGHT must be set together" >&2
+        exit 2
+    fi
+    camera_target_override_args=("${camera_target_width}" "${camera_target_height}")
+fi
 
 operator_cue() {
     local phase="$1"
@@ -234,7 +246,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${route_warmup_frames}" \
             "${mavlink_telemetry_device}" \
             "${mavlink_telemetry_baud}" \
-            "${route_telemetry_warmup_ms}"
+            "${route_telemetry_warmup_ms}" \
+            "${camera_target_override_args[@]}"
     elif [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-active-profile \
             "${camera_profile_dir}" \
@@ -274,7 +287,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
     "${build_dir}/visual_homing_core" --export-route-keyframes \
         "${route_output}" \
-        "${route_keyframe_dir}"
+        "${route_keyframe_dir}" \
+        "${route_keyframe_scale}"
     "${build_dir}/visual_homing_core" --self-match-route \
         "${route_output}" \
         "${VISUAL_HOMING_SELF_MATCH_MIN_CONFIDENCE:-0.99}"
@@ -308,7 +322,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${live_route_match_max_direction_shift_px}" \
         "${live_route_match_expected_progress}" \
         "${live_route_match_max_progress_regressions}" \
-        "${live_route_match_max_progress_rollback}"
+        "${live_route_match_max_progress_rollback}" \
+        "${camera_target_override_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then
@@ -335,7 +350,8 @@ fi
 if [[ "${VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES:-0}" == "1" ]]; then
     "${build_dir}/visual_homing_core" --export-route-keyframes \
         "${route_output}" \
-        "${route_keyframe_dir}"
+        "${route_keyframe_dir}" \
+        "${route_keyframe_scale}"
 fi
 
 if [[ "${VISUAL_HOMING_SELF_MATCH_ROUTE:-0}" == "1" ]]; then

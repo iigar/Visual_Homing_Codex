@@ -5,6 +5,7 @@
 #include <exception>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -83,6 +84,16 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
     config.max_progress_regressions = max_progress_regressions;
     config.max_progress_rollback = max_progress_rollback;
     return config;
+}
+
+vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {
+    if (target_width <= 0 || target_height <= 0) {
+        throw std::invalid_argument("Camera profile target override dimensions must be positive");
+    }
+    profile.target_width = target_width;
+    profile.target_height = target_height;
+    vh::validate_camera_profile(profile);
+    return profile;
 }
 
 void log_profile_hardware_config(const char* prefix, const vh::CameraProfileRecord& record, std::ostream& output) {
@@ -609,9 +620,12 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 12 || argc == 13) && std::string(argv[1]) == "--record-live-route-active-profile-live-telemetry") {
+    if ((argc == 12 || argc == 13 || argc == 15) && std::string(argv[1]) == "--record-live-route-active-profile-live-telemetry") {
         try {
-            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            if (argc == 15) {
+                record.profile = profile_with_target_override(record.profile, std::stoi(argv[13]), std::stoi(argv[14]));
+            }
             log_profile_hardware_config("live_route_active_profile", record, std::cout);
             auto config = live_route_config_from_profile(
                 record.profile,
@@ -624,7 +638,7 @@ int main(int argc, char** argv) {
             config.use_live_telemetry_stream = true;
             config.telemetry_stream.device_path = argv[10];
             config.telemetry_stream.baud_rate = std::stoi(argv[11]);
-            if (argc == 13) {
+            if (argc == 13 || argc == 15) {
                 config.telemetry_warmup_timeout_ms = static_cast<std::uint64_t>(std::stoull(argv[12]));
             }
             const auto result = vh::record_live_camera_route(config, std::cout);
@@ -635,9 +649,12 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14) && std::string(argv[1]) == "--match-live-route-active-profile") {
+    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16) && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
-            const auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            auto record = vh::load_active_camera_profile(argv[2], argv[3]);
+            if (argc == 16) {
+                record.profile = profile_with_target_override(record.profile, std::stoi(argv[14]), std::stoi(argv[15]));
+            }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
             const auto config = live_route_matching_config_from_profile(
                 record.profile,
@@ -742,12 +759,14 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc == 4 && std::string(argv[1]) == "--export-route-keyframes") {
+    if ((argc == 4 || argc == 5) && std::string(argv[1]) == "--export-route-keyframes") {
         try {
-            const auto keyframes_written = vh::export_route_signature_keyframes_file(argv[2], argv[3]);
+            const auto scale = argc == 5 ? static_cast<std::uint16_t>(std::stoul(argv[4])) : 1;
+            const auto keyframes_written = vh::export_route_signature_keyframes_file(argv[2], argv[3], scale);
             std::cout << "route_keyframes_export"
                       << " path=" << argv[2]
                       << " output_dir=" << argv[3]
+                      << " scale=" << scale
                       << " keyframes_written=" << keyframes_written
                       << " files=start.pgm,025.pgm,050.pgm,075.pgm,end.pgm"
                       << "\n";
@@ -863,6 +882,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --pi-camera-smoke-profile <camera.profile> <fps> <frames>\n";
     std::cout << "usage: visual_homing_core --pi-camera-smoke-active-profile <profile_dir> <active_profile_state> <fps> <frames>\n";
     std::cout << "usage: visual_homing_core --record-live-route <camera_width> <camera_height> <fps> <frames> <route.vhrs> <target_width> <target_height> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
+    std::cout << "usage: visual_homing_core --export-route-keyframes <route.vhrs> <output_dir> [scale]\n";
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms]\n";

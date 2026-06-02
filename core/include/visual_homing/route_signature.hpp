@@ -54,9 +54,13 @@ void write_route_signature_file(const std::filesystem::path& path, const RouteSi
 RouteSignatureFile read_route_signature_file(const std::filesystem::path& path);
 RouteSignatureSummary summarize_route_signature(const RouteSignatureFile& route);
 RouteSignatureSummary inspect_route_signature_file(const std::filesystem::path& path);
-std::uint64_t write_route_signature_keyframes(const RouteSignatureFile& route, const std::filesystem::path& output_dir);
+std::uint64_t write_route_signature_keyframes(
+    const RouteSignatureFile& route,
+    const std::filesystem::path& output_dir,
+    std::uint16_t scale = 1);
 std::uint64_t export_route_signature_keyframes_file(
     const std::filesystem::path& route_path,
-    const std::filesystem::path& output_dir);
+    const std::filesystem::path& output_dir,
+    std::uint16_t scale = 1);
 
 } // namespace vh

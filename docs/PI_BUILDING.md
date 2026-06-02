@@ -284,6 +284,8 @@ Optional live route settings:
 ```bash
 VISUAL_HOMING_ROUTE_OUTPUT=artifacts/visual_homing_live_route.vhrs
 VISUAL_HOMING_CAMERA_FRAMES=120
+VISUAL_HOMING_CAMERA_TARGET_WIDTH=64
+VISUAL_HOMING_CAMERA_TARGET_HEIGHT=48
 VISUAL_HOMING_ROUTE_WARMUP_FRAMES=3
 VISUAL_HOMING_ROUTE_ALTITUDE_M=0.0
 VISUAL_HOMING_ROUTE_HEADING_HINT_RAD=0.0
@@ -311,6 +313,17 @@ To record using the active profile:
 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 VISUAL_HOMING_RECORD_LIVE_ROUTE=1 ./scripts/test-core-pi.sh
 ```
 
+When `VISUAL_HOMING_CAMERA_TARGET_WIDTH` and `VISUAL_HOMING_CAMERA_TARGET_HEIGHT` are set together, active-profile live telemetry recording overrides only the route signature size while keeping the active profile's capture dimensions and field of view. For example, use `64x48` signatures and export larger operator keyframes:
+
+```bash
+VISUAL_HOMING_CAMERA_TARGET_WIDTH=64 \
+VISUAL_HOMING_CAMERA_TARGET_HEIGHT=48 \
+VISUAL_HOMING_ROUTE_KEYFRAME_SCALE=5 \
+VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 \
+VISUAL_HOMING_RECORD_LIVE_ROUTE=1 \
+./scripts/test-core-pi.sh
+```
+
 The underlying CLI is:
 
 ```bash
@@ -332,6 +345,8 @@ end.pgm
 ```
 
 Use these files to identify where the route began and ended before running forward or reverse live-match tests.
+
+Set `VISUAL_HOMING_ROUTE_KEYFRAME_SCALE` to export larger PGM images for human review. The default is `1`; `5` turns a `64x48` route keyframe into a `320x240` PGM without changing the route artifact itself.
 
 This path is still a hardware validation/recording mode, not a flight loop. It intentionally writes to disk after collecting live frames and should not be used inside future realtime command loops.
 
@@ -357,6 +372,12 @@ Export keyframes from an existing route artifact without touching camera hardwar
 
 ```bash
 VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES=1 ./scripts/test-core-pi.sh
+```
+
+For larger exported keyframes:
+
+```bash
+VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES=1 VISUAL_HOMING_ROUTE_KEYFRAME_SCALE=5 ./scripts/test-core-pi.sh
 ```
 
 ## Route Validation
@@ -398,6 +419,8 @@ Live route matching uses the same operator cue countdown as live recording befor
 Optional controls:
 
 ```bash
+VISUAL_HOMING_CAMERA_TARGET_WIDTH=64
+VISUAL_HOMING_CAMERA_TARGET_HEIGHT=48
 VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=30
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MIN_CONFIDENCE=0.75
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_DIRECTION_SHIFT_PX=4
@@ -405,6 +428,8 @@ VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=any
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS=5
 VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.25
 ```
+
+If the route was recorded with a target override such as `64x48`, use the same `VISUAL_HOMING_CAMERA_TARGET_WIDTH` and `VISUAL_HOMING_CAMERA_TARGET_HEIGHT` values for live matching.
 
 ## Route Self-Match
 

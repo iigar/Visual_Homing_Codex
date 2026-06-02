@@ -102,6 +102,29 @@ int main() {
     start_keyframe.read(reinterpret_cast<char*>(start_payload.data()), static_cast<std::streamsize>(start_payload.size()));
     assert(start_payload == first.payload);
 
+    const auto scaled_keyframe_dir = std::filesystem::temp_directory_path() / "visual_homing_route_signature_scaled_keyframes_test";
+    std::filesystem::remove_all(scaled_keyframe_dir);
+    const auto scaled_keyframes_written = vh::export_route_signature_keyframes_file(path, scaled_keyframe_dir, 2);
+    assert(scaled_keyframes_written == 5);
+
+    std::ifstream scaled_start_keyframe(scaled_keyframe_dir / "start.pgm", std::ios::binary);
+    std::getline(scaled_start_keyframe, header_line);
+    assert(header_line == "P5");
+    std::getline(scaled_start_keyframe, header_line);
+    assert(header_line == "4 4");
+    std::getline(scaled_start_keyframe, header_line);
+    assert(header_line == "255");
+    std::vector<unsigned char> scaled_start_payload(16);
+    scaled_start_keyframe.read(
+        reinterpret_cast<char*>(scaled_start_payload.data()),
+        static_cast<std::streamsize>(scaled_start_payload.size()));
+    assert((scaled_start_payload == std::vector<unsigned char>{
+        1, 1, 2, 2,
+        1, 1, 2, 2,
+        3, 3, 4, 4,
+        3, 3, 4, 4,
+    }));
+
     auto mixed_route = loaded;
     mixed_route.entries[1].timestamp_ns = 999999999ULL;
     mixed_route.entries[1].width = 3;
