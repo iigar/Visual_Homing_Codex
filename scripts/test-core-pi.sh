@@ -35,6 +35,7 @@ mavlink_min_attitude_messages="${VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES:-1}
 mavlink_min_global_position_int_messages="${VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES:-1}"
 mavlink_max_malformed_frames="${VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES:-0}"
 route_telemetry_warmup_ms="${VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS:-1500}"
+operator_cue_enabled="${VISUAL_HOMING_OPERATOR_CUE:-1}"
 operator_cue_seconds="${VISUAL_HOMING_OPERATOR_CUE_SECONDS:-5}"
 operator_cue_bell="${VISUAL_HOMING_OPERATOR_CUE_BELL:-1}"
 run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -65,39 +66,7 @@ if [[ -n "${camera_target_width}" || -n "${camera_target_height}" ]]; then
     fi
     camera_target_override_args=("${camera_target_width}" "${camera_target_height}")
 fi
-
-operator_cue() {
-    local phase="$1"
-    local details="$2"
-
-    if [[ "${VISUAL_HOMING_OPERATOR_CUE:-1}" != "1" ]]; then
-        return
-    fi
-
-    echo ""
-    echo "###############################################################################"
-    echo "### VISUAL_HOMING_OPERATOR_CUE phase=${phase}"
-    echo "### ${details}"
-    echo "###############################################################################"
-    echo "operator_cue phase=${phase} details=\"${details}\" countdown_s=${operator_cue_seconds} wall_time_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
-    local remaining="${operator_cue_seconds}"
-    while (( remaining > 0 )); do
-        if [[ "${operator_cue_bell}" == "1" ]]; then
-            printf '\a'
-        fi
-        echo "operator_cue_countdown phase=${phase} starts_in_s=${remaining}"
-        sleep 1
-        remaining=$((remaining - 1))
-    done
-
-    if [[ "${operator_cue_bell}" == "1" ]]; then
-        printf '\a\a'
-    fi
-    echo "operator_cue_go phase=${phase} wall_time_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    echo "###############################################################################"
-    echo ""
-}
+operator_cue_args=("${operator_cue_enabled}" "${operator_cue_seconds}" "${operator_cue_bell}")
 
 clean=0
 for arg in "$@"; do
@@ -231,8 +200,6 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
         route_telemetry_args=("${mavlink_telemetry_input}")
     fi
 
-    operator_cue "record_live_route" "Route recording starts after this countdown; route_output=${route_output}"
-
     if [[ "${VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}" == "1" ]]; then
         if [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" != "1" ]]; then
             echo "VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
@@ -250,7 +217,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${mavlink_telemetry_device}" \
             "${mavlink_telemetry_baud}" \
             "${route_telemetry_warmup_ms}" \
-            "${camera_target_override_args[@]}"
+            "${camera_target_override_args[@]}" \
+            "${operator_cue_args[@]}"
     elif [[ "${VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-active-profile \
             "${camera_profile_dir}" \
@@ -261,7 +229,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
             "${route_warmup_frames}" \
-            "${route_telemetry_args[@]}"
+            "${route_telemetry_args[@]}" \
+            "${operator_cue_args[@]}"
     elif [[ "${VISUAL_HOMING_USE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-profile \
             "${camera_profile}" \
@@ -271,7 +240,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
             "${route_warmup_frames}" \
-            "${route_telemetry_args[@]}"
+            "${route_telemetry_args[@]}" \
+            "${operator_cue_args[@]}"
     else
         "${build_dir}/visual_homing_core" --record-live-route \
             "${VISUAL_HOMING_CAMERA_WIDTH:-320}" \
@@ -284,7 +254,8 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_ROUTE_ALTITUDE_M:-0.0}" \
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
             "${route_warmup_frames}" \
-            "${route_telemetry_args[@]}"
+            "${route_telemetry_args[@]}" \
+            "${operator_cue_args[@]}"
     fi
 
     "${build_dir}/visual_homing_core" --inspect-route "${route_output}"
@@ -312,7 +283,6 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         echo "VISUAL_HOMING_MATCH_LIVE_ROUTE=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
         exit 2
     fi
-    operator_cue "match_live_route" "Live route matching starts after this countdown; expected_progress=${live_route_match_expected_progress} route_output=${route_output}"
     "${build_dir}/visual_homing_core" --match-live-route-active-profile \
         "${camera_profile_dir}" \
         "${active_camera_profile}" \
@@ -329,7 +299,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${camera_target_override_args[@]}" \
         "${live_route_match_require_endpoint_progress}" \
         "${live_route_match_endpoint_start_progress}" \
-        "${live_route_match_endpoint_end_progress}"
+        "${live_route_match_endpoint_end_progress}" \
+        "${operator_cue_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

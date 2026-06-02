@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <sstream>
 #include <thread>
 
 #include "visual_homing/gray8_resize_preprocessor.hpp"
@@ -15,6 +18,104 @@
 #include "visual_homing/time.hpp"
 
 namespace vh {
+
+namespace {
+
+std::string wall_time_utc_iso8601() {
+    const auto current = std::chrono::system_clock::now();
+    const auto current_time = std::chrono::system_clock::to_time_t(current);
+    std::tm utc{};
+#if defined(_WIN32)
+    gmtime_s(&utc, &current_time);
+#else
+    gmtime_r(&current_time, &utc);
+#endif
+    std::ostringstream output;
+    output << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+    return output.str();
+}
+
+void emit_bells(std::ostream& metrics, int count) {
+    for (int index = 0; index < count; ++index) {
+        metrics << '\a';
+    }
+    metrics.flush();
+}
+
+void emit_operator_start_cue(bool enabled,
+                             std::size_t countdown_seconds,
+                             bool bell_enabled,
+                             const std::string& phase,
+                             const std::string& details,
+                             std::ostream& metrics) {
+    if (!enabled) {
+        return;
+    }
+
+    metrics << "\n"
+            << "###############################################################################\n"
+            << "###############################################################################\n"
+            << "### VISUAL_HOMING_OPERATOR_CUE phase=" << phase << "\n"
+            << "### " << details << "\n"
+            << "### Camera backend is running and warmup frames are already dropped.\n"
+            << "###############################################################################\n"
+            << "operator_cue phase=" << phase
+            << " details=\"" << details << "\""
+            << " countdown_s=" << countdown_seconds
+            << " wall_time_utc=" << wall_time_utc_iso8601() << "\n";
+
+    auto remaining = countdown_seconds;
+    while (remaining > 0) {
+        if (bell_enabled) {
+            emit_bells(metrics, 1);
+        }
+        metrics << "operator_cue_countdown phase=" << phase
+                << " starts_in_s=" << remaining << "\n";
+        metrics.flush();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        --remaining;
+    }
+
+    if (bell_enabled) {
+        emit_bells(metrics, 4);
+    }
+    metrics << "###############################################################################\n"
+            << "###############################################################################\n"
+            << "### >>> START NOW <<< START NOW <<< START NOW <<<\n"
+            << "### >>> LIVE CAPTURE BEGINS ON THE NEXT FRAME <<<\n"
+            << "### >>> START NOW <<< START NOW <<< START NOW <<<\n"
+            << "###############################################################################\n"
+            << "operator_cue_go phase=" << phase
+            << " wall_time_utc=" << wall_time_utc_iso8601() << "\n"
+            << "###############################################################################\n\n";
+    metrics.flush();
+}
+
+void emit_operator_stop_cue(bool enabled,
+                            bool bell_enabled,
+                            const std::string& phase,
+                            std::ostream& metrics) {
+    if (!enabled) {
+        return;
+    }
+
+    if (bell_enabled) {
+        emit_bells(metrics, 3);
+    }
+    metrics << "\n"
+            << "###############################################################################\n"
+            << "###############################################################################\n"
+            << "### >>> STOP NOW <<< STOP NOW <<< STOP NOW <<<\n"
+            << "### >>> LIVE CAPTURE COMPLETE <<<\n"
+            << "### >>> STOP NOW <<< STOP NOW <<< STOP NOW <<<\n"
+            << "###############################################################################\n"
+            << "operator_cue_stop phase=" << phase
+            << " wall_time_utc=" << wall_time_utc_iso8601() << "\n"
+            << "###############################################################################\n\n";
+    metrics.flush();
+}
+
+} // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
     if (config.frames_to_capture == 0) {
@@ -205,9 +306,9 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
         return result;
     }
 
-    const auto started_at = now();
+    const auto warmup_started_at = now();
     const auto requested_source_frames = config.frames_to_capture + config.warmup_frames;
-    const auto timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
+    const auto warmup_timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
     while (result.warmup_frames_dropped < config.warmup_frames) {
         if (auto frame = source.poll()) {
@@ -222,11 +323,21 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
 
-        if (milliseconds_between(started_at, now()) > timeout_ms) {
+        if (milliseconds_between(warmup_started_at, now()) > warmup_timeout_ms) {
             break;
         }
     }
 
+    emit_operator_start_cue(config.operator_cue_enabled,
+                            config.operator_cue_seconds,
+                            config.operator_cue_bell,
+                            "record_live_route",
+                            "Route recording starts on the next captured frame; route_output=" + config.route_output_path.string(),
+                            metrics);
+
+    const auto capture_started_at = now();
+    const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
+        / static_cast<double>(config.camera.frame_rate_hz));
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -277,12 +388,16 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
 
-        if (milliseconds_between(started_at, now()) > timeout_ms) {
+        if (milliseconds_between(capture_started_at, now()) > capture_timeout_ms) {
             break;
         }
     }
 
     source.stop();
+    emit_operator_stop_cue(config.operator_cue_enabled,
+                           config.operator_cue_bell,
+                           "record_live_route",
+                           metrics);
     if (telemetry_stream) {
         telemetry_stream->stop();
         const auto telemetry = telemetry_stream->snapshot();
@@ -307,7 +422,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
         }
         metrics << "\n";
     }
-    result.elapsed_ms = milliseconds_between(started_at, now());
+    result.elapsed_ms = milliseconds_between(capture_started_at, now());
     result.effective_fps = result.elapsed_ms > 0.0
         ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
         : 0.0;
@@ -409,9 +524,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         return result;
     }
 
-    const auto started_at = now();
+    const auto warmup_started_at = now();
     const auto requested_source_frames = config.frames_to_capture + config.warmup_frames;
-    const auto timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
+    const auto warmup_timeout_ms = 2000.0 + (static_cast<double>(requested_source_frames) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
     while (result.warmup_frames_dropped < config.warmup_frames) {
         if (auto frame = source.poll()) {
@@ -426,11 +541,22 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
 
-        if (milliseconds_between(started_at, now()) > timeout_ms) {
+        if (milliseconds_between(warmup_started_at, now()) > warmup_timeout_ms) {
             break;
         }
     }
 
+    emit_operator_start_cue(config.operator_cue_enabled,
+                            config.operator_cue_seconds,
+                            config.operator_cue_bell,
+                            "match_live_route",
+                            "Live route matching starts on the next captured frame; expected_progress=" + config.expected_progress
+                                + " route_output=" + config.route_path.string(),
+                            metrics);
+
+    const auto capture_started_at = now();
+    const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
+        / static_cast<double>(config.camera.frame_rate_hz));
     double confidence_sum = 0.0;
     std::optional<double> last_valid_progress;
     while (result.frames_captured < config.frames_to_capture) {
@@ -489,13 +615,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
 
-        if (milliseconds_between(started_at, now()) > timeout_ms) {
+        if (milliseconds_between(capture_started_at, now()) > capture_timeout_ms) {
             break;
         }
     }
 
     source.stop();
-    result.elapsed_ms = milliseconds_between(started_at, now());
+    emit_operator_stop_cue(config.operator_cue_enabled,
+                           config.operator_cue_bell,
+                           "match_live_route",
+                           metrics);
+    result.elapsed_ms = milliseconds_between(capture_started_at, now());
     result.effective_fps = result.elapsed_ms > 0.0
         ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
         : 0.0;

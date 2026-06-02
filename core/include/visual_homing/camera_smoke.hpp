@@ -43,6 +43,9 @@ struct LiveRouteRecordingConfig {
     bool use_live_telemetry_stream = false;
     MavlinkTelemetryStreamConfig telemetry_stream{};
     std::uint64_t telemetry_warmup_timeout_ms = 1500;
+    bool operator_cue_enabled = false;
+    std::size_t operator_cue_seconds = 0;
+    bool operator_cue_bell = true;
 };
 
 struct LiveRouteRecordingResult {
@@ -84,6 +87,9 @@ struct LiveRouteMatchingConfig {
     bool require_endpoint_progress = false;
     double endpoint_start_progress = 0.15;
     double endpoint_end_progress = 0.85;
+    bool operator_cue_enabled = false;
+    std::size_t operator_cue_seconds = 0;
+    bool operator_cue_bell = true;
 };
 
 struct LiveRouteMatchingResult {
