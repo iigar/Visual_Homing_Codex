@@ -10,6 +10,8 @@
 #include <sstream>
 #include <thread>
 
+#include "visual_homing/bounded_navigator.hpp"
+#include "visual_homing/dry_run_command_sink.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
@@ -498,8 +500,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     Gray8RouteMatcher matcher(route, matcher_config);
+    std::optional<BoundedNavigator> navigator;
+    if (config.emit_dry_run_commands) {
+        navigator.emplace(config.navigator);
+    }
+    DryRunCommandSink command_sink(&metrics);
     HealthMonitor health(now());
-    health.set_links(true, false, true);
+    health.set_links(true, config.emit_dry_run_commands, true);
     LiveRouteMatchingResult result;
 
     metrics << "live_route_match_start width=" << config.camera.width
@@ -519,7 +526,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " max_progress_rollback=" << config.max_progress_rollback
             << " require_endpoint_progress=" << (config.require_endpoint_progress ? "true" : "false")
             << " endpoint_start_progress=" << config.endpoint_start_progress
-            << " endpoint_end_progress=" << config.endpoint_end_progress << "\n";
+            << " endpoint_end_progress=" << config.endpoint_end_progress
+            << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false");
+    if (config.emit_dry_run_commands) {
+        metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence
+                << " navigator_max_match_age_ms=" << config.navigator.max_match_age_ms
+                << " navigator_yaw_gain=" << config.navigator.yaw_gain
+                << " navigator_max_yaw_rate_radps=" << config.navigator.max_yaw_rate_radps
+                << " navigator_max_yaw_accel_radps2=" << config.navigator.max_yaw_accel_radps2
+                << " navigator_forward_speed_mps=" << config.navigator.forward_speed_mps;
+    }
+    metrics << "\n";
 
     result.started = source.start();
     metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
@@ -533,6 +550,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         metrics << "live_route_match_unavailable error=" << source.last_error() << "\n";
         metrics << "live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false\n";
         return result;
+    }
+
+    if (config.emit_dry_run_commands) {
+        command_sink.start();
     }
 
     const auto warmup_started_at = now();
@@ -581,6 +602,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto processing_finished = now();
             const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
             health.set_route_match_confidence(match.confidence);
+            const auto health_snapshot = health.snapshot(processing_finished);
+            NavigationCommand command;
+            if (config.emit_dry_run_commands) {
+                command = navigator->update(match, health_snapshot);
+                command_sink.send(command);
+                ++result.dry_run_commands;
+                if (command.valid) {
+                    ++result.valid_dry_run_commands;
+                }
+            }
 
             ++result.frames_captured;
             confidence_sum += match.confidence;
@@ -623,7 +654,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " valid=" << (match.valid ? "true" : "false")
                     << " direction_error_rad=" << match.direction_error_rad
                     << " age_ms=" << timing.frame_age_ms
-                    << " latency_ms=" << timing.processing_latency_ms << "\n";
+                    << " latency_ms=" << timing.processing_latency_ms;
+            if (config.emit_dry_run_commands) {
+                metrics << " command_valid=" << (command.valid ? "true" : "false")
+                        << " command_yaw_rate_radps=" << command.yaw_rate_radps
+                        << " command_vx_mps=" << command.vx_mps
+                        << " command_confidence=" << command.confidence;
+            }
+            metrics << "\n";
         } else {
             ++result.empty_polls;
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -635,6 +673,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
 
     source.stop();
+    if (config.emit_dry_run_commands) {
+        command_sink.stop();
+    }
     emit_operator_stop_cue(config.operator_cue_enabled,
                            config.operator_cue_bell,
                            "match_live_route",
@@ -706,6 +747,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms
             << " effective_fps=" << result.effective_fps
+            << " dry_run_commands=" << result.dry_run_commands
+            << " valid_dry_run_commands=" << result.valid_dry_run_commands
             << " passed=" << (result.passed ? "true" : "false") << "\n";
     return result;
 }

@@ -436,6 +436,20 @@ VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_END_PROGRESS=0.85
 
 If the route was recorded with a target override such as `64x48`, use the same `VISUAL_HOMING_CAMERA_TARGET_WIDTH` and `VISUAL_HOMING_CAMERA_TARGET_HEIGHT` values for live matching.
 
+To inspect the bounded navigator output without sending any MAVLink commands, enable dry-run command logging during live matching:
+
+```bash
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MIN_CONFIDENCE=0.75
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_MATCH_AGE_MS=250
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_YAW_GAIN=1.0
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_RATE_RADPS=0.35
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_ACCEL_RADPS2=1.0
+VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_FORWARD_SPEED_MPS=0.0
+```
+
+This path writes `dry_run_command` and per-frame `command_*` metrics only. It does not open a live MAVLink command output path.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

@@ -131,16 +131,26 @@ int main() {
     match_config.expected_progress = "reverse";
     match_config.max_progress_regressions = 7;
     match_config.max_progress_rollback = 0.125;
+    match_config.emit_dry_run_commands = true;
+    match_config.navigator.minimum_confidence = 0.8;
+    match_config.navigator.max_match_age_ms = 150.0;
+    match_config.navigator.yaw_gain = 0.5;
+    match_config.navigator.max_yaw_rate_radps = 0.2;
+    match_config.navigator.max_yaw_accel_radps2 = 0.7;
+    match_config.navigator.forward_speed_mps = 0.1;
 
     const auto match_result = vh::match_live_camera_route(match_config, match_metrics);
     assert(!match_result.started);
     assert(!match_result.passed);
     assert(match_result.frames_captured == 0);
     assert(match_result.valid_matches == 0);
+    assert(match_result.dry_run_commands == 0);
+    assert(match_result.valid_dry_run_commands == 0);
 
     const auto match_output = match_metrics.str();
     assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
     assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85") != std::string::npos);
+    assert(match_output.find("dry_run_commands=true navigator_minimum_confidence=0.8 navigator_max_match_age_ms=150 navigator_yaw_gain=0.5 navigator_max_yaw_rate_radps=0.2 navigator_max_yaw_accel_radps2=0.7 navigator_forward_speed_mps=0.1") != std::string::npos);
     assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
     assert(match_output.find("live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false") != std::string::npos);
 

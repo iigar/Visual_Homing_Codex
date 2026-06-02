@@ -840,3 +840,21 @@ Impact:
 
 Risk:
 - This is still a read-only matching diagnostic. It does not command the flight controller, does not use live MAVLink freshness in the match gate, and does not yet implement route reacquisition or long-running bounded matcher state.
+
+## 2026-06-03 - Add Live Route Dry-Run Navigation Commands
+
+Decision:
+- Let opt-in live route matching feed `BoundedNavigator` and `DryRunCommandSink`.
+- Expose the mode through `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1` and navigator tuning env vars in `scripts/test-core-pi.sh`.
+- Keep live MAVLink command output blocked.
+
+Why:
+- Manual route matching is validated enough to move from recognition metrics to command-shape inspection.
+- The next safe integration step is seeing bounded yaw/velocity commands in the live match log before any real flight-controller writer is enabled.
+
+Impact:
+- Live match logs can include `dry_run_command` lines and per-frame `command_*` fields.
+- The final `live_route_match_done` line reports generated and valid dry-run command counts.
+
+Risk:
+- This is still a bench diagnostic. It uses a synthetic health link for the no-output dry-run path and must not be treated as permission to send live MAVLink commands.

@@ -9,6 +9,7 @@
 #include "visual_homing/mavlink.hpp"
 #include "visual_homing/mavlink_telemetry_stream.hpp"
 #include "visual_homing/pi_camera_source.hpp"
+#include "visual_homing/bounded_navigator.hpp"
 
 namespace vh {
 
@@ -90,6 +91,8 @@ struct LiveRouteMatchingConfig {
     bool operator_cue_enabled = false;
     std::size_t operator_cue_seconds = 0;
     bool operator_cue_bell = true;
+    bool emit_dry_run_commands = false;
+    BoundedNavigatorConfig navigator{};
 };
 
 struct LiveRouteMatchingResult {
@@ -117,6 +120,8 @@ struct LiveRouteMatchingResult {
     double last_processing_latency_ms = 0.0;
     double elapsed_ms = 0.0;
     double effective_fps = 0.0;
+    std::uint64_t dry_run_commands = 0;
+    std::uint64_t valid_dry_run_commands = 0;
     bool passed = false;
 };
 
