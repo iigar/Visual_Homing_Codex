@@ -140,3 +140,9 @@
 - Added route keyframe export for operator orientation: `--export-route-keyframes` and `VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES=1` write `start.pgm`, `025.pgm`, `050.pgm`, `075.pgm`, and `end.pgm` from a `VHRS` route, and the Pi recording path exports them automatically after a successful route write.
 - Added Pi operator cues before live route recording and live route matching: `scripts/test-core-pi.sh` now prints a large countdown banner and terminal bell characters by default, controlled by `VISUAL_HOMING_OPERATOR_CUE`, `VISUAL_HOMING_OPERATOR_CUE_SECONDS`, and `VISUAL_HOMING_OPERATOR_CUE_BELL`.
 - Added active-profile target-size overrides and scaled route keyframe export for higher-detail Pi tests: set `VISUAL_HOMING_CAMERA_TARGET_WIDTH=64`, `VISUAL_HOMING_CAMERA_TARGET_HEIGHT=48`, and `VISUAL_HOMING_ROUTE_KEYFRAME_SCALE=5` to record/match `64x48` route signatures while exporting human-readable `320x240` PGM keyframes.
+
+## 2026-06-03
+
+- Concluded the manual `jtzero` live route matching bench pass. The useful manual signal is now sufficient: active-profile live route recording works, forward matching passes cleanly, and strict reverse matching passes when the drone is moved nose-forward along the route axis instead of being carried sideways or rotated by a box/chair.
+- Captured the main bench limitations: hand-pushed furniture and boxes introduce yaw, pitch/roll drift, sideways optical flow, endpoint-placement error, and end-of-run shake, so repeated manual strict-threshold runs mostly test the improvised fixture rather than the matcher. A small straight-line no-yaw test stand or guide rail remains a useful future validation aid.
+- Agreed to stop manual route-match threshold chasing and move the project focus toward real navigation/control integration. Live MAVLink command output remains blocked until the next safety-gated integration step is designed and validated.
