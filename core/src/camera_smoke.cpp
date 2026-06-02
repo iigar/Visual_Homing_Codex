@@ -115,6 +115,14 @@ void emit_operator_stop_cue(bool enabled,
     metrics.flush();
 }
 
+std::uint64_t drain_pending_frames(PiCameraSource& source) {
+    std::uint64_t drained = 0;
+    while (source.poll()) {
+        ++drained;
+    }
+    return drained;
+}
+
 } // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
@@ -334,6 +342,9 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                             "record_live_route",
                             "Route recording starts on the next captured frame; route_output=" + config.route_output_path.string(),
                             metrics);
+    if (config.operator_cue_enabled) {
+        metrics << "live_route_pre_capture_frame_drain drained_frames=" << drain_pending_frames(source) << "\n";
+    }
 
     const auto capture_started_at = now();
     const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
@@ -553,6 +564,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                             "Live route matching starts on the next captured frame; expected_progress=" + config.expected_progress
                                 + " route_output=" + config.route_path.string(),
                             metrics);
+    if (config.operator_cue_enabled) {
+        metrics << "live_route_match_pre_capture_frame_drain drained_frames=" << drain_pending_frames(source) << "\n";
+    }
 
     const auto capture_started_at = now();
     const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
