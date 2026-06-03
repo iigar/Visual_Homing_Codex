@@ -895,3 +895,21 @@ Impact:
 
 Risk:
 - Negative yaw gain is no longer allowed. If an airframe ever needs inverted correction, that should be represented explicitly in camera/profile orientation or route geometry rather than by silently flipping navigator gain.
+
+## 2026-06-03 - Harden VHRS Route Artifact Parsing
+
+Decision:
+- Add v1 safety limits for route entry count and per-entry payload size.
+- Require every route entry payload length to match `width * height * bytes_per_pixel(format)` on both read and write.
+- Reject malformed route files before large vector reservation or payload allocation.
+
+Why:
+- `VHRS` files are operator-provided artifacts used by live route matching. A malformed or corrupted file should fail closed with a controlled error, not pressure memory or defer structural validation to later matcher code.
+
+Impact:
+- Reader rejects excessive entry counts, oversized payload declarations, zero dimensions, unsupported formats, and payload-size mismatches.
+- Writer no longer emits structurally malformed route entries.
+- Regression tests cover excessive entry counts, payload-size mismatch, and malformed writes.
+
+Risk:
+- The safety limits are intentionally generous for current Pi route artifacts. Future high-resolution or long-duration route formats may need an explicit v2 policy rather than relaxing v1 silently.

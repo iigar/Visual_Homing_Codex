@@ -1,11 +1,62 @@
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
 
 #include "visual_homing/route_signature.hpp"
+
+namespace {
+
+void append_u8(std::vector<unsigned char>& bytes, std::uint8_t value) {
+    bytes.push_back(value);
+}
+
+void append_u16(std::vector<unsigned char>& bytes, std::uint16_t value) {
+    append_u8(bytes, static_cast<std::uint8_t>(value & 0xFFU));
+    append_u8(bytes, static_cast<std::uint8_t>((value >> 8U) & 0xFFU));
+}
+
+void append_u32(std::vector<unsigned char>& bytes, std::uint32_t value) {
+    for (int shift = 0; shift < 32; shift += 8) {
+        append_u8(bytes, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
+}
+
+void append_u64(std::vector<unsigned char>& bytes, std::uint64_t value) {
+    for (int shift = 0; shift < 64; shift += 8) {
+        append_u8(bytes, static_cast<std::uint8_t>((value >> shift) & 0xFFU));
+    }
+}
+
+void write_bytes(const std::filesystem::path& path, const std::vector<unsigned char>& bytes) {
+    std::ofstream output(path, std::ios::binary);
+    output.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+}
+
+std::vector<unsigned char> route_header(std::uint32_t entry_count) {
+    std::vector<unsigned char> bytes{'V', 'H', 'R', 'S'};
+    append_u16(bytes, vh::route_signature_format_version);
+    append_u16(bytes, 16);
+    append_u8(bytes, 1);
+    append_u8(bytes, 0);
+    append_u16(bytes, 0);
+    append_u32(bytes, entry_count);
+    return bytes;
+}
+
+bool rejects_route_file(const std::filesystem::path& path) {
+    try {
+        (void)vh::read_route_signature_file(path);
+    } catch (const std::runtime_error&) {
+        return true;
+    }
+    return false;
+}
+
+} // namespace
 
 int main() {
     vh::RouteSignatureFile route;
@@ -140,6 +191,41 @@ int main() {
     assert(mixed_summary.min_payload_bytes == 4);
     assert(mixed_summary.max_payload_bytes == 5);
     assert(mixed_summary.total_payload_bytes == 9);
+
+    const auto excessive_entries_path = std::filesystem::temp_directory_path() / "visual_homing_route_signature_excessive_entries.vhrs";
+    write_bytes(excessive_entries_path, route_header(100001));
+    assert(rejects_route_file(excessive_entries_path));
+
+    auto payload_mismatch_bytes = route_header(1);
+    append_u64(payload_mismatch_bytes, 1);
+    append_u64(payload_mismatch_bytes, 1000);
+    append_u16(payload_mismatch_bytes, 0);
+    append_u32(payload_mismatch_bytes, 0);
+    append_u16(payload_mismatch_bytes, 2);
+    append_u16(payload_mismatch_bytes, 2);
+    append_u8(payload_mismatch_bytes, 1);
+    append_u8(payload_mismatch_bytes, 0);
+    append_u16(payload_mismatch_bytes, 0);
+    append_u32(payload_mismatch_bytes, 3);
+    payload_mismatch_bytes.push_back(1);
+    payload_mismatch_bytes.push_back(2);
+    payload_mismatch_bytes.push_back(3);
+
+    const auto payload_mismatch_path = std::filesystem::temp_directory_path() / "visual_homing_route_signature_payload_mismatch.vhrs";
+    write_bytes(payload_mismatch_path, payload_mismatch_bytes);
+    assert(rejects_route_file(payload_mismatch_path));
+
+    auto malformed_route = route;
+    malformed_route.entries[0].payload.pop_back();
+    bool rejected_malformed_write = false;
+    try {
+        vh::write_route_signature_file(
+            std::filesystem::temp_directory_path() / "visual_homing_route_signature_malformed_write.vhrs",
+            malformed_route);
+    } catch (const std::runtime_error&) {
+        rejected_malformed_write = true;
+    }
+    assert(rejected_malformed_write);
 
     return 0;
 }

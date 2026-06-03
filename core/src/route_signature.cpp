@@ -15,6 +15,8 @@ namespace {
 constexpr std::array<char, 4> magic = {'V', 'H', 'R', 'S'};
 constexpr std::uint16_t header_size = 16;
 constexpr std::uint8_t little_endian = 1;
+constexpr std::uint32_t max_route_entries_v1 = 100000;
+constexpr std::uint32_t max_payload_bytes_v1 = 64U * 1024U * 1024U;
 
 std::uint8_t pixel_format_to_u8(PixelFormat format) {
     switch (format) {
@@ -39,6 +41,18 @@ PixelFormat pixel_format_from_u8(std::uint8_t value) {
     default:
         throw std::runtime_error("Unsupported route signature pixel format");
     }
+}
+
+std::uint32_t bytes_per_pixel(PixelFormat format) {
+    switch (format) {
+    case PixelFormat::Gray8:
+        return 1;
+    case PixelFormat::Bgr8:
+        return 3;
+    case PixelFormat::Thermal16:
+        return 2;
+    }
+    throw std::runtime_error("Unknown pixel format");
 }
 
 void write_u8(std::ostream& output, std::uint8_t value) {
@@ -121,6 +135,15 @@ void require_stream_ok(const std::ios& stream, const std::string& action) {
     }
 }
 
+std::uint32_t expected_payload_size(std::uint16_t width, std::uint16_t height, PixelFormat format) {
+    const auto pixels = static_cast<std::uint64_t>(width) * static_cast<std::uint64_t>(height);
+    const auto bytes = pixels * static_cast<std::uint64_t>(bytes_per_pixel(format));
+    if (bytes > max_payload_bytes_v1) {
+        throw std::runtime_error("Route signature payload dimensions exceed v1 safety limit");
+    }
+    return static_cast<std::uint32_t>(bytes);
+}
+
 void write_gray8_pgm(const std::filesystem::path& path, const RouteSignatureEntry& entry, std::uint16_t scale) {
     if (entry.format != PixelFormat::Gray8) {
         throw std::runtime_error("Route keyframes require Gray8 route entries");
@@ -194,6 +217,12 @@ void write_route_signature_file(const std::filesystem::path& path, const RouteSi
         if (entry.payload.size() > std::numeric_limits<std::uint32_t>::max()) {
             throw std::runtime_error("Route signature payload exceeds v1 limit");
         }
+        if (entry.payload.size() > max_payload_bytes_v1) {
+            throw std::runtime_error("Route signature payload exceeds v1 safety limit");
+        }
+        if (entry.payload.size() != expected_payload_size(entry.width, entry.height, entry.format)) {
+            throw std::runtime_error("Route signature payload size does not match dimensions and format");
+        }
 
         write_u64(output, entry.frame_id);
         write_u64(output, entry.timestamp_ns);
@@ -242,6 +271,9 @@ RouteSignatureFile read_route_signature_file(const std::filesystem::path& path) 
     if (endian != little_endian) {
         throw std::runtime_error("Unsupported route signature endian policy");
     }
+    if (entry_count > max_route_entries_v1) {
+        throw std::runtime_error("Route signature entry count exceeds v1 safety limit");
+    }
 
     route.entries.reserve(entry_count);
     for (std::uint32_t index = 0; index < entry_count; ++index) {
@@ -259,6 +291,12 @@ RouteSignatureFile read_route_signature_file(const std::filesystem::path& path) 
 
         if (entry.width == 0 || entry.height == 0) {
             throw std::runtime_error("Route signature entry has invalid dimensions");
+        }
+        if (payload_size > max_payload_bytes_v1) {
+            throw std::runtime_error("Route signature payload exceeds v1 safety limit");
+        }
+        if (payload_size != expected_payload_size(entry.width, entry.height, entry.format)) {
+            throw std::runtime_error("Route signature payload size does not match dimensions and format");
         }
 
         entry.payload.resize(payload_size);
