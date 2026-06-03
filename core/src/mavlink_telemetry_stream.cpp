@@ -1,6 +1,8 @@
 #include "visual_homing/mavlink_telemetry_stream.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -92,8 +94,63 @@ void configure_serial_read_only(int fd, int baud_rate) {
 
 } // namespace
 
+MavlinkTelemetryByteBuffer::MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes)
+    : max_buffer_bytes_(max_buffer_bytes) {
+    if (max_buffer_bytes_ == 0) {
+        throw std::invalid_argument("MAVLink telemetry stream max buffer bytes must be positive");
+    }
+}
+
+void MavlinkTelemetryByteBuffer::append(const char* data, std::size_t size) {
+    if (size == 0) {
+        return;
+    }
+
+    bytes_captured_ += static_cast<std::uint64_t>(size);
+    const auto max_size = static_cast<std::size_t>(std::min<std::uint64_t>(
+        max_buffer_bytes_,
+        static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())));
+
+    if (size >= max_size) {
+        bytes_dropped_ += static_cast<std::uint64_t>(bytes_.size());
+        bytes_dropped_ += static_cast<std::uint64_t>(size - max_size);
+        bytes_.assign(data + (size - max_size), max_size);
+        return;
+    }
+
+    bytes_.append(data, size);
+    if (bytes_.size() > max_size) {
+        const auto overflow = bytes_.size() - max_size;
+        bytes_.erase(0, overflow);
+        bytes_dropped_ += static_cast<std::uint64_t>(overflow);
+    }
+}
+
+void MavlinkTelemetryByteBuffer::clear() {
+    bytes_.clear();
+    bytes_captured_ = 0;
+    bytes_dropped_ = 0;
+}
+
+const std::string& MavlinkTelemetryByteBuffer::bytes() const {
+    return bytes_;
+}
+
+std::uint64_t MavlinkTelemetryByteBuffer::bytes_captured() const {
+    return bytes_captured_;
+}
+
+std::uint64_t MavlinkTelemetryByteBuffer::bytes_retained() const {
+    return static_cast<std::uint64_t>(bytes_.size());
+}
+
+std::uint64_t MavlinkTelemetryByteBuffer::bytes_dropped() const {
+    return bytes_dropped_;
+}
+
 MavlinkTelemetryStream::MavlinkTelemetryStream(MavlinkTelemetryStreamConfig config)
-    : config_(std::move(config)) {
+    : config_(std::move(config)),
+      bytes_(config_.max_buffer_bytes) {
     if (config_.device_path.empty()) {
         throw std::invalid_argument("MAVLink telemetry stream device path must not be empty");
     }
@@ -113,7 +170,6 @@ bool MavlinkTelemetryStream::start() {
     }
 
     stop_requested_ = false;
-    bytes_captured_ = 0;
     bytes_.clear();
     last_error_.clear();
     worker_ = std::thread(&MavlinkTelemetryStream::read_loop, this);
@@ -136,12 +192,15 @@ MavlinkTelemetryStreamSnapshot MavlinkTelemetryStream::snapshot() const {
     snapshot.supported = supported_;
     snapshot.opened = opened_;
     snapshot.running = running_;
-    snapshot.bytes_captured = bytes_captured_;
-    snapshot.inspection = inspect_mavlink_telemetry_bytes(bytes_);
+    snapshot.bytes_captured = bytes_.bytes_captured();
+    snapshot.bytes_retained = bytes_.bytes_retained();
+    snapshot.bytes_dropped = bytes_.bytes_dropped();
+    snapshot.inspection = inspect_mavlink_telemetry_bytes(bytes_.bytes());
     return snapshot;
 }
 
-const std::string& MavlinkTelemetryStream::last_error() const {
+std::string MavlinkTelemetryStream::last_error() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     return last_error_;
 }
 
@@ -184,7 +243,6 @@ void MavlinkTelemetryStream::read_loop() {
             if (bytes_read > 0) {
                 std::lock_guard<std::mutex> lock(mutex_);
                 bytes_.append(buffer, static_cast<std::size_t>(bytes_read));
-                bytes_captured_ += static_cast<std::uint64_t>(bytes_read);
                 continue;
             }
             if (bytes_read < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {

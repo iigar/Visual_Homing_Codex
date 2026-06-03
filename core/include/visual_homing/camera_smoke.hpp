@@ -65,6 +65,8 @@ struct LiveRouteRecordingResult {
     bool telemetry_warmup_passed = false;
     double telemetry_warmup_elapsed_ms = 0.0;
     std::uint64_t telemetry_bytes_captured = 0;
+    std::uint64_t telemetry_bytes_retained = 0;
+    std::uint64_t telemetry_bytes_dropped = 0;
     std::uint64_t telemetry_frames_seen = 0;
     std::uint64_t telemetry_heartbeat_messages = 0;
     std::uint64_t telemetry_attitude_messages = 0;
@@ -131,6 +133,8 @@ struct LiveRouteMatchingResult {
     bool telemetry_warmup_passed = false;
     double telemetry_warmup_elapsed_ms = 0.0;
     std::uint64_t telemetry_bytes_captured = 0;
+    std::uint64_t telemetry_bytes_retained = 0;
+    std::uint64_t telemetry_bytes_dropped = 0;
     std::uint64_t telemetry_frames_seen = 0;
     std::uint64_t telemetry_heartbeat_messages = 0;
     std::uint64_t telemetry_attitude_messages = 0;

@@ -913,3 +913,23 @@ Impact:
 
 Risk:
 - The safety limits are intentionally generous for current Pi route artifacts. Future high-resolution or long-duration route formats may need an explicit v2 policy rather than relaxing v1 silently.
+
+## 2026-06-03 - Bound Live MAVLink Telemetry Stream Buffer
+
+Decision:
+- Keep the read-only live MAVLink telemetry stream as a bounded retained byte buffer instead of an unbounded accumulated string.
+- Preserve total captured byte accounting while reporting retained and dropped byte counts in snapshots and live route logs.
+- Return telemetry stream errors by value under lock instead of exposing an unlocked string reference.
+
+Why:
+- Short bench runs worked with accumulated bytes, but future longer dry-run and tethered tests should not let serial telemetry memory grow without limit.
+- The inspector only needs recent MAVLink bytes for freshness and latest-message health in live loops; total captured bytes remain available as an audit counter.
+
+Impact:
+- Default retained buffer size is 64 KiB.
+- `live_route_*_telemetry_warmup`, stream-done logs, and final summaries can expose retained/dropped byte metrics.
+- A new unit test covers pruning, captured/retained/dropped accounting, clear behavior, and zero-size rejection.
+- Stream error reads no longer race the worker thread's error writes.
+
+Risk:
+- Very long historical telemetry inspection should use the existing capture-to-file path, not the live stream snapshot buffer.

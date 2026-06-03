@@ -127,6 +127,30 @@ std::uint64_t drain_pending_frames(PiCameraSource& source) {
     return drained;
 }
 
+void copy_telemetry_stream_metrics(
+    LiveRouteRecordingResult& result,
+    const MavlinkTelemetryStreamSnapshot& telemetry) {
+    result.telemetry_bytes_captured = telemetry.bytes_captured;
+    result.telemetry_bytes_retained = telemetry.bytes_retained;
+    result.telemetry_bytes_dropped = telemetry.bytes_dropped;
+    result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+    result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+    result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+    result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+}
+
+void copy_telemetry_stream_metrics(
+    LiveRouteMatchingResult& result,
+    const MavlinkTelemetryStreamSnapshot& telemetry) {
+    result.telemetry_bytes_captured = telemetry.bytes_captured;
+    result.telemetry_bytes_retained = telemetry.bytes_retained;
+    result.telemetry_bytes_dropped = telemetry.bytes_dropped;
+    result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+    result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+    result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+    result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+}
+
 } // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
@@ -266,11 +290,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                static_cast<double>(config.telemetry_warmup_timeout_ms)) {
             const auto telemetry = telemetry_stream->snapshot();
             const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
-            result.telemetry_bytes_captured = telemetry.bytes_captured;
-            result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-            result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-            result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-            result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+            copy_telemetry_stream_metrics(result, telemetry);
             if (validation.passed) {
                 result.telemetry_warmup_passed = true;
                 last_valid_live_telemetry = telemetry.inspection.latest;
@@ -284,6 +304,8 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                 << " elapsed_ms=" << result.telemetry_warmup_elapsed_ms
                 << " passed=" << (result.telemetry_warmup_passed ? "true" : "false")
                 << " bytes_captured=" << result.telemetry_bytes_captured
+                << " bytes_retained=" << result.telemetry_bytes_retained
+                << " bytes_dropped=" << result.telemetry_bytes_dropped
                 << " frames_seen=" << result.telemetry_frames_seen
                 << " heartbeat_messages=" << result.telemetry_heartbeat_messages
                 << " attitude_messages=" << result.telemetry_attitude_messages
@@ -299,6 +321,8 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                     << " live_telemetry_stream=true"
                     << " telemetry_warmup_passed=false"
                     << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+                    << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
+                    << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
                     << " telemetry_frames_seen=" << result.telemetry_frames_seen << "\n";
             return result;
         }
@@ -371,11 +395,7 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
                 const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
-                result.telemetry_bytes_captured = telemetry.bytes_captured;
-                result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-                result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-                result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-                result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+                copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
                     last_valid_live_telemetry = telemetry.inspection.latest;
                 }
@@ -416,15 +436,13 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
     if (telemetry_stream) {
         telemetry_stream->stop();
         const auto telemetry = telemetry_stream->snapshot();
-        result.telemetry_bytes_captured = telemetry.bytes_captured;
-        result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-        result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-        result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-        result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+        copy_telemetry_stream_metrics(result, telemetry);
         metrics << "live_route_telemetry_stream_done"
                 << " supported=" << (telemetry.supported ? "true" : "false")
                 << " opened=" << (telemetry.opened ? "true" : "false")
                 << " bytes_captured=" << telemetry.bytes_captured
+                << " bytes_retained=" << telemetry.bytes_retained
+                << " bytes_dropped=" << telemetry.bytes_dropped
                 << " frames_seen=" << telemetry.inspection.frames_seen
                 << " heartbeat_messages=" << telemetry.inspection.heartbeat_messages
                 << " attitude_messages=" << telemetry.inspection.attitude_messages
@@ -458,6 +476,8 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
             << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+            << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
+            << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
             << " telemetry_frames_seen=" << result.telemetry_frames_seen
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
@@ -585,11 +605,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                static_cast<double>(config.telemetry_warmup_timeout_ms)) {
             const auto telemetry = telemetry_stream->snapshot();
             const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
-            result.telemetry_bytes_captured = telemetry.bytes_captured;
-            result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-            result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-            result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-            result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+            copy_telemetry_stream_metrics(result, telemetry);
             if (validation.passed) {
                 result.telemetry_warmup_passed = true;
                 telemetry_adapter.observe(telemetry.inspection.latest, now());
@@ -603,6 +619,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " elapsed_ms=" << result.telemetry_warmup_elapsed_ms
                 << " passed=" << (result.telemetry_warmup_passed ? "true" : "false")
                 << " bytes_captured=" << result.telemetry_bytes_captured
+                << " bytes_retained=" << result.telemetry_bytes_retained
+                << " bytes_dropped=" << result.telemetry_bytes_dropped
                 << " frames_seen=" << result.telemetry_frames_seen
                 << " heartbeat_messages=" << result.telemetry_heartbeat_messages
                 << " attitude_messages=" << result.telemetry_attitude_messages
@@ -617,6 +635,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " live_telemetry_stream=true"
                     << " telemetry_warmup_passed=false"
                     << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+                    << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
+                    << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
                     << " telemetry_frames_seen=" << result.telemetry_frames_seen
                     << " live_telemetry_health_passed=false"
                     << " passed=false\n";
@@ -696,11 +716,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
                 const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
-                result.telemetry_bytes_captured = telemetry.bytes_captured;
-                result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-                result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-                result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-                result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+                copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
                     telemetry_adapter.observe(telemetry.inspection.latest, processing_finished);
                 }
@@ -812,11 +828,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (telemetry_stream) {
         telemetry_stream->stop();
         const auto telemetry = telemetry_stream->snapshot();
-        result.telemetry_bytes_captured = telemetry.bytes_captured;
-        result.telemetry_frames_seen = telemetry.inspection.frames_seen;
-        result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
-        result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
-        result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+        copy_telemetry_stream_metrics(result, telemetry);
     }
     emit_operator_stop_cue(config.operator_cue_enabled,
                            config.operator_cue_bell,
@@ -910,6 +922,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
             << " telemetry_warmup_elapsed_ms=" << result.telemetry_warmup_elapsed_ms
             << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+            << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
+            << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
             << " telemetry_frames_seen=" << result.telemetry_frames_seen
             << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages
             << " telemetry_attitude_messages=" << result.telemetry_attitude_messages

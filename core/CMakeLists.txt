@@ -195,6 +195,19 @@ if(BUILD_TESTING)
 
     add_test(NAME mavlink_telemetry_inspector COMMAND mavlink_telemetry_inspector_test)
 
+    add_executable(mavlink_telemetry_stream_test
+        tests/mavlink_telemetry_stream_test.cpp
+    )
+
+    target_link_libraries(mavlink_telemetry_stream_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(mavlink_telemetry_stream_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME mavlink_telemetry_stream COMMAND mavlink_telemetry_stream_test)
+
     add_executable(pipeline_harness_test
         tests/pipeline_harness_test.cpp
     )
