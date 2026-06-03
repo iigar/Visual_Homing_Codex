@@ -249,6 +249,7 @@ if [[ "${VISUAL_HOMING_RECORD_LIVE_ROUTE:-0}" == "1" ]]; then
             "${VISUAL_HOMING_ROUTE_HEADING_HINT_RAD:-0.0}" \
             "${route_warmup_frames}" \
             "${route_telemetry_args[@]}" \
+            "${camera_target_override_args[@]}" \
             "${operator_cue_args[@]}"
     elif [[ "${VISUAL_HOMING_USE_CAMERA_PROFILE:-0}" == "1" ]]; then
         "${build_dir}/visual_homing_core" --record-live-route-profile \
