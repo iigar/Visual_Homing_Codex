@@ -878,3 +878,20 @@ Impact:
 
 Risk:
 - This is a freshness/heartbeat health gate for bench dry-run matching, not live command permission. Armed/GUIDED permission and a real MAVLink writer remain blocked for a later explicit safety step.
+
+## 2026-06-03 - Harden Bounded Navigator Fail-Closed Inputs
+
+Decision:
+- Reject non-finite `BoundedNavigator` config values and negative `yaw_gain`.
+- Keep invalid health, invalid match, low confidence, stale match age, and future match timestamps as invalid zero-command outputs that reset the slew limiter.
+
+Why:
+- The navigator sits directly before any future command writer, so malformed tuning must fail at construction instead of producing NaN, infinite, or inverted yaw commands.
+- Resetting command history on any invalid input prevents stale valid commands from shaping the next accepted command after a fail-closed interval.
+
+Impact:
+- Unit tests now cover per-link health blocking, future timestamps, invalid-match reset, and invalid config rejection.
+- Live MAVLink output remains blocked; this only strengthens the dry-run/navigation boundary.
+
+Risk:
+- Negative yaw gain is no longer allowed. If an airframe ever needs inverted correction, that should be represented explicitly in camera/profile orientation or route geometry rather than by silently flipping navigator gain.

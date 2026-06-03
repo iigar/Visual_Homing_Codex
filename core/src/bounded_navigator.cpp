@@ -3,11 +3,18 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 #include "visual_homing/time.hpp"
 
 namespace vh {
 namespace {
+
+void require_finite_non_negative(double value, const char* name) {
+    if (!std::isfinite(value) || value < 0.0) {
+        throw std::invalid_argument(std::string("BoundedNavigator ") + name + " must be finite and non-negative");
+    }
+}
 
 bool health_allows_navigation(const HealthSnapshot& health) {
     return health.state == HealthState::Ready
@@ -20,21 +27,14 @@ bool health_allows_navigation(const HealthSnapshot& health) {
 
 BoundedNavigator::BoundedNavigator(BoundedNavigatorConfig config)
     : config_(config) {
-    if (config_.minimum_confidence < 0.0 || config_.minimum_confidence > 1.0) {
+    if (!std::isfinite(config_.minimum_confidence) || config_.minimum_confidence < 0.0 || config_.minimum_confidence > 1.0) {
         throw std::invalid_argument("BoundedNavigator minimum_confidence must be in [0, 1]");
     }
-    if (config_.max_match_age_ms < 0.0) {
-        throw std::invalid_argument("BoundedNavigator max_match_age_ms must be non-negative");
-    }
-    if (config_.max_yaw_rate_radps < 0.0) {
-        throw std::invalid_argument("BoundedNavigator max_yaw_rate_radps must be non-negative");
-    }
-    if (config_.max_yaw_accel_radps2 < 0.0) {
-        throw std::invalid_argument("BoundedNavigator max_yaw_accel_radps2 must be non-negative");
-    }
-    if (config_.forward_speed_mps < 0.0) {
-        throw std::invalid_argument("BoundedNavigator forward_speed_mps must be non-negative");
-    }
+    require_finite_non_negative(config_.max_match_age_ms, "max_match_age_ms");
+    require_finite_non_negative(config_.yaw_gain, "yaw_gain");
+    require_finite_non_negative(config_.max_yaw_rate_radps, "max_yaw_rate_radps");
+    require_finite_non_negative(config_.max_yaw_accel_radps2, "max_yaw_accel_radps2");
+    require_finite_non_negative(config_.forward_speed_mps, "forward_speed_mps");
 }
 
 NavigationCommand BoundedNavigator::update(const RouteMatch& match, const HealthSnapshot& health) {

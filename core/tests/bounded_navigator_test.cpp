@@ -1,5 +1,6 @@
 #include <cassert>
 #include <chrono>
+#include <limits>
 #include <stdexcept>
 
 #include "visual_homing/bounded_navigator.hpp"
@@ -77,6 +78,21 @@ int main() {
     const auto health_blocked = navigator.update(valid_match(950, 0.10, 0.95), degraded);
     assert(!health_blocked.valid);
 
+    auto no_camera = ready_health(1000, 0.95);
+    no_camera.camera_ok = false;
+    assert(!navigator.update(valid_match(950, 0.10, 0.95), no_camera).valid);
+
+    auto no_mavlink = ready_health(1000, 0.95);
+    no_mavlink.mavlink_ok = false;
+    assert(!navigator.update(valid_match(950, 0.10, 0.95), no_mavlink).valid);
+
+    auto no_navigation = ready_health(1000, 0.95);
+    no_navigation.navigation_ok = false;
+    assert(!navigator.update(valid_match(950, 0.10, 0.95), no_navigation).valid);
+
+    const auto future_match = navigator.update(valid_match(1100, 0.10, 0.95), ready_health(1000, 0.95));
+    assert(!future_match.valid);
+
     vh::BoundedNavigator slew_limited({
         .minimum_confidence = 0.75,
         .max_match_age_ms = 200.0,
@@ -106,9 +122,57 @@ int main() {
     assert(after_reset.yaw_rate_radps < -0.99);
     assert(after_reset.yaw_rate_radps > -1.01);
 
+    vh::BoundedNavigator invalid_match_reset({
+        .minimum_confidence = 0.75,
+        .max_match_age_ms = 200.0,
+        .yaw_gain = 10.0,
+        .max_yaw_rate_radps = 1.0,
+        .max_yaw_accel_radps2 = 0.5,
+        .forward_speed_mps = 0.0,
+    });
+
+    const auto before_invalid = invalid_match_reset.update(valid_match(990, 0.10, 0.95), ready_health(1000, 0.95));
+    assert(before_invalid.valid);
+    assert(before_invalid.yaw_rate_radps > 0.99);
+    assert(before_invalid.yaw_rate_radps < 1.01);
+
+    auto invalid_match = valid_match(1090, -0.10, 0.95);
+    invalid_match.valid = false;
+    const auto invalid_command = invalid_match_reset.update(invalid_match, ready_health(1100, 0.95));
+    assert(!invalid_command.valid);
+
+    const auto after_invalid = invalid_match_reset.update(valid_match(1190, -0.10, 0.95), ready_health(1200, 0.95));
+    assert(after_invalid.valid);
+    assert(after_invalid.yaw_rate_radps < -0.99);
+    assert(after_invalid.yaw_rate_radps > -1.01);
+
     bool rejected = false;
     try {
         (void)vh::BoundedNavigator({.minimum_confidence = 1.5});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected);
+
+    rejected = false;
+    try {
+        (void)vh::BoundedNavigator({.minimum_confidence = std::numeric_limits<double>::quiet_NaN()});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected);
+
+    rejected = false;
+    try {
+        (void)vh::BoundedNavigator({.yaw_gain = -1.0});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected);
+
+    rejected = false;
+    try {
+        (void)vh::BoundedNavigator({.max_yaw_rate_radps = std::numeric_limits<double>::infinity()});
     } catch (const std::invalid_argument&) {
         rejected = true;
     }

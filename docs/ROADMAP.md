@@ -83,7 +83,7 @@
 - Review safety boundaries: fail-closed behavior, health transitions, permission gates, route-quality gates, and live-output blockers.
 - Review security and operational hardening: artifact parsing robustness, path handling, dependency assumptions, install/bootstrap scripts, web/UI boundaries if reintroduced, log privacy, and unauthenticated network surfaces.
 - Update roadmap/decisions with findings, residual risks, and required fixes before Milestone 7.
-- Status: planned before flight-test ladder work.
+- Status: started with `BoundedNavigator` fail-closed hardening: config validation now rejects non-finite values and negative yaw gain, and unit tests cover per-link health blocking, future match timestamps, invalid-match command reset, and invalid config rejection.
 
 ## Milestone 7 - Flight Test Ladder
 
