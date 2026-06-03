@@ -1,6 +1,7 @@
 # CMake build outputs
 build/
 core/build/
+core/build-*/
 core/build-pi/
 cmake-build-*/
 artifacts/
