@@ -859,3 +859,22 @@ Impact:
 
 Risk:
 - This is still a bench diagnostic. It uses a synthetic health link for the no-output dry-run path and must not be treated as permission to send live MAVLink commands.
+
+## 2026-06-03 - Gate Live Dry-Run Commands With Read-Only MAVLink Health
+
+Decision:
+- Add an opt-in read-only live MAVLink telemetry stream to active-profile live route matching.
+- When enabled, use fresh validated heartbeat telemetry as the `mavlink_ok` health input for `BoundedNavigator`.
+- Keep live MAVLink command output blocked; dry-run output still goes only to `DryRunCommandSink`.
+
+Why:
+- The synthetic dry-run health link was useful for command-shape inspection, but the next safety step needs proof that command generation fails closed when real FC telemetry is absent or stale.
+- This keeps the integration read-only while exercising the same health boundary future live command output will depend on.
+
+Impact:
+- `VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1` opens the configured serial device read-only during live matching.
+- The match run logs telemetry warmup, byte/frame/message counts, per-frame `telemetry_mavlink_ok`, and final telemetry-health frame counts.
+- `VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH=1` makes the final pass/fail result include telemetry warmup and per-frame freshness health.
+
+Risk:
+- This is a freshness/heartbeat health gate for bench dry-run matching, not live command permission. Armed/GUIDED permission and a real MAVLink writer remain blocked for a later explicit safety step.

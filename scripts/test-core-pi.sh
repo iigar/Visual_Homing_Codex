@@ -36,6 +36,9 @@ live_route_dry_run_max_invalid_command_streak="${VISUAL_HOMING_LIVE_ROUTE_DRY_RU
 live_route_dry_run_max_abs_yaw_rate_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_ABS_YAW_RATE_RADPS:-${live_route_navigator_max_yaw_rate_radps}}"
 live_route_dry_run_max_yaw_rate_sign_flips="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_SIGN_FLIPS:-20}"
 live_route_dry_run_max_yaw_rate_delta_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_DELTA_RADPS:-0.15}"
+live_route_match_use_live_mavlink_telemetry="${VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}"
+live_route_match_telemetry_max_age_ms="${VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS:-500}"
+live_route_match_require_live_telemetry_health="${VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH:-0}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -96,6 +99,21 @@ if [[ "${live_route_dry_run_commands}" == "1" ]]; then
         "${live_route_dry_run_max_abs_yaw_rate_radps}"
         "${live_route_dry_run_max_yaw_rate_sign_flips}"
         "${live_route_dry_run_max_yaw_rate_delta_radps}"
+    )
+fi
+live_route_match_telemetry_args=()
+if [[ "${live_route_match_use_live_mavlink_telemetry}" == "1" ]]; then
+    if [[ "${live_route_dry_run_commands}" != "1" ]]; then
+        echo "VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1 currently requires VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1" >&2
+        exit 2
+    fi
+    live_route_match_telemetry_args=(
+        "${live_route_match_use_live_mavlink_telemetry}"
+        "${mavlink_telemetry_device}"
+        "${mavlink_telemetry_baud}"
+        "${route_telemetry_warmup_ms}"
+        "${live_route_match_telemetry_max_age_ms}"
+        "${live_route_match_require_live_telemetry_health}"
     )
 fi
 
@@ -333,7 +351,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${live_route_match_endpoint_start_progress}" \
         "${live_route_match_endpoint_end_progress}" \
         "${operator_cue_args[@]}" \
-        "${live_route_dry_run_command_args[@]}"
+        "${live_route_dry_run_command_args[@]}" \
+        "${live_route_match_telemetry_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

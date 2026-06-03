@@ -456,6 +456,21 @@ VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_DELTA_RADPS=0.15
 
 This path writes `dry_run_command`, per-frame `command_*` metrics, and final dry-run command quality fields such as valid command fraction, max invalid streak, yaw-rate sign flips, and max yaw-rate delta. It does not open a live MAVLink command output path. Set `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY=1` only when you want the command-quality gate to participate in the final `passed` result.
 
+To gate the same dry-run command path with live read-only MAVLink telemetry health, enable the live telemetry stream during matching:
+
+```bash
+VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE=/dev/serial0
+VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD=115200
+VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1
+VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS=500
+VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH=1
+VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS=1500
+```
+
+This mode still sends no MAVLink commands. It opens the serial device read-only, waits for heartbeat, attitude, and global-position telemetry, then uses fresh heartbeat telemetry as the `mavlink_ok` health input for `BoundedNavigator`. The final `live_route_match_done` line reports telemetry byte/frame/message counts plus `telemetry_health_ready_frames`, `telemetry_health_degraded_frames`, and `live_telemetry_health_passed`.
+
+For bench dry-run matching, this health gate only checks read-only telemetry freshness. Armed/GUIDED command permission remains reserved for a later live-output safety step.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

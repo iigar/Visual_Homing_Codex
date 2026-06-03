@@ -16,6 +16,7 @@
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
 #include "visual_homing/time.hpp"
@@ -499,6 +500,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.max_dry_run_yaw_rate_delta_radps < 0.0) {
         throw std::invalid_argument("Live route matching max_dry_run_yaw_rate_delta_radps must be non-negative");
     }
+    if (config.telemetry_warmup_timeout_ms == 0 && config.use_live_telemetry_stream) {
+        throw std::invalid_argument("Live route matching telemetry_warmup_timeout_ms must be positive when telemetry stream is enabled");
+    }
+    if (config.telemetry_max_age_ms < 0.0) {
+        throw std::invalid_argument("Live route matching telemetry_max_age_ms must be non-negative");
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcherConfig matcher_config;
@@ -516,7 +523,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     DryRunCommandSink command_sink(&metrics);
     HealthMonitor health(now());
-    health.set_links(true, config.emit_dry_run_commands, true);
+    health.set_links(true, config.emit_dry_run_commands && !config.use_live_telemetry_stream, true);
+    std::optional<MavlinkTelemetryStream> telemetry_stream;
+    MavlinkTelemetryAdapter telemetry_adapter({
+        .max_telemetry_age_ms = config.telemetry_max_age_ms,
+        .navigation_confidence = 1.0,
+        .require_armed = false,
+        .required_mode = FlightMode::Guided,
+    });
     LiveRouteMatchingResult result;
 
     metrics << "live_route_match_start width=" << config.camera.width
@@ -537,7 +551,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " require_endpoint_progress=" << (config.require_endpoint_progress ? "true" : "false")
             << " endpoint_start_progress=" << config.endpoint_start_progress
             << " endpoint_end_progress=" << config.endpoint_end_progress
-            << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false");
+            << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false")
+            << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
+            << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
+            << " telemetry_max_age_ms=" << config.telemetry_max_age_ms
+            << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false");
     if (config.emit_dry_run_commands) {
         metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence
                 << " navigator_max_match_age_ms=" << config.navigator.max_match_age_ms
@@ -554,6 +572,58 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     metrics << "\n";
 
+    if (config.use_live_telemetry_stream) {
+        telemetry_stream.emplace(config.telemetry_stream);
+        telemetry_stream->start();
+        result.used_live_telemetry_stream = true;
+        metrics << "live_route_match_telemetry_stream_start"
+                << " device=" << config.telemetry_stream.device_path
+                << " baud_rate=" << config.telemetry_stream.baud_rate
+                << " started=true\n";
+        const auto telemetry_warmup_started = now();
+        while (milliseconds_between(telemetry_warmup_started, now()) <
+               static_cast<double>(config.telemetry_warmup_timeout_ms)) {
+            const auto telemetry = telemetry_stream->snapshot();
+            const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+            result.telemetry_bytes_captured = telemetry.bytes_captured;
+            result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+            result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+            result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+            result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+            if (validation.passed) {
+                result.telemetry_warmup_passed = true;
+                telemetry_adapter.observe(telemetry.inspection.latest, now());
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        result.telemetry_warmup_elapsed_ms = milliseconds_between(telemetry_warmup_started, now());
+        metrics << "live_route_match_telemetry_warmup"
+                << " timeout_ms=" << config.telemetry_warmup_timeout_ms
+                << " elapsed_ms=" << result.telemetry_warmup_elapsed_ms
+                << " passed=" << (result.telemetry_warmup_passed ? "true" : "false")
+                << " bytes_captured=" << result.telemetry_bytes_captured
+                << " frames_seen=" << result.telemetry_frames_seen
+                << " heartbeat_messages=" << result.telemetry_heartbeat_messages
+                << " attitude_messages=" << result.telemetry_attitude_messages
+                << " global_position_int_messages=" << result.telemetry_global_position_int_messages;
+        if (!telemetry_stream->last_error().empty()) {
+            metrics << " error=" << telemetry_stream->last_error();
+        }
+        metrics << "\n";
+        if (config.require_live_telemetry_health && !result.telemetry_warmup_passed) {
+            telemetry_stream->stop();
+            metrics << "live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0"
+                    << " live_telemetry_stream=true"
+                    << " telemetry_warmup_passed=false"
+                    << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+                    << " telemetry_frames_seen=" << result.telemetry_frames_seen
+                    << " live_telemetry_health_passed=false"
+                    << " passed=false\n";
+            return result;
+        }
+    }
+
     result.started = source.start();
     metrics << "live_route_match_backend_start_result started=" << (result.started ? "true" : "false")
             << " running=" << (source.running() ? "true" : "false");
@@ -565,6 +635,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (!result.started) {
         metrics << "live_route_match_unavailable error=" << source.last_error() << "\n";
         metrics << "live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false\n";
+        if (telemetry_stream) {
+            telemetry_stream->stop();
+        }
         return result;
     }
 
@@ -620,6 +693,25 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto processing_finished = now();
             const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
             health.set_route_match_confidence(match.confidence);
+            if (telemetry_stream) {
+                const auto telemetry = telemetry_stream->snapshot();
+                const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+                result.telemetry_bytes_captured = telemetry.bytes_captured;
+                result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+                result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+                result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+                result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+                if (validation.passed) {
+                    telemetry_adapter.observe(telemetry.inspection.latest, processing_finished);
+                }
+                const bool telemetry_health_ready = telemetry_adapter.mavlink_ok(processing_finished);
+                health.set_links(true, telemetry_health_ready, true);
+                if (telemetry_health_ready) {
+                    ++result.telemetry_health_ready_frames;
+                } else {
+                    ++result.telemetry_health_degraded_frames;
+                }
+            }
             const auto health_snapshot = health.snapshot(processing_finished);
             NavigationCommand command;
             if (config.emit_dry_run_commands) {
@@ -697,6 +789,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         << " command_vx_mps=" << command.vx_mps
                         << " command_confidence=" << command.confidence;
             }
+            if (telemetry_stream) {
+                metrics << " telemetry_mavlink_ok=" << (health_snapshot.mavlink_ok ? "true" : "false")
+                        << " telemetry_frames_seen=" << result.telemetry_frames_seen
+                        << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages;
+            }
             metrics << "\n";
         } else {
             ++result.empty_polls;
@@ -711,6 +808,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     source.stop();
     if (config.emit_dry_run_commands) {
         command_sink.stop();
+    }
+    if (telemetry_stream) {
+        telemetry_stream->stop();
+        const auto telemetry = telemetry_stream->snapshot();
+        result.telemetry_bytes_captured = telemetry.bytes_captured;
+        result.telemetry_frames_seen = telemetry.inspection.frames_seen;
+        result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
+        result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
+        result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
     }
     emit_operator_stop_cue(config.operator_cue_enabled,
                            config.operator_cue_bell,
@@ -763,11 +869,18 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             && result.dry_run_yaw_rate_sign_flips <= config.max_dry_run_yaw_rate_sign_flips
             && result.max_dry_run_yaw_rate_delta_radps <= config.max_dry_run_yaw_rate_delta_radps;
     }
+    if (config.use_live_telemetry_stream) {
+        result.live_telemetry_health_passed =
+            result.telemetry_warmup_passed
+            && result.telemetry_health_degraded_frames == 0
+            && result.telemetry_health_ready_frames == result.frames_captured;
+    }
 
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
         && result.valid_matches == result.frames_captured
         && result.progress_gate_passed
+        && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
         && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed);
 
     metrics << "live_route_match_done started=true"
@@ -793,6 +906,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " directional_progress_passed=" << (result.directional_progress_passed ? "true" : "false")
             << " endpoint_progress_passed=" << (result.endpoint_progress_passed ? "true" : "false")
             << " progress_gate_passed=" << (result.progress_gate_passed ? "true" : "false")
+            << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
+            << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
+            << " telemetry_warmup_elapsed_ms=" << result.telemetry_warmup_elapsed_ms
+            << " telemetry_bytes_captured=" << result.telemetry_bytes_captured
+            << " telemetry_frames_seen=" << result.telemetry_frames_seen
+            << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages
+            << " telemetry_attitude_messages=" << result.telemetry_attitude_messages
+            << " telemetry_global_position_int_messages=" << result.telemetry_global_position_int_messages
+            << " telemetry_health_ready_frames=" << result.telemetry_health_ready_frames
+            << " telemetry_health_degraded_frames=" << result.telemetry_health_degraded_frames
+            << " live_telemetry_health_passed=" << (result.live_telemetry_health_passed ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms
