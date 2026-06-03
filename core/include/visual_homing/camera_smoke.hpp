@@ -93,6 +93,12 @@ struct LiveRouteMatchingConfig {
     bool operator_cue_bell = true;
     bool emit_dry_run_commands = false;
     BoundedNavigatorConfig navigator{};
+    bool require_dry_run_command_quality = false;
+    double minimum_valid_dry_run_command_fraction = 0.95;
+    std::uint64_t max_invalid_dry_run_command_streak = 3;
+    double max_abs_dry_run_yaw_rate_radps = 0.35;
+    std::uint64_t max_dry_run_yaw_rate_sign_flips = 20;
+    double max_dry_run_yaw_rate_delta_radps = 0.15;
 };
 
 struct LiveRouteMatchingResult {
@@ -122,6 +128,12 @@ struct LiveRouteMatchingResult {
     double effective_fps = 0.0;
     std::uint64_t dry_run_commands = 0;
     std::uint64_t valid_dry_run_commands = 0;
+    std::uint64_t max_invalid_dry_run_command_streak = 0;
+    double valid_dry_run_command_fraction = 0.0;
+    double max_abs_dry_run_yaw_rate_radps = 0.0;
+    std::uint64_t dry_run_yaw_rate_sign_flips = 0;
+    double max_dry_run_yaw_rate_delta_radps = 0.0;
+    bool dry_run_command_quality_passed = true;
     bool passed = false;
 };
 

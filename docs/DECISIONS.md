@@ -855,6 +855,7 @@ Why:
 Impact:
 - Live match logs can include `dry_run_command` lines and per-frame `command_*` fields.
 - The final `live_route_match_done` line reports generated and valid dry-run command counts.
+- The final summary also reports command-quality metrics and can optionally include the quality gate in `passed`.
 
 Risk:
 - This is still a bench diagnostic. It uses a synthetic health link for the no-output dry-run path and must not be treated as permission to send live MAVLink commands.

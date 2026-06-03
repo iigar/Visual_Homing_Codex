@@ -30,6 +30,12 @@ live_route_navigator_yaw_gain="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_YAW_GAIN:-1.
 live_route_navigator_max_yaw_rate_radps="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_RATE_RADPS:-0.35}"
 live_route_navigator_max_yaw_accel_radps2="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_ACCEL_RADPS2:-1.0}"
 live_route_navigator_forward_speed_mps="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_FORWARD_SPEED_MPS:-0.0}"
+live_route_dry_run_require_command_quality="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY:-0}"
+live_route_dry_run_minimum_valid_command_fraction="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MIN_VALID_COMMAND_FRACTION:-0.95}"
+live_route_dry_run_max_invalid_command_streak="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_INVALID_COMMAND_STREAK:-3}"
+live_route_dry_run_max_abs_yaw_rate_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_ABS_YAW_RATE_RADPS:-${live_route_navigator_max_yaw_rate_radps}}"
+live_route_dry_run_max_yaw_rate_sign_flips="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_SIGN_FLIPS:-20}"
+live_route_dry_run_max_yaw_rate_delta_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_DELTA_RADPS:-0.15}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -84,6 +90,12 @@ if [[ "${live_route_dry_run_commands}" == "1" ]]; then
         "${live_route_navigator_max_yaw_rate_radps}"
         "${live_route_navigator_max_yaw_accel_radps2}"
         "${live_route_navigator_forward_speed_mps}"
+        "${live_route_dry_run_require_command_quality}"
+        "${live_route_dry_run_minimum_valid_command_fraction}"
+        "${live_route_dry_run_max_invalid_command_streak}"
+        "${live_route_dry_run_max_abs_yaw_rate_radps}"
+        "${live_route_dry_run_max_yaw_rate_sign_flips}"
+        "${live_route_dry_run_max_yaw_rate_delta_radps}"
     )
 fi
 

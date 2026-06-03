@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
@@ -489,6 +490,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.endpoint_start_progress >= config.endpoint_end_progress) {
         throw std::invalid_argument("Live route matching endpoint_start_progress must be less than endpoint_end_progress");
     }
+    if (config.minimum_valid_dry_run_command_fraction < 0.0 || config.minimum_valid_dry_run_command_fraction > 1.0) {
+        throw std::invalid_argument("Live route matching minimum_valid_dry_run_command_fraction must be in [0, 1]");
+    }
+    if (config.max_abs_dry_run_yaw_rate_radps < 0.0) {
+        throw std::invalid_argument("Live route matching max_abs_dry_run_yaw_rate_radps must be non-negative");
+    }
+    if (config.max_dry_run_yaw_rate_delta_radps < 0.0) {
+        throw std::invalid_argument("Live route matching max_dry_run_yaw_rate_delta_radps must be non-negative");
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcherConfig matcher_config;
@@ -534,7 +544,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " navigator_yaw_gain=" << config.navigator.yaw_gain
                 << " navigator_max_yaw_rate_radps=" << config.navigator.max_yaw_rate_radps
                 << " navigator_max_yaw_accel_radps2=" << config.navigator.max_yaw_accel_radps2
-                << " navigator_forward_speed_mps=" << config.navigator.forward_speed_mps;
+                << " navigator_forward_speed_mps=" << config.navigator.forward_speed_mps
+                << " require_command_quality=" << (config.require_dry_run_command_quality ? "true" : "false")
+                << " minimum_valid_command_fraction=" << config.minimum_valid_dry_run_command_fraction
+                << " max_invalid_command_streak=" << config.max_invalid_dry_run_command_streak
+                << " max_abs_yaw_rate_radps=" << config.max_abs_dry_run_yaw_rate_radps
+                << " max_yaw_rate_sign_flips=" << config.max_dry_run_yaw_rate_sign_flips
+                << " max_yaw_rate_delta_radps=" << config.max_dry_run_yaw_rate_delta_radps;
     }
     metrics << "\n";
 
@@ -594,6 +610,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         / static_cast<double>(config.camera.frame_rate_hz));
     double confidence_sum = 0.0;
     std::optional<double> last_valid_progress;
+    std::optional<double> previous_valid_command_yaw_rate;
+    std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -610,6 +628,24 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 ++result.dry_run_commands;
                 if (command.valid) {
                     ++result.valid_dry_run_commands;
+                    current_invalid_command_streak = 0;
+                    const auto abs_yaw_rate = std::abs(command.yaw_rate_radps);
+                    result.max_abs_dry_run_yaw_rate_radps =
+                        std::max(result.max_abs_dry_run_yaw_rate_radps, abs_yaw_rate);
+                    if (previous_valid_command_yaw_rate) {
+                        result.max_dry_run_yaw_rate_delta_radps = std::max(
+                            result.max_dry_run_yaw_rate_delta_radps,
+                            std::abs(command.yaw_rate_radps - *previous_valid_command_yaw_rate));
+                        if ((*previous_valid_command_yaw_rate < 0.0 && command.yaw_rate_radps > 0.0)
+                            || (*previous_valid_command_yaw_rate > 0.0 && command.yaw_rate_radps < 0.0)) {
+                            ++result.dry_run_yaw_rate_sign_flips;
+                        }
+                    }
+                    previous_valid_command_yaw_rate = command.yaw_rate_radps;
+                } else {
+                    ++current_invalid_command_streak;
+                    result.max_invalid_dry_run_command_streak =
+                        std::max(result.max_invalid_dry_run_command_streak, current_invalid_command_streak);
                 }
             }
 
@@ -715,10 +751,24 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         ? result.endpoint_progress_passed
         : result.directional_progress_passed;
 
+    if (config.emit_dry_run_commands) {
+        result.valid_dry_run_command_fraction = result.dry_run_commands > 0
+            ? static_cast<double>(result.valid_dry_run_commands) / static_cast<double>(result.dry_run_commands)
+            : 0.0;
+        result.dry_run_command_quality_passed =
+            result.dry_run_commands == result.frames_captured
+            && result.valid_dry_run_command_fraction >= config.minimum_valid_dry_run_command_fraction
+            && result.max_invalid_dry_run_command_streak <= config.max_invalid_dry_run_command_streak
+            && result.max_abs_dry_run_yaw_rate_radps <= config.max_abs_dry_run_yaw_rate_radps
+            && result.dry_run_yaw_rate_sign_flips <= config.max_dry_run_yaw_rate_sign_flips
+            && result.max_dry_run_yaw_rate_delta_radps <= config.max_dry_run_yaw_rate_delta_radps;
+    }
+
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
         && result.valid_matches == result.frames_captured
-        && result.progress_gate_passed;
+        && result.progress_gate_passed
+        && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed);
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
@@ -749,6 +799,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " effective_fps=" << result.effective_fps
             << " dry_run_commands=" << result.dry_run_commands
             << " valid_dry_run_commands=" << result.valid_dry_run_commands
+            << " valid_dry_run_command_fraction=" << result.valid_dry_run_command_fraction
+            << " max_invalid_dry_run_command_streak=" << result.max_invalid_dry_run_command_streak
+            << " max_abs_dry_run_yaw_rate_radps=" << result.max_abs_dry_run_yaw_rate_radps
+            << " dry_run_yaw_rate_sign_flips=" << result.dry_run_yaw_rate_sign_flips
+            << " max_dry_run_yaw_rate_delta_radps=" << result.max_dry_run_yaw_rate_delta_radps
+            << " dry_run_command_quality_passed=" << (result.dry_run_command_quality_passed ? "true" : "false")
             << " passed=" << (result.passed ? "true" : "false") << "\n";
     return result;
 }

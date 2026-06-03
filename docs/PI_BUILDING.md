@@ -446,9 +446,15 @@ VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_YAW_GAIN=1.0
 VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_RATE_RADPS=0.35
 VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_YAW_ACCEL_RADPS2=1.0
 VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_FORWARD_SPEED_MPS=0.0
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY=0
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MIN_VALID_COMMAND_FRACTION=0.95
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_INVALID_COMMAND_STREAK=3
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_ABS_YAW_RATE_RADPS=0.35
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_SIGN_FLIPS=20
+VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_MAX_YAW_RATE_DELTA_RADPS=0.15
 ```
 
-This path writes `dry_run_command` and per-frame `command_*` metrics only. It does not open a live MAVLink command output path.
+This path writes `dry_run_command`, per-frame `command_*` metrics, and final dry-run command quality fields such as valid command fraction, max invalid streak, yaw-rate sign flips, and max yaw-rate delta. It does not open a live MAVLink command output path. Set `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY=1` only when you want the command-quality gate to participate in the final `passed` result.
 
 ## Route Self-Match
 

@@ -93,4 +93,4 @@
 - 100-300 m return.
 - 1 km+ only after replay logs show stable behavior.
 - Start by integrating the validated live matcher with the existing bounded navigation and command-sink safety gates; keep live MAVLink output blocked until dry-run command behavior is reviewed, logged, and explicitly enabled through a separate safety step.
-- Status: started with opt-in live-route dry-run command logging. Live route matching can now feed `BoundedNavigator` and `DryRunCommandSink` metrics under `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1`, while live MAVLink command output remains blocked.
+- Status: started with opt-in live-route dry-run command logging and command-quality metrics. Live route matching can now feed `BoundedNavigator` and `DryRunCommandSink` metrics under `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1`, optionally gate the run on dry-run command quality, and still keep live MAVLink command output blocked.
