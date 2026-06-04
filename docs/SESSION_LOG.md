@@ -4,6 +4,7 @@
 
 - Validated the compact live-route dry-run summary on `jtzero`: Pi CTest passed 19/19, live forward route matching returned `passed=true`, captured 150/150 frames with 150/150 valid matches, endpoint/progress gates passed, minimum/average confidence was `0.878262/0.938119`, read-only MAVLink telemetry stayed healthy with zero dropped bytes, dry-run command quality passed with 150/150 valid commands, and live output remained blocked for all frames with `live_output_gate_block_reasons=vehicle_not_armed:150`.
 - Treated the physical route as no longer critical after backup, route artifact validation, perturbation checks, live telemetry/dry-run validation, and the successful compact-summary Pi pass. Further work should move to the next explicit safety layer before any live MAVLink command output is considered.
+- Refreshed the roadmap around Milestone 6.7, a pre-live MAVLink output safety readiness step. The first future live-output boundary is bench-only with propellers removed, the first command scope is yaw-only with zero forward velocity, and at least three clean Pi dry-runs are required before changing live-output blockers.
 
 ## 2026-05-22
 

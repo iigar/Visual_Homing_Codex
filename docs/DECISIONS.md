@@ -1058,3 +1058,24 @@ Impact:
 
 Risk:
 - The compact line is a summary only; detailed diagnosis still depends on the full `live_route_match_done` and frame logs.
+
+## 2026-06-05 - Insert Pre-Live MAVLink Output Safety Readiness
+
+Decision:
+- Add Milestone 6.7 before the flight-test ladder for pre-live MAVLink output safety readiness.
+- Keep live output blocked until a safety plan, operator checklist, audit log policy, single-writer ownership, stop/kill behavior, and failure handling are documented and reviewed.
+- Define the first future live-output boundary as bench-only with propellers removed.
+- Limit the first future command scope to yaw-rate only with zero forward velocity.
+- Require at least three clean Pi dry-runs before changing any compile-time or runtime live-output blocker.
+
+Why:
+- The `jtzero` compact dry-run proved the current live camera, matcher, read-only telemetry, dry-run command quality, and safety-gate diagnostics are healthy enough to plan the next safety layer.
+- It does not prove that a live MAVLink writer is safe to enable.
+
+Impact:
+- Milestone 7 is deferred until Milestone 6.7 is complete.
+- The current compile-time CMake gate and fail-closed `LiveMavlinkBridge` remain unchanged.
+- The next implementation work should be safety readiness, not live command output.
+
+Risk:
+- This delays live-output experimentation, but keeps the project aligned with the dry-run evidence actually collected.
