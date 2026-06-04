@@ -10,6 +10,10 @@ class LiveMavlinkBridge final : public MavlinkBridge {
 public:
     LiveMavlinkBridge() = default;
 
+    static constexpr bool command_output_compiled_out() noexcept {
+        return true;
+    }
+
     bool start() override;
     void stop() override;
     void send(const NavigationCommand& command) override;

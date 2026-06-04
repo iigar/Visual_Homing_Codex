@@ -970,3 +970,22 @@ Impact:
 
 Risk:
 - This is still not a live writer. The next step toward real output must define arming/mode/freshness/operator-enable gates before changing this class.
+
+## 2026-06-04 - Add Compile-Time Live MAVLink Output Gate
+
+Decision:
+- Add `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT` as an explicit CMake option that currently fails configuration when enabled.
+- Define `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED=1` for the core library and test the blocked build contract.
+- Keep `LiveMavlinkBridge::command_output_compiled_out()` true until a reviewed live writer replaces the fail-closed boundary.
+
+Why:
+- Live command output should not become available by accidentally wiring a runtime flag, environment variable, or alternate bridge path.
+- A future writer must deliberately change both the compile-time gate and the runtime safety boundary after arming/mode/freshness/operator-enable gates are specified.
+
+Impact:
+- Default builds continue to compile and test normally.
+- Attempts to configure with live MAVLink output enabled fail early with a clear safety error.
+- The current Pi and desktop paths remain dry-run/read-only for command output.
+
+Risk:
+- This intentionally blocks experimentation with real command output until the next safety review step removes or replaces the gate.

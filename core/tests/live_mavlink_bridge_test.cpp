@@ -4,6 +4,9 @@
 #include "visual_homing/live_mavlink_bridge.hpp"
 
 int main() {
+    static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED == 1);
+    static_assert(vh::LiveMavlinkBridge::command_output_compiled_out());
+
     vh::LiveMavlinkBridge bridge;
     assert(!bridge.available());
     assert(!bridge.running());

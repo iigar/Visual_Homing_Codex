@@ -7,6 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(VISUAL_HOMING_ENABLE_LIBCAMERA "Build the Raspberry Pi libcamera capture backend" OFF)
+option(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT "Build live MAVLink command output support" OFF)
+
+if(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT)
+    message(FATAL_ERROR "Live MAVLink command output is intentionally blocked; implement and review LiveMavlinkBridge safety gates before enabling this build option")
+endif()
 
 add_executable(visual_homing_core
     src/main.cpp
@@ -38,6 +43,8 @@ add_library(visual_homing_core_lib
 target_include_directories(visual_homing_core_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_compile_definitions(visual_homing_core_lib PUBLIC VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED=1)
 
 if(VISUAL_HOMING_ENABLE_LIBCAMERA)
     find_package(PkgConfig REQUIRED)
