@@ -200,6 +200,10 @@ std::string format_reason_counts(const std::map<std::string, std::uint64_t>& rea
     return output.str();
 }
 
+const char* bool_word(const bool value) {
+    return value ? "true" : "false";
+}
+
 } // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
@@ -1025,6 +1029,25 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " final_live_output_gate_allowed=" << (result.final_live_output_gate_allowed ? "true" : "false")
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
             << " passed=" << (result.passed ? "true" : "false") << "\n";
+
+    metrics << "live_route_match_compact"
+            << " passed=" << bool_word(result.passed)
+            << " frames=" << result.frames_captured << "/" << config.frames_to_capture
+            << " valid_matches=" << result.valid_matches
+            << " progress=" << result.first_progress << ".." << result.last_progress
+            << " minmax_progress=" << result.min_progress_seen << ".." << result.max_progress_seen
+            << " endpoint_passed=" << bool_word(result.endpoint_progress_passed)
+            << " progress_gate_passed=" << bool_word(result.progress_gate_passed)
+            << " confidence_min_avg=" << result.minimum_confidence_seen << "/" << result.average_confidence
+            << " telemetry_health=" << bool_word(result.live_telemetry_health_passed)
+            << " telemetry_dropped=" << result.telemetry_bytes_dropped
+            << " dry_run_quality=" << bool_word(result.dry_run_command_quality_passed)
+            << " dry_run_valid=" << result.valid_dry_run_commands << "/" << result.dry_run_commands
+            << " live_output_gate_allowed=" << result.live_output_gate_allowed_frames
+            << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
+            << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
+            << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
+            << "\n";
     return result;
 }
 

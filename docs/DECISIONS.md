@@ -1042,3 +1042,19 @@ Impact:
 
 Risk:
 - Per-frame diagnostics assume runtime/operator/audit prerequisites are intentionally satisfied so that frame-level blockers are visible; the final summary includes aggregate dry-run quality.
+
+## 2026-06-04 - Add Compact Live Route Match Summary
+
+Decision:
+- Emit a short `live_route_match_compact` summary after the full `live_route_match_done` line.
+- Include only the operator-critical fields: pass/fail, frame and valid-match counts, progress range, endpoint/progress gates, confidence, telemetry health/drops, dry-run command quality, and live-output gate block reasons.
+
+Why:
+- Field runs produce hundreds of per-frame lines. A compact final line makes it easier to confirm whether a run failed due to route endpoint/progress, telemetry, dry-run command quality, or live-output safety gate state.
+
+Impact:
+- Existing detailed logs remain unchanged.
+- Operators can inspect the final compact line first, then fall back to detailed frame logs only when needed.
+
+Risk:
+- The compact line is a summary only; detailed diagnosis still depends on the full `live_route_match_done` and frame logs.
