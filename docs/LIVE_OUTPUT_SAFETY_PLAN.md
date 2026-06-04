@@ -56,6 +56,14 @@ Each clean run must show:
 
 The three runs should be logged as artifact paths in `docs/SESSION_LOG.md` or a future dedicated readiness record.
 
+Use the readiness checker on Pi logs:
+
+```bash
+./scripts/check-live-readiness-log.sh artifacts/logs/test-core-pi-<run-1>.log artifacts/logs/test-core-pi-<run-2>.log artifacts/logs/test-core-pi-<run-3>.log
+```
+
+The default expected live-output gate block reason is `vehicle_not_armed:150`. For a future reviewed stage with a different expected reason, set `VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS=<reason:count>`.
+
 ## Operator Checklist
 
 Before any future bench props-off live-output test:

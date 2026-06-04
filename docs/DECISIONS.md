@@ -1098,3 +1098,20 @@ Impact:
 
 Risk:
 - The plan is necessary but not sufficient; implementation still needs a separate reviewed change before any command output exists.
+
+## 2026-06-05 - Add Readiness Log Checker
+
+Decision:
+- Add `scripts/check-live-readiness-log.sh` to validate `live_route_match_compact` lines against Milestone 6.7 readiness criteria.
+- Require the current clean-run defaults: 150/150 frames, 150 valid matches, endpoint/progress gates passed, healthy read-only telemetry with zero dropped bytes, dry-run quality passed, zero live-output allowed frames, 150 blocked frames, and `vehicle_not_armed:150` gate reasons.
+- Allow the expected gate reason to be overridden with `VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS` for later reviewed stages.
+
+Why:
+- Milestone 6.7 requires three clean Pi dry-runs. Manual inspection of long logs is error-prone and easy to summarize inconsistently.
+
+Impact:
+- Operators can check one or more Pi logs with a single command.
+- This is offline log validation only; it does not change live route matching, telemetry, command generation, CMake gates, or live-output blockers.
+
+Risk:
+- The checker only validates the compact summary line. Detailed diagnosis still requires the full run log when a check fails.

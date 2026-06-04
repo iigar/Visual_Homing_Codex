@@ -6,6 +6,7 @@
 - Treated the physical route as no longer critical after backup, route artifact validation, perturbation checks, live telemetry/dry-run validation, and the successful compact-summary Pi pass. Further work should move to the next explicit safety layer before any live MAVLink command output is considered.
 - Refreshed the roadmap around Milestone 6.7, a pre-live MAVLink output safety readiness step. The first future live-output boundary is bench-only with propellers removed, the first command scope is yaw-only with zero forward velocity, and at least three clean Pi dry-runs are required before changing live-output blockers.
 - Added `docs/LIVE_OUTPUT_SAFETY_PLAN.md` as the Milestone 6.7 controlling safety artifact. It defines the current blocked boundary, first future bench props-off boundary, three-run readiness evidence, operator checklist, gate conditions, stop/failsafe policy, implementation readiness checklist, and completion criteria.
+- Added `scripts/check-live-readiness-log.sh`, an offline Pi log checker for Milestone 6.7 clean dry-runs. It validates the final `live_route_match_compact` line for frame/match counts, endpoint/progress gates, telemetry health, dry-run command quality, and expected live-output gate blocking.
 
 ## 2026-05-22
 

@@ -471,6 +471,14 @@ This mode still sends no MAVLink commands. It opens the serial device read-only,
 
 For bench dry-run matching, this health gate only checks read-only telemetry freshness. Armed/GUIDED command permission remains reserved for a later live-output safety step.
 
+Milestone 6.7 readiness logs can be checked without rereading the full run output:
+
+```bash
+./scripts/check-live-readiness-log.sh artifacts/logs/test-core-pi-20260604T205416Z.log
+```
+
+The checker reads the final `live_route_match_compact` line and requires the current safety-readiness defaults: `passed=true`, `frames=150/150`, `valid_matches=150`, endpoint/progress gates passed, read-only telemetry healthy with zero dropped bytes, dry-run command quality passed with `150/150` valid commands, zero live-output allowed frames, and `live_output_gate_block_reasons=vehicle_not_armed:150`. Pass multiple log paths to verify the three clean dry-runs required by `docs/LIVE_OUTPUT_SAFETY_PLAN.md`.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:
