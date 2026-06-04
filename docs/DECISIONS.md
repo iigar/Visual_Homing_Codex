@@ -952,3 +952,21 @@ Impact:
 
 Risk:
 - Long-run historical command analysis should use the emitted log stream, not the retained in-memory `commands()` vector.
+
+## 2026-06-04 - Add Explicit Live MAVLink Output Blocker
+
+Decision:
+- Add `LiveMavlinkBridge` as an explicit `MavlinkBridge` implementation that is unavailable by default.
+- Make `start()` fail closed and make `send()` throw a controlled blocked-output error.
+- Require any future live command output to modify this boundary intentionally instead of appearing through dry-run paths.
+
+Why:
+- The safest pre-writer state is not just absence of a writer, but an explicit, tested live-output boundary that rejects commands.
+- This gives future integration work a clear place to add compile-time/runtime safety gates.
+
+Impact:
+- Unit coverage verifies that live output is unavailable, does not enter running state, and rejects valid commands.
+- Existing dry-run paths are unchanged.
+
+Risk:
+- This is still not a live writer. The next step toward real output must define arming/mode/freshness/operator-enable gates before changing this class.
