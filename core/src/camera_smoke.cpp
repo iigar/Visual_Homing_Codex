@@ -16,6 +16,7 @@
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/live_mavlink_output_safety_gate.hpp"
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
@@ -149,6 +150,36 @@ void copy_telemetry_stream_metrics(
     result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
     result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
     result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+}
+
+LiveMavlinkOutputSafetyConfig live_output_gate_config_from_match_config(
+    const LiveRouteMatchingConfig& config,
+    bool dry_run_quality_passed) {
+    LiveMavlinkOutputSafetyConfig gate_config;
+    gate_config.runtime_enabled = true;
+    gate_config.operator_confirmed = true;
+    gate_config.dry_run_quality_passed = dry_run_quality_passed;
+    gate_config.audit_log_enabled = true;
+    gate_config.single_writer = true;
+    gate_config.max_telemetry_age_ms = config.telemetry_max_age_ms;
+    gate_config.min_match_confidence = config.minimum_confidence;
+    gate_config.max_match_age_ms = config.navigator.max_match_age_ms;
+    gate_config.max_abs_yaw_rate_radps = config.max_abs_dry_run_yaw_rate_radps;
+    gate_config.max_abs_forward_speed_mps = std::max(0.0, std::abs(config.navigator.forward_speed_mps));
+    return gate_config;
+}
+
+LiveMavlinkOutputSafetySnapshot live_output_gate_snapshot(
+    Timestamp timestamp,
+    const MavlinkTelemetry& telemetry,
+    const RouteMatch& match,
+    const NavigationCommand& command) {
+    LiveMavlinkOutputSafetySnapshot snapshot;
+    snapshot.now = timestamp;
+    snapshot.telemetry = telemetry;
+    snapshot.match = match;
+    snapshot.command = command;
+    return snapshot;
 }
 
 } // namespace
@@ -704,6 +735,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     double confidence_sum = 0.0;
     std::optional<double> last_valid_progress;
     std::optional<double> previous_valid_command_yaw_rate;
+    std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
+    MavlinkTelemetry latest_gate_telemetry;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
@@ -718,7 +751,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
                 copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
-                    telemetry_adapter.observe(telemetry.inspection.latest, processing_finished);
+                    latest_gate_telemetry = telemetry.inspection.latest;
+                    latest_gate_telemetry.timestamp = processing_finished;
+                    telemetry_adapter.observe(latest_gate_telemetry, processing_finished);
                 }
                 const bool telemetry_health_ready = telemetry_adapter.mavlink_ok(processing_finished);
                 health.set_links(true, telemetry_health_ready, true);
@@ -730,6 +765,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             }
             const auto health_snapshot = health.snapshot(processing_finished);
             NavigationCommand command;
+            LiveMavlinkOutputSafetyResult live_output_gate_result{false, "dry_run_commands_disabled"};
             if (config.emit_dry_run_commands) {
                 command = navigator->update(match, health_snapshot);
                 command_sink.send(command);
@@ -754,6 +790,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++current_invalid_command_streak;
                     result.max_invalid_dry_run_command_streak =
                         std::max(result.max_invalid_dry_run_command_streak, current_invalid_command_streak);
+                }
+                const LiveMavlinkOutputSafetyGate gate(
+                    live_output_gate_config_from_match_config(config, true));
+                last_live_output_gate_snapshot =
+                    live_output_gate_snapshot(processing_finished, latest_gate_telemetry, match, command);
+                live_output_gate_result = gate.evaluate(*last_live_output_gate_snapshot);
+                if (live_output_gate_result.allowed) {
+                    ++result.live_output_gate_allowed_frames;
+                } else {
+                    ++result.live_output_gate_blocked_frames;
                 }
             }
 
@@ -803,7 +849,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 metrics << " command_valid=" << (command.valid ? "true" : "false")
                         << " command_yaw_rate_radps=" << command.yaw_rate_radps
                         << " command_vx_mps=" << command.vx_mps
-                        << " command_confidence=" << command.confidence;
+                        << " command_confidence=" << command.confidence
+                        << " live_output_gate_allowed=" << (live_output_gate_result.allowed ? "true" : "false")
+                        << " live_output_gate_reason=" << live_output_gate_result.reason;
             }
             if (telemetry_stream) {
                 metrics << " telemetry_mavlink_ok=" << (health_snapshot.mavlink_ok ? "true" : "false")
@@ -887,6 +935,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             && result.telemetry_health_degraded_frames == 0
             && result.telemetry_health_ready_frames == result.frames_captured;
     }
+    if (config.emit_dry_run_commands && last_live_output_gate_snapshot) {
+        const LiveMavlinkOutputSafetyGate final_gate(
+            live_output_gate_config_from_match_config(config, result.dry_run_command_quality_passed));
+        const auto final_gate_result = final_gate.evaluate(*last_live_output_gate_snapshot);
+        result.final_live_output_gate_allowed = final_gate_result.allowed;
+        result.final_live_output_gate_reason = final_gate_result.reason;
+    }
 
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
@@ -943,6 +998,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " dry_run_yaw_rate_sign_flips=" << result.dry_run_yaw_rate_sign_flips
             << " max_dry_run_yaw_rate_delta_radps=" << result.max_dry_run_yaw_rate_delta_radps
             << " dry_run_command_quality_passed=" << (result.dry_run_command_quality_passed ? "true" : "false")
+            << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
+            << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
+            << " final_live_output_gate_allowed=" << (result.final_live_output_gate_allowed ? "true" : "false")
+            << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
             << " passed=" << (result.passed ? "true" : "false") << "\n";
     return result;
 }

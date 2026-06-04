@@ -154,6 +154,10 @@ struct LiveRouteMatchingResult {
     std::uint64_t dry_run_yaw_rate_sign_flips = 0;
     double max_dry_run_yaw_rate_delta_radps = 0.0;
     bool dry_run_command_quality_passed = true;
+    std::uint64_t live_output_gate_allowed_frames = 0;
+    std::uint64_t live_output_gate_blocked_frames = 0;
+    bool final_live_output_gate_allowed = false;
+    std::string final_live_output_gate_reason;
     bool passed = false;
 };
 

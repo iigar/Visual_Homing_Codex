@@ -1024,3 +1024,20 @@ Impact:
 
 Risk:
 - This gate is necessary but not sufficient for flight. A future writer still needs integration tests, operator workflow, and hardware-level kill/stop behavior before sending commands.
+
+## 2026-06-04 - Log Live Output Gate Diagnostics During Dry-Run Matching
+
+Decision:
+- Evaluate `LiveMavlinkOutputSafetyGate` for each live-route dry-run command and append `live_output_gate_allowed` plus `live_output_gate_reason` to frame logs.
+- Re-evaluate the final frame after aggregate dry-run command quality is known and append final gate counters/reason to `live_route_match_done`.
+- Keep this diagnostic independent from any real command writer.
+
+Why:
+- The next hardware dry-run should show whether the future writer would be blocked by telemetry, mode, route match, command bounds, or dry-run quality without sending MAVLink commands.
+
+Impact:
+- Live-route dry-run logs now include per-frame and final live-output gate diagnostics.
+- No live MAVLink output is enabled.
+
+Risk:
+- Per-frame diagnostics assume runtime/operator/audit prerequisites are intentionally satisfied so that frame-level blockers are visible; the final summary includes aggregate dry-run quality.
