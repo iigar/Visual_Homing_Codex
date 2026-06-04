@@ -87,7 +87,7 @@
 
 ## Milestone 6.7 - Pre-Live MAVLink Output Safety Readiness
 
-- Document the safety plan that must be satisfied before changing the compile-time or runtime live-output blockers.
+- Document the safety plan that must be satisfied before changing the compile-time or runtime live-output blockers. Current plan: `docs/LIVE_OUTPUT_SAFETY_PLAN.md`.
 - Define the first future live-output boundary as bench-only with propellers removed; no tethered, ground, or flight testing is authorized by this milestone.
 - Limit the first future command scope to yaw-rate only with zero forward velocity, matching the current validated dry-run shape.
 - Require at least three clean Pi dry-runs before any live-output blocker change: 150/150 valid matches, endpoint/progress gate pass, read-only telemetry health pass, zero telemetry drops, dry-run command quality pass, and expected live-output gate blocked reasons.

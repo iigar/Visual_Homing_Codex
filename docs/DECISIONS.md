@@ -1079,3 +1079,22 @@ Impact:
 
 Risk:
 - This delays live-output experimentation, but keeps the project aligned with the dry-run evidence actually collected.
+
+## 2026-06-05 - Create Live Output Safety Plan
+
+Decision:
+- Add `docs/LIVE_OUTPUT_SAFETY_PLAN.md` as the controlling Milestone 6.7 safety artifact.
+- Require the plan to define the current blocked boundary, first future bench props-off test boundary, readiness evidence, operator checklist, gate conditions, stop/failsafe policy, implementation readiness checklist, and completion criteria.
+- Keep the first future writer scope limited to yaw-rate-only commands with zero forward speed.
+
+Why:
+- The roadmap needs an actionable safety artifact before any implementation can touch the live-output blockers.
+- Keeping the plan separate from the roadmap avoids burying operator-critical constraints in milestone status text.
+
+Impact:
+- Future live-output implementation work has a required checklist and acceptance criteria.
+- No code, CMake option, CLI, or Pi script behavior changes.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The plan is necessary but not sufficient; implementation still needs a separate reviewed change before any command output exists.
