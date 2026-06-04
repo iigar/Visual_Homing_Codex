@@ -54,7 +54,7 @@ Each clean run must show:
 - `live_output_gate_blocked=150`.
 - `live_output_gate_block_reasons` is expected for the test state, such as `vehicle_not_armed:150`.
 
-The three runs should be logged as artifact paths in `docs/SESSION_LOG.md` or a future dedicated readiness record.
+The three runs should be logged as artifact paths in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
 
 Use the readiness checker on Pi logs:
 

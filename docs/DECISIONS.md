@@ -1115,3 +1115,22 @@ Impact:
 
 Risk:
 - The checker only validates the compact summary line. Detailed diagnosis still requires the full run log when a check fails.
+
+## 2026-06-05 - Track Readiness Evidence Without Rebuilding Old Route
+
+Decision:
+- Add `docs/LIVE_OUTPUT_READINESS_RECORD.md` to track the three clean Pi dry-run logs required by Milestone 6.7.
+- Count `artifacts/logs/test-core-pi-20260604T205416Z.log` as 1/3 accepted readiness evidence because it passes `scripts/check-live-readiness-log.sh`.
+- Do not recreate the dismantled physical route just to collect the remaining 2/3 logs.
+- Collect the remaining logs only on a future stable route or repeatable no-yaw bench stand.
+
+Why:
+- The old physical route was intentionally treated as no longer critical after backup and validation.
+- Readiness evidence should be honest about what was already proven without forcing fragile reconstruction of a dismantled setup.
+
+Impact:
+- Milestone 6.7 now has an explicit evidence ledger.
+- Live output remains blocked.
+
+Risk:
+- The readiness count stays at 1/3 until a new comparable route or bench stand is available.
