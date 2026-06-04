@@ -27,11 +27,23 @@ const char* flight_mode_name(FlightMode mode) {
     return "unknown";
 }
 
-DryRunMavlinkBridge::DryRunMavlinkBridge(std::vector<MavlinkTelemetry> telemetry_script, std::ostream* output)
-    : telemetry_script_(std::move(telemetry_script)), output_(output) {}
+DryRunMavlinkBridge::DryRunMavlinkBridge(
+    std::vector<MavlinkTelemetry> telemetry_script,
+    std::ostream* output,
+    std::size_t max_command_history)
+    : telemetry_script_(std::move(telemetry_script)),
+      output_(output),
+      max_command_history_(max_command_history) {
+    if (max_command_history_ == 0) {
+        throw std::invalid_argument("DryRunMavlinkBridge max command history must be positive");
+    }
+}
 
 bool DryRunMavlinkBridge::start() {
     next_telemetry_index_ = 0;
+    commands_.clear();
+    commands_sent_ = 0;
+    commands_dropped_ = 0;
     running_ = true;
     return true;
 }
@@ -45,7 +57,12 @@ void DryRunMavlinkBridge::send(const NavigationCommand& command) {
         throw std::runtime_error("DryRunMavlinkBridge send called while stopped");
     }
 
+    ++commands_sent_;
     commands_.push_back(command);
+    if (commands_.size() > max_command_history_) {
+        commands_.erase(commands_.begin());
+        ++commands_dropped_;
+    }
     if (output_ != nullptr) {
         *output_ << "mavlink_dry_run_command valid=" << (command.valid ? "true" : "false")
                  << " vx_mps=" << command.vx_mps
@@ -79,6 +96,14 @@ bool DryRunMavlinkBridge::running() const {
 
 const std::vector<NavigationCommand>& DryRunMavlinkBridge::commands() const {
     return commands_;
+}
+
+std::uint64_t DryRunMavlinkBridge::commands_sent() const {
+    return commands_sent_;
+}
+
+std::uint64_t DryRunMavlinkBridge::commands_dropped() const {
+    return commands_dropped_;
 }
 
 } // namespace vh

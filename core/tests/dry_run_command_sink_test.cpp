@@ -37,5 +37,30 @@ int main() {
     sink.stop();
     assert(!sink.running());
 
+    vh::DryRunCommandSink bounded(nullptr, 2);
+    assert(bounded.start());
+    vh::NavigationCommand first;
+    first.yaw_rate_radps = 0.1;
+    vh::NavigationCommand second;
+    second.yaw_rate_radps = 0.2;
+    vh::NavigationCommand third;
+    third.yaw_rate_radps = 0.3;
+    bounded.send(first);
+    bounded.send(second);
+    bounded.send(third);
+    assert(bounded.commands_sent() == 3);
+    assert(bounded.commands_dropped() == 1);
+    assert(bounded.commands().size() == 2);
+    assert(bounded.commands()[0].yaw_rate_radps == 0.2);
+    assert(bounded.commands()[1].yaw_rate_radps == 0.3);
+
+    rejected = false;
+    try {
+        (void)vh::DryRunCommandSink(nullptr, 0);
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected);
+
     return 0;
 }

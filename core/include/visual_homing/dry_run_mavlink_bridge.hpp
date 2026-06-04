@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <iosfwd>
 #include <vector>
 
@@ -9,7 +11,10 @@ namespace vh {
 
 class DryRunMavlinkBridge final : public MavlinkBridge, public MavlinkTelemetrySource {
 public:
-    DryRunMavlinkBridge(std::vector<MavlinkTelemetry> telemetry_script, std::ostream* output = nullptr);
+    DryRunMavlinkBridge(
+        std::vector<MavlinkTelemetry> telemetry_script,
+        std::ostream* output = nullptr,
+        std::size_t max_command_history = 10000);
 
     bool start() override;
     void stop() override;
@@ -18,10 +23,15 @@ public:
 
     bool running() const;
     const std::vector<NavigationCommand>& commands() const;
+    std::uint64_t commands_sent() const;
+    std::uint64_t commands_dropped() const;
 
 private:
     std::vector<MavlinkTelemetry> telemetry_script_;
     std::ostream* output_ = nullptr;
+    std::size_t max_command_history_ = 0;
+    std::uint64_t commands_sent_ = 0;
+    std::uint64_t commands_dropped_ = 0;
     std::vector<NavigationCommand> commands_;
     std::size_t next_telemetry_index_ = 0;
     bool running_ = false;

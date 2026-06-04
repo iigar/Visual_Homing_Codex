@@ -65,5 +65,30 @@ int main() {
     assert(text.find("mode=rtl") != std::string::npos);
     assert(text.find("mavlink_dry_run_command valid=true") != std::string::npos);
 
+    vh::DryRunMavlinkBridge bounded({}, nullptr, 2);
+    assert(bounded.start());
+    vh::NavigationCommand first_command;
+    first_command.yaw_rate_radps = 0.1;
+    vh::NavigationCommand second_command;
+    second_command.yaw_rate_radps = 0.2;
+    vh::NavigationCommand third_command;
+    third_command.yaw_rate_radps = 0.3;
+    bounded.send(first_command);
+    bounded.send(second_command);
+    bounded.send(third_command);
+    assert(bounded.commands_sent() == 3);
+    assert(bounded.commands_dropped() == 1);
+    assert(bounded.commands().size() == 2);
+    assert(bounded.commands()[0].yaw_rate_radps == 0.2);
+    assert(bounded.commands()[1].yaw_rate_radps == 0.3);
+
+    rejected = false;
+    try {
+        (void)vh::DryRunMavlinkBridge({}, nullptr, 0);
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    assert(rejected);
+
     return 0;
 }

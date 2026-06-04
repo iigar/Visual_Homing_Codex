@@ -933,3 +933,22 @@ Impact:
 
 Risk:
 - Very long historical telemetry inspection should use the existing capture-to-file path, not the live stream snapshot buffer.
+
+## 2026-06-04 - Bound Dry-Run Command History
+
+Decision:
+- Keep `DryRunCommandSink` and `DryRunMavlinkBridge` as bounded retained command histories instead of unbounded vectors.
+- Preserve total sent command accounting and expose dropped-history counters.
+- Keep the command-output path dry-run only; no live MAVLink writer is present.
+
+Why:
+- Dry-run command logging can be used in longer bench and tethered runs. Retaining every command in memory is unnecessary when logs are streamed and summary counters are available.
+- This mirrors the bounded live telemetry buffer policy before any future live writer is considered.
+
+Impact:
+- Default retained command history is 10,000 commands.
+- `commands()` remains available for tests and short runs, but represents retained history rather than an unlimited archive.
+- Unit tests cover pruning and zero-size history rejection for both dry-run output classes.
+
+Risk:
+- Long-run historical command analysis should use the emitted log stream, not the retained in-memory `commands()` vector.
