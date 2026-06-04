@@ -4,6 +4,7 @@
 #include <ctime>
 #include <exception>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -102,42 +103,86 @@ bool parse_bool_arg(const std::string& value) {
     throw std::invalid_argument("Boolean argument must be one of: 0, 1, true, false, yes, no");
 }
 
+double parse_double_arg(const std::string& value, const std::string& name) {
+    std::size_t parsed = 0;
+    const auto result = std::stod(value, &parsed);
+    if (parsed != value.size()) {
+        throw std::invalid_argument(name + " must be a complete floating-point number");
+    }
+    return result;
+}
+
+std::uint64_t parse_uint64_arg(const std::string& value, const std::string& name) {
+    if (!value.empty() && value.front() == '-') {
+        throw std::invalid_argument(name + " must be a non-negative integer");
+    }
+    std::size_t parsed = 0;
+    const auto result = std::stoull(value, &parsed);
+    if (parsed != value.size()) {
+        throw std::invalid_argument(name + " must be a complete non-negative integer");
+    }
+    return static_cast<std::uint64_t>(result);
+}
+
+std::size_t parse_size_arg(const std::string& value, const std::string& name) {
+    const auto result = parse_uint64_arg(value, name);
+    if (result > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
+        throw std::invalid_argument(name + " is too large");
+    }
+    return static_cast<std::size_t>(result);
+}
+
+int parse_int_arg(const std::string& value, const std::string& name) {
+    std::size_t parsed = 0;
+    const auto result = std::stoll(value, &parsed);
+    if (parsed != value.size()) {
+        throw std::invalid_argument(name + " must be a complete integer");
+    }
+    if (result < std::numeric_limits<int>::min() || result > std::numeric_limits<int>::max()) {
+        throw std::invalid_argument(name + " is outside int range");
+    }
+    return static_cast<int>(result);
+}
+
 void apply_operator_cue_args(vh::LiveRouteRecordingConfig& config, char** argv, int first_index) {
     config.operator_cue_enabled = parse_bool_arg(argv[first_index]);
-    config.operator_cue_seconds = static_cast<std::size_t>(std::stoull(argv[first_index + 1]));
+    config.operator_cue_seconds = parse_size_arg(argv[first_index + 1], "operator_cue_seconds");
     config.operator_cue_bell = parse_bool_arg(argv[first_index + 2]);
 }
 
 void apply_operator_cue_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
     config.operator_cue_enabled = parse_bool_arg(argv[first_index]);
-    config.operator_cue_seconds = static_cast<std::size_t>(std::stoull(argv[first_index + 1]));
+    config.operator_cue_seconds = parse_size_arg(argv[first_index + 1], "operator_cue_seconds");
     config.operator_cue_bell = parse_bool_arg(argv[first_index + 2]);
 }
 
 void apply_live_route_dry_run_command_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index, int argc) {
     config.emit_dry_run_commands = parse_bool_arg(argv[first_index]);
-    config.navigator.minimum_confidence = std::stod(argv[first_index + 1]);
-    config.navigator.max_match_age_ms = std::stod(argv[first_index + 2]);
-    config.navigator.yaw_gain = std::stod(argv[first_index + 3]);
-    config.navigator.max_yaw_rate_radps = std::stod(argv[first_index + 4]);
-    config.navigator.max_yaw_accel_radps2 = std::stod(argv[first_index + 5]);
-    config.navigator.forward_speed_mps = std::stod(argv[first_index + 6]);
+    config.navigator.minimum_confidence = parse_double_arg(argv[first_index + 1], "navigator_minimum_confidence");
+    config.navigator.max_match_age_ms = parse_double_arg(argv[first_index + 2], "navigator_max_match_age_ms");
+    config.navigator.yaw_gain = parse_double_arg(argv[first_index + 3], "navigator_yaw_gain");
+    config.navigator.max_yaw_rate_radps = parse_double_arg(argv[first_index + 4], "navigator_max_yaw_rate_radps");
+    config.navigator.max_yaw_accel_radps2 = parse_double_arg(argv[first_index + 5], "navigator_max_yaw_accel_radps2");
+    config.navigator.forward_speed_mps = parse_double_arg(argv[first_index + 6], "navigator_forward_speed_mps");
     if (argc >= first_index + 13) {
         config.require_dry_run_command_quality = parse_bool_arg(argv[first_index + 7]);
-        config.minimum_valid_dry_run_command_fraction = std::stod(argv[first_index + 8]);
-        config.max_invalid_dry_run_command_streak = static_cast<std::uint64_t>(std::stoull(argv[first_index + 9]));
-        config.max_abs_dry_run_yaw_rate_radps = std::stod(argv[first_index + 10]);
-        config.max_dry_run_yaw_rate_sign_flips = static_cast<std::uint64_t>(std::stoull(argv[first_index + 11]));
-        config.max_dry_run_yaw_rate_delta_radps = std::stod(argv[first_index + 12]);
+        config.minimum_valid_dry_run_command_fraction =
+            parse_double_arg(argv[first_index + 8], "minimum_valid_command_fraction");
+        config.max_invalid_dry_run_command_streak =
+            parse_uint64_arg(argv[first_index + 9], "max_invalid_command_streak");
+        config.max_abs_dry_run_yaw_rate_radps = parse_double_arg(argv[first_index + 10], "max_abs_yaw_rate_radps");
+        config.max_dry_run_yaw_rate_sign_flips =
+            parse_uint64_arg(argv[first_index + 11], "max_yaw_rate_sign_flips");
+        config.max_dry_run_yaw_rate_delta_radps = parse_double_arg(argv[first_index + 12], "max_yaw_rate_delta_radps");
     }
 }
 
 void apply_live_route_match_telemetry_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
     config.use_live_telemetry_stream = parse_bool_arg(argv[first_index]);
     config.telemetry_stream.device_path = argv[first_index + 1];
-    config.telemetry_stream.baud_rate = std::stoi(argv[first_index + 2]);
-    config.telemetry_warmup_timeout_ms = static_cast<std::uint64_t>(std::stoull(argv[first_index + 3]));
-    config.telemetry_max_age_ms = std::stod(argv[first_index + 4]);
+    config.telemetry_stream.baud_rate = parse_int_arg(argv[first_index + 2], "baud_rate");
+    config.telemetry_warmup_timeout_ms = parse_uint64_arg(argv[first_index + 3], "telemetry_warmup_timeout_ms");
+    config.telemetry_max_age_ms = parse_double_arg(argv[first_index + 4], "telemetry_max_age_ms");
     config.require_live_telemetry_health = parse_bool_arg(argv[first_index + 5]);
 }
 
@@ -755,7 +800,10 @@ int main(int argc, char** argv) {
         try {
             auto record = vh::load_active_camera_profile(argv[2], argv[3]);
             if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41) {
-                record.profile = profile_with_target_override(record.profile, std::stoi(argv[14]), std::stoi(argv[15]));
+                record.profile = profile_with_target_override(
+                    record.profile,
+                    parse_int_arg(argv[14], "target_width"),
+                    parse_int_arg(argv[15], "target_height"));
             }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
             const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41) ? 16 : 0);
@@ -764,19 +812,19 @@ int main(int argc, char** argv) {
             const auto live_telemetry_arg_offset = argc == 39 ? 33 : (argc == 41 ? 35 : 0);
             auto config = live_route_matching_config_from_profile(
                 record.profile,
-                std::stoi(argv[4]),
-                static_cast<std::size_t>(std::stoull(argv[5])),
+                parse_int_arg(argv[4], "fps"),
+                parse_size_arg(argv[5], "frames"),
                 argv[6],
-                static_cast<std::size_t>(std::stoull(argv[7])),
-                static_cast<std::size_t>(std::stoull(argv[8])),
-                std::stod(argv[9]),
-                std::stoi(argv[10]),
+                parse_size_arg(argv[7], "warmup_frames"),
+                parse_size_arg(argv[8], "window_radius"),
+                parse_double_arg(argv[9], "minimum_confidence"),
+                parse_int_arg(argv[10], "max_direction_shift_px"),
                 argc >= 12 ? argv[11] : "any",
-                argc >= 13 ? static_cast<std::uint64_t>(std::stoull(argv[12])) : 5,
-                argc >= 14 ? std::stod(argv[13]) : 0.25,
+                argc >= 13 ? parse_uint64_arg(argv[12], "max_progress_regressions") : 5,
+                argc >= 14 ? parse_double_arg(argv[13], "max_progress_rollback") : 0.25,
                 endpoint_arg_offset != 0 ? parse_bool_arg(argv[endpoint_arg_offset]) : false,
-                endpoint_arg_offset != 0 ? std::stod(argv[endpoint_arg_offset + 1]) : 0.15,
-                endpoint_arg_offset != 0 ? std::stod(argv[endpoint_arg_offset + 2]) : 0.85);
+                endpoint_arg_offset != 0 ? parse_double_arg(argv[endpoint_arg_offset + 1], "endpoint_start_progress") : 0.15,
+                endpoint_arg_offset != 0 ? parse_double_arg(argv[endpoint_arg_offset + 2], "endpoint_end_progress") : 0.85);
             if (operator_cue_arg_offset != 0) {
                 apply_operator_cue_args(config, argv, operator_cue_arg_offset);
             }

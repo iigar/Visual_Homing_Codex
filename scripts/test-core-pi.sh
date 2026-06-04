@@ -59,6 +59,61 @@ run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
 run_log_file="${VISUAL_HOMING_RUN_LOG:-${log_dir}/test-core-pi-${run_log_stamp}.log}"
 
+require_bool_env() {
+    local name="$1"
+    local value="${!name:-0}"
+    case "${value}" in
+        0|1)
+            ;;
+        *)
+            echo "${name} must be 0 or 1, got '${value}'" >&2
+            exit 2
+            ;;
+    esac
+}
+
+for bool_env in \
+    VISUAL_HOMING_DISABLE_RUN_LOG \
+    VISUAL_HOMING_OPERATOR_CUE \
+    VISUAL_HOMING_OPERATOR_CUE_BELL \
+    VISUAL_HOMING_INSPECT_CAMERA_PROFILE \
+    VISUAL_HOMING_LIST_CAMERA_PROFILES \
+    VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE \
+    VISUAL_HOMING_API_LIST_CAMERA_PROFILES \
+    VISUAL_HOMING_API_GET_ACTIVE_CAMERA_PROFILE \
+    VISUAL_HOMING_CAPTURE_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_RUN_CAMERA_SMOKE \
+    VISUAL_HOMING_RECORD_LIVE_ROUTE \
+    VISUAL_HOMING_ROUTE_USE_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE \
+    VISUAL_HOMING_USE_CAMERA_PROFILE \
+    VISUAL_HOMING_MATCH_LIVE_ROUTE \
+    VISUAL_HOMING_VALIDATE_ROUTE \
+    VISUAL_HOMING_INSPECT_ROUTE \
+    VISUAL_HOMING_EXPORT_ROUTE_KEYFRAMES \
+    VISUAL_HOMING_SELF_MATCH_ROUTE \
+    VISUAL_HOMING_PERTURB_ROUTE \
+    VISUAL_HOMING_ROUTE_DISTINCTIVENESS \
+    VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS \
+    VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS \
+    VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY \
+    VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
+    VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH; do
+    require_bool_env "${bool_env}"
+done
+
+case "${live_route_match_expected_progress}" in
+    any|forward|reverse)
+        ;;
+    *)
+        echo "VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS must be one of: any, forward, reverse" >&2
+        exit 2
+        ;;
+esac
+
 if [[ "${VISUAL_HOMING_DISABLE_RUN_LOG:-0}" != "1" ]]; then
     mkdir -p "$(dirname "${run_log_file}")"
     exec > >(tee -a "${run_log_file}") 2>&1

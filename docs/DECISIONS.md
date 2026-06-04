@@ -989,3 +989,21 @@ Impact:
 
 Risk:
 - This intentionally blocks experimentation with real command output until the next safety review step removes or replaces the gate.
+
+## 2026-06-04 - Harden Live Route CLI And Pi Env Parsing
+
+Decision:
+- Parse live-route active-profile CLI numeric arguments with full-string validation for integers, unsigned integers, and floating-point values.
+- Reject negative values before unsigned parsing.
+- Require Pi script boolean environment flags to be exactly `0` or `1`, and require live-route expected progress to be `any`, `forward`, or `reverse`.
+
+Why:
+- Future safety-sensitive modes will be controlled through these CLI/env surfaces. Typos and partial numeric strings should fail closed instead of being silently truncated or treated as false.
+
+Impact:
+- Invalid values such as `15bad` for CLI numeric fields now produce a controlled parse error.
+- Invalid values such as `VISUAL_HOMING_MATCH_LIVE_ROUTE=true` now fail before build/test actions begin.
+- Existing documented Pi commands using `0`/`1` and valid numeric values are unchanged.
+
+Risk:
+- Operators must use `0`/`1` in Pi env flags rather than shell-style `true`/`false`.
