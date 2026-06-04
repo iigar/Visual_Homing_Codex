@@ -1037,6 +1037,7 @@ Why:
 
 Impact:
 - Live-route dry-run logs now include per-frame and final live-output gate diagnostics.
+- Final summaries include compact per-reason blocked-frame counts such as `vehicle_not_armed:150`.
 - No live MAVLink output is enabled.
 
 Risk:

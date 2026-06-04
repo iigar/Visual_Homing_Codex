@@ -158,6 +158,7 @@ struct LiveRouteMatchingResult {
     std::uint64_t live_output_gate_blocked_frames = 0;
     bool final_live_output_gate_allowed = false;
     std::string final_live_output_gate_reason;
+    std::string live_output_gate_block_reasons;
     bool passed = false;
 };
 

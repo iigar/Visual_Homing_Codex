@@ -6,6 +6,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <sstream>
@@ -180,6 +181,23 @@ LiveMavlinkOutputSafetySnapshot live_output_gate_snapshot(
     snapshot.match = match;
     snapshot.command = command;
     return snapshot;
+}
+
+std::string format_reason_counts(const std::map<std::string, std::uint64_t>& reason_counts) {
+    if (reason_counts.empty()) {
+        return "none";
+    }
+
+    std::ostringstream output;
+    bool first = true;
+    for (const auto& [reason, count] : reason_counts) {
+        if (!first) {
+            output << ",";
+        }
+        first = false;
+        output << reason << ":" << count;
+    }
+    return output.str();
 }
 
 } // namespace
@@ -737,6 +755,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<double> previous_valid_command_yaw_rate;
     std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
     MavlinkTelemetry latest_gate_telemetry;
+    std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
@@ -800,6 +819,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++result.live_output_gate_allowed_frames;
                 } else {
                     ++result.live_output_gate_blocked_frames;
+                    ++live_output_gate_block_reasons[live_output_gate_result.reason];
                 }
             }
 
@@ -942,6 +962,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.final_live_output_gate_allowed = final_gate_result.allowed;
         result.final_live_output_gate_reason = final_gate_result.reason;
     }
+    result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
 
     result.passed = result.started
         && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
@@ -1000,6 +1021,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " dry_run_command_quality_passed=" << (result.dry_run_command_quality_passed ? "true" : "false")
             << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
+            << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
             << " final_live_output_gate_allowed=" << (result.final_live_output_gate_allowed ? "true" : "false")
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
             << " passed=" << (result.passed ? "true" : "false") << "\n";
