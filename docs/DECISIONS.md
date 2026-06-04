@@ -1007,3 +1007,20 @@ Impact:
 
 Risk:
 - Operators must use `0`/`1` in Pi env flags rather than shell-style `true`/`false`.
+
+## 2026-06-04 - Define Live MAVLink Output Safety Gate Contract
+
+Decision:
+- Add `LiveMavlinkOutputSafetyGate` as a tested, standalone permission gate for any future live MAVLink writer.
+- Require explicit runtime enable, operator confirmation, single-writer ownership, audit logging, prior dry-run quality, fresh heartbeat telemetry, armed `Guided` mode, fresh high-confidence route match, valid command, finite command fields, and command bounds.
+- Return a stable blocked reason for the first failed gate.
+
+Why:
+- The project needs a concrete contract before a real command writer exists. Keeping the gate independent lets tests cover the safety policy without enabling live output.
+
+Impact:
+- Unit tests cover every currently required failure reason plus the all-clear path.
+- No live command output is added; the compile-time and runtime live-output blockers remain in place.
+
+Risk:
+- This gate is necessary but not sufficient for flight. A future writer still needs integration tests, operator workflow, and hardware-level kill/stop behavior before sending commands.
