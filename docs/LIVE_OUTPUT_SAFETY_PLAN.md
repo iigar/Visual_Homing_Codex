@@ -67,6 +67,14 @@ Use the readiness checker on Pi logs:
 
 The default expected live-output gate block reason is `vehicle_not_armed:150`. For a future reviewed stage with a different expected reason, set `VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS=<reason:count>`.
 
+When `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1` is used, validate the audit artifact too:
+
+```bash
+./scripts/check-live-session-audit-log.sh artifacts/logs/live-output-session-audit-<run>.log
+```
+
+The audit checker confirms that the non-live writer-shaped session started, audited every dry-run command, blocked every command for the expected reason, and emitted the final stop record.
+
 ## Operator Checklist
 
 Before any future bench props-off live-output test:

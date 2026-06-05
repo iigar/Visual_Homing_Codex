@@ -488,6 +488,14 @@ Milestone 6.7 readiness logs can be checked without rereading the full run outpu
 
 The checker reads the final `live_route_match_compact` line and requires the current safety-readiness defaults: `passed=true`, `frames=150/150`, `valid_matches=150`, endpoint/progress gates passed, read-only telemetry healthy with zero dropped bytes, dry-run command quality passed with `150/150` valid commands, zero live-output allowed frames, and `live_output_gate_block_reasons=vehicle_not_armed:150`. Pass multiple log paths to verify the three clean dry-runs required by `docs/LIVE_OUTPUT_SAFETY_PLAN.md`.
 
+When session audit is enabled, validate the real audit artifact as a separate file:
+
+```bash
+./scripts/check-live-session-audit-log.sh artifacts/logs/live-output-session-audit-20260605T194839Z.log
+```
+
+The audit checker requires one start event, `150` command audit records, one stop event with `reason=match_live_route_complete`, and every command record blocked with `allowed=false`, `reason=vehicle_not_armed`, `valid=true`, and `vx_mps=0`.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

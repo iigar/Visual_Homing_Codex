@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-05 - Track Session Audit Evidence Separately From Pi Compact Logs
+
+Decision:
+- Add `scripts/check-live-session-audit-log.sh` for non-live `LiveMavlinkOutputSession` audit artifacts.
+- Record the successful `jtzero` session-audited dry-run as readiness evidence 2/3 while keeping live MAVLink output blocked.
+
+Why:
+- The Pi compact log proves route matching, telemetry health, dry-run command quality, and live-output blocking.
+- The session audit log proves the future writer-shaped path can create a real audit artifact with one command record per dry-run command and a final stop record.
+- Keeping separate checkers makes failures easier to diagnose and avoids treating the audit file as a substitute for the main readiness gate.
+
+Impact:
+- Future session-audited readiness runs can be validated with both `check-live-readiness-log.sh` and `check-live-session-audit-log.sh`.
+- The readiness record now has 2/3 accepted clean dry-run logs; one more clean run is still required before changing any live-output blocker.
+
+Risk:
+- The accepted route still had a distinctiveness warning, so this evidence supports pre-live safety plumbing only. It is not approval for route quality, live output, flight, or Milestone 7.
+
 ## 2026-05-22 - Keep Baseline Separate From New Core
 
 Decision:
