@@ -10,6 +10,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - `LiveMavlinkBridge` must continue to be unavailable and reject sends.
 - `LiveMavlinkOutputSafetyGate` is the required pre-writer contract for any future live writer.
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
+- `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 
 ## First Future Live Test Boundary
 

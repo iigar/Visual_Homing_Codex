@@ -1134,3 +1134,21 @@ Impact:
 
 Risk:
 - The readiness count stays at 1/3 until a new comparable route or bench stand is available.
+
+## 2026-06-05 - Enforce Zero Forward Speed In Live Output Safety Gate
+
+Decision:
+- Add `require_zero_forward_speed` to `LiveMavlinkOutputSafetyConfig`, defaulting to `true`.
+- Block any nonzero `NavigationCommand::vx_mps` with `command_forward_speed_not_zero` before the general forward-speed bound is evaluated.
+- Keep a tested opt-out path for later reviewed stages by setting `require_zero_forward_speed=false`, while still enforcing `max_abs_forward_speed_mps`.
+
+Why:
+- The first future live-output scope is yaw-rate-only with zero forward velocity. This must be a tested gate policy, not only a roadmap statement.
+
+Impact:
+- Current dry-runs with `VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_FORWARD_SPEED_MPS=0.0` remain unchanged.
+- Any accidental nonzero forward command is blocked by the safety gate even if it is below the configured speed bound.
+- Live MAVLink output remains blocked.
+
+Risk:
+- Later stages that intentionally test forward velocity must explicitly change this policy in a reviewed commit.

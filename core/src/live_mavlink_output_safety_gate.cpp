@@ -89,6 +89,9 @@ LiveMavlinkOutputSafetyResult LiveMavlinkOutputSafetyGate::evaluate(
     if (std::abs(snapshot.command.yaw_rate_radps) > config_.max_abs_yaw_rate_radps) {
         return blocked("command_yaw_rate_out_of_bounds");
     }
+    if (config_.require_zero_forward_speed && snapshot.command.vx_mps != 0.0) {
+        return blocked("command_forward_speed_not_zero");
+    }
     if (std::abs(snapshot.command.vx_mps) > config_.max_abs_forward_speed_mps) {
         return blocked("command_forward_speed_out_of_bounds");
     }
