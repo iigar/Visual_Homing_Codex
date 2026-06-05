@@ -12,6 +12,7 @@ vh::LiveMavlinkOutputSafetyConfig passing_config() {
     config.operator_confirmed = true;
     config.dry_run_quality_passed = true;
     config.audit_log_enabled = true;
+    config.audit_log_ready = true;
     config.single_writer = true;
     config.max_telemetry_age_ms = 500.0;
     config.min_match_confidence = 0.75;
@@ -79,6 +80,11 @@ int main() {
         auto config = passing_config();
         config.audit_log_enabled = false;
         expect_blocked(config, passing_snapshot(), "audit_log_disabled");
+    }
+    {
+        auto config = passing_config();
+        config.audit_log_ready = false;
+        expect_blocked(config, passing_snapshot(), "audit_log_not_ready");
     }
     {
         auto config = passing_config();

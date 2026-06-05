@@ -1152,3 +1152,22 @@ Impact:
 
 Risk:
 - Later stages that intentionally test forward velocity must explicitly change this policy in a reviewed commit.
+
+## 2026-06-05 - Require Ready Audit Log Before Live Output Gate Allows Commands
+
+Decision:
+- Add `audit_log_ready` to `LiveMavlinkOutputSafetyConfig`, defaulting to `false`.
+- Keep `audit_log_enabled` as the policy/configuration flag and use `audit_log_ready` as the runtime readiness flag.
+- Block with `audit_log_disabled` when audit logging is not enabled.
+- Block with `audit_log_not_ready` when audit logging is enabled but not ready/open.
+
+Why:
+- A future live writer must not accept a command merely because audit logging is intended. The log must be ready before any command can pass the gate.
+
+Impact:
+- Dry-run diagnostics explicitly mark audit logging as ready so existing gate diagnostics still expose vehicle/match/command blockers.
+- Unit tests cover both disabled and not-ready audit log states.
+- Live MAVLink output remains blocked.
+
+Risk:
+- A future real audit logger still needs implementation; this only makes readiness a required safety-gate input.

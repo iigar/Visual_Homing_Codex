@@ -161,6 +161,7 @@ LiveMavlinkOutputSafetyConfig live_output_gate_config_from_match_config(
     gate_config.operator_confirmed = true;
     gate_config.dry_run_quality_passed = dry_run_quality_passed;
     gate_config.audit_log_enabled = true;
+    gate_config.audit_log_ready = true;
     gate_config.single_writer = true;
     gate_config.max_telemetry_age_ms = config.telemetry_max_age_ms;
     gate_config.min_match_confidence = config.minimum_confidence;

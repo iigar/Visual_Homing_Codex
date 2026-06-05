@@ -9,6 +9,7 @@
 - Added `scripts/check-live-readiness-log.sh`, an offline Pi log checker for Milestone 6.7 clean dry-runs. It validates the final `live_route_match_compact` line for frame/match counts, endpoint/progress gates, telemetry health, dry-run command quality, and expected live-output gate blocking.
 - Added `docs/LIVE_OUTPUT_READINESS_RECORD.md` and recorded the validated `test-core-pi-20260604T205416Z.log` as 1/3 clean readiness evidence. The old physical route is dismantled and should not be rebuilt only to chase the remaining 2/3 logs; collect them on the next stable route or repeatable bench stand.
 - Hardened `LiveMavlinkOutputSafetyGate` so the default first-live-test policy requires exact zero forward speed. Nonzero `vx_mps` now blocks with `command_forward_speed_not_zero`; later reviewed stages must explicitly opt out before forward velocity can pass the gate.
+- Hardened the audit-log precondition in `LiveMavlinkOutputSafetyGate`: audit logging must be both enabled and ready before commands can pass. The gate now distinguishes `audit_log_disabled` from `audit_log_not_ready`.
 
 ## 2026-05-22
 

@@ -14,6 +14,7 @@ struct LiveMavlinkOutputSafetyConfig {
     bool operator_confirmed = false;
     bool dry_run_quality_passed = false;
     bool audit_log_enabled = false;
+    bool audit_log_ready = false;
     bool single_writer = true;
     double max_telemetry_age_ms = 500.0;
     double min_match_confidence = 0.75;

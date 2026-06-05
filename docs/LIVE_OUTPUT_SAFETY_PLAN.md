@@ -23,7 +23,7 @@ The first possible live-output test, after this plan is complete, is:
 - `vx_mps=0`;
 - short duration;
 - operator physically present;
-- audit log enabled;
+- audit log enabled and ready before any command can pass;
 - explicit runtime enable and operator confirmation required.
 
 The first live-output test is not:
@@ -88,7 +88,7 @@ Any future writer must be blocked unless all conditions are true:
 - runtime live-output flag enabled;
 - operator confirmation provided for the current run;
 - single writer owns command output;
-- audit logging is enabled before the writer starts;
+- audit logging is enabled and ready before the writer starts;
 - dry-run command quality has passed;
 - MAVLink heartbeat is present and fresh;
 - vehicle is armed only for the later reviewed test stage that requires it;

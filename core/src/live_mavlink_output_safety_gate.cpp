@@ -50,6 +50,9 @@ LiveMavlinkOutputSafetyResult LiveMavlinkOutputSafetyGate::evaluate(
     if (!config_.audit_log_enabled) {
         return blocked("audit_log_disabled");
     }
+    if (!config_.audit_log_ready) {
+        return blocked("audit_log_not_ready");
+    }
     if (!config_.dry_run_quality_passed) {
         return blocked("dry_run_quality_not_validated");
     }
