@@ -208,8 +208,23 @@ Current Codex baseline to match or preserve if already present:
 - Pi bootstrap/test scripts exist.
 - Live camera route recording exists as explicit validation mode.
 - Route inspection, stateless self-match, perturbation checks, distinctiveness diagnostics, and route-quality policy exist.
-- Pi Zero 2W class validation has passed CTest and live IMX219 route capture.
-- Hand-carried 180-frame bench route baseline: about 15.4 FPS, 180/180 self-match, perturbation pass, 8/180 ambiguous nearest entries, average nearest mean absolute byte difference about 7.44, `quality_pass=true`.
+- Active camera profile support exists for IMX219-class visible camera validation.
+- Live camera route matching exists with endpoint-progress gates, dry-run command quality checks, live read-only MAVLink telemetry health, and operator cue timing.
+- Live MAVLink output remains blocked. `LiveMavlinkOutputSafetyGate`, `LiveMavlinkOutputAuditLog`, and `LiveMavlinkOutputSession` exist only as non-live safety/audit scaffolding.
+- The first future live-output scope is yaw-rate only with `vx_mps=0`, bench-only, propellers removed, explicit runtime enable and operator confirmation, and audit logging ready before any command can pass.
+- Pi Zero 2W class validation has passed CTest and live IMX219 route capture/matching on `jtzero`.
+- Current readiness evidence is `2/3` accepted clean dry-runs in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
+- Accepted readiness log 1/3: `artifacts/logs/test-core-pi-20260604T205416Z.log`, validated with `scripts/check-live-readiness-log.sh`.
+- Accepted readiness log 2/3: `artifacts/logs/test-core-pi-20260605T194839Z.log`, with session audit `artifacts/logs/live-output-session-audit-20260605T194839Z.log`, validated with both `scripts/check-live-readiness-log.sh` and `scripts/check-live-session-audit-log.sh`.
+- The latest session-audited Pi run captured 150/150 live matches, passed endpoint/progress gates, kept read-only telemetry healthy with zero dropped bytes, produced 150/150 valid dry-run commands, and blocked all live-output decisions with `vehicle_not_armed:150`.
+- The source route for readiness 2/3 had `route_distinctiveness warning=true quality_pass=false`; this is acceptable as safety plumbing evidence only, not as route-quality approval.
+
+Immediate next useful task:
+- Add an offline route-quality/readiness checker so route recording logs can be machine-checked before spending time on another match/audit dry-run.
+- The checker should parse the route recording validation output from `scripts/test-core-pi.sh`, especially `route_self_match`, `route_perturb_check`, and `route_distinctiveness`.
+- It should pass only when route self-match and perturbation checks pass and route distinctiveness meets the current route-quality policy, unless an explicit diagnostic override is used.
+- It must be offline, deterministic, shell-script friendly on Pi, and documented in `docs/PI_BUILDING.md` and the live-output readiness docs.
+- Do not treat a route-quality checker pass as flight authorization; it is only a filter for collecting the final `3/3` pre-live readiness evidence.
 
 Validation requirements:
 - Build with CMake or the repo's existing build system.
@@ -228,6 +243,8 @@ Safety constraints:
 - Web/UI/diagnostics must read immutable snapshots only.
 - Low-confidence, stale, degraded, ambiguous, or invalid matches must fail closed.
 - Live ArduPilot command output remains blocked until read-only telemetry, replay logs, bench replay, route-quality gates, and safety review pass.
+- Do not change compile-time or runtime live-output blockers until `docs/LIVE_OUTPUT_SAFETY_PLAN.md` is complete, reviewed, and `docs/LIVE_OUTPUT_READINESS_RECORD.md` has `3/3` accepted clean dry-runs.
+- Do not escalate from yaw-only to pitch/roll/forward velocity in the first live-output stage.
 
 Required review before flight-test ladder:
 - Perform a code review of replay/camera/route/matching/navigation/MAVLink dry-run baseline.
