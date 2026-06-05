@@ -2,6 +2,7 @@
 
 ## 2026-06-05
 
+- Added a non-live `LiveMavlinkOutputSession` scaffold that orders audit readiness, safety-gate evaluation, and bridge sends without enabling live output. Tests cover stopped sessions, failed/not-ready audit startup, blocked decisions audited without sends, allowed dry-run sends, and the real compiled-out live bridge still failing to start.
 - Added a non-live `LiveMavlinkOutputAuditLog` boundary with focused tests for readiness, command records, stop records, and fail-closed missing-path behavior. MAVLink live output remains blocked.
 
 ## 2026-06-04

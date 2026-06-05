@@ -1190,3 +1190,20 @@ Impact:
 
 Risk:
 - The audit format is intentionally minimal key-value text for now; future bench tests may add run metadata fields before live-output use.
+
+## 2026-06-05 - Add Non-Live Live Output Session Scaffold
+
+Decision:
+- Add `LiveMavlinkOutputSession` as a writer-shaped coordinator that starts audit logging first, starts the bridge only after audit readiness, evaluates `LiveMavlinkOutputSafetyGate` for each snapshot, records every safety decision to audit, and calls `bridge.send()` only after an allowed safety result.
+- Introduce `LiveMavlinkOutputAuditSink` so the session can depend on the audit boundary contract while tests use a fake sink and the file audit log remains the concrete implementation.
+- Keep `LiveMavlinkBridge` compiled out and unavailable; session startup with the real live bridge fails and records `bridge_start_failed`.
+
+Why:
+- The next Milestone 6.7 step needs the exact future writer ordering without enabling real MAVLink output: audit readiness first, safety gate second, bridge send last.
+
+Impact:
+- Tests now prove stopped sessions reject processing, failed/not-ready audit prevents bridge startup, blocked safety decisions are audited without sending, allowed decisions can reach a dry-run bridge, and the real live bridge remains unable to start.
+- Live MAVLink output remains blocked.
+
+Risk:
+- This is still an orchestration scaffold, not the reviewed live writer. Later work must add runtime CLI controls, final audit metadata, stop/failsafe integration, and bench-only procedures before any live-output blocker changes.

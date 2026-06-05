@@ -10,6 +10,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - `LiveMavlinkBridge` must continue to be unavailable and reject sends.
 - `LiveMavlinkOutputSafetyGate` is the required pre-writer contract for any future live writer.
 - `LiveMavlinkOutputAuditLog` is the non-live audit boundary for future writer integration; it must be ready before the gate can allow a command.
+- `LiveMavlinkOutputSession` is the non-live writer-shaped coordinator for audit readiness, safety-gate evaluation, and bridge sends; with the current blocked bridge it cannot produce live MAVLink output.
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 
@@ -120,9 +121,9 @@ On stop, the writer must emit a final audit line with the stop reason and must n
 
 Before implementing a real writer:
 
-- Add or update tests proving the writer rejects sends while stopped.
-- Add tests proving each safety gate reason blocks output.
-- Add or update integration tests proving the future writer wires audit-log readiness into the safety gate before any command is accepted.
+- Add or update tests proving the writer rejects sends while stopped. Current non-live session tests cover stopped sessions.
+- Add tests proving each safety gate reason blocks output. Current safety-gate tests cover gate reasons; current session tests cover blocked decisions not reaching the bridge.
+- Add or update integration tests proving the future writer wires audit-log readiness into the safety gate before any command is accepted. Current session tests cover failed audit startup and not-ready audit state before bridge start.
 - Add tests proving forward speed cannot become nonzero in the first writer scope.
 - Add tests proving compile-time disabled builds still reject live output.
 - Document the exact Pi command for the future bench props-off run.

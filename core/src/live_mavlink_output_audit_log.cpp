@@ -1,6 +1,7 @@
 #include "visual_homing/live_mavlink_output_audit_log.hpp"
 
 #include <stdexcept>
+#include <utility>
 
 namespace vh {
 

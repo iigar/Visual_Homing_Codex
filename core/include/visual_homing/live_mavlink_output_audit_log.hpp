@@ -13,15 +13,24 @@ struct LiveMavlinkOutputAuditLogConfig {
     bool append = true;
 };
 
-class LiveMavlinkOutputAuditLog {
+class LiveMavlinkOutputAuditSink {
+public:
+    virtual ~LiveMavlinkOutputAuditSink() = default;
+    virtual bool start(const std::string& run_id) = 0;
+    virtual void stop(const std::string& reason) = 0;
+    virtual void record_command(const NavigationCommand& command, const LiveMavlinkOutputSafetyResult& safety_result) = 0;
+    virtual bool ready() const = 0;
+};
+
+class LiveMavlinkOutputAuditLog final : public LiveMavlinkOutputAuditSink {
 public:
     explicit LiveMavlinkOutputAuditLog(LiveMavlinkOutputAuditLogConfig config);
 
-    bool start(const std::string& run_id);
-    void stop(const std::string& reason);
-    void record_command(const NavigationCommand& command, const LiveMavlinkOutputSafetyResult& safety_result);
+    bool start(const std::string& run_id) override;
+    void stop(const std::string& reason) override;
+    void record_command(const NavigationCommand& command, const LiveMavlinkOutputSafetyResult& safety_result) override;
 
-    bool ready() const;
+    bool ready() const override;
     const std::filesystem::path& path() const;
 
 private:
