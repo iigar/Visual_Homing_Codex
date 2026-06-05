@@ -186,6 +186,11 @@ void apply_live_route_match_telemetry_args(vh::LiveRouteMatchingConfig& config, 
     config.require_live_telemetry_health = parse_bool_arg(argv[first_index + 5]);
 }
 
+void apply_live_route_session_audit_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
+    config.emit_live_output_session_audit = parse_bool_arg(argv[first_index]);
+    config.live_output_session_audit_path = argv[first_index + 1];
+}
+
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {
     if (target_width <= 0 || target_height <= 0) {
         throw std::invalid_argument("Camera profile target override dimensions must be positive");
@@ -795,21 +800,22 @@ int main(int argc, char** argv) {
 
     if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16 || argc == 17 || argc == 19
             || argc == 20 || argc == 22 || argc == 27 || argc == 29 || argc == 33 || argc == 35
-            || argc == 39 || argc == 41)
+            || argc == 39 || argc == 41 || argc == 43)
         && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
             auto record = vh::load_active_camera_profile(argv[2], argv[3]);
-            if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41) {
+            if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43) {
                 record.profile = profile_with_target_override(
                     record.profile,
                     parse_int_arg(argv[14], "target_width"),
                     parse_int_arg(argv[15], "target_height"));
             }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
-            const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41) ? 16 : 0);
-            const auto operator_cue_arg_offset = (argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 17 : ((argc == 22 || argc == 29 || argc == 35 || argc == 41) ? 19 : 0);
-            const auto dry_run_command_arg_offset = (argc == 27 || argc == 33 || argc == 39) ? 20 : ((argc == 29 || argc == 35 || argc == 41) ? 22 : 0);
-            const auto live_telemetry_arg_offset = argc == 39 ? 33 : (argc == 41 ? 35 : 0);
+            const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43) ? 16 : 0);
+            const auto operator_cue_arg_offset = (argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 17 : ((argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43) ? 19 : 0);
+            const auto dry_run_command_arg_offset = (argc == 27 || argc == 33 || argc == 39) ? 20 : ((argc == 29 || argc == 35 || argc == 41 || argc == 43) ? 22 : 0);
+            const auto live_telemetry_arg_offset = argc == 39 ? 33 : ((argc == 41 || argc == 43) ? 35 : 0);
+            const auto session_audit_arg_offset = argc == 43 ? 41 : 0;
             auto config = live_route_matching_config_from_profile(
                 record.profile,
                 parse_int_arg(argv[4], "fps"),
@@ -833,6 +839,9 @@ int main(int argc, char** argv) {
             }
             if (live_telemetry_arg_offset != 0) {
                 apply_live_route_match_telemetry_args(config, argv, live_telemetry_arg_offset);
+            }
+            if (session_audit_arg_offset != 0) {
+                apply_live_route_session_audit_args(config, argv, session_audit_arg_offset);
             }
             const auto result = vh::match_live_camera_route(config, std::cout);
             return result.passed ? 0 : 2;

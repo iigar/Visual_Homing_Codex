@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <sstream>
@@ -17,6 +18,8 @@
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/live_mavlink_output_audit_log.hpp"
+#include "visual_homing/live_mavlink_output_session.hpp"
 #include "visual_homing/live_mavlink_output_safety_gate.hpp"
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/route_signature.hpp"
@@ -580,6 +583,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.telemetry_max_age_ms < 0.0) {
         throw std::invalid_argument("Live route matching telemetry_max_age_ms must be non-negative");
     }
+    if (config.emit_live_output_session_audit) {
+        if (!config.emit_dry_run_commands) {
+            throw std::invalid_argument("Live route matching session audit requires dry-run commands");
+        }
+        if (config.live_output_session_audit_path.empty()) {
+            throw std::invalid_argument("Live route matching session audit path must not be empty");
+        }
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     Gray8RouteMatcherConfig matcher_config;
@@ -596,6 +607,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         navigator.emplace(config.navigator);
     }
     DryRunCommandSink command_sink(&metrics);
+    std::optional<LiveMavlinkOutputAuditLog> session_audit_log;
+    std::optional<DryRunCommandSink> session_bridge;
+    std::optional<LiveMavlinkOutputSession> live_output_session;
     HealthMonitor health(now());
     health.set_links(true, config.emit_dry_run_commands && !config.use_live_telemetry_stream, true);
     std::optional<MavlinkTelemetryStream> telemetry_stream;
@@ -642,7 +656,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " max_invalid_command_streak=" << config.max_invalid_dry_run_command_streak
                 << " max_abs_yaw_rate_radps=" << config.max_abs_dry_run_yaw_rate_radps
                 << " max_yaw_rate_sign_flips=" << config.max_dry_run_yaw_rate_sign_flips
-                << " max_yaw_rate_delta_radps=" << config.max_dry_run_yaw_rate_delta_radps;
+                << " max_yaw_rate_delta_radps=" << config.max_dry_run_yaw_rate_delta_radps
+                << " session_audit=" << (config.emit_live_output_session_audit ? "true" : "false");
+        if (config.emit_live_output_session_audit) {
+            metrics << " session_audit_path=" << config.live_output_session_audit_path.string();
+        }
     }
     metrics << "\n";
 
@@ -717,6 +735,33 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
 
     if (config.emit_dry_run_commands) {
         command_sink.start();
+    }
+    if (config.emit_live_output_session_audit) {
+        session_audit_log.emplace(LiveMavlinkOutputAuditLogConfig{config.live_output_session_audit_path, false});
+        session_bridge.emplace(nullptr);
+        live_output_session.emplace(
+            LiveMavlinkOutputSessionConfig{
+                "match_live_route",
+                live_output_gate_config_from_match_config(config, true),
+            },
+            *session_audit_log,
+            *session_bridge);
+        result.live_output_session_audit_path = config.live_output_session_audit_path.string();
+        result.live_output_session_audit_started = live_output_session->start();
+        metrics << "live_route_match_session_audit_start"
+                << " path=" << result.live_output_session_audit_path
+                << " started=" << (result.live_output_session_audit_started ? "true" : "false") << "\n";
+        if (!result.live_output_session_audit_started) {
+            source.stop();
+            command_sink.stop();
+            if (telemetry_stream) {
+                telemetry_stream->stop();
+            }
+            metrics << "live_route_match_done started=false warmup_frames_dropped=" << result.warmup_frames_dropped
+                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=" << result.empty_polls
+                    << " live_output_session_audit_started=false passed=false\n";
+            return result;
+        }
     }
 
     const auto warmup_started_at = now();
@@ -820,6 +865,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 last_live_output_gate_snapshot =
                     live_output_gate_snapshot(processing_finished, latest_gate_telemetry, match, command);
                 live_output_gate_result = gate.evaluate(*last_live_output_gate_snapshot);
+                if (live_output_session) {
+                    const auto session_result = live_output_session->process(*last_live_output_gate_snapshot);
+                    if (session_result.safety.reason != live_output_gate_result.reason
+                        || session_result.safety.allowed != live_output_gate_result.allowed) {
+                        throw std::runtime_error("Live output session audit safety result diverged from gate diagnostics");
+                    }
+                }
                 if (live_output_gate_result.allowed) {
                     ++result.live_output_gate_allowed_frames;
                 } else {
@@ -895,6 +947,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
 
     source.stop();
+    if (live_output_session) {
+        live_output_session->stop("match_live_route_complete");
+    }
     if (config.emit_dry_run_commands) {
         command_sink.stop();
     }
@@ -1029,6 +1084,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
             << " final_live_output_gate_allowed=" << (result.final_live_output_gate_allowed ? "true" : "false")
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
+            << " live_output_session_audit_started=" << (result.live_output_session_audit_started ? "true" : "false")
+            << " live_output_session_audit_path=" << result.live_output_session_audit_path
             << " passed=" << (result.passed ? "true" : "false") << "\n";
 
     metrics << "live_route_match_compact"
@@ -1048,6 +1105,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
+            << " live_output_session_audit=" << bool_word(result.live_output_session_audit_started)
             << "\n";
     return result;
 }

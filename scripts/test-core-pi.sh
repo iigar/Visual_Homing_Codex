@@ -39,6 +39,8 @@ live_route_dry_run_max_yaw_rate_delta_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_
 live_route_match_use_live_mavlink_telemetry="${VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}"
 live_route_match_telemetry_max_age_ms="${VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS:-500}"
 live_route_match_require_live_telemetry_health="${VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH:-0}"
+live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
+live_route_session_audit_path="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH:-${artifact_dir}/logs/live-output-session-audit-${run_log_stamp}.log}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -101,7 +103,8 @@ for bool_env in \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
-    VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH; do
+    VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
+    VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT; do
     require_bool_env "${bool_env}"
 done
 
@@ -170,6 +173,23 @@ if [[ "${live_route_match_use_live_mavlink_telemetry}" == "1" ]]; then
         "${live_route_match_telemetry_max_age_ms}"
         "${live_route_match_require_live_telemetry_health}"
     )
+fi
+live_route_session_audit_args=()
+if [[ "${live_route_session_audit}" == "1" ]]; then
+    if [[ "${live_route_dry_run_commands}" != "1" ]]; then
+        echo "VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1 currently requires VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1" >&2
+        exit 2
+    fi
+    if [[ "${live_route_match_use_live_mavlink_telemetry}" != "1" ]]; then
+        echo "VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1 currently requires VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1" >&2
+        exit 2
+    fi
+    if [[ ${#camera_target_override_args[@]} -ne 2 ]]; then
+        echo "VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1 currently requires VISUAL_HOMING_CAMERA_TARGET_WIDTH and VISUAL_HOMING_CAMERA_TARGET_HEIGHT" >&2
+        exit 2
+    fi
+    mkdir -p "$(dirname "${live_route_session_audit_path}")"
+    live_route_session_audit_args=("${live_route_session_audit}" "${live_route_session_audit_path}")
 fi
 
 clean=0
@@ -407,7 +427,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${live_route_match_endpoint_end_progress}" \
         "${operator_cue_args[@]}" \
         "${live_route_dry_run_command_args[@]}" \
-        "${live_route_match_telemetry_args[@]}"
+        "${live_route_match_telemetry_args[@]}" \
+        "${live_route_session_audit_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

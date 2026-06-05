@@ -1223,3 +1223,22 @@ Impact:
 
 Risk:
 - The test uses a temporary local file only; future bench tests still need a configured artifact path and richer run metadata.
+
+## 2026-06-05 - Add Optional Pi Live-Route Session Audit Artifact
+
+Decision:
+- Add opt-in live-route dry-run session audit support behind `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1`.
+- `test-core-pi.sh` writes the audit file to `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH` or a timestamped path under `artifacts/logs/`.
+- Require the full existing safety dry-run shape before enabling the artifact path: dry-run commands, live read-only MAVLink telemetry, and explicit camera target dimensions.
+- Route matching still computes its existing live-output gate diagnostics directly and additionally runs the same snapshot through `LiveMavlinkOutputSession` with a real file audit log and dry-run bridge. If the two safety results diverge, the run fails.
+
+Why:
+- CTest validates the session and audit file behavior with synthetic snapshots. The Pi readiness path also needs an optional real artifact generated during live camera matching without enabling live MAVLink output.
+
+Impact:
+- Operators can collect a live-route session audit file from the same Pi dry-run that produces `live_route_match_compact`.
+- Default runs are unchanged unless the new env flag is set.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The positional active-profile CLI only accepts this audit pair in the full target-override plus live-telemetry form used by the current readiness command; broader CLI cleanup should happen before adding more optional groups.

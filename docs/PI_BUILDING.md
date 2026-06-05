@@ -471,6 +471,15 @@ This mode still sends no MAVLink commands. It opens the serial device read-only,
 
 For bench dry-run matching, this health gate only checks read-only telemetry freshness. Armed/GUIDED command permission remains reserved for a later live-output safety step.
 
+To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
+
+```bash
+VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1
+VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH=artifacts/logs/live-output-session-audit.log
+```
+
+This requires dry-run commands, live read-only telemetry, and explicit camera target dimensions. It writes `LiveMavlinkOutputSession` audit records through the real file audit boundary while still using a dry-run bridge. It does not enable live MAVLink command output.
+
 Milestone 6.7 readiness logs can be checked without rereading the full run output:
 
 ```bash

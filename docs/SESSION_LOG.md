@@ -2,6 +2,7 @@
 
 ## 2026-06-05
 
+- Added opt-in Pi live-route session audit artifact support behind `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1`. The full safety dry-run path can now write a real `LiveMavlinkOutputSession` audit file while still using only dry-run bridge output and keeping live MAVLink output blocked.
 - Added a real-file session audit smoke test: `LiveMavlinkOutputSession` now runs through `LiveMavlinkOutputAuditLog` plus `DryRunCommandSink`, audits one blocked and one allowed command, and verifies only the allowed command reaches the dry-run bridge.
 - Added a non-live `LiveMavlinkOutputSession` scaffold that orders audit readiness, safety-gate evaluation, and bridge sends without enabling live output. Tests cover stopped sessions, failed/not-ready audit startup, blocked decisions audited without sends, allowed dry-run sends, and the real compiled-out live bridge still failing to start.
 - Added a non-live `LiveMavlinkOutputAuditLog` boundary with focused tests for readiness, command records, stop records, and fail-closed missing-path behavior. MAVLink live output remains blocked.
