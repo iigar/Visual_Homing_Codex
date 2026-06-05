@@ -40,7 +40,6 @@ live_route_match_use_live_mavlink_telemetry="${VISUAL_HOMING_MATCH_LIVE_ROUTE_US
 live_route_match_telemetry_max_age_ms="${VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS:-500}"
 live_route_match_require_live_telemetry_health="${VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH:-0}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
-live_route_session_audit_path="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH:-${artifact_dir}/logs/live-output-session-audit-${run_log_stamp}.log}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -60,6 +59,7 @@ run_started_wall_time_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
 run_log_file="${VISUAL_HOMING_RUN_LOG:-${log_dir}/test-core-pi-${run_log_stamp}.log}"
+live_route_session_audit_path="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH:-${artifact_dir}/logs/live-output-session-audit-${run_log_stamp}.log}"
 
 require_bool_env() {
     local name="$1"
