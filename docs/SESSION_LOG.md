@@ -2,6 +2,7 @@
 
 ## 2026-06-05
 
+- Added `scripts/check-route-quality-log.sh`, an offline Pi log checker for route recording/validation output. It validates route self-match, perturbation checks, malformed-payload rejection, exact-duplicate count, and `route_distinctiveness quality_pass=true` before spending time on the final readiness match/audit run.
 - Recorded the fresh `jtzero` route/match evidence as readiness item 2/3: route recording wrote 150 entries, live matching captured 150/150 valid matches with endpoint/progress gates, read-only telemetry health, 150/150 dry-run commands, expected `vehicle_not_armed:150` live-output blocking, and an opt-in session audit artifact with 150 blocked command records.
 - Added `scripts/check-live-session-audit-log.sh` to validate non-live live-output session audit artifacts independently from the main Pi compact readiness checker.
 - Added opt-in Pi live-route session audit artifact support behind `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1`. The full safety dry-run path can now write a real `LiveMavlinkOutputSession` audit file while still using only dry-run bridge output and keeping live MAVLink output blocked.

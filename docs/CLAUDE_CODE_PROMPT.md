@@ -220,10 +220,8 @@ Current Codex baseline to match or preserve if already present:
 - The source route for readiness 2/3 had `route_distinctiveness warning=true quality_pass=false`; this is acceptable as safety plumbing evidence only, not as route-quality approval.
 
 Immediate next useful task:
-- Add an offline route-quality/readiness checker so route recording logs can be machine-checked before spending time on another match/audit dry-run.
-- The checker should parse the route recording validation output from `scripts/test-core-pi.sh`, especially `route_self_match`, `route_perturb_check`, and `route_distinctiveness`.
-- It should pass only when route self-match and perturbation checks pass and route distinctiveness meets the current route-quality policy, unless an explicit diagnostic override is used.
-- It must be offline, deterministic, shell-script friendly on Pi, and documented in `docs/PI_BUILDING.md` and the live-output readiness docs.
+- Use `scripts/check-route-quality-log.sh` to machine-check new route recording logs before spending time on another match/audit dry-run.
+- Collect one more clean readiness run on a stable route or repeatable bench stand so `docs/LIVE_OUTPUT_READINESS_RECORD.md` can reach `3/3`.
 - Do not treat a route-quality checker pass as flight authorization; it is only a filter for collecting the final `3/3` pre-live readiness evidence.
 
 Validation requirements:

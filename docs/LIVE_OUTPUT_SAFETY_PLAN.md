@@ -59,6 +59,15 @@ Each clean run must show:
 
 The three runs should be logged as artifact paths in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
 
+When a new route is recorded for readiness evidence, validate the route-recording log before running the match/audit pass:
+
+```bash
+VISUAL_HOMING_EXPECTED_ROUTE_QUALITY_ENTRIES=150 \
+./scripts/check-route-quality-log.sh artifacts/logs/test-core-pi-<record-run>.log
+```
+
+The route-quality checker is a prefilter only. It is not flight authorization and does not replace the live route match, dry-run command quality, telemetry health, or live-output blocking checks.
+
 Use the readiness checker on Pi logs:
 
 ```bash

@@ -22,6 +22,7 @@ Live MAVLink output remains blocked. This record is evidence tracking only.
 
 - 1/3 clean readiness log remains pending.
 - Collect them only when a comparable stable route or repeatable no-yaw bench stand exists.
+- For newly recorded routes, validate the recording log with `scripts/check-route-quality-log.sh` before running the readiness match/audit command.
 - Each future run log must pass `scripts/check-live-readiness-log.sh`.
 - When `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1` is enabled, the audit artifact must also pass `scripts/check-live-session-audit-log.sh`.
 

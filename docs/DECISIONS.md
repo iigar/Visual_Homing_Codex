@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-05 - Add Route Quality Log Checker Before Final Readiness Run
+
+Decision:
+- Add `scripts/check-route-quality-log.sh` to validate route recording/validation logs offline.
+- Require self-match pass, perturbation pass, malformed-payload rejection, zero exact duplicate entries, and `route_distinctiveness quality_pass=true` by default.
+
+Why:
+- The second accepted readiness run proved safety plumbing but used a route whose distinctiveness diagnostics returned `quality_pass=false`.
+- The remaining 3/3 readiness evidence should avoid wasting match/audit time on an obviously weak route when the route recording log already contains the needed diagnostics.
+- A small log checker gives the operator a short `passed=true/false` result instead of manually scanning long Pi output.
+
+Impact:
+- Future readiness collection should record a route, run `check-route-quality-log.sh` on that recording log, and only then run the match/audit readiness command.
+- The checker is a route-quality prefilter only; it does not authorize live output, flight, or Milestone 7.
+
+Risk:
+- The current route-quality policy is still Gray8-baseline-specific and may reject routes that a future improved matcher could handle. Use diagnostic overrides only for analysis, not for readiness evidence.
+
 ## 2026-06-05 - Track Session Audit Evidence Separately From Pi Compact Logs
 
 Decision:

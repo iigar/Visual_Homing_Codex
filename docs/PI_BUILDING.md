@@ -396,6 +396,21 @@ VISUAL_HOMING_PERTURB_MIN_CONFIDENCE=0.90
 VISUAL_HOMING_ROUTE_EDGE_TRIM=3
 ```
 
+After recording or validating a route, check the route-quality portion of the Pi log without rereading the full output:
+
+```bash
+./scripts/check-route-quality-log.sh artifacts/logs/test-core-pi-<UTC>.log
+```
+
+The checker requires route self-match to pass, perturbation checks to pass, malformed payload rejection to pass, zero exact duplicate entries, and `route_distinctiveness quality_pass=true`. For a Milestone 6.7 readiness route, also require the expected entry count:
+
+```bash
+VISUAL_HOMING_EXPECTED_ROUTE_QUALITY_ENTRIES=150 \
+./scripts/check-route-quality-log.sh artifacts/logs/test-core-pi-<UTC>.log
+```
+
+Set `VISUAL_HOMING_ALLOW_ROUTE_QUALITY_WARNING=1` only for diagnostics when you intentionally want to inspect a weak route; do not use that override for readiness evidence.
+
 ## Live Route Matching
 
 Match live camera frames against an existing route artifact without overwriting the route:
@@ -487,6 +502,13 @@ Milestone 6.7 readiness logs can be checked without rereading the full run outpu
 ```
 
 The checker reads the final `live_route_match_compact` line and requires the current safety-readiness defaults: `passed=true`, `frames=150/150`, `valid_matches=150`, endpoint/progress gates passed, read-only telemetry healthy with zero dropped bytes, dry-run command quality passed with `150/150` valid commands, zero live-output allowed frames, and `live_output_gate_block_reasons=vehicle_not_armed:150`. Pass multiple log paths to verify the three clean dry-runs required by `docs/LIVE_OUTPUT_SAFETY_PLAN.md`.
+
+Before spending time on a readiness match/audit run against a newly recorded route, check the route recording log first:
+
+```bash
+VISUAL_HOMING_EXPECTED_ROUTE_QUALITY_ENTRIES=150 \
+./scripts/check-route-quality-log.sh artifacts/logs/test-core-pi-<record-run>.log
+```
 
 When session audit is enabled, validate the real audit artifact as a separate file:
 
