@@ -258,6 +258,19 @@ if(BUILD_TESTING)
 
     add_test(NAME live_mavlink_output_session COMMAND live_mavlink_output_session_test)
 
+    add_executable(live_mavlink_output_session_audit_file_test
+        tests/live_mavlink_output_session_audit_file_test.cpp
+    )
+
+    target_link_libraries(live_mavlink_output_session_audit_file_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_mavlink_output_session_audit_file_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_mavlink_output_session_audit_file COMMAND live_mavlink_output_session_audit_file_test)
+
     add_executable(live_mavlink_output_safety_gate_test
         tests/live_mavlink_output_safety_gate_test.cpp
     )

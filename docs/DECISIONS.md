@@ -1207,3 +1207,19 @@ Impact:
 
 Risk:
 - This is still an orchestration scaffold, not the reviewed live writer. Later work must add runtime CLI controls, final audit metadata, stop/failsafe integration, and bench-only procedures before any live-output blocker changes.
+
+## 2026-06-05 - Add Real-File Session Audit Smoke Test
+
+Decision:
+- Add a `LiveMavlinkOutputSession` smoke test that uses the real `LiveMavlinkOutputAuditLog` with `DryRunCommandSink`.
+- The test starts a session, processes one blocked snapshot and one allowed snapshot, verifies the dry-run bridge only receives the allowed command, stops the session, and checks the real audit file for start, blocked command, allowed command, and stop records.
+
+Why:
+- The fake-audit session tests prove ordering and edge cases, but Milestone 6.7 also needs proof that the real file audit boundary works through the session path before any live-output writer is considered.
+
+Impact:
+- The CTest suite now validates real audit-file contents through the non-live session coordinator.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The test uses a temporary local file only; future bench tests still need a configured artifact path and richer run metadata.
