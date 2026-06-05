@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-05 - Mark Milestone 6.7 Readiness Evidence Complete
+
+Decision:
+- Record the `jtzero` 2026-06-05T20:39:07Z live-route match/audit run as readiness evidence 3/3.
+- Keep live MAVLink output blocked until a separate reviewed bench props-off implementation plan changes the current boundary.
+
+Why:
+- The third run used a route-quality prechecked route and passed both the compact readiness checker and session audit checker.
+- It produced 150/150 valid matches, strict monotonic forward progress, endpoint/progress gates, healthy read-only telemetry, 150/150 valid dry-run commands, and expected live-output blocking for every command.
+- The evidence-count requirement is satisfied, but the first live-output boundary still needs an explicit implementation plan, operator checklist, and reviewed blocker change.
+
+Impact:
+- `docs/LIVE_OUTPUT_READINESS_RECORD.md` now records 3/3 accepted clean Pi dry-runs.
+- The next work should design the first bench props-off yaw-only live-output boundary without relaxing route, telemetry, command-quality, audit, or zero-forward-speed gates.
+
+Risk:
+- Treating 3/3 evidence as automatic permission to enable live output would bypass the remaining safety review. Documentation must keep distinguishing evidence completion from live-output authorization.
+
 ## 2026-06-05 - Add Route Quality Log Checker Before Final Readiness Run
 
 Decision:

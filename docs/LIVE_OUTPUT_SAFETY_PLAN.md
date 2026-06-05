@@ -84,6 +84,12 @@ When `VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1` is used, validate the audit arti
 
 The audit checker confirms that the non-live writer-shaped session started, audited every dry-run command, blocked every command for the expected reason, and emitted the final stop record.
 
+Current readiness evidence status:
+
+- `docs/LIVE_OUTPUT_READINESS_RECORD.md` records 3/3 accepted clean Pi dry-runs.
+- The third accepted run used a route-quality prechecked 150-entry route and produced strictly monotonic forward progress.
+- This satisfies the evidence-count requirement only; live output remains blocked until a separate reviewed implementation step changes the current boundary.
+
 ## Operator Checklist
 
 Before any future bench props-off live-output test:
@@ -155,3 +161,5 @@ Milestone 6.7 is complete only when:
 - the first writer scope remains yaw-only with zero forward velocity;
 - the first future live test remains bench-only with propellers removed;
 - no live-output blocker has been changed without a follow-up reviewed implementation plan.
+
+As of the 2026-06-05 `jtzero` evidence set, the three clean dry-runs are recorded and validated. The remaining action before any blocker change is the follow-up reviewed implementation plan for the first bench props-off live-output boundary.
