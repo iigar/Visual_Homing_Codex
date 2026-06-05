@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-05
+
+- Added a non-live `LiveMavlinkOutputAuditLog` boundary with focused tests for readiness, command records, stop records, and fail-closed missing-path behavior. MAVLink live output remains blocked.
+
 ## 2026-06-04
 
 - Validated the compact live-route dry-run summary on `jtzero`: Pi CTest passed 19/19, live forward route matching returned `passed=true`, captured 150/150 frames with 150/150 valid matches, endpoint/progress gates passed, minimum/average confidence was `0.878262/0.938119`, read-only MAVLink telemetry stayed healthy with zero dropped bytes, dry-run command quality passed with 150/150 valid commands, and live output remained blocked for all frames with `live_output_gate_block_reasons=vehicle_not_armed:150`.

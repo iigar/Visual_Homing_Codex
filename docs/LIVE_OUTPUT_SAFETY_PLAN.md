@@ -9,6 +9,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` must continue to fail CMake configuration until this plan is complete and reviewed.
 - `LiveMavlinkBridge` must continue to be unavailable and reject sends.
 - `LiveMavlinkOutputSafetyGate` is the required pre-writer contract for any future live writer.
+- `LiveMavlinkOutputAuditLog` is the non-live audit boundary for future writer integration; it must be ready before the gate can allow a command.
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 
@@ -121,7 +122,7 @@ Before implementing a real writer:
 
 - Add or update tests proving the writer rejects sends while stopped.
 - Add tests proving each safety gate reason blocks output.
-- Add tests proving audit logging starts before any command is accepted.
+- Add or update integration tests proving the future writer wires audit-log readiness into the safety gate before any command is accepted.
 - Add tests proving forward speed cannot become nonzero in the first writer scope.
 - Add tests proving compile-time disabled builds still reject live output.
 - Document the exact Pi command for the future bench props-off run.

@@ -1171,3 +1171,22 @@ Impact:
 
 Risk:
 - A future real audit logger still needs implementation; this only makes readiness a required safety-gate input.
+
+## 2026-06-05 - Add Non-Live Live Output Audit Log Boundary
+
+Decision:
+- Add `LiveMavlinkOutputAuditLog` as a small append-capable file audit boundary for future live-output writer integration.
+- Make the audit log fail-closed: empty log paths do not start, readiness becomes true only after the start line is opened and flushed, command records before readiness throw, and `stop()` writes a final stop reason before clearing readiness.
+- Include safety decision reason and command fields in command audit records.
+- Keep this independent from `LiveMavlinkBridge`; this change does not enable MAVLink command output.
+
+Why:
+- The safety gate now has an `audit_log_ready` precondition, so the project needs a testable boundary that can later drive that readiness bit from real file state instead of a placeholder.
+
+Impact:
+- The CTest suite gains a focused audit-log boundary test.
+- Future writer work can require `audit.ready()` before constructing an allowing gate snapshot.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The audit format is intentionally minimal key-value text for now; future bench tests may add run metadata fields before live-output use.
