@@ -5,7 +5,16 @@
 
 int main() {
     static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED == 1);
+    static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE == 0);
     static_assert(vh::LiveMavlinkBridge::command_output_compiled_out());
+    static_assert(!vh::LiveMavlinkBridge::command_output_available());
+#if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BUILD_REQUESTED
+    static_assert(vh::LiveMavlinkBridge::build_requested());
+    static_assert(vh::LiveMavlinkBridge::bench_props_off_scope());
+#else
+    static_assert(!vh::LiveMavlinkBridge::build_requested());
+    static_assert(!vh::LiveMavlinkBridge::bench_props_off_scope());
+#endif
 
     vh::LiveMavlinkBridge bridge;
     assert(!bridge.available());

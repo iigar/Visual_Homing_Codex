@@ -16,7 +16,9 @@ This plan does not authorize flight, tethered flight, ground movement, or autono
 
 ## Current Boundary To Preserve Until Implementation
 
-- `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` still fails CMake configuration.
+- `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` without the reviewed bench scope still fails CMake configuration.
+- `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` is only valid together with `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON`.
+- The combined bench-scope build is allowed to configure only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and the bridge remains fail-closed.
 - `LiveMavlinkBridge` still rejects starts and sends.
 - Dry-run route matching, dry-run commands, and session audit are validated.
 - No live MAVLink command writer exists yet.
@@ -50,15 +52,18 @@ The first writer must not send:
 
 ### Phase 1 - Compile-Time Boundary Split
 
-- Replace the unconditional live-output CMake failure with a reviewed build option that still defaults to `OFF`.
+- Replace the unconditional live-output CMake failure with a reviewed bench-scope build option that still defaults to `OFF`.
 - When `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=OFF`, the build must behave exactly as it does today: live output unavailable and tests proving rejection still pass.
-- When `ON`, compile only the narrow bench writer and its tests.
+- `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` by itself must fail.
+- `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` by itself must fail.
+- When both options are `ON`, the build may enter the reviewed bench scope, but live command output must stay unavailable until the narrow bench writer is implemented and tested.
 - Keep runtime enable and operator confirmation separate from the compile-time option.
 
 Acceptance:
 
 - Default desktop and Pi builds still leave live output disabled.
 - A dedicated test proves the disabled build rejects live output.
+- Enabling the bench-scope build options does not make live output available until the writer phase explicitly changes `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE`.
 - Enabling the build option does not send commands unless runtime gates are also satisfied.
 
 ### Phase 2 - Live Writer Interface

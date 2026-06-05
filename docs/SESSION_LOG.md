@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-06
+
+- Started Milestone 6.8 Phase 1 by splitting the live-output compile-time boundary. Default builds still block live output, `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` remains invalid without the separate bench props-off CMake scope, and the paired bench-scope build still keeps live output unavailable until the writer phase is implemented and reviewed.
+
 ## 2026-06-05
 
 - Added `docs/LIVE_OUTPUT_BENCH_PROPS_OFF_PLAN.md` as the reviewed implementation scope for the first possible live-output boundary after 3/3 readiness evidence. The plan keeps live output blocked until implementation, limits the first writer to bench-only props-off yaw-rate commands with `vx_mps=0`, and requires explicit compile-time/runtime/operator gates, audit readiness, single-writer ownership, telemetry freshness, route-match freshness/confidence, command quality, and max command/duration limits.

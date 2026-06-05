@@ -7,10 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(VISUAL_HOMING_ENABLE_LIBCAMERA "Build the Raspberry Pi libcamera capture backend" OFF)
-option(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT "Build live MAVLink command output support" OFF)
+option(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT "Request live MAVLink command output build scope" OFF)
+option(VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT "Request the reviewed bench props-off live-output boundary scope" OFF)
 
-if(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT)
-    message(FATAL_ERROR "Live MAVLink command output is intentionally blocked; implement and review LiveMavlinkBridge safety gates before enabling this build option")
+if(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT AND NOT VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT)
+    message(FATAL_ERROR "Live MAVLink command output requires VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON and remains blocked until the bench props-off writer is implemented and reviewed")
+endif()
+
+if(VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT AND NOT VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT)
+    message(FATAL_ERROR "VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT is only valid with VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON")
 endif()
 
 add_executable(visual_homing_core
@@ -47,7 +52,22 @@ target_include_directories(visual_homing_core_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_compile_definitions(visual_homing_core_lib PUBLIC VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED=1)
+target_compile_definitions(visual_homing_core_lib PUBLIC
+    VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED=1
+    VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0
+)
+
+if(VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT)
+    target_compile_definitions(visual_homing_core_lib PUBLIC
+        VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BUILD_REQUESTED=1
+        VISUAL_HOMING_BENCH_PROPS_OFF_LIVE_OUTPUT_SCOPE=1
+    )
+else()
+    target_compile_definitions(visual_homing_core_lib PUBLIC
+        VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BUILD_REQUESTED=0
+        VISUAL_HOMING_BENCH_PROPS_OFF_LIVE_OUTPUT_SCOPE=0
+    )
+endif()
 
 if(VISUAL_HOMING_ENABLE_LIBCAMERA)
     find_package(PkgConfig REQUIRED)

@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-06-06 - Split Live Output Compile-Time Bench Scope
+
+Decision:
+- Add `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT` as the reviewed companion CMake option for future bench props-off live-output work.
+- Keep `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` invalid unless the bench props-off scope is also enabled.
+- Allow the paired bench-scope build to configure only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and `LiveMavlinkBridge` remains fail-closed.
+
+Why:
+- The next implementation phases need a narrow build boundary for tests without accidentally turning on command output.
+- A two-option build boundary makes accidental live-output enablement less likely and keeps the safety distinction visible in CMake, tests, and docs.
+
+Impact:
+- Default builds remain blocked.
+- The bench-scope build can validate compile-time wiring before any writer exists.
+- The real writer phase must explicitly change the availability macro and add tests before commands can be emitted.
+
+Risk:
+- Future work could misread the bench-scope build as authorization to send commands. Documentation and tests must continue to assert that availability is false until the writer phase is reviewed.
+
 ## 2026-06-05 - Define Bench Props-Off Live Output Boundary Plan
 
 Decision:

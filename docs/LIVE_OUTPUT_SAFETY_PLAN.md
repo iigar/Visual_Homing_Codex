@@ -6,7 +6,9 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 
 ## Current Boundary
 
-- `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` must continue to fail CMake configuration until this plan is complete and reviewed.
+- `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` without the reviewed bench props-off CMake scope must continue to fail configuration.
+- `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` is only valid together with `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON`.
+- The combined bench-scope build may configure for implementation work only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and the live bridge remains fail-closed.
 - `LiveMavlinkBridge` must continue to be unavailable and reject sends.
 - `LiveMavlinkOutputSafetyGate` is the required pre-writer contract for any future live writer.
 - `LiveMavlinkOutputAuditLog` is the non-live audit boundary for future writer integration; it must be ready before the gate can allow a command.
@@ -162,6 +164,6 @@ Milestone 6.7 is complete only when:
 - the first future live test remains bench-only with propellers removed;
 - no live-output blocker has been changed without a follow-up reviewed implementation plan.
 
-As of the 2026-06-05 `jtzero` evidence set, the three clean dry-runs are recorded and validated. The remaining action before any blocker change is the follow-up reviewed implementation plan for the first bench props-off live-output boundary.
+As of the 2026-06-05 `jtzero` evidence set, the three clean dry-runs are recorded and validated. The only approved blocker change is the reviewed bench-scope compile-time split; live command output must remain unavailable until the follow-up writer phases are implemented and reviewed.
 
 The follow-up implementation scope is defined in `docs/LIVE_OUTPUT_BENCH_PROPS_OFF_PLAN.md`.

@@ -6,7 +6,7 @@ namespace vh {
 namespace {
 
 constexpr const char* blocked_reason =
-    "Live MAVLink command output is intentionally blocked in this build; use dry-run command sinks only";
+    "Live MAVLink command output is intentionally blocked in this build; bench props-off writer is not implemented";
 
 } // namespace
 
