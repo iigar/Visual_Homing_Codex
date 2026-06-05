@@ -163,3 +163,5 @@ Milestone 6.7 is complete only when:
 - no live-output blocker has been changed without a follow-up reviewed implementation plan.
 
 As of the 2026-06-05 `jtzero` evidence set, the three clean dry-runs are recorded and validated. The remaining action before any blocker change is the follow-up reviewed implementation plan for the first bench props-off live-output boundary.
+
+The follow-up implementation scope is defined in `docs/LIVE_OUTPUT_BENCH_PROPS_OFF_PLAN.md`.

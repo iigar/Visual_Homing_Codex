@@ -94,6 +94,15 @@
 - Define operator checklist, explicit runtime/operator enable, audit logging, single-writer ownership, stop/kill behavior, and failure handling before implementation of a real writer.
 - Status: readiness evidence complete, live output still blocked. `docs/LIVE_OUTPUT_READINESS_RECORD.md` records 3/3 accepted clean Pi dry-runs. The third accepted run used a route-quality prechecked 150-entry route, captured 150/150 valid matches, had strict monotonic forward progress, passed endpoint/progress gates, passed read-only telemetry health with zero dropped bytes, passed dry-run command quality with 150/150 valid commands, wrote a session audit artifact with 150 blocked command records, and kept future live output blocked with `vehicle_not_armed:150`. Live MAVLink output remains blocked by default, blocked at CMake configure time, and blocked by the fail-closed `LiveMavlinkBridge` boundary until a separate reviewed bench props-off implementation plan changes the boundary.
 
+## Milestone 6.8 - Bench Props-Off Live Output Boundary
+
+- Define the first reviewed live-output implementation scope after 3/3 readiness evidence.
+- Keep the first live-output boundary bench-only, propellers removed, physically restrained, short duration, and operator-present.
+- Keep first command authority yaw-rate-only with `vx_mps=0`.
+- Require explicit compile-time enable, runtime enable, operator confirmation, audit readiness, single-writer ownership, telemetry freshness, route-match freshness/confidence, command quality, and hard max command/duration limits.
+- Add tests before any real writer send path is considered.
+- Status: planned in `docs/LIVE_OUTPUT_BENCH_PROPS_OFF_PLAN.md`; not implemented. Live MAVLink output remains blocked.
+
 ## Milestone 7 - Flight Test Ladder
 
 - Bench replay.

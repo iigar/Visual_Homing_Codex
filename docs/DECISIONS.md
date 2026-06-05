@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-05 - Define Bench Props-Off Live Output Boundary Plan
+
+Decision:
+- Add `docs/LIVE_OUTPUT_BENCH_PROPS_OFF_PLAN.md` as Milestone 6.8, the first reviewed live-output implementation scope after 3/3 readiness evidence.
+- Keep live output blocked until the plan is implemented and reviewed.
+
+Why:
+- The 3/3 evidence count is complete, but enabling live output without a narrow implementation contract would skip the remaining safety boundary design.
+- The first live-output step must be bench-only, props-off, yaw-rate-only, zero-forward-speed, short-duration, audited, and explicitly operator-confirmed.
+- A separate plan makes the next code changes reviewable without mixing them with flight-test assumptions.
+
+Impact:
+- The next implementation work has a bounded scope: compile-time boundary split, concrete writer interface, runtime/operator gates, safety-gate wiring, audit contract, documented Pi command, and tests.
+- Milestone 7 remains deferred.
+
+Risk:
+- The plan still introduces future live command output. Implementation must keep defaults blocked and must not add pitch, roll, forward velocity, altitude, mode changes, arm/disarm, or flight authorization.
+
 ## 2026-06-05 - Mark Milestone 6.7 Readiness Evidence Complete
 
 Decision:
