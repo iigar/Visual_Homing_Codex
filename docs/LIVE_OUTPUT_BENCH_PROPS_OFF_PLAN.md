@@ -112,6 +112,7 @@ Status:
 - The exact bench props-off confirmation string is required when runtime live output is requested.
 - `LiveMavlinkOutputSession` enforces max command count and max duration before writer send.
 - The max-duration clock starts after camera warmup, operator cue, and pending-frame drain so it measures only the live command-attempt phase.
+- Runtime live-output runs require directional progress in addition to the selected endpoint/progress gate.
 - Existing dry-run readiness audit commands keep their previous default diagnostics unless the new runtime controls are explicitly supplied.
 
 ### Phase 4 - Safety Gate Wiring
@@ -226,6 +227,7 @@ VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED
 Current expected result before a concrete writer exists:
 
 - route matching and dry-run command quality must pass;
+- runtime live-output runs must pass directional progress, not endpoint progress alone;
 - live-output gate must remain blocked with `live_output_unavailable`;
 - session audit must report `allowed=0` and `blocked=150`.
 

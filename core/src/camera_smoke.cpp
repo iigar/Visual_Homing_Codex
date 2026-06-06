@@ -1013,6 +1013,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.progress_gate_passed = config.require_endpoint_progress
         ? result.endpoint_progress_passed
         : result.directional_progress_passed;
+    if (config.live_output_runtime_controls_provided) {
+        result.progress_gate_passed = result.progress_gate_passed && result.directional_progress_passed;
+    }
 
     if (config.emit_dry_run_commands) {
         result.valid_dry_run_command_fraction = result.dry_run_commands > 0

@@ -1447,3 +1447,20 @@ Impact:
 
 Risk:
 - Audit files start closer to the first command attempt, so pre-capture warmup/cue context remains in the main run log rather than the session audit log.
+
+## 2026-06-06 - Require Directional Progress For Runtime Live Output
+
+Decision:
+- When live-output runtime controls are provided, require `directional_progress_passed=true` in addition to the selected progress gate.
+- Keep legacy readiness dry-runs unchanged when runtime live-output controls are not provided.
+
+Why:
+- Endpoint-only progress can pass when the route reaches an endpoint but includes too many local forward regressions. That is acceptable as diagnostic evidence for some manual dry-runs, but too weak for any future writer-enabled live-output boundary.
+
+Impact:
+- The bench props-off wrapper now fails if forward/reverse directional progress exceeds the configured regression or rollback limits, even when endpoint progress passes.
+- Existing non-runtime readiness audit evidence remains interpretable under the old policy.
+- Live MAVLink output remains blocked.
+
+Risk:
+- Manual bench passes may need steadier movement or explicit directional thresholds before the wrapper passes again.
