@@ -38,6 +38,9 @@ LiveMavlinkOutputSafetyGate::LiveMavlinkOutputSafetyGate(LiveMavlinkOutputSafety
 
 LiveMavlinkOutputSafetyResult LiveMavlinkOutputSafetyGate::evaluate(
     const LiveMavlinkOutputSafetySnapshot& snapshot) const {
+    if (!config_.live_output_available) {
+        return blocked("live_output_unavailable");
+    }
     if (!config_.runtime_enabled) {
         return blocked("runtime_live_output_disabled");
     }

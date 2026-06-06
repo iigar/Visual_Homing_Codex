@@ -73,6 +73,7 @@ public:
 
 vh::LiveMavlinkOutputSafetyConfig passing_config() {
     vh::LiveMavlinkOutputSafetyConfig config;
+    config.live_output_available = true;
     config.runtime_enabled = true;
     config.operator_confirmed = true;
     config.dry_run_quality_passed = true;
@@ -263,6 +264,28 @@ int main() {
         assert(writer.sends == 0);
         assert(audit.records.size() == 2);
         assert(audit.records[1] == "command:route_match_confidence_low");
+
+        session.stop("done");
+        assert(writer.stops == 1);
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeLiveWriter writer;
+        vh::LiveMavlinkBridge bridge(writer);
+        auto config = passing_config();
+        config.live_output_available = false;
+        vh::LiveMavlinkOutputSession session({ "unavailable_live_writer", config }, audit, bridge);
+        assert(session.start());
+
+        const auto result = session.process(passing_snapshot());
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "live_output_unavailable");
+        assert(writer.starts == 1);
+        assert(writer.sends == 0);
+        assert(audit.records.size() == 2);
+        assert(audit.records[1] == "command:live_output_unavailable");
 
         session.stop("done");
         assert(writer.stops == 1);

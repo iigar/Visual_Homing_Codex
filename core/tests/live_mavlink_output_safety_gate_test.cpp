@@ -8,6 +8,7 @@ namespace {
 
 vh::LiveMavlinkOutputSafetyConfig passing_config() {
     vh::LiveMavlinkOutputSafetyConfig config;
+    config.live_output_available = true;
     config.runtime_enabled = true;
     config.operator_confirmed = true;
     config.dry_run_quality_passed = true;
@@ -61,6 +62,11 @@ int main() {
         assert(result.reason == "allowed");
     }
 
+    {
+        auto config = passing_config();
+        config.live_output_available = false;
+        expect_blocked(config, passing_snapshot(), "live_output_unavailable");
+    }
     {
         auto config = passing_config();
         config.runtime_enabled = false;

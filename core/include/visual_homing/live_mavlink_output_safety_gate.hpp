@@ -10,6 +10,7 @@
 namespace vh {
 
 struct LiveMavlinkOutputSafetyConfig {
+    bool live_output_available = false;
     bool runtime_enabled = false;
     bool operator_confirmed = false;
     bool dry_run_quality_passed = false;

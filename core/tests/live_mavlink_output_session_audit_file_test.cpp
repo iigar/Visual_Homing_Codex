@@ -20,6 +20,7 @@ std::string read_all(const std::filesystem::path& path) {
 
 vh::LiveMavlinkOutputSafetyConfig passing_config() {
     vh::LiveMavlinkOutputSafetyConfig config;
+    config.live_output_available = true;
     config.runtime_enabled = true;
     config.operator_confirmed = true;
     config.dry_run_quality_passed = true;

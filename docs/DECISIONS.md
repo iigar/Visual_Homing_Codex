@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-06-06 - Wire Compile-Time Availability Into Safety Gate
+
+Decision:
+- Add `live_output_available` to `LiveMavlinkOutputSafetyConfig`.
+- Check availability before runtime/operator/telemetry/match/command gates.
+- Wire runtime-controlled live-route audit sessions to `LiveMavlinkBridge::command_output_available()`.
+- Preserve historical dry-run readiness diagnostics by using the older non-runtime diagnostic path unless runtime controls are explicitly supplied.
+
+Why:
+- Runtime enable and operator confirmation are insufficient if the build still has no reviewed writer.
+- The safety gate should make the unavailable compiled state visible as an explicit block reason before any writer send.
+- Existing 3/3 readiness evidence should remain stable and continue to validate as `vehicle_not_armed` for the old dry-run audit path.
+
+Impact:
+- Runtime-controlled live-output attempts currently block with `live_output_unavailable`.
+- Tests prove an unavailable live-output build blocks before fake writer send.
+- Live output remains unavailable because no concrete writer exists and `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`.
+
+Risk:
+- `live_output_unavailable` is now an earlier gate for the new runtime-controlled path. Checkers for future runtime-gate tests must expect that reason until the concrete writer phase changes availability.
+
 ## 2026-06-06 - Add Runtime Controls And Session Limits Before Writer Send
 
 Decision:

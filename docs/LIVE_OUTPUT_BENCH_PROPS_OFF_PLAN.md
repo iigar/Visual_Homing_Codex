@@ -139,6 +139,13 @@ Acceptance:
 - Tests prove stale telemetry blocks.
 - Tests prove low-confidence or stale route match blocks.
 
+Status:
+
+- `LiveMavlinkOutputSafetyGate` now has an explicit `live_output_available` gate.
+- Runtime-controlled live-route audit sessions use the compiled bridge availability state, which is currently unavailable.
+- Existing dry-run readiness diagnostics keep the older non-runtime path so historical `vehicle_not_armed` evidence remains stable.
+- Tests prove an unavailable live-output build blocks before fake writer send.
+
 ### Phase 5 - Audit Contract
 
 Every session must write:

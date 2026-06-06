@@ -18,6 +18,7 @@
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/live_mavlink_bridge.hpp"
 #include "visual_homing/live_mavlink_output_audit_log.hpp"
 #include "visual_homing/live_mavlink_output_session.hpp"
 #include "visual_homing/live_mavlink_output_safety_gate.hpp"
@@ -160,6 +161,8 @@ LiveMavlinkOutputSafetyConfig live_output_gate_config_from_match_config(
     const LiveRouteMatchingConfig& config,
     bool dry_run_quality_passed) {
     LiveMavlinkOutputSafetyConfig gate_config;
+    gate_config.live_output_available =
+        config.live_output_runtime_controls_provided ? LiveMavlinkBridge::command_output_available() : true;
     gate_config.runtime_enabled =
         config.live_output_runtime_controls_provided ? config.live_output_runtime_enabled : true;
     gate_config.operator_confirmed =
