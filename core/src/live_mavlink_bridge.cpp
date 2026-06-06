@@ -10,17 +10,37 @@ constexpr const char* blocked_reason =
 
 } // namespace
 
+LiveMavlinkBridge::LiveMavlinkBridge(LiveMavlinkCommandWriter& writer)
+    : writer_(&writer) {}
+
 bool LiveMavlinkBridge::start() {
-    running_ = false;
-    return false;
+    if (running_) {
+        return true;
+    }
+    if (writer_ == nullptr) {
+        running_ = false;
+        return false;
+    }
+    if (!writer_->start()) {
+        running_ = false;
+        return false;
+    }
+    running_ = true;
+    return true;
 }
 
 void LiveMavlinkBridge::stop() {
+    if (running_ && writer_ != nullptr) {
+        writer_->stop();
+    }
     running_ = false;
 }
 
-void LiveMavlinkBridge::send(const NavigationCommand&) {
-    throw std::runtime_error(blocked_reason);
+void LiveMavlinkBridge::send(const NavigationCommand& command) {
+    if (!running_ || writer_ == nullptr) {
+        throw std::runtime_error(blocked_reason);
+    }
+    writer_->send(command);
 }
 
 bool LiveMavlinkBridge::running() const {
@@ -28,10 +48,13 @@ bool LiveMavlinkBridge::running() const {
 }
 
 bool LiveMavlinkBridge::available() const {
-    return false;
+    return writer_ != nullptr;
 }
 
 std::string LiveMavlinkBridge::unavailable_reason() const {
+    if (writer_ != nullptr) {
+        return writer_->unavailable_reason();
+    }
     return blocked_reason;
 }
 

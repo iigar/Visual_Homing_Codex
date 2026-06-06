@@ -37,6 +37,40 @@ public:
     }
 };
 
+class FakeLiveWriter final : public vh::LiveMavlinkCommandWriter {
+public:
+    int starts = 0;
+    int stops = 0;
+    int sends = 0;
+    bool running_state = false;
+
+    bool start() override {
+        ++starts;
+        running_state = true;
+        return true;
+    }
+
+    void stop() override {
+        ++stops;
+        running_state = false;
+    }
+
+    void send(const vh::NavigationCommand&) override {
+        if (!running_state) {
+            throw std::runtime_error("fake live writer send called while stopped");
+        }
+        ++sends;
+    }
+
+    bool running() const override {
+        return running_state;
+    }
+
+    std::string unavailable_reason() const override {
+        return {};
+    }
+};
+
 vh::LiveMavlinkOutputSafetyConfig passing_config() {
     vh::LiveMavlinkOutputSafetyConfig config;
     config.runtime_enabled = true;
@@ -156,6 +190,28 @@ int main() {
         assert(audit.records[1] == "command:allowed");
 
         session.stop("done");
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeLiveWriter writer;
+        vh::LiveMavlinkBridge bridge(writer);
+        vh::LiveMavlinkOutputSession session({ "blocked_live_writer", passing_config() }, audit, bridge);
+        assert(session.start());
+
+        auto snapshot = passing_snapshot();
+        snapshot.match.confidence = 0.1;
+        const auto result = session.process(snapshot);
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "route_match_confidence_low");
+        assert(writer.starts == 1);
+        assert(writer.sends == 0);
+        assert(audit.records.size() == 2);
+        assert(audit.records[1] == "command:route_match_confidence_low");
+
+        session.stop("done");
+        assert(writer.stops == 1);
     }
 
     {

@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-06 - Add Live Bridge Writer Interface Without Serial Writer
+
+Decision:
+- Add `LiveMavlinkCommandWriter` as an injectable writer interface behind `LiveMavlinkBridge`.
+- Keep the default `LiveMavlinkBridge` fail-closed when no writer is attached.
+- Keep `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`; do not add a concrete serial MAVLink command writer in this step.
+
+Why:
+- The live bridge start/stop/send contract needs tests before a real writer exists.
+- Fake-writer tests can validate stopped-send rejection, deterministic double start/stop behavior, and safety-gate blocking without emitting MAVLink commands.
+
+Impact:
+- Phase 2 can be reviewed independently from runtime/operator gates and serial command output.
+- The application path still has no live writer attached and cannot send live MAVLink commands.
+
+Risk:
+- An injectable writer boundary could be mistaken for an active writer. The default constructor, availability macro, docs, and tests must continue to keep real output unavailable until the concrete writer phase is reviewed.
+
 ## 2026-06-06 - Split Live Output Compile-Time Bench Scope
 
 Decision:

@@ -19,9 +19,9 @@ This plan does not authorize flight, tethered flight, ground movement, or autono
 - `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` without the reviewed bench scope still fails CMake configuration.
 - `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` is only valid together with `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON`.
 - The combined bench-scope build is allowed to configure only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and the bridge remains fail-closed.
-- `LiveMavlinkBridge` still rejects starts and sends.
+- Default `LiveMavlinkBridge` still rejects starts and sends when no reviewed writer is attached.
 - Dry-run route matching, dry-run commands, and session audit are validated.
-- No live MAVLink command writer exists yet.
+- No concrete serial MAVLink command writer exists yet.
 
 ## First Writer Scope
 
@@ -68,7 +68,7 @@ Acceptance:
 
 ### Phase 2 - Live Writer Interface
 
-- Implement a concrete writer behind the existing `LiveMavlinkBridge` boundary.
+- Implement a writer interface behind the existing `LiveMavlinkBridge` boundary.
 - Preserve single-writer ownership.
 - Start must fail if the serial device cannot be opened for command output.
 - Stop must be idempotent and must prevent all future sends in the same session.
@@ -79,6 +79,12 @@ Acceptance:
 - Tests prove stopped writer rejects sends.
 - Tests prove double start/stop behavior is deterministic.
 - Tests prove no send occurs when safety gate blocks.
+
+Status:
+
+- The injectable `LiveMavlinkCommandWriter` interface exists and is tested through fake writers.
+- The default live bridge remains fail-closed when no writer is attached.
+- A concrete serial MAVLink command writer is not implemented.
 
 ### Phase 3 - Runtime And Operator Gates
 

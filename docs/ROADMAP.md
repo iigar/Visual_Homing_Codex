@@ -101,7 +101,7 @@
 - Keep first command authority yaw-rate-only with `vx_mps=0`.
 - Require explicit compile-time enable, runtime enable, operator confirmation, audit readiness, single-writer ownership, telemetry freshness, route-match freshness/confidence, command quality, and hard max command/duration limits.
 - Add tests before any real writer send path is considered.
-- Status: Phase 1 compile-time boundary split is implemented; writer phases are not implemented. Default builds keep live output disabled, `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` fails unless paired with `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON`, and the paired bench-scope build still keeps `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`. Live MAVLink output remains blocked.
+- Status: Phase 1 compile-time boundary split and Phase 2 writer-interface scaffolding are implemented; the concrete serial writer is not implemented. Default builds keep live output disabled, `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` fails unless paired with `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON`, and the paired bench-scope build still keeps `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`. `LiveMavlinkBridge` now has an injectable `LiveMavlinkCommandWriter` interface tested with fake writers for stopped-send rejection, deterministic double start/stop behavior, and no send when the safety gate blocks. Live MAVLink output remains blocked.
 
 ## Milestone 7 - Flight Test Ladder
 

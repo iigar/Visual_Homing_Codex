@@ -14,9 +14,21 @@
 
 namespace vh {
 
+class LiveMavlinkCommandWriter {
+public:
+    virtual ~LiveMavlinkCommandWriter() = default;
+
+    virtual bool start() = 0;
+    virtual void stop() = 0;
+    virtual void send(const NavigationCommand& command) = 0;
+    virtual bool running() const = 0;
+    virtual std::string unavailable_reason() const = 0;
+};
+
 class LiveMavlinkBridge final : public MavlinkBridge {
 public:
     LiveMavlinkBridge() = default;
+    explicit LiveMavlinkBridge(LiveMavlinkCommandWriter& writer);
 
     static constexpr bool command_output_compiled_out() noexcept {
         return true;
@@ -43,6 +55,7 @@ public:
     std::string unavailable_reason() const;
 
 private:
+    LiveMavlinkCommandWriter* writer_ = nullptr;
     bool running_ = false;
 };
 
