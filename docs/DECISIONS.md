@@ -1430,3 +1430,20 @@ Impact:
 
 Risk:
 - The wrapper still depends on a stable current-room route and operator movement matching the recorded route. A route/progress failure remains a validation failure, not a writer failure.
+
+## 2026-06-06 - Start Live-Output Session Timing At Capture Phase
+
+Decision:
+- Start the live-output session audit after camera warmup, operator cue, and pending-frame drain, immediately before the live route matching capture loop.
+- Keep audit readiness as a pre-command requirement, but do not count warmup/countdown time against `VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS`.
+
+Why:
+- The bench props-off wrapper uses a 10 second command window and also has a 10 second operator cue. Starting the session before the cue made the first command frame hit `max_duration_reached`, while the direct gate diagnostics correctly reported `live_output_unavailable`.
+
+Impact:
+- The session max-duration limit now measures the live command-attempt phase.
+- Session audit and direct gate diagnostics stay aligned for the fail-closed bench wrapper.
+- Live MAVLink output remains blocked.
+
+Risk:
+- Audit files start closer to the first command attempt, so pre-capture warmup/cue context remains in the main run log rather than the session audit log.

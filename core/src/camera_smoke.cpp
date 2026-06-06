@@ -750,35 +750,6 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.emit_dry_run_commands) {
         command_sink.start();
     }
-    if (config.emit_live_output_session_audit) {
-        session_audit_log.emplace(LiveMavlinkOutputAuditLogConfig{config.live_output_session_audit_path, false});
-        session_bridge.emplace(nullptr);
-        live_output_session.emplace(
-            LiveMavlinkOutputSessionConfig{
-                "match_live_route",
-                live_output_gate_config_from_match_config(config, true),
-                config.live_output_max_commands,
-                config.live_output_max_duration_ms,
-            },
-            *session_audit_log,
-            *session_bridge);
-        result.live_output_session_audit_path = config.live_output_session_audit_path.string();
-        result.live_output_session_audit_started = live_output_session->start();
-        metrics << "live_route_match_session_audit_start"
-                << " path=" << result.live_output_session_audit_path
-                << " started=" << (result.live_output_session_audit_started ? "true" : "false") << "\n";
-        if (!result.live_output_session_audit_started) {
-            source.stop();
-            command_sink.stop();
-            if (telemetry_stream) {
-                telemetry_stream->stop();
-            }
-            metrics << "live_route_match_done started=false warmup_frames_dropped=" << result.warmup_frames_dropped
-                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=" << result.empty_polls
-                    << " live_output_session_audit_started=false passed=false\n";
-            return result;
-        }
-    }
 
     const auto warmup_started_at = now();
     const auto requested_source_frames = config.frames_to_capture + config.warmup_frames;
@@ -811,6 +782,36 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                             metrics);
     if (config.operator_cue_enabled) {
         metrics << "live_route_match_pre_capture_frame_drain drained_frames=" << drain_pending_frames(source) << "\n";
+    }
+
+    if (config.emit_live_output_session_audit) {
+        session_audit_log.emplace(LiveMavlinkOutputAuditLogConfig{config.live_output_session_audit_path, false});
+        session_bridge.emplace(nullptr);
+        live_output_session.emplace(
+            LiveMavlinkOutputSessionConfig{
+                "match_live_route",
+                live_output_gate_config_from_match_config(config, true),
+                config.live_output_max_commands,
+                config.live_output_max_duration_ms,
+            },
+            *session_audit_log,
+            *session_bridge);
+        result.live_output_session_audit_path = config.live_output_session_audit_path.string();
+        result.live_output_session_audit_started = live_output_session->start();
+        metrics << "live_route_match_session_audit_start"
+                << " path=" << result.live_output_session_audit_path
+                << " started=" << (result.live_output_session_audit_started ? "true" : "false") << "\n";
+        if (!result.live_output_session_audit_started) {
+            source.stop();
+            command_sink.stop();
+            if (telemetry_stream) {
+                telemetry_stream->stop();
+            }
+            metrics << "live_route_match_done started=false warmup_frames_dropped=" << result.warmup_frames_dropped
+                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=" << result.empty_polls
+                    << " live_output_session_audit_started=false passed=false\n";
+            return result;
+        }
     }
 
     const auto capture_started_at = now();

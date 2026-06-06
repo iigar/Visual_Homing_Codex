@@ -111,6 +111,7 @@ Status:
 - Runtime controls are available on the live-route audit path.
 - The exact bench props-off confirmation string is required when runtime live output is requested.
 - `LiveMavlinkOutputSession` enforces max command count and max duration before writer send.
+- The max-duration clock starts after camera warmup, operator cue, and pending-frame drain so it measures only the live command-attempt phase.
 - Existing dry-run readiness audit commands keep their previous default diagnostics unless the new runtime controls are explicitly supplied.
 
 ### Phase 4 - Safety Gate Wiring
