@@ -194,6 +194,60 @@ int main() {
 
     {
         FakeAuditSink audit;
+        vh::DryRunCommandSink bridge(nullptr);
+        vh::LiveMavlinkOutputSession session({ "max_commands", passing_config(), 1, 0.0 }, audit, bridge);
+        assert(session.start());
+
+        const auto first = session.process(passing_snapshot());
+        assert(first.sent);
+        assert(bridge.commands_sent() == 1);
+
+        const auto second = session.process(passing_snapshot());
+        assert(!second.sent);
+        assert(!second.safety.allowed);
+        assert(second.safety.reason == "max_command_count_reached");
+        assert(!session.running());
+        assert(!bridge.running());
+        assert(bridge.commands_sent() == 1);
+        assert(audit.records.size() == 4);
+        assert(audit.records[2] == "command:max_command_count_reached");
+        assert(audit.records[3] == "stop:max_command_count_reached");
+    }
+
+    {
+        FakeAuditSink audit;
+        vh::DryRunCommandSink bridge(nullptr);
+        vh::LiveMavlinkOutputSession session({ "max_duration", passing_config(), 0, 10.0 }, audit, bridge);
+        assert(session.start());
+
+        auto snapshot = passing_snapshot();
+        snapshot.now = vh::now() + std::chrono::milliseconds(1000);
+        const auto result = session.process(snapshot);
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "max_duration_reached");
+        assert(!session.running());
+        assert(!bridge.running());
+        assert(bridge.commands_sent() == 0);
+        assert(audit.records.size() == 3);
+        assert(audit.records[1] == "command:max_duration_reached");
+        assert(audit.records[2] == "stop:max_duration_reached");
+    }
+
+    {
+        bool rejected = false;
+        try {
+            FakeAuditSink audit;
+            vh::DryRunCommandSink bridge(nullptr);
+            vh::LiveMavlinkOutputSession session({ "bad_duration", passing_config(), 0, -1.0 }, audit, bridge);
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        assert(rejected);
+    }
+
+    {
+        FakeAuditSink audit;
         FakeLiveWriter writer;
         vh::LiveMavlinkBridge bridge(writer);
         vh::LiveMavlinkOutputSession session({ "blocked_live_writer", passing_config() }, audit, bridge);

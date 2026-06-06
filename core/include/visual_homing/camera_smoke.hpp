@@ -108,6 +108,11 @@ struct LiveRouteMatchingConfig {
     double max_dry_run_yaw_rate_delta_radps = 0.15;
     bool emit_live_output_session_audit = false;
     std::filesystem::path live_output_session_audit_path;
+    bool live_output_runtime_controls_provided = false;
+    bool live_output_runtime_enabled = false;
+    bool live_output_operator_confirmed = false;
+    std::uint64_t live_output_max_commands = 0;
+    double live_output_max_duration_ms = 0.0;
 };
 
 struct LiveRouteMatchingResult {

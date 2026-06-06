@@ -2,6 +2,7 @@
 
 ## 2026-06-06
 
+- Added Milestone 6.8 Phase 3 runtime/operator/max-limit scaffolding. The live-route audit path can now receive explicit runtime enable, exact props-off confirmation, max commands, and max seconds; the Pi wrapper validates confirmation/limits when runtime output is requested; and `LiveMavlinkOutputSession` stops before writer send on max command count or max duration. Existing dry-run readiness audit diagnostics are preserved unless the new runtime controls are explicitly supplied.
 - Added Milestone 6.8 Phase 2 writer-interface scaffolding: `LiveMavlinkBridge` can now wrap an injected `LiveMavlinkCommandWriter`, while the default bridge remains fail-closed and no concrete serial MAVLink writer exists. Tests cover stopped-send rejection, deterministic double start/stop behavior, failed writer start, forwarded fake-writer sends after start, and no send when `LiveMavlinkOutputSession` is blocked by the safety gate.
 - Started Milestone 6.8 Phase 1 by splitting the live-output compile-time boundary. Default builds still block live output, `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` remains invalid without the separate bench props-off CMake scope, and the paired bench-scope build still keeps live output unavailable until the writer phase is implemented and reviewed.
 

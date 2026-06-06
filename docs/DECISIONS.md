@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-06-06 - Add Runtime Controls And Session Limits Before Writer Send
+
+Decision:
+- Add explicit runtime/operator/max-limit controls to the live-route audit path.
+- Require the exact `I_UNDERSTAND_PROPS_ARE_REMOVED` confirmation string when runtime live output is requested through the Pi wrapper.
+- Enforce max command count and max duration inside `LiveMavlinkOutputSession` before any writer send.
+- Preserve existing dry-run readiness diagnostics unless the new runtime controls are explicitly supplied.
+
+Why:
+- Runtime/operator controls must be testable before a concrete serial writer exists.
+- Hard command and duration limits are part of the first bench props-off boundary and must live in the session that owns writer calls.
+- Existing readiness checks still need stable `vehicle_not_armed` dry-run blocking unless a new test intentionally exercises runtime gates.
+
+Impact:
+- Future bench commands can pass runtime enable, exact confirmation, and hard limits through `scripts/test-core-pi.sh`.
+- `LiveMavlinkOutputSession` now records and stops on `max_command_count_reached` or `max_duration_reached`.
+- Live output remains unavailable because no concrete writer exists and `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`.
+
+Risk:
+- Runtime flags could look like authorization. They are only one gate; compile-time availability, concrete writer implementation, safety gate pass, audit readiness, and bench-only procedure remain required.
+
 ## 2026-06-06 - Add Live Bridge Writer Interface Without Serial Writer
 
 Decision:

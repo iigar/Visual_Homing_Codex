@@ -40,6 +40,10 @@ live_route_match_use_live_mavlink_telemetry="${VISUAL_HOMING_MATCH_LIVE_ROUTE_US
 live_route_match_telemetry_max_age_ms="${VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS:-500}"
 live_route_match_require_live_telemetry_health="${VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH:-0}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
+live_output_runtime_enabled="${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
+live_output_bench_props_off_confirm="${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
+live_output_max_commands="${VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS:-0}"
+live_output_max_seconds="${VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS:-0}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -104,7 +108,8 @@ for bool_env in \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
-    VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT; do
+    VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
+    VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT; do
     require_bool_env "${bool_env}"
 done
 
@@ -188,8 +193,29 @@ if [[ "${live_route_session_audit}" == "1" ]]; then
         echo "VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1 currently requires VISUAL_HOMING_CAMERA_TARGET_WIDTH and VISUAL_HOMING_CAMERA_TARGET_HEIGHT" >&2
         exit 2
     fi
+    if [[ "${live_output_runtime_enabled}" == "1" ]]; then
+        if [[ "${live_output_bench_props_off_confirm}" != "I_UNDERSTAND_PROPS_ARE_REMOVED" ]]; then
+            echo "VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED" >&2
+            exit 2
+        fi
+        if [[ "${live_output_max_commands}" == "0" || "${live_output_max_seconds}" == "0" ]]; then
+            echo "VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=1 requires positive VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS and VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS" >&2
+            exit 2
+        fi
+    fi
     mkdir -p "$(dirname "${live_route_session_audit_path}")"
-    live_route_session_audit_args=("${live_route_session_audit}" "${live_route_session_audit_path}")
+    live_route_session_audit_args=(
+        "${live_route_session_audit}"
+        "${live_route_session_audit_path}"
+    )
+    if [[ -n "${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-}" || -n "${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}" || -n "${VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS:-}" || -n "${VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS:-}" ]]; then
+        live_route_session_audit_args+=(
+            "${live_output_runtime_enabled}"
+            "${live_output_bench_props_off_confirm}"
+            "${live_output_max_commands}"
+            "${live_output_max_seconds}"
+        )
+    fi
 fi
 
 clean=0

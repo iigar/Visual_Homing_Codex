@@ -106,6 +106,13 @@ Acceptance:
 - Max commands and max seconds are enforced.
 - Audit records the runtime/confirmation state without exposing secrets.
 
+Status:
+
+- Runtime controls are available on the live-route audit path.
+- The exact bench props-off confirmation string is required when runtime live output is requested.
+- `LiveMavlinkOutputSession` enforces max command count and max duration before writer send.
+- Existing dry-run readiness audit commands keep their previous default diagnostics unless the new runtime controls are explicitly supplied.
+
 ### Phase 4 - Safety Gate Wiring
 
 The writer must be called only through `LiveMavlinkOutputSession` and `LiveMavlinkOutputSafetyGate`.

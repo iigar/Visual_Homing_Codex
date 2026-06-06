@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "visual_homing/interfaces.hpp"
@@ -11,6 +12,8 @@ namespace vh {
 struct LiveMavlinkOutputSessionConfig {
     std::string run_id;
     LiveMavlinkOutputSafetyConfig safety_config;
+    std::uint64_t max_commands = 0;
+    double max_duration_ms = 0.0;
 };
 
 struct LiveMavlinkOutputSessionResult {
@@ -35,6 +38,8 @@ private:
     LiveMavlinkOutputSessionConfig config_;
     LiveMavlinkOutputAuditSink& audit_;
     MavlinkBridge& bridge_;
+    Timestamp started_at_{};
+    std::uint64_t commands_sent_ = 0;
     bool running_ = false;
 };
 

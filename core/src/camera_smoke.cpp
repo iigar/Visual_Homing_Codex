@@ -160,8 +160,10 @@ LiveMavlinkOutputSafetyConfig live_output_gate_config_from_match_config(
     const LiveRouteMatchingConfig& config,
     bool dry_run_quality_passed) {
     LiveMavlinkOutputSafetyConfig gate_config;
-    gate_config.runtime_enabled = true;
-    gate_config.operator_confirmed = true;
+    gate_config.runtime_enabled =
+        config.live_output_runtime_controls_provided ? config.live_output_runtime_enabled : true;
+    gate_config.operator_confirmed =
+        config.live_output_runtime_controls_provided ? config.live_output_operator_confirmed : true;
     gate_config.dry_run_quality_passed = dry_run_quality_passed;
     gate_config.audit_log_enabled = true;
     gate_config.audit_log_ready = true;
@@ -590,6 +592,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         if (config.live_output_session_audit_path.empty()) {
             throw std::invalid_argument("Live route matching session audit path must not be empty");
         }
+        if (!std::isfinite(config.live_output_max_duration_ms) || config.live_output_max_duration_ms < 0.0) {
+            throw std::invalid_argument("Live route matching live_output_max_duration_ms must be finite and non-negative");
+        }
     }
 
     const auto route = read_route_signature_file(config.route_path);
@@ -659,7 +664,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " max_yaw_rate_delta_radps=" << config.max_dry_run_yaw_rate_delta_radps
                 << " session_audit=" << (config.emit_live_output_session_audit ? "true" : "false");
         if (config.emit_live_output_session_audit) {
-            metrics << " session_audit_path=" << config.live_output_session_audit_path.string();
+            metrics << " session_audit_path=" << config.live_output_session_audit_path.string()
+                    << " live_output_runtime_controls_provided="
+                    << (config.live_output_runtime_controls_provided ? "true" : "false")
+                    << " live_output_runtime_enabled=" << (config.live_output_runtime_enabled ? "true" : "false")
+                    << " live_output_operator_confirmed=" << (config.live_output_operator_confirmed ? "true" : "false")
+                    << " live_output_max_commands=" << config.live_output_max_commands
+                    << " live_output_max_duration_ms=" << config.live_output_max_duration_ms;
         }
     }
     metrics << "\n";
@@ -743,6 +754,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             LiveMavlinkOutputSessionConfig{
                 "match_live_route",
                 live_output_gate_config_from_match_config(config, true),
+                config.live_output_max_commands,
+                config.live_output_max_duration_ms,
             },
             *session_audit_log,
             *session_bridge);
