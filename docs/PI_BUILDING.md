@@ -516,7 +516,33 @@ When session audit is enabled, validate the real audit artifact as a separate fi
 ./scripts/check-live-session-audit-log.sh artifacts/logs/live-output-session-audit-20260605T194839Z.log
 ```
 
-The audit checker requires one start event, `150` command audit records, one stop event with `reason=match_live_route_complete`, and every command record blocked with `allowed=false`, `reason=vehicle_not_armed`, `valid=true`, and `vx_mps=0`.
+## Bench Props-Off Live-Output Boundary Wrapper
+
+This wrapper is for the reviewed Milestone 6.8 bench boundary only. It does not authorize flight, tethered flight, ground movement, or autonomous return. Propellers must be removed and the vehicle must be physically restrained.
+
+Current repository state still has no concrete live MAVLink writer, so the expected result is fail-closed: route matching and dry-run command quality pass, while live-output decisions remain blocked with `live_output_unavailable`.
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED \
+./scripts/run-live-output-bench-props-off-pi.sh
+```
+
+The wrapper writes timestamped logs under `artifacts/logs/` and then runs:
+
+```bash
+./scripts/check-live-readiness-log.sh <bench-run-log>
+./scripts/check-live-session-audit-log.sh <bench-audit-log>
+```
+
+Default expected audit result before writer implementation:
+
+```text
+allowed=0 blocked=150 reason=live_output_unavailable
+```
+
+By default, the audit checker preserves the original readiness contract: one start event, `150` command audit records, one stop event with `reason=match_live_route_complete`, and every command record blocked with `allowed=false`, `reason=vehicle_not_armed`, `valid=true`, and `vx_mps=0`. The bench wrapper overrides the expected allowed/blocked counts and reason for its current fail-closed `live_output_unavailable` stage.
 
 ## Route Self-Match
 

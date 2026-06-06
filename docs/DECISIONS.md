@@ -1411,3 +1411,22 @@ Impact:
 
 Risk:
 - The audit format is still key-value text. Future tooling should parse it conservatively and avoid treating the order of fields as stable.
+
+## 2026-06-06 - Add Fail-Closed Bench Props-Off Pi Wrapper
+
+Decision:
+- Add `scripts/run-live-output-bench-props-off-pi.sh` as the dedicated Phase 6 Pi command wrapper for the bench props-off live-output boundary.
+- Require the exact `VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED` string before running.
+- Route the run through the runtime live-output gate path and automatically check the main readiness log plus session audit log after completion.
+- Default the expected result to `allowed=0 blocked=150 reason=live_output_unavailable` because no concrete live MAVLink writer exists.
+
+Why:
+- The bench command must be visually and operationally separate from the old readiness dry-run command. A wrapper avoids copy/paste drift while preserving the current fail-closed boundary.
+
+Impact:
+- Operators have one explicit command for the reviewed bench props-off boundary.
+- The wrapper will fail if the run unexpectedly allows writer decisions before the writer phase is reviewed.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The wrapper still depends on a stable current-room route and operator movement matching the recorded route. A route/progress failure remains a validation failure, not a writer failure.

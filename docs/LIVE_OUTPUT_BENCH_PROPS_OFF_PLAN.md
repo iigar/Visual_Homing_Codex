@@ -213,6 +213,23 @@ VISUAL_HOMING_OPERATOR_CUE_SECONDS=10 \
 
 This template is not active until the implementation exists and is reviewed.
 
+Current fail-closed wrapper:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED \
+./scripts/run-live-output-bench-props-off-pi.sh
+```
+
+Current expected result before a concrete writer exists:
+
+- route matching and dry-run command quality must pass;
+- live-output gate must remain blocked with `live_output_unavailable`;
+- session audit must report `allowed=0` and `blocked=150`.
+
+This wrapper is the command to revise before any future writer-enabled bench run.
+
 ## Stop Conditions
 
 The live writer must stop immediately when any of these happens:
@@ -262,6 +279,7 @@ The first bench props-off live-output implementation is ready for review only wh
 - start/stop/send behavior is tested;
 - max command and max duration limits are enforced;
 - Pi command is documented;
+- dedicated Pi wrapper exists and remains fail-closed until writer implementation;
 - no flight, tethered flight, ground movement, forward velocity, pitch/roll authority, or altitude authority is introduced.
 
 ## Non-Goals
