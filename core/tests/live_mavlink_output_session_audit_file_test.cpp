@@ -95,8 +95,17 @@ int main() {
 
     const auto contents = read_all(path);
     assert(contents.find("live_output_audit event=start run_id=audit_file_smoke") != std::string::npos);
-    assert(contents.find("live_output_audit event=command allowed=false reason=vehicle_not_armed") != std::string::npos);
-    assert(contents.find("live_output_audit event=command allowed=true reason=allowed") != std::string::npos);
+    assert(contents.find("live_output_audit event=command allowed=false") != std::string::npos);
+    assert(contents.find("live_output_audit event=command allowed=true") != std::string::npos);
+    assert(contents.find("reason=vehicle_not_armed") != std::string::npos);
+    assert(contents.find("reason=allowed") != std::string::npos);
+    assert(contents.find("decision=blocked") != std::string::npos);
+    assert(contents.find("decision=allowed") != std::string::npos);
+    assert(contents.find("telemetry_heartbeat_seen=true") != std::string::npos);
+    assert(contents.find("telemetry_mode=Guided") != std::string::npos);
+    assert(contents.find("route_match_valid=true") != std::string::npos);
+    assert(contents.find("route_match_confidence=0.9") != std::string::npos);
+    assert(contents.find("route_match_progress=0.5") != std::string::npos);
     assert(contents.find("vx_mps=0") != std::string::npos);
     assert(contents.find("yaw_rate_radps=0.1") != std::string::npos);
     assert(contents.find("live_output_audit event=stop reason=audit_file_smoke_complete") != std::string::npos);

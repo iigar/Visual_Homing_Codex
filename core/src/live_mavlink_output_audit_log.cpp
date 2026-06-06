@@ -4,6 +4,31 @@
 #include <utility>
 
 namespace vh {
+namespace {
+
+const char* flight_mode_word(const FlightMode mode) {
+    switch (mode) {
+    case FlightMode::Unknown:
+        return "Unknown";
+    case FlightMode::Manual:
+        return "Manual";
+    case FlightMode::Stabilize:
+        return "Stabilize";
+    case FlightMode::AltHold:
+        return "AltHold";
+    case FlightMode::Guided:
+        return "Guided";
+    case FlightMode::Auto:
+        return "Auto";
+    case FlightMode::Rtl:
+        return "Rtl";
+    case FlightMode::Land:
+        return "Land";
+    }
+    return "Unknown";
+}
+
+} // namespace
 
 LiveMavlinkOutputAuditLog::LiveMavlinkOutputAuditLog(LiveMavlinkOutputAuditLogConfig config)
     : config_(std::move(config)) {}
@@ -48,20 +73,32 @@ void LiveMavlinkOutputAuditLog::stop(const std::string& reason) {
 }
 
 void LiveMavlinkOutputAuditLog::record_command(
-    const NavigationCommand& command,
+    const LiveMavlinkOutputSafetySnapshot& snapshot,
     const LiveMavlinkOutputSafetyResult& safety_result) {
     if (!ready_) {
         throw std::runtime_error("LiveMavlinkOutputAuditLog record_command called before ready");
     }
 
+    const auto telemetry_age_ms = milliseconds_between(snapshot.telemetry.timestamp, snapshot.now);
+    const auto match_age_ms = milliseconds_between(snapshot.match.timestamp, snapshot.now);
+    const auto& command = snapshot.command;
     output_ << "live_output_audit event=command"
             << " allowed=" << (safety_result.allowed ? "true" : "false")
+            << " decision=" << (safety_result.allowed ? "allowed" : "blocked")
             << " reason=" << safety_result.reason
             << " valid=" << (command.valid ? "true" : "false")
             << " vx_mps=" << command.vx_mps
             << " vy_mps=" << command.vy_mps
             << " yaw_rate_radps=" << command.yaw_rate_radps
-            << " confidence=" << command.confidence << "\n";
+            << " confidence=" << command.confidence
+            << " telemetry_heartbeat_seen=" << (snapshot.telemetry.heartbeat_seen ? "true" : "false")
+            << " telemetry_armed=" << (snapshot.telemetry.armed ? "true" : "false")
+            << " telemetry_mode=" << flight_mode_word(snapshot.telemetry.mode)
+            << " telemetry_age_ms=" << telemetry_age_ms
+            << " route_match_valid=" << (snapshot.match.valid ? "true" : "false")
+            << " route_match_confidence=" << snapshot.match.confidence
+            << " route_match_progress=" << snapshot.match.progress
+            << " route_match_age_ms=" << match_age_ms << "\n";
     output_.flush();
     if (!output_.good()) {
         ready_ = false;

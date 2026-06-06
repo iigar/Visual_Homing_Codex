@@ -4,6 +4,8 @@ set -euo pipefail
 expected_commands="${VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_COMMANDS:-150}"
 expected_reason="${VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_REASON:-vehicle_not_armed}"
 expected_stop_reason="${VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_STOP_REASON:-match_live_route_complete}"
+expected_allowed_commands="${VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_ALLOWED_COMMANDS:-0}"
+expected_blocked_commands="${VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_BLOCKED_COMMANDS:-${expected_commands}}"
 
 usage() {
     echo "usage: $0 <live-output-session-audit-log> [<live-output-session-audit-log> ...]" >&2
@@ -58,7 +60,12 @@ check_audit_log() {
         failed=1
     fi
 
-    if ! awk -v audit_path="${audit_path}" -v expected_reason="${expected_reason}" '
+    local command_summary
+    command_summary="$(awk \
+        -v audit_path="${audit_path}" \
+        -v expected_reason="${expected_reason}" \
+        -v expected_allowed_commands="${expected_allowed_commands}" \
+        -v expected_blocked_commands="${expected_blocked_commands}" '
         function field(key, parts, n, i, kv) {
             n = split($0, parts, " ")
             for (i = 1; i <= n; ++i) {
@@ -75,11 +82,24 @@ check_audit_log() {
             reason = field("reason")
             valid = field("valid")
             vx = field("vx_mps")
-            if (allowed != "false") {
-                printf "session_audit_log_check path=%s passed=false command_index=%d field=allowed expected=false actual=%s\n", audit_path, commands + 1, allowed > "/dev/stderr"
+            decision = field("decision")
+            if (allowed == "true") {
+                ++allowed_commands
+                if (decision != "" && decision != "allowed") {
+                    printf "session_audit_log_check path=%s passed=false command_index=%d field=decision expected=allowed actual=%s\n", audit_path, commands + 1, decision > "/dev/stderr"
+                    bad = 1
+                }
+            } else if (allowed == "false") {
+                ++blocked_commands
+                if (decision != "" && decision != "blocked") {
+                    printf "session_audit_log_check path=%s passed=false command_index=%d field=decision expected=blocked actual=%s\n", audit_path, commands + 1, decision > "/dev/stderr"
+                    bad = 1
+                }
+            } else {
+                printf "session_audit_log_check path=%s passed=false command_index=%d field=allowed expected=true_or_false actual=%s\n", audit_path, commands + 1, allowed > "/dev/stderr"
                 bad = 1
             }
-            if (reason != expected_reason) {
+            if (expected_reason != "*" && reason != expected_reason) {
                 printf "session_audit_log_check path=%s passed=false command_index=%d field=reason expected=%s actual=%s\n", audit_path, commands + 1, expected_reason, reason > "/dev/stderr"
                 bad = 1
             }
@@ -95,9 +115,23 @@ check_audit_log() {
         }
 
         END {
+            if (allowed_commands != expected_allowed_commands) {
+                printf "session_audit_log_check path=%s passed=false field=allowed_commands expected=%s actual=%d\n", audit_path, expected_allowed_commands, allowed_commands > "/dev/stderr"
+                bad = 1
+            }
+            if (blocked_commands != expected_blocked_commands) {
+                printf "session_audit_log_check path=%s passed=false field=blocked_commands expected=%s actual=%d\n", audit_path, expected_blocked_commands, blocked_commands > "/dev/stderr"
+                bad = 1
+            }
+            printf "%d %d", allowed_commands, blocked_commands
             exit bad
         }
-    ' "${audit_path}"; then
+    ' "${audit_path}")" || failed=1
+
+    local allowed_commands blocked_commands
+    read -r allowed_commands blocked_commands <<< "${command_summary:-0 0}"
+
+    if [[ "${failed}" != "0" ]]; then
         failed=1
     fi
 
@@ -105,7 +139,7 @@ check_audit_log() {
         return 1
     fi
 
-    echo "session_audit_log_check path=${audit_path} passed=true commands=${command_count} reason=${expected_reason} stop_reason=${expected_stop_reason}"
+    echo "session_audit_log_check path=${audit_path} passed=true commands=${command_count} allowed=${allowed_commands} blocked=${blocked_commands} reason=${expected_reason} stop_reason=${expected_stop_reason}"
 }
 
 overall_status=0

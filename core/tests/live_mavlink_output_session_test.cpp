@@ -27,7 +27,7 @@ public:
     }
 
     void record_command(
-        const vh::NavigationCommand&,
+        const vh::LiveMavlinkOutputSafetySnapshot&,
         const vh::LiveMavlinkOutputSafetyResult& safety_result) override {
         records.push_back("command:" + safety_result.reason);
     }

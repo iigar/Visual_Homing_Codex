@@ -49,7 +49,7 @@ LiveMavlinkOutputSessionResult LiveMavlinkOutputSession::process(
 
     if (config_.max_commands > 0 && commands_sent_ >= config_.max_commands) {
         const LiveMavlinkOutputSafetyResult safety{false, "max_command_count_reached"};
-        audit_.record_command(snapshot.command, safety);
+        audit_.record_command(snapshot, safety);
         stop("max_command_count_reached");
         return LiveMavlinkOutputSessionResult{false, safety};
     }
@@ -58,7 +58,7 @@ LiveMavlinkOutputSessionResult LiveMavlinkOutputSession::process(
         const auto elapsed_ms = milliseconds_between(started_at_, snapshot.now);
         if (!std::isfinite(elapsed_ms) || elapsed_ms < 0.0 || elapsed_ms > config_.max_duration_ms) {
             const LiveMavlinkOutputSafetyResult safety{false, "max_duration_reached"};
-            audit_.record_command(snapshot.command, safety);
+            audit_.record_command(snapshot, safety);
             stop("max_duration_reached");
             return LiveMavlinkOutputSessionResult{false, safety};
         }
@@ -68,7 +68,7 @@ LiveMavlinkOutputSessionResult LiveMavlinkOutputSession::process(
     safety_config.audit_log_ready = audit_.ready();
     const LiveMavlinkOutputSafetyGate gate(safety_config);
     const auto safety = gate.evaluate(snapshot);
-    audit_.record_command(snapshot.command, safety);
+    audit_.record_command(snapshot, safety);
 
     if (!safety.allowed) {
         return LiveMavlinkOutputSessionResult{false, safety};

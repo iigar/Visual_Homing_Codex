@@ -173,6 +173,12 @@ Acceptance:
 - Stop record is written on normal completion.
 - Stop record is attempted on early stop.
 
+Status:
+
+- Command audit records now include both the original `allowed` flag and an explicit `decision=allowed|blocked`.
+- Command audit records include command validity, velocity/yaw/confidence fields, read-only telemetry heartbeat/armed/mode/freshness fields, and route-match validity/confidence/progress/freshness fields.
+- The session audit checker remains compatible with existing dry-run-blocked logs while also counting expected allowed and blocked command decisions for future bench props-off runs.
+
 ### Phase 6 - Bench-Only Pi Command
 
 The first bench command must be documented before it is run. It should be a separate command from the existing readiness dry-run command and should make the live-output risk visually obvious.
@@ -233,7 +239,14 @@ After any future bench props-off live-output run, run checkers equivalent to:
 ./scripts/check-live-session-audit-log.sh artifacts/logs/live-output-session-audit-<run>.log
 ```
 
-Additional live-output audit checks must be added before the run to distinguish dry-run-blocked decisions from actual allowed writer sends.
+For a future run that is expected to allow writer sends, set explicit audit expectations, for example:
+
+```bash
+VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_ALLOWED_COMMANDS=150 \
+VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_BLOCKED_COMMANDS=0 \
+VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_REASON='*' \
+./scripts/check-live-session-audit-log.sh artifacts/logs/live-output-session-audit-<run>.log
+```
 
 ## Completion Criteria
 

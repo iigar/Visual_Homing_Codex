@@ -18,7 +18,9 @@ public:
     virtual ~LiveMavlinkOutputAuditSink() = default;
     virtual bool start(const std::string& run_id) = 0;
     virtual void stop(const std::string& reason) = 0;
-    virtual void record_command(const NavigationCommand& command, const LiveMavlinkOutputSafetyResult& safety_result) = 0;
+    virtual void record_command(
+        const LiveMavlinkOutputSafetySnapshot& snapshot,
+        const LiveMavlinkOutputSafetyResult& safety_result) = 0;
     virtual bool ready() const = 0;
 };
 
@@ -28,7 +30,9 @@ public:
 
     bool start(const std::string& run_id) override;
     void stop(const std::string& reason) override;
-    void record_command(const NavigationCommand& command, const LiveMavlinkOutputSafetyResult& safety_result) override;
+    void record_command(
+        const LiveMavlinkOutputSafetySnapshot& snapshot,
+        const LiveMavlinkOutputSafetyResult& safety_result) override;
 
     bool ready() const override;
     const std::filesystem::path& path() const;

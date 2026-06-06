@@ -1393,3 +1393,21 @@ Impact:
 
 Risk:
 - The positional active-profile CLI only accepts this audit pair in the full target-override plus live-telemetry form used by the current readiness command; broader CLI cleanup should happen before adding more optional groups.
+
+## 2026-06-06 - Extend Live Output Audit Command Contract
+
+Decision:
+- Change `LiveMavlinkOutputAuditSink::record_command` to accept the full `LiveMavlinkOutputSafetySnapshot` instead of only `NavigationCommand`.
+- Keep the existing command audit fields for backward readability and add `decision=allowed|blocked`, telemetry heartbeat/armed/mode/age fields, and route-match validity/confidence/progress/age fields.
+- Extend `scripts/check-live-session-audit-log.sh` with expected allowed and blocked command counts while keeping the current default of 150 blocked `vehicle_not_armed` records for existing readiness evidence.
+
+Why:
+- The first bench props-off live-output run must be auditable as a safety decision, not just as a command value. A reviewer needs to see what telemetry and route-match state existed at the moment a command was blocked or, in the future, allowed.
+
+Impact:
+- Existing dry-run-blocked Pi audit logs remain checkable with the default script settings.
+- Future bench props-off runs can require explicit allowed/blocked command counts and can use `VISUAL_HOMING_EXPECTED_LIVE_SESSION_AUDIT_REASON='*'` when a mixed allowed/blocking reason set is intentional.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The audit format is still key-value text. Future tooling should parse it conservatively and avoid treating the order of fields as stable.
