@@ -520,7 +520,7 @@ When session audit is enabled, validate the real audit artifact as a separate fi
 
 This wrapper is for the reviewed Milestone 6.8 bench boundary only. It does not authorize flight, tethered flight, ground movement, or autonomous return. Propellers must be removed and the vehicle must be physically restrained.
 
-Current repository state still has no concrete live MAVLink writer, so the expected result is fail-closed: route matching and dry-run command quality pass, while live-output decisions remain blocked with `live_output_unavailable`.
+The repository has a concrete serial MAVLink writer library, but it is not attached to runtime sessions and live output remains unavailable. The expected result is still fail-closed: route matching and dry-run command quality pass, while live-output decisions remain blocked with `live_output_unavailable`.
 
 ```bash
 cd ~/Visual_Homing_Codex
@@ -536,7 +536,7 @@ The wrapper writes timestamped logs under `artifacts/logs/` and then runs:
 ./scripts/check-live-session-audit-log.sh <bench-audit-log>
 ```
 
-Default expected audit result before writer implementation:
+Default expected audit result before runtime writer attachment:
 
 ```text
 allowed=0 blocked=150 reason=live_output_unavailable

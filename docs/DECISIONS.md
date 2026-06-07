@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-06-08 - Harden Pre-Attach Live Output Session Safety
+
+Decision:
+- Start `LiveMavlinkOutputSession` audit without opening the bridge/writer; start the bridge lazily only after an allowed safety decision.
+- Require zero lateral speed in `LiveMavlinkOutputSafetyGate` for the first yaw-rate-only boundary.
+- Convert bridge start failures into audited blocked command decisions, require an audit record before writer send, and stop sessions explicitly on writer send failures.
+- Update the bench props-off wrapper banner to reflect that the serial writer library exists but is not attached or available.
+
+Why:
+- The next attach phase must not open the command serial writer while `live_output_available=false`.
+- The safety gate should enforce the full yaw-rate-only command contract independently of the serial writer's own validation.
+- An allowed safety decision followed by a writer failure must leave an explicit audit trail instead of throwing past the session boundary.
+
+Impact:
+- Current fail-closed Pi wrapper behavior should remain `allowed=0 blocked=150 reason=live_output_unavailable`.
+- Future writer-enabled sessions will distinguish `bridge_start_failed` and `send_failed` from ordinary safety blocks.
+- Audit record failures now stop the session before a writer send can occur.
+- Live MAVLink output remains blocked.
+
+Risk:
+- Lazy bridge start changes session timing semantics: max-duration still starts at audit/session start, but the writer is opened only at the first allowed command.
+
 ## 2026-06-07 - Accept Post-Writer-Library Fail-Closed Pi Evidence
 
 Decision:

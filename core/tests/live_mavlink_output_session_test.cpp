@@ -14,6 +14,7 @@ class FakeAuditSink final : public vh::LiveMavlinkOutputAuditSink {
 public:
     bool start_result = true;
     bool ready_state = true;
+    bool throw_on_record = false;
     std::vector<std::string> records;
 
     bool start(const std::string& run_id) override {
@@ -29,6 +30,9 @@ public:
     void record_command(
         const vh::LiveMavlinkOutputSafetySnapshot&,
         const vh::LiveMavlinkOutputSafetyResult& safety_result) override {
+        if (throw_on_record) {
+            throw std::runtime_error("fake audit record failure");
+        }
         records.push_back("command:" + safety_result.reason);
     }
 
@@ -43,11 +47,13 @@ public:
     int stops = 0;
     int sends = 0;
     bool running_state = false;
+    bool start_result = true;
+    bool throw_on_send = false;
 
     bool start() override {
         ++starts;
-        running_state = true;
-        return true;
+        running_state = start_result;
+        return start_result;
     }
 
     void stop() override {
@@ -58,6 +64,9 @@ public:
     void send(const vh::NavigationCommand&) override {
         if (!running_state) {
             throw std::runtime_error("fake live writer send called while stopped");
+        }
+        if (throw_on_send) {
+            throw std::runtime_error("fake live writer send failure");
         }
         ++sends;
     }
@@ -86,6 +95,7 @@ vh::LiveMavlinkOutputSafetyConfig passing_config() {
     config.max_abs_yaw_rate_radps = 0.35;
     config.max_abs_forward_speed_mps = 0.5;
     config.require_zero_forward_speed = true;
+    config.require_zero_lateral_speed = true;
     return config;
 }
 
@@ -160,6 +170,7 @@ int main() {
         vh::DryRunCommandSink bridge(nullptr);
         vh::LiveMavlinkOutputSession session({ "blocked", passing_config() }, audit, bridge);
         assert(session.start());
+        assert(!bridge.running());
 
         auto snapshot = passing_snapshot();
         snapshot.telemetry.armed = false;
@@ -168,6 +179,7 @@ int main() {
         assert(!result.safety.allowed);
         assert(result.safety.reason == "vehicle_not_armed");
         assert(bridge.commands_sent() == 0);
+        assert(!bridge.running());
         assert(audit.records.size() == 2);
         assert(audit.records[1] == "command:vehicle_not_armed");
 
@@ -181,12 +193,14 @@ int main() {
         vh::DryRunCommandSink bridge(nullptr);
         vh::LiveMavlinkOutputSession session({ "allowed", passing_config() }, audit, bridge);
         assert(session.start());
+        assert(!bridge.running());
 
         const auto result = session.process(passing_snapshot());
         assert(result.sent);
         assert(result.safety.allowed);
         assert(result.safety.reason == "allowed");
         assert(bridge.commands_sent() == 1);
+        assert(bridge.running());
         assert(audit.records.size() == 2);
         assert(audit.records[1] == "command:allowed");
 
@@ -198,6 +212,7 @@ int main() {
         vh::DryRunCommandSink bridge(nullptr);
         vh::LiveMavlinkOutputSession session({ "max_commands", passing_config(), 1, 0.0 }, audit, bridge);
         assert(session.start());
+        assert(!bridge.running());
 
         const auto first = session.process(passing_snapshot());
         assert(first.sent);
@@ -260,13 +275,13 @@ int main() {
         assert(!result.sent);
         assert(!result.safety.allowed);
         assert(result.safety.reason == "route_match_confidence_low");
-        assert(writer.starts == 1);
+        assert(writer.starts == 0);
         assert(writer.sends == 0);
         assert(audit.records.size() == 2);
         assert(audit.records[1] == "command:route_match_confidence_low");
 
         session.stop("done");
-        assert(writer.stops == 1);
+        assert(writer.stops == 0);
     }
 
     {
@@ -282,13 +297,13 @@ int main() {
         assert(!result.sent);
         assert(!result.safety.allowed);
         assert(result.safety.reason == "live_output_unavailable");
-        assert(writer.starts == 1);
+        assert(writer.starts == 0);
         assert(writer.sends == 0);
         assert(audit.records.size() == 2);
         assert(audit.records[1] == "command:live_output_unavailable");
 
         session.stop("done");
-        assert(writer.stops == 1);
+        assert(writer.stops == 0);
     }
 
     {
@@ -296,12 +311,88 @@ int main() {
         vh::LiveMavlinkBridge bridge;
         vh::LiveMavlinkOutputSession session({ "compiled_out_bridge", passing_config() }, audit, bridge);
 
-        assert(!session.start());
+        assert(session.start());
+        const auto result = session.process(passing_snapshot());
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "bridge_start_failed");
         assert(!session.running());
         assert(!bridge.running());
-        assert(audit.records.size() == 2);
+        assert(audit.records.size() == 3);
         assert(audit.records[0] == "start:compiled_out_bridge");
-        assert(audit.records[1] == "stop:bridge_start_failed");
+        assert(audit.records[1] == "command:bridge_start_failed");
+        assert(audit.records[2] == "stop:bridge_start_failed");
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeLiveWriter writer;
+        writer.throw_on_send = true;
+        vh::LiveMavlinkBridge bridge(writer);
+        vh::LiveMavlinkOutputSession session({ "send_failed", passing_config() }, audit, bridge);
+        assert(session.start());
+
+        const auto result = session.process(passing_snapshot());
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "send_failed");
+        assert(!session.running());
+        assert(!bridge.running());
+        assert(writer.starts == 1);
+        assert(writer.sends == 0);
+        assert(writer.stops == 1);
+        assert(audit.records.size() == 3);
+        assert(audit.records[0] == "start:send_failed");
+        assert(audit.records[1] == "command:allowed");
+        assert(audit.records[2] == "stop:send_failed");
+    }
+
+    {
+        FakeAuditSink audit;
+        audit.throw_on_record = true;
+        FakeLiveWriter writer;
+        vh::LiveMavlinkBridge bridge(writer);
+        vh::LiveMavlinkOutputSession session({ "audit_record_failed", passing_config() }, audit, bridge);
+        assert(session.start());
+
+        bool threw = false;
+        try {
+            (void)session.process(passing_snapshot());
+        } catch (const std::runtime_error&) {
+            threw = true;
+        }
+        assert(threw);
+        assert(!session.running());
+        assert(!bridge.running());
+        assert(writer.starts == 1);
+        assert(writer.sends == 0);
+        assert(writer.stops == 1);
+        assert(audit.records.size() == 2);
+        assert(audit.records[0] == "start:audit_record_failed");
+        assert(audit.records[1] == "stop:audit_record_failed");
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeLiveWriter writer;
+        writer.start_result = false;
+        vh::LiveMavlinkBridge bridge(writer);
+        vh::LiveMavlinkOutputSession session({ "bridge_start_failed", passing_config() }, audit, bridge);
+        assert(session.start());
+
+        const auto result = session.process(passing_snapshot());
+        assert(!result.sent);
+        assert(!result.safety.allowed);
+        assert(result.safety.reason == "bridge_start_failed");
+        assert(!session.running());
+        assert(!bridge.running());
+        assert(writer.starts == 1);
+        assert(writer.sends == 0);
+        assert(writer.stops == 0);
+        assert(audit.records.size() == 3);
+        assert(audit.records[0] == "start:bridge_start_failed");
+        assert(audit.records[1] == "command:bridge_start_failed");
+        assert(audit.records[2] == "stop:bridge_start_failed");
     }
 
     return 0;

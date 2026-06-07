@@ -70,7 +70,7 @@ int main() {
     assert(session.start());
     assert(session.running());
     assert(audit.ready());
-    assert(bridge.running());
+    assert(!bridge.running());
 
     auto blocked_snapshot = passing_snapshot();
     blocked_snapshot.telemetry.armed = false;
@@ -79,12 +79,14 @@ int main() {
     assert(!blocked.safety.allowed);
     assert(blocked.safety.reason == "vehicle_not_armed");
     assert(bridge.commands_sent() == 0);
+    assert(!bridge.running());
 
     const auto allowed = session.process(passing_snapshot());
     assert(allowed.sent);
     assert(allowed.safety.allowed);
     assert(allowed.safety.reason == "allowed");
     assert(bridge.commands_sent() == 1);
+    assert(bridge.running());
     assert(bridge.commands().size() == 1);
     assert(bridge.commands()[0].yaw_rate_radps == 0.1);
 

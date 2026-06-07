@@ -21,6 +21,7 @@ vh::LiveMavlinkOutputSafetyConfig passing_config() {
     config.max_abs_yaw_rate_radps = 0.35;
     config.max_abs_forward_speed_mps = 0.5;
     config.require_zero_forward_speed = true;
+    config.require_zero_lateral_speed = true;
     return config;
 }
 
@@ -38,6 +39,7 @@ vh::LiveMavlinkOutputSafetySnapshot passing_snapshot() {
     snapshot.match.confidence = 0.9;
     snapshot.command.valid = true;
     snapshot.command.vx_mps = 0.0;
+    snapshot.command.vy_mps = 0.0;
     snapshot.command.yaw_rate_radps = 0.1;
     snapshot.command.confidence = 0.9;
     return snapshot;
@@ -162,6 +164,21 @@ int main() {
         config.require_zero_forward_speed = false;
         auto snapshot = passing_snapshot();
         snapshot.command.vx_mps = 0.2;
+        const vh::LiveMavlinkOutputSafetyGate gate(config);
+        const auto result = gate.evaluate(snapshot);
+        assert(result.allowed);
+        assert(result.reason == "allowed");
+    }
+    {
+        auto snapshot = passing_snapshot();
+        snapshot.command.vy_mps = 0.2;
+        expect_blocked(passing_config(), snapshot, "command_lateral_speed_not_zero");
+    }
+    {
+        auto config = passing_config();
+        config.require_zero_lateral_speed = false;
+        auto snapshot = passing_snapshot();
+        snapshot.command.vy_mps = 0.2;
         const vh::LiveMavlinkOutputSafetyGate gate(config);
         const auto result = gate.evaluate(snapshot);
         assert(result.allowed);

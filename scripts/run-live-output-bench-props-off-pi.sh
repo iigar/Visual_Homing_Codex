@@ -22,8 +22,8 @@ cat <<EOF
 ###############################################################################
 ### BENCH PROPS-OFF LIVE-OUTPUT BOUNDARY
 ### This command is for a physically restrained bench setup with propellers removed.
-### Current repository state still has no concrete live MAVLink writer.
-### Expected result before writer implementation: allowed=${expected_allowed} blocked=${expected_blocked} reason=${expected_reason}
+### A serial MAVLink writer library exists, but it is not attached or available.
+### Expected fail-closed result before runtime attachment: allowed=${expected_allowed} blocked=${expected_blocked} reason=${expected_reason}
 ### run_log=${run_log}
 ### audit_log=${audit_log}
 ###############################################################################

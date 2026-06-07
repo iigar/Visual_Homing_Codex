@@ -23,6 +23,7 @@ struct LiveMavlinkOutputSafetyConfig {
     double max_abs_yaw_rate_radps = 0.35;
     double max_abs_forward_speed_mps = 0.5;
     bool require_zero_forward_speed = true;
+    bool require_zero_lateral_speed = true;
 };
 
 struct LiveMavlinkOutputSafetySnapshot {

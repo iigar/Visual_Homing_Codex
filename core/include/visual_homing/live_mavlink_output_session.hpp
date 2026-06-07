@@ -40,6 +40,7 @@ private:
     MavlinkBridge& bridge_;
     Timestamp started_at_{};
     std::uint64_t commands_sent_ = 0;
+    bool bridge_started_ = false;
     bool running_ = false;
 };
 

@@ -149,7 +149,7 @@ bool PosixSerialByteTransport::open() {
     return false;
 #else
     try {
-        fd_ = ::open(device_path_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+        fd_ = ::open(device_path_.c_str(), O_RDWR | O_NOCTTY);
         if (fd_ < 0) {
             throw std::runtime_error(errno_message("Could not open MAVLink command device for write: " + device_path_));
         }
@@ -195,6 +195,9 @@ void PosixSerialByteTransport::write_all(const std::vector<std::uint8_t>& bytes)
             continue;
         }
         if (written < 0 && errno == EINTR) {
+            continue;
+        }
+        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             continue;
         }
         throw std::runtime_error(errno_message("Could not write MAVLink command bytes"));

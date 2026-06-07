@@ -134,6 +134,7 @@ Required gate inputs:
 - route match valid, fresh, finite, and high confidence;
 - command valid and finite;
 - `vx_mps == 0`;
+- `vy_mps == 0`;
 - yaw rate within configured bound.
 
 Acceptance:
@@ -141,13 +142,16 @@ Acceptance:
 - Tests cover each block reason.
 - Tests prove audit-not-ready blocks.
 - Tests prove nonzero forward speed blocks before command send.
+- Tests prove nonzero lateral speed blocks before command send.
 - Tests prove stale telemetry blocks.
 - Tests prove low-confidence or stale route match blocks.
 
 Status:
 
 - `LiveMavlinkOutputSafetyGate` now has an explicit `live_output_available` gate.
+- `LiveMavlinkOutputSafetyGate` requires zero lateral speed as well as zero forward speed for the first yaw-rate-only boundary.
 - Runtime-controlled live-route audit sessions use the compiled bridge availability state, which is currently unavailable.
+- `LiveMavlinkOutputSession` starts the bridge/writer lazily only after an allowed safety decision, so unavailable or otherwise blocked sessions can still audit command decisions without opening the writer.
 - Existing dry-run readiness diagnostics keep the older non-runtime path so historical `vehicle_not_armed` evidence remains stable.
 - Tests prove an unavailable live-output build blocks before fake writer send.
 
@@ -177,12 +181,14 @@ Acceptance:
 - Missing audit path blocks before bridge start.
 - Stop record is written on normal completion.
 - Stop record is attempted on early stop.
+- Writer start/send failures are audited and stop the session.
 
 Status:
 
 - Command audit records now include both the original `allowed` flag and an explicit `decision=allowed|blocked`.
 - Command audit records include command validity, velocity/yaw/confidence fields, read-only telemetry heartbeat/armed/mode/freshness fields, and route-match validity/confidence/progress/freshness fields.
 - The session audit checker remains compatible with existing dry-run-blocked logs while also counting expected allowed and blocked command decisions for future bench props-off runs.
+- Session tests now cover bridge start failure and writer send failure as audited stop conditions.
 
 ### Phase 6 - Bench-Only Pi Command
 
@@ -314,7 +320,7 @@ The first bench props-off live-output implementation is ready for review only wh
 - start/stop/send behavior is tested;
 - max command and max duration limits are enforced;
 - Pi command is documented;
-- dedicated Pi wrapper exists and remains fail-closed until writer implementation;
+- dedicated Pi wrapper exists and remains fail-closed until runtime writer attachment is explicitly reviewed;
 - no flight, tethered flight, ground movement, forward velocity, pitch/roll authority, or altitude authority is introduced.
 
 ## Non-Goals
