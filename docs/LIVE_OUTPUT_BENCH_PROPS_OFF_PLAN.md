@@ -253,6 +253,18 @@ Accepted fail-closed Pi evidence:
 - dry-run command quality passed with 150/150 valid commands;
 - live-output decisions remained fail-closed: `allowed=0 blocked=150 reason=live_output_unavailable`.
 
+Post-writer-library fail-closed Pi evidence:
+
+- `2026-06-07`, commit `6fc9cd2`;
+- run log: `artifacts/logs/bench-props-off-live-output-20260607T060503Z.log`;
+- audit log: `artifacts/logs/bench-props-off-live-output-audit-20260607T060503Z.log`;
+- Pi CTest passed 23/23 before the bench run;
+- live matching captured 150/150 valid matches with `directional_progress_passed=true`, `endpoint_progress_passed=true`, and `progress_gate_passed=true`;
+- telemetry health passed with `telemetry_bytes_dropped=0`;
+- dry-run command quality passed with 150/150 valid commands;
+- live-output decisions remained fail-closed: `allowed=0 blocked=150 reason=live_output_unavailable`;
+- this evidence was recorded after `LiveMavlinkSerialCommandWriter` existed as a tested library boundary, but before it was attached to runtime sessions or made available.
+
 ## Stop Conditions
 
 The live writer must stop immediately when any of these happens:

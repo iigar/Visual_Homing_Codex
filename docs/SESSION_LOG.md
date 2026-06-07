@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-07
+
+- Accepted the post-writer-library `jtzero` fail-closed bench props-off evidence at commit `6fc9cd2`: Pi CTest passed 23/23, live route matching captured 150/150 valid matches, directional and endpoint progress gates passed, telemetry health and dry-run command quality passed, readiness/session-audit checkers passed, and live-output remained unavailable with `allowed=0 blocked=150 reason=live_output_unavailable`.
+
 ## 2026-06-06
 
 - Added Milestone 6.8 Phase 4 safety-gate availability wiring. Runtime-controlled live-route audit sessions now use the compiled `LiveMavlinkBridge::command_output_available()` state, which currently blocks with `live_output_unavailable`; old dry-run readiness diagnostics remain on the historical path unless runtime controls are explicitly supplied.

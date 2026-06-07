@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-06-07 - Accept Post-Writer-Library Fail-Closed Pi Evidence
+
+Decision:
+- Accept the `jtzero` bench props-off runtime-controlled fail-closed run at commit `6fc9cd2` as post-writer-library boundary evidence.
+- Record both the main run log and session audit log in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
+- Keep `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and leave the serial writer unattached to runtime sessions.
+
+Why:
+- The run was collected after `LiveMavlinkSerialCommandWriter` existed as a tested concrete library boundary, so it proves the new code did not accidentally make runtime live output available.
+- Pi CTest passed 23/23, live route matching captured 150/150 valid matches, directional and endpoint progress gates passed, read-only telemetry health passed with zero dropped bytes, dry-run command quality passed, and both wrapper checkers passed.
+- All 150 live-output decisions remained blocked with `live_output_unavailable`.
+
+Impact:
+- The next implementation step can focus on the explicit writer attach/availability phase with a clean fail-closed baseline after the writer library landed.
+- Live MAVLink output remains blocked.
+
+Risk:
+- This evidence still proves only the unavailable-runtime boundary. It does not prove flight-controller acceptance, hardware serial send behavior in-session, or any flight behavior.
+
 ## 2026-06-06 - Wire Compile-Time Availability Into Safety Gate
 
 Decision:
