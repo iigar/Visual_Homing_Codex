@@ -1482,3 +1482,23 @@ Impact:
 
 Risk:
 - This evidence proves the unavailable-writer boundary only. It does not prove a concrete writer implementation, serial send behavior, or any flight behavior.
+
+## 2026-06-07 - Add Bench-Only Serial MAVLink Writer Boundary
+
+Decision:
+- Add `LiveMavlinkSerialCommandWriter` behind the existing `LiveMavlinkCommandWriter` interface.
+- Add an injectable `LiveMavlinkByteTransport` plus a POSIX serial transport backend.
+- Encode unsigned MAVLink2 `SET_POSITION_TARGET_LOCAL_NED` messages in `MAV_FRAME_BODY_NED` with position, velocity, acceleration, and yaw ignored by the type mask, zero-filled velocity fields, and yaw-rate as the only active command authority.
+- Keep `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and do not attach the writer to the runtime live-route session yet.
+
+Why:
+- The concrete writer should be reviewable and testable before it can be selected by the live route runtime path.
+- Memory-transport tests can validate frame shape, sequence increments, start/stop behavior, and command rejection without opening a serial device or sending bytes to hardware.
+
+Impact:
+- The project now has a concrete serial writer library boundary for the bench props-off phase.
+- Runtime Pi wrapper behavior is intentionally unchanged: it should still fail closed with `allowed=0 blocked=150 reason=live_output_unavailable` until the explicit attach/availability phase.
+- Live MAVLink output remains blocked.
+
+Risk:
+- The frame encoder and POSIX byte writer are unit-tested, but no flight-controller acceptance test has been run. The next phase must attach this only through the existing audit/session/safety gate and re-run the props-off wrapper before any send-enabled bench attempt.

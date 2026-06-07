@@ -35,6 +35,7 @@ add_library(visual_homing_core_lib
     src/live_mavlink_output_audit_log.cpp
     src/live_mavlink_output_session.cpp
     src/live_mavlink_output_safety_gate.cpp
+    src/live_mavlink_serial_writer.cpp
     src/mavlink_telemetry_adapter.cpp
     src/mavlink_telemetry_capture.cpp
     src/mavlink_telemetry_inspector.cpp
@@ -251,6 +252,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME live_mavlink_bridge COMMAND live_mavlink_bridge_test)
+
+    add_executable(live_mavlink_serial_writer_test
+        tests/live_mavlink_serial_writer_test.cpp
+    )
+
+    target_link_libraries(live_mavlink_serial_writer_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_mavlink_serial_writer_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_mavlink_serial_writer COMMAND live_mavlink_serial_writer_test)
 
     add_executable(live_mavlink_output_audit_log_test
         tests/live_mavlink_output_audit_log_test.cpp

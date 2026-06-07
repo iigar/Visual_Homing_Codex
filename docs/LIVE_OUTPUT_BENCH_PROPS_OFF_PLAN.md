@@ -84,7 +84,10 @@ Status:
 
 - The injectable `LiveMavlinkCommandWriter` interface exists and is tested through fake writers.
 - The default live bridge remains fail-closed when no writer is attached.
-- A concrete serial MAVLink command writer is not implemented.
+- A concrete serial MAVLink command writer now exists as a tested library boundary, but it is not attached to the runtime live-route session and does not make live output available yet.
+- The writer emits MAVLink2 `SET_POSITION_TARGET_LOCAL_NED` body-frame commands with velocity fields zero-filled but ignored by the type mask; yaw-rate is the only active command authority.
+- The writer rejects invalid commands, non-finite values, nonzero velocity, and yaw rates above the configured bench bound before any byte write.
+- The serial byte transport is injectable, so encoder/writer tests use memory transport without opening hardware.
 
 ### Phase 3 - Runtime And Operator Gates
 
@@ -232,6 +235,12 @@ Current expected result before a concrete writer exists:
 - session audit must report `allowed=0` and `blocked=150`.
 
 This wrapper is the command to revise before any future writer-enabled bench run.
+
+Current expected result after the serial writer library boundary exists but before it is attached:
+
+- unchanged from above;
+- the runtime wrapper must still report `allowed=0 blocked=150 reason=live_output_unavailable`;
+- `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE` remains `0`.
 
 Accepted fail-closed Pi evidence:
 
