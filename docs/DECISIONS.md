@@ -1464,3 +1464,21 @@ Impact:
 
 Risk:
 - Manual bench passes may need steadier movement or explicit directional thresholds before the wrapper passes again.
+
+## 2026-06-06 - Accept Fail-Closed Bench Props-Off Runtime Evidence
+
+Decision:
+- Accept the `jtzero` bench props-off runtime-controlled fail-closed run at commit `d355bf1` as Phase 6 evidence.
+- Record both the main run log and session audit log in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
+
+Why:
+- The run used the dedicated props-off wrapper after directional progress became mandatory for runtime live-output controls.
+- The wrapper proved the current boundary is operationally fail-closed: route matching, telemetry health, dry-run command quality, readiness checking, and session audit checking all passed while all 150 live-output decisions remained blocked with `live_output_unavailable`.
+
+Impact:
+- The fail-closed runtime path is now documented evidence, not just terminal output.
+- The next implementation step can focus on the reviewed concrete writer boundary while keeping sends disabled until the writer phase explicitly changes availability and is revalidated.
+- Live MAVLink output remains blocked.
+
+Risk:
+- This evidence proves the unavailable-writer boundary only. It does not prove a concrete writer implementation, serial send behavior, or any flight behavior.

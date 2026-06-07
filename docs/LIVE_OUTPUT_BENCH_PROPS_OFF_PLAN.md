@@ -233,6 +233,17 @@ Current expected result before a concrete writer exists:
 
 This wrapper is the command to revise before any future writer-enabled bench run.
 
+Accepted fail-closed Pi evidence:
+
+- `2026-06-06`, commit `d355bf1`;
+- run log: `artifacts/logs/bench-props-off-live-output-20260606T193652Z.log`;
+- audit log: `artifacts/logs/bench-props-off-live-output-audit-20260606T193652Z.log`;
+- Pi CTest passed 22/22 before the bench run;
+- live matching captured 150/150 valid matches with `directional_progress_passed=true`, `endpoint_progress_passed=true`, and `progress_gate_passed=true`;
+- telemetry health passed with `telemetry_bytes_dropped=0`;
+- dry-run command quality passed with 150/150 valid commands;
+- live-output decisions remained fail-closed: `allowed=0 blocked=150 reason=live_output_unavailable`.
+
 ## Stop Conditions
 
 The live writer must stop immediately when any of these happens:
