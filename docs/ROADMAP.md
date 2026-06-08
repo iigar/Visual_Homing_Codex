@@ -112,3 +112,13 @@
 - 1 km+ only after replay logs show stable behavior.
 - Start by integrating the validated live matcher with the existing bounded navigation and command-sink safety gates; keep live MAVLink output blocked until dry-run command behavior is reviewed, logged, and explicitly enabled through a separate safety step.
 - Status: deferred until the first bench props-off live-output boundary is separately implemented and reviewed. Live route matching can now feed `BoundedNavigator` and `DryRunCommandSink` metrics under `VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1`, optionally gate the run on dry-run command quality, optionally use read-only live MAVLink telemetry freshness as the dry-run health input, and still keep live MAVLink command output blocked. Milestone 6.7 now has 3/3 validated dry-run evidence, which is sufficient to design the bench props-off live-output boundary, not to start the flight ladder.
+
+## Milestone 8 - Visual Brake And Station-Keeping Assist
+
+- Treat this as a separate post-return feature, not part of the first live-output return boundary.
+- Start with dry-run-only visual braking: compare a reference frame/window against the current frame, estimate image displacement, compensate with flight-controller IMU attitude, and emit proposed counter-commands only to logs.
+- Keep ArduPilot responsible for attitude, altitude, motor mixing, and primary hold/failsafe behavior. The companion may only propose bounded assist commands after confidence, telemetry freshness, attitude-rate, deadband, gain, acceleration, cooldown, max-duration, and max-command gates pass.
+- Avoid direct "opposite direction immediately" behavior without damping. Use deadband, small gains, slew limits, rate limits, and timeout-to-autopilot-hold to prevent oscillation.
+- Require a scale source before any real lateral/forward station-keeping command is considered: rangefinder/altitude model, optical-flow-like scale, VIO, UWB, or another reviewed source.
+- First live-capable shape, if ever approved, should be bench/props-off and likely limited to zero/stop or very small body-frame corrections. No pitch/roll/altitude authority should be introduced from the companion without a new safety plan.
+- Status: planned only. Useful groundwork already exists through read-only MAVLink attitude telemetry, frame timing, bounded command models, and audit logging, but no visual braking controller or live station-keeping output exists.

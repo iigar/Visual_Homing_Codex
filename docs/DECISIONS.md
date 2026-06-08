@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-06-08 - Defer Visual Brake And Station-Keeping Assist
+
+Decision:
+- Record visual braking / station-keeping assist as a later milestone, separate from the first bench props-off live-output return boundary.
+- Define the later mode as dry-run-first: estimate image displacement against a reference frame/window, compensate with FC IMU/attitude telemetry, and log proposed bounded counter-commands before any live output is considered.
+- Keep ArduPilot responsible for hover, attitude/altitude hold, motor mixing, and failsafe behavior.
+
+Why:
+- The current route matcher supports coarse visual return, not metric hover or position hold.
+- Immediate opposite-direction commands without damping can oscillate. Any future assist mode needs deadband, gain/rate/slew limits, confidence gates, telemetry freshness gates, cooldowns, max duration, max command count, and timeout-to-autopilot-hold.
+- Real station keeping requires a scale source such as rangefinder/altitude model, optical-flow-like scale, VIO, UWB, or another reviewed input.
+
+Impact:
+- Milestone 6.8 remains focused on fail-closed bench props-off yaw-rate-only return output.
+- Useful groundwork can be kept now: read-only IMU/attitude telemetry, frame timing, confidence gates, bounded command models, and audit logs.
+
+Risk:
+- This feature must not be treated as hover capability until dry-run logs show stable non-oscillatory behavior and a separate safety plan exists.
+
 ## 2026-06-08 - Harden Pre-Attach Live Output Session Safety
 
 Decision:

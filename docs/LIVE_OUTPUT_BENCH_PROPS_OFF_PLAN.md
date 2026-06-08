@@ -338,3 +338,4 @@ The first bench props-off live-output implementation is ready for review only wh
 - Do not change flight modes.
 - Do not remove the route-quality, telemetry, command-quality, audit, or zero-forward-speed gates.
 - Do not treat successful bench yaw output as permission for flight.
+- Do not implement hover, visual braking, station keeping, or opposite-direction counter-command behavior in this boundary. Those belong to a later dry-run-first visual brake / station-keeping assist milestone.
