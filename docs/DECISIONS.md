@@ -3,21 +3,21 @@
 ## 2026-06-08 - Harden Pre-Attach Live Output Session Safety
 
 Decision:
-- Set the dedicated bench props-off wrapper's `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK` default to `0.30` while leaving the core default at `0.25`.
+- Set the dedicated bench props-off wrapper's progress tolerance defaults to `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS=10` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.30` while leaving the core defaults at `5` and `0.25`.
 - Start `LiveMavlinkOutputSession` audit without opening the bridge/writer; start the bridge lazily only after an allowed safety decision.
 - Require zero lateral speed in `LiveMavlinkOutputSafetyGate` for the first yaw-rate-only boundary.
 - Convert bridge start failures into audited blocked command decisions, require an audit record before writer send, and stop sessions explicitly on writer send failures.
 - Update the bench props-off wrapper banner to reflect that the serial writer library exists but is not attached or available.
 
 Why:
-- The `2026-06-08` `jtzero` post-hardening run reached `progress=1` and preserved the expected fail-closed live-output result, but fixed-frame endpoint-tail frames rolled back to `0.798658` and produced `progress_rollback=0.261745` against the inherited `0.25` wrapper threshold.
+- The `2026-06-08` `jtzero` post-hardening runs reached endpoint progress and preserved the expected fail-closed live-output result, but fixed-frame endpoint-tail ambiguity exceeded inherited wrapper progress tolerances: first `progress_rollback=0.261745` exceeded `0.25`, then `progress_regressions=8` exceeded `5`.
 - The next attach phase must not open the command serial writer while `live_output_available=false`.
 - The safety gate should enforce the full yaw-rate-only command contract independently of the serial writer's own validation.
 - An allowed safety decision followed by a writer failure must leave an explicit audit trail instead of throwing past the session boundary.
 
 Impact:
 - Current fail-closed Pi wrapper behavior should remain `allowed=0 blocked=150 reason=live_output_unavailable`.
-- The rollback tolerance change affects the dedicated bench wrapper readiness gate only; it does not make live MAVLink output available and does not alter writer safety gating.
+- The progress tolerance changes affect the dedicated bench wrapper readiness gate only; they do not make live MAVLink output available and do not alter writer safety gating.
 - Future writer-enabled sessions will distinguish `bridge_start_failed` and `send_failed` from ordinary safety blocks.
 - Audit record failures now stop the session before a writer send can occur.
 - Live MAVLink output remains blocked.

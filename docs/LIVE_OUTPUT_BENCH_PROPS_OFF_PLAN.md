@@ -275,7 +275,7 @@ Post-hardening wrapper note:
 
 - `2026-06-08`, commit `eb76339`, Pi CTest passed 23/23 and live output remained fail-closed with `allowed=0 blocked=150 reason=live_output_unavailable`;
 - the fixed-frame route match failed progress gate after reaching `progress=1` because endpoint-tail frames rolled back to `0.798658`, yielding `progress_rollback=0.261745` against the inherited `0.25` wrapper threshold;
-- the dedicated bench wrapper now defaults `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.30` while core defaults remain `0.25`;
+- the dedicated bench wrapper now defaults `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS=10` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.30` while core defaults remain `5` and `0.25`;
 - this is a wrapper readiness tolerance only, not a live-output availability change. Before runtime writer attachment, prefer endpoint-complete stop semantics so command generation stops after the route endpoint instead of collecting tail frames.
 
 ## Stop Conditions
