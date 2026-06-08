@@ -279,6 +279,18 @@ Post-hardening wrapper note:
 - this is a wrapper readiness tolerance only, not a live-output availability change. Before runtime writer attachment, prefer endpoint-complete stop semantics so command generation stops after the route endpoint instead of collecting tail frames.
 - Core now has opt-in endpoint-complete stop semantics (`stop_at_endpoint_progress`, `endpoint_stop_triggered`, `stop_reason`). The dedicated Pi wrapper enables it for the bench props-off boundary and the readiness/audit checkers accept variable-length command sessions through explicit `auto` expectations.
 
+Endpoint-stop fail-closed Pi evidence:
+
+- `2026-06-08`, commit `98d5407`;
+- run log: `artifacts/logs/bench-props-off-live-output-20260608T210953Z.log`;
+- audit log: `artifacts/logs/bench-props-off-live-output-audit-20260608T210953Z.log`;
+- Pi CTest passed 23/23 before the bench run;
+- live matching stopped at endpoint with `frames=129/150`, `endpoint_stop=true`, and `stop_reason=endpoint_progress_reached`;
+- live matching passed `directional_progress_passed=true`, `endpoint_progress_passed=true`, and `progress_gate_passed=true`;
+- telemetry health passed with `telemetry_bytes_dropped=0`;
+- dry-run command quality passed with 129/129 valid commands;
+- live-output decisions remained fail-closed: `allowed=0 blocked=129 reason=live_output_unavailable`.
+
 ## Stop Conditions
 
 The live writer must stop immediately when any of these happens:

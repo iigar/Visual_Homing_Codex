@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-09 - Accept Endpoint-Stop Fail-Closed Bench Evidence
+
+Decision:
+- Accept the `jtzero` bench props-off endpoint-stop fail-closed run at commit `98d5407` as the current pre-attach live-output boundary evidence.
+- Keep live output unavailable and keep the serial writer unattached to runtime sessions.
+
+Why:
+- The run proves the dedicated bench wrapper now stops command generation at endpoint completion instead of collecting post-endpoint tail frames.
+- Pi CTest passed 23/23, live route matching stopped at `frames=129/150`, route progress gates passed, read-only telemetry stayed healthy, dry-run command quality passed, and both readiness and session-audit checkers passed.
+- All 129 live-output decisions remained blocked with `live_output_unavailable`.
+
+Impact:
+- The next implementation step can focus on the reviewed writer attach/availability phase with endpoint-tail command generation removed from the pre-attach baseline.
+- Checker expectations for this wrapper are variable-length by design and must be derived from the compact run log/audit log rather than assuming 150 commands.
+
+Risk:
+- This evidence still proves only the unavailable-runtime boundary. It does not prove serial writer attachment, hardware serial writes during a live session, or any flight behavior.
+
 ## 2026-06-09 - Enable Endpoint-Complete Stop In Bench Wrapper
 
 Decision:

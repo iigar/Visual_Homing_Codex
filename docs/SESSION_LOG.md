@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Accepted the endpoint-stop `jtzero` bench props-off fail-closed evidence at commit `98d5407`: Pi CTest passed 23/23, live matching stopped at `frames=129/150` with `endpoint_stop=true` and `stop_reason=endpoint_progress_reached`, route progress gates passed, telemetry health and dry-run command quality passed, readiness/session-audit checkers passed, and live output remained unavailable with `allowed=0 blocked=129 reason=live_output_unavailable`.
 - Wired endpoint-complete stop into the dedicated bench props-off wrapper path. The active-profile CLI now accepts an opt-in endpoint-stop flag after runtime live-output args, `test-core-pi.sh` exposes it through `VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS`, and the readiness/session-audit checkers support `auto` counts for variable-length endpoint-stop sessions while preserving the old 150-frame defaults.
 
 ## 2026-06-08
