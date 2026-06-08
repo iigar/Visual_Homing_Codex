@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-06-09 - Add Explicit Serial Writer Attach Build Flag
+
+Decision:
+- Add `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER` as a third compile-time flag for attaching the concrete serial writer to runtime live-route sessions.
+- Require both `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` and `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` before this attach flag can configure.
+- Keep the default build and the ordinary Pi wrapper on `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0`.
+
+Why:
+- The writer library existed, but the runtime live-route session still used a dry-run bridge. A separate attach flag makes the transition from library-present to runtime-attached explicit and reviewable.
+- The current endpoint-stop fail-closed evidence should remain stable until a deliberate bench writer build is requested.
+
+Impact:
+- Triple-flag bench builds compile with `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=1` and create a `LiveMavlinkBridge` backed by `LiveMavlinkSerialCommandWriter` for runtime-controlled live-route sessions.
+- Default builds still block as before, and the dedicated Pi wrapper still proves the unavailable boundary unless it is run from a separately configured attach build.
+
+Risk:
+- This is the first code path that can open a command serial writer in a reviewed bench-scope build. It must only be used with propellers removed, physical restraint, explicit runtime/operator confirmation, and the existing audit/safety gates.
+
 ## 2026-06-09 - Accept Endpoint-Stop Fail-Closed Bench Evidence
 
 Decision:

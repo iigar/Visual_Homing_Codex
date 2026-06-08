@@ -54,10 +54,16 @@ vh::NavigationCommand valid_command() {
 } // namespace
 
 int main() {
+#if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE
+    static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED == 0);
+    static_assert(!vh::LiveMavlinkBridge::command_output_compiled_out());
+    static_assert(vh::LiveMavlinkBridge::command_output_available());
+#else
     static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED == 1);
     static_assert(VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE == 0);
     static_assert(vh::LiveMavlinkBridge::command_output_compiled_out());
     static_assert(!vh::LiveMavlinkBridge::command_output_available());
+#endif
 #if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BUILD_REQUESTED
     static_assert(vh::LiveMavlinkBridge::build_requested());
     static_assert(vh::LiveMavlinkBridge::bench_props_off_scope());

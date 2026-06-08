@@ -56,14 +56,14 @@ The first writer must not send:
 - When `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=OFF`, the build must behave exactly as it does today: live output unavailable and tests proving rejection still pass.
 - `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` by itself must fail.
 - `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` by itself must fail.
-- When both options are `ON`, the build may enter the reviewed bench scope, but live command output must stay unavailable until the narrow bench writer is implemented and tested.
+- When both options are `ON`, the build may enter the reviewed bench scope, but live command output must stay unavailable until the separate `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=ON` attach flag explicitly changes `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE`.
 - Keep runtime enable and operator confirmation separate from the compile-time option.
 
 Acceptance:
 
 - Default desktop and Pi builds still leave live output disabled.
 - A dedicated test proves the disabled build rejects live output.
-- Enabling the bench-scope build options does not make live output available until the writer phase explicitly changes `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE`.
+- Enabling the bench-scope build options does not make live output available until the explicit writer attach flag changes `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE`.
 - Enabling the build option does not send commands unless runtime gates are also satisfied.
 
 ### Phase 2 - Live Writer Interface
@@ -84,10 +84,11 @@ Status:
 
 - The injectable `LiveMavlinkCommandWriter` interface exists and is tested through fake writers.
 - The default live bridge remains fail-closed when no writer is attached.
-- A concrete serial MAVLink command writer now exists as a tested library boundary, but it is not attached to the runtime live-route session and does not make live output available yet.
+- A concrete serial MAVLink command writer now exists as a tested library boundary, and a separate attach flag can wire it into runtime live-route sessions for reviewed bench-scope builds.
 - The writer emits MAVLink2 `SET_POSITION_TARGET_LOCAL_NED` body-frame commands with velocity fields zero-filled but ignored by the type mask; yaw-rate is the only active command authority.
 - The writer rejects invalid commands, non-finite values, nonzero velocity, and yaw rates above the configured bench bound before any byte write.
 - The serial byte transport is injectable, so encoder/writer tests use memory transport without opening hardware.
+- `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=ON` is valid only with both reviewed live-output build-scope flags.
 
 ### Phase 3 - Runtime And Operator Gates
 

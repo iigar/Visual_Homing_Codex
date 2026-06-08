@@ -12,6 +12,10 @@
 #define VISUAL_HOMING_BENCH_PROPS_OFF_LIVE_OUTPUT_SCOPE 0
 #endif
 
+#ifndef VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE
+#define VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE 0
+#endif
+
 namespace vh {
 
 class LiveMavlinkCommandWriter {
@@ -31,11 +35,11 @@ public:
     explicit LiveMavlinkBridge(LiveMavlinkCommandWriter& writer);
 
     static constexpr bool command_output_compiled_out() noexcept {
-        return true;
+        return VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE == 0;
     }
 
     static constexpr bool command_output_available() noexcept {
-        return false;
+        return VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE == 1;
     }
 
     static constexpr bool build_requested() noexcept {

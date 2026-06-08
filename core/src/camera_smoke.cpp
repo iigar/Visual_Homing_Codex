@@ -22,6 +22,7 @@
 #include "visual_homing/live_mavlink_output_audit_log.hpp"
 #include "visual_homing/live_mavlink_output_session.hpp"
 #include "visual_homing/live_mavlink_output_safety_gate.hpp"
+#include "visual_homing/live_mavlink_serial_writer.hpp"
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
@@ -626,6 +627,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         if (!std::isfinite(config.live_output_max_duration_ms) || config.live_output_max_duration_ms < 0.0) {
             throw std::invalid_argument("Live route matching live_output_max_duration_ms must be finite and non-negative");
         }
+#if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE
+        if (config.live_output_runtime_controls_provided && !config.use_live_telemetry_stream) {
+            throw std::invalid_argument("Live route matching attached live output requires live telemetry stream device configuration");
+        }
+#endif
     }
 
     const auto route = read_route_signature_file(config.route_path);
@@ -644,7 +650,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     DryRunCommandSink command_sink(&metrics);
     std::optional<LiveMavlinkOutputAuditLog> session_audit_log;
-    std::optional<DryRunCommandSink> session_bridge;
+    std::optional<DryRunCommandSink> session_dry_run_bridge;
+    std::optional<PosixSerialByteTransport> live_output_transport;
+    std::optional<LiveMavlinkSerialCommandWriter> live_output_writer;
+    std::optional<LiveMavlinkBridge> live_output_bridge;
     std::optional<LiveMavlinkOutputSession> live_output_session;
     HealthMonitor health(now());
     health.set_links(true, config.emit_dry_run_commands && !config.use_live_telemetry_stream, true);
@@ -702,7 +711,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " live_output_runtime_enabled=" << (config.live_output_runtime_enabled ? "true" : "false")
                     << " live_output_operator_confirmed=" << (config.live_output_operator_confirmed ? "true" : "false")
                     << " live_output_max_commands=" << config.live_output_max_commands
-                    << " live_output_max_duration_ms=" << config.live_output_max_duration_ms;
+                    << " live_output_max_duration_ms=" << config.live_output_max_duration_ms
+                    << " live_output_writer_attached="
+                    << (LiveMavlinkBridge::command_output_available() ? "true" : "false");
+#if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE
+            if (config.live_output_runtime_controls_provided) {
+                metrics << " live_output_command_device=" << config.telemetry_stream.device_path
+                        << " live_output_command_baud=" << config.telemetry_stream.baud_rate;
+            }
+#endif
         }
     }
     metrics << "\n";
@@ -815,7 +832,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
 
     if (config.emit_live_output_session_audit) {
         session_audit_log.emplace(LiveMavlinkOutputAuditLogConfig{config.live_output_session_audit_path, false});
-        session_bridge.emplace(nullptr);
+        MavlinkBridge* session_bridge = nullptr;
+#if VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE
+        if (config.live_output_runtime_controls_provided) {
+            LiveMavlinkSerialWriterConfig writer_config;
+            writer_config.device_path = config.telemetry_stream.device_path;
+            writer_config.baud_rate = config.telemetry_stream.baud_rate;
+            writer_config.max_abs_yaw_rate_radps = config.max_abs_dry_run_yaw_rate_radps;
+            live_output_transport.emplace(writer_config.device_path, writer_config.baud_rate);
+            live_output_writer.emplace(writer_config, *live_output_transport);
+            live_output_bridge.emplace(*live_output_writer);
+            session_bridge = &*live_output_bridge;
+        } else
+#endif
+        {
+            session_dry_run_bridge.emplace(nullptr);
+            session_bridge = &*session_dry_run_bridge;
+        }
         live_output_session.emplace(
             LiveMavlinkOutputSessionConfig{
                 "match_live_route",
