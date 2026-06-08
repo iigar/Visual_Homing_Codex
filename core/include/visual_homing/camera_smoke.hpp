@@ -90,6 +90,7 @@ struct LiveRouteMatchingConfig {
     bool require_endpoint_progress = false;
     double endpoint_start_progress = 0.15;
     double endpoint_end_progress = 0.85;
+    bool stop_at_endpoint_progress = false;
     bool operator_cue_enabled = false;
     std::size_t operator_cue_seconds = 0;
     bool operator_cue_bell = true;
@@ -136,6 +137,8 @@ struct LiveRouteMatchingResult {
     bool directional_progress_passed = true;
     bool endpoint_progress_passed = true;
     bool progress_gate_passed = true;
+    bool endpoint_stop_triggered = false;
+    std::string stop_reason = "not_started";
     bool used_live_telemetry_stream = false;
     bool telemetry_warmup_passed = false;
     double telemetry_warmup_elapsed_ms = 0.0;
@@ -173,6 +176,9 @@ struct LiveRouteMatchingResult {
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
+bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress);
+bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,
+                                               const LiveRouteMatchingResult& result);
 LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics);
 
 } // namespace vh

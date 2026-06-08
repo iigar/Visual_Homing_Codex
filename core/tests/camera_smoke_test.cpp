@@ -146,14 +146,42 @@ int main() {
     assert(match_result.valid_matches == 0);
     assert(match_result.dry_run_commands == 0);
     assert(match_result.valid_dry_run_commands == 0);
+    assert(match_result.stop_reason == "not_started");
 
     const auto match_output = match_metrics.str();
     assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
-    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85") != std::string::npos);
+    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85 stop_at_endpoint_progress=false") != std::string::npos);
     assert(match_output.find("dry_run_commands=true live_telemetry_stream=false telemetry_warmup_timeout_ms=1500 telemetry_max_age_ms=500 require_live_telemetry_health=false") != std::string::npos);
     assert(match_output.find("navigator_minimum_confidence=0.8 navigator_max_match_age_ms=150 navigator_yaw_gain=0.5 navigator_max_yaw_rate_radps=0.2 navigator_max_yaw_accel_radps2=0.7 navigator_forward_speed_mps=0.1") != std::string::npos);
     assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
     assert(match_output.find("live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false") != std::string::npos);
+
+    vh::LiveRouteMatchingConfig endpoint_forward;
+    endpoint_forward.expected_progress = "forward";
+    endpoint_forward.endpoint_start_progress = 0.15;
+    endpoint_forward.endpoint_end_progress = 0.85;
+    assert(!vh::live_route_match_endpoint_reached(endpoint_forward, 0.84));
+    assert(vh::live_route_match_endpoint_reached(endpoint_forward, 0.85));
+
+    vh::LiveRouteMatchingConfig endpoint_reverse = endpoint_forward;
+    endpoint_reverse.expected_progress = "reverse";
+    assert(!vh::live_route_match_endpoint_reached(endpoint_reverse, 0.16));
+    assert(vh::live_route_match_endpoint_reached(endpoint_reverse, 0.15));
+
+    vh::LiveRouteMatchingConfig endpoint_any = endpoint_forward;
+    endpoint_any.expected_progress = "any";
+    assert(!vh::live_route_match_endpoint_reached(endpoint_any, 1.0));
+
+    vh::LiveRouteMatchingConfig frame_count_config;
+    frame_count_config.frames_to_capture = 150;
+    vh::LiveRouteMatchingResult frame_count_result;
+    frame_count_result.frames_captured = 150;
+    assert(vh::live_route_match_has_required_frame_count(frame_count_config, frame_count_result));
+    frame_count_result.frames_captured = 100;
+    assert(!vh::live_route_match_has_required_frame_count(frame_count_config, frame_count_result));
+    frame_count_config.stop_at_endpoint_progress = true;
+    frame_count_result.endpoint_stop_triggered = true;
+    assert(vh::live_route_match_has_required_frame_count(frame_count_config, frame_count_result));
 
     bool rejected_match_frames = false;
     try {
@@ -225,6 +253,19 @@ int main() {
         rejected_match_endpoint_order = true;
     }
     assert(rejected_match_endpoint_order);
+
+    bool rejected_match_endpoint_stop_any = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.expected_progress = "any";
+        invalid.stop_at_endpoint_progress = true;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_stop_any = true;
+    }
+    assert(rejected_match_endpoint_stop_any);
 
     bool rejected_match_telemetry_warmup = false;
     try {

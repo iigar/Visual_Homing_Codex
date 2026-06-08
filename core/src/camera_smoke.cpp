@@ -192,6 +192,31 @@ LiveMavlinkOutputSafetySnapshot live_output_gate_snapshot(
     return snapshot;
 }
 
+} // namespace
+
+bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress) {
+    if (config.expected_progress == "forward") {
+        return progress >= config.endpoint_end_progress;
+    }
+    if (config.expected_progress == "reverse") {
+        return progress <= config.endpoint_start_progress;
+    }
+    return false;
+}
+
+bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,
+                                               const LiveRouteMatchingResult& result) {
+    if (result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)) {
+        return true;
+    }
+    return config.stop_at_endpoint_progress
+        && result.endpoint_stop_triggered
+        && result.frames_captured > 0
+        && result.frames_captured < static_cast<std::uint64_t>(config.frames_to_capture);
+}
+
+namespace {
+
 std::string format_reason_counts(const std::map<std::string, std::uint64_t>& reason_counts) {
     if (reason_counts.empty()) {
         return "none";
@@ -573,6 +598,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.endpoint_start_progress >= config.endpoint_end_progress) {
         throw std::invalid_argument("Live route matching endpoint_start_progress must be less than endpoint_end_progress");
     }
+    if (config.stop_at_endpoint_progress && config.expected_progress == "any") {
+        throw std::invalid_argument("Live route matching stop_at_endpoint_progress requires forward or reverse expected_progress");
+    }
     if (config.minimum_valid_dry_run_command_fraction < 0.0 || config.minimum_valid_dry_run_command_fraction > 1.0) {
         throw std::invalid_argument("Live route matching minimum_valid_dry_run_command_fraction must be in [0, 1]");
     }
@@ -647,6 +675,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " require_endpoint_progress=" << (config.require_endpoint_progress ? "true" : "false")
             << " endpoint_start_progress=" << config.endpoint_start_progress
             << " endpoint_end_progress=" << config.endpoint_end_progress
+            << " stop_at_endpoint_progress=" << (config.stop_at_endpoint_progress ? "true" : "false")
             << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false")
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
@@ -953,6 +982,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages;
             }
             metrics << "\n";
+
+            if (config.stop_at_endpoint_progress
+                && match.valid
+                && live_route_match_endpoint_reached(config, match.progress)) {
+                result.endpoint_stop_triggered = true;
+                result.stop_reason = "endpoint_progress_reached";
+                break;
+            }
         } else {
             ++result.empty_polls;
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -964,8 +1001,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
 
     source.stop();
+    if (result.stop_reason == "not_started") {
+        result.stop_reason =
+            result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
+                ? "frame_limit_reached"
+                : "capture_timeout";
+    }
     if (live_output_session) {
-        live_output_session->stop("match_live_route_complete");
+        live_output_session->stop(result.endpoint_stop_triggered ? "endpoint_progress_reached" : "match_live_route_complete");
     }
     if (config.emit_dry_run_commands) {
         command_sink.stop();
@@ -1045,7 +1088,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
 
     result.passed = result.started
-        && result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
+        && live_route_match_has_required_frame_count(config, result)
         && result.valid_matches == result.frames_captured
         && result.progress_gate_passed
         && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
@@ -1074,6 +1117,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " directional_progress_passed=" << (result.directional_progress_passed ? "true" : "false")
             << " endpoint_progress_passed=" << (result.endpoint_progress_passed ? "true" : "false")
             << " progress_gate_passed=" << (result.progress_gate_passed ? "true" : "false")
+            << " endpoint_stop_triggered=" << (result.endpoint_stop_triggered ? "true" : "false")
+            << " stop_reason=" << result.stop_reason
             << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
             << " telemetry_warmup_elapsed_ms=" << result.telemetry_warmup_elapsed_ms
@@ -1116,6 +1161,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " minmax_progress=" << result.min_progress_seen << ".." << result.max_progress_seen
             << " endpoint_passed=" << bool_word(result.endpoint_progress_passed)
             << " progress_gate_passed=" << bool_word(result.progress_gate_passed)
+            << " endpoint_stop=" << bool_word(result.endpoint_stop_triggered)
+            << " stop_reason=" << result.stop_reason
             << " confidence_min_avg=" << result.minimum_confidence_seen << "/" << result.average_confidence
             << " telemetry_health=" << bool_word(result.live_telemetry_health_passed)
             << " telemetry_dropped=" << result.telemetry_bytes_dropped
