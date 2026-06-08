@@ -35,6 +35,16 @@ require_count() {
     fi
 }
 
+resolve_expected_count() {
+    local expected="$1"
+    local actual="$2"
+    if [[ "${expected}" == "auto" ]]; then
+        printf '%s' "${actual}"
+    else
+        printf '%s' "${expected}"
+    fi
+}
+
 check_audit_log() {
     local audit_path="$1"
     if [[ ! -f "${audit_path}" ]]; then
@@ -46,10 +56,22 @@ check_audit_log() {
     start_count="$(grep -c '^live_output_audit event=start' "${audit_path}" || true)"
     command_count="$(grep -c '^live_output_audit event=command ' "${audit_path}" || true)"
     stop_count="$(grep -c '^live_output_audit event=stop ' "${audit_path}" || true)"
+    local resolved_expected_commands resolved_expected_allowed resolved_expected_blocked
+    resolved_expected_commands="$(resolve_expected_count "${expected_commands}" "${command_count}")"
+    resolved_expected_allowed="$(resolve_expected_count "${expected_allowed_commands}" "0")"
+    if [[ "${expected_blocked_commands}" == "auto" ]]; then
+        if [[ ! "${resolved_expected_allowed}" =~ ^[0-9]+$ ]]; then
+            echo "session_audit_log_check path=${audit_path} passed=false field=allowed_commands expected=uint actual=${resolved_expected_allowed}" >&2
+            return 1
+        fi
+        resolved_expected_blocked="$((command_count - resolved_expected_allowed))"
+    else
+        resolved_expected_blocked="${expected_blocked_commands}"
+    fi
 
     local failed=0
     require_count "${audit_path}" "start_events" "1" "${start_count}" || failed=1
-    require_count "${audit_path}" "command_events" "${expected_commands}" "${command_count}" || failed=1
+    require_count "${audit_path}" "command_events" "${resolved_expected_commands}" "${command_count}" || failed=1
     require_count "${audit_path}" "stop_events" "1" "${stop_count}" || failed=1
 
     local stop_line stop_reason
@@ -64,8 +86,8 @@ check_audit_log() {
     command_summary="$(awk \
         -v audit_path="${audit_path}" \
         -v expected_reason="${expected_reason}" \
-        -v expected_allowed_commands="${expected_allowed_commands}" \
-        -v expected_blocked_commands="${expected_blocked_commands}" '
+        -v expected_allowed_commands="${resolved_expected_allowed}" \
+        -v expected_blocked_commands="${resolved_expected_blocked}" '
         function field(key, parts, n, i, kv) {
             n = split($0, parts, " ")
             for (i = 1; i <= n; ++i) {

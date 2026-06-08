@@ -277,7 +277,7 @@ Post-hardening wrapper note:
 - the fixed-frame route match failed progress gate after reaching `progress=1` because endpoint-tail frames rolled back to `0.798658`, yielding `progress_rollback=0.261745` against the inherited `0.25` wrapper threshold;
 - the dedicated bench wrapper now defaults `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_REGRESSIONS=10` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PROGRESS_ROLLBACK=0.30` while core defaults remain `5` and `0.25`;
 - this is a wrapper readiness tolerance only, not a live-output availability change. Before runtime writer attachment, prefer endpoint-complete stop semantics so command generation stops after the route endpoint instead of collecting tail frames.
-- Core now has opt-in endpoint-complete stop groundwork (`stop_at_endpoint_progress`, `endpoint_stop_triggered`, `stop_reason`) but the dedicated Pi wrapper keeps fixed-frame behavior until readiness and audit checkers accept variable-length command sessions.
+- Core now has opt-in endpoint-complete stop semantics (`stop_at_endpoint_progress`, `endpoint_stop_triggered`, `stop_reason`). The dedicated Pi wrapper enables it for the bench props-off boundary and the readiness/audit checkers accept variable-length command sessions through explicit `auto` expectations.
 
 ## Stop Conditions
 

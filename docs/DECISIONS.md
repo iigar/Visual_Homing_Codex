@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-06-09 - Enable Endpoint-Complete Stop In Bench Wrapper
+
+Decision:
+- Enable opt-in endpoint-complete stop for the dedicated bench props-off live-output wrapper.
+- Keep the behavior tied to explicit runtime live-output session args and `expected_progress=forward|reverse`; `any` progress remains invalid for endpoint-stop.
+- Allow readiness and session-audit checkers to validate variable-length endpoint-stop sessions through explicit `auto` expectations.
+
+Why:
+- The recent `jtzero` runs reached endpoint progress before the fixed 150-frame window ended, so tail frames after endpoint completion created regressions/rollback unrelated to the intended return segment.
+- Before any runtime writer attachment, command generation should stop when the reviewed endpoint condition is reached rather than continuing to produce post-endpoint command attempts.
+
+Impact:
+- The bench props-off wrapper now expects `stop_reason=endpoint_progress_reached`, `endpoint_stop=true`, and fail-closed `live_output_unavailable` decisions for however many frames were captured before endpoint stop.
+- Legacy readiness and audit checker defaults still validate the old 150-frame fixed-window logs unless `auto` expectations are explicitly set.
+- Live MAVLink output remains unavailable; this changes session length, not writer availability.
+
+Risk:
+- Shorter sessions reduce endpoint-tail noise but make command counts route/operator dependent, so downstream tooling must use the compact run log and audit log together instead of assuming 150 commands.
+
 ## 2026-06-08 - Defer Visual Brake And Station-Keeping Assist
 
 Decision:

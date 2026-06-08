@@ -810,23 +810,24 @@ int main(int argc, char** argv) {
 
     if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16 || argc == 17 || argc == 19
             || argc == 20 || argc == 22 || argc == 27 || argc == 29 || argc == 33 || argc == 35
-            || argc == 39 || argc == 41 || argc == 43 || argc == 47)
+            || argc == 39 || argc == 41 || argc == 43 || argc == 47 || argc == 48)
         && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
             auto record = vh::load_active_camera_profile(argv[2], argv[3]);
-            if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47) {
+            if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) {
                 record.profile = profile_with_target_override(
                     record.profile,
                     parse_int_arg(argv[14], "target_width"),
                     parse_int_arg(argv[15], "target_height"));
             }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
-            const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47) ? 16 : 0);
-            const auto operator_cue_arg_offset = (argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 17 : ((argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47) ? 19 : 0);
-            const auto dry_run_command_arg_offset = (argc == 27 || argc == 33 || argc == 39) ? 20 : ((argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47) ? 22 : 0);
-            const auto live_telemetry_arg_offset = argc == 39 ? 33 : ((argc == 41 || argc == 43 || argc == 47) ? 35 : 0);
-            const auto session_audit_arg_offset = (argc == 43 || argc == 47) ? 41 : 0;
-            const auto live_output_runtime_arg_offset = argc == 47 ? 43 : 0;
+            const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 16 : 0);
+            const auto operator_cue_arg_offset = (argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 17 : ((argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 19 : 0);
+            const auto dry_run_command_arg_offset = (argc == 27 || argc == 33 || argc == 39) ? 20 : ((argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 22 : 0);
+            const auto live_telemetry_arg_offset = argc == 39 ? 33 : ((argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 35 : 0);
+            const auto session_audit_arg_offset = (argc == 43 || argc == 47 || argc == 48) ? 41 : 0;
+            const auto live_output_runtime_arg_offset = (argc == 47 || argc == 48) ? 43 : 0;
+            const auto endpoint_stop_arg_offset = argc == 48 ? 47 : 0;
             auto config = live_route_matching_config_from_profile(
                 record.profile,
                 parse_int_arg(argv[4], "fps"),
@@ -856,6 +857,9 @@ int main(int argc, char** argv) {
             }
             if (live_output_runtime_arg_offset != 0) {
                 apply_live_output_runtime_args(config, argv, live_output_runtime_arg_offset);
+            }
+            if (endpoint_stop_arg_offset != 0) {
+                config.stop_at_endpoint_progress = parse_bool_arg(argv[endpoint_stop_arg_offset]);
             }
             const auto result = vh::match_live_camera_route(config, std::cout);
             return result.passed ? 0 : 2;
@@ -1075,7 +1079,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
-    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds]]]]]]]]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds [stop_at_endpoint_progress]]]]]]]]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

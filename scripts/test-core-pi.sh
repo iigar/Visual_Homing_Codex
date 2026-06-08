@@ -23,6 +23,7 @@ live_route_match_max_progress_rollback="${VISUAL_HOMING_LIVE_ROUTE_MATCH_MAX_PRO
 live_route_match_require_endpoint_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS:-0}"
 live_route_match_endpoint_start_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_START_PROGRESS:-0.15}"
 live_route_match_endpoint_end_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_END_PROGRESS:-0.85}"
+live_route_match_stop_at_endpoint_progress="${VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS:-0}"
 live_route_dry_run_commands="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS:-0}"
 live_route_navigator_min_confidence="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MIN_CONFIDENCE:-${live_route_match_min_confidence}}"
 live_route_navigator_max_match_age_ms="${VISUAL_HOMING_LIVE_ROUTE_NAVIGATOR_MAX_MATCH_AGE_MS:-250}"
@@ -104,6 +105,7 @@ for bool_env in \
     VISUAL_HOMING_PERTURB_ROUTE \
     VISUAL_HOMING_ROUTE_DISTINCTIVENESS \
     VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS \
+    VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
@@ -121,6 +123,11 @@ case "${live_route_match_expected_progress}" in
         exit 2
         ;;
 esac
+
+if [[ "${live_route_match_stop_at_endpoint_progress}" == "1" && "${live_route_match_expected_progress}" == "any" ]]; then
+    echo "VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS=1 requires VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=forward or reverse" >&2
+    exit 2
+fi
 
 if [[ "${VISUAL_HOMING_DISABLE_RUN_LOG:-0}" != "1" ]]; then
     mkdir -p "$(dirname "${run_log_file}")"
@@ -180,6 +187,7 @@ if [[ "${live_route_match_use_live_mavlink_telemetry}" == "1" ]]; then
     )
 fi
 live_route_session_audit_args=()
+live_route_endpoint_stop_args=()
 if [[ "${live_route_session_audit}" == "1" ]]; then
     if [[ "${live_route_dry_run_commands}" != "1" ]]; then
         echo "VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT=1 currently requires VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_COMMANDS=1" >&2
@@ -216,6 +224,14 @@ if [[ "${live_route_session_audit}" == "1" ]]; then
             "${live_output_max_seconds}"
         )
     fi
+fi
+
+if [[ "${live_route_match_stop_at_endpoint_progress}" == "1" ]]; then
+    if [[ ${#live_route_session_audit_args[@]} -lt 6 ]]; then
+        echo "VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS currently requires live-output runtime session args" >&2
+        exit 2
+    fi
+    live_route_endpoint_stop_args=("${live_route_match_stop_at_endpoint_progress}")
 fi
 
 clean=0
@@ -454,7 +470,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${operator_cue_args[@]}" \
         "${live_route_dry_run_command_args[@]}" \
         "${live_route_match_telemetry_args[@]}" \
-        "${live_route_session_audit_args[@]}"
+        "${live_route_session_audit_args[@]}" \
+        "${live_route_endpoint_stop_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then

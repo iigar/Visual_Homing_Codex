@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-09
+
+- Wired endpoint-complete stop into the dedicated bench props-off wrapper path. The active-profile CLI now accepts an opt-in endpoint-stop flag after runtime live-output args, `test-core-pi.sh` exposes it through `VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS`, and the readiness/session-audit checkers support `auto` counts for variable-length endpoint-stop sessions while preserving the old 150-frame defaults.
+
 ## 2026-06-08
 
 - Added opt-in endpoint-complete stop groundwork in the live route matcher: core config/result now expose `stop_at_endpoint_progress`, `endpoint_stop_triggered`, and `stop_reason`, with tested helper logic for forward/reverse endpoint detection and early-stop frame-count acceptance. The Pi bench wrapper still leaves it disabled until readiness/session-audit checkers are updated for variable-length sessions.
