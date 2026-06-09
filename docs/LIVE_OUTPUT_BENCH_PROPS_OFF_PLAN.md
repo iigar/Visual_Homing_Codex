@@ -22,6 +22,7 @@ This plan does not authorize flight, tethered flight, ground movement, or autono
 - Default `LiveMavlinkBridge` still rejects starts and sends when no reviewed writer is attached.
 - Dry-run route matching, dry-run commands, and session audit are validated.
 - A concrete serial MAVLink command writer library exists, but the ordinary/default Pi wrapper does not attach it.
+- Default desktop/Pi test scripts explicitly pass the live-output CMake options as `OFF` so stale CMake cache state cannot silently turn an ordinary run into an attach-capable build.
 
 ## First Writer Scope
 
@@ -254,6 +255,12 @@ Current expected result before a concrete writer exists:
 - session audit must report `allowed=0` and `blocked=150`.
 
 This wrapper is the command to revise before any future writer-enabled bench run.
+
+Default build-script cache guard:
+
+- `scripts/test-core.ps1` explicitly configures `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=OFF`, `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=OFF`, and `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=OFF`;
+- `scripts/test-core-pi.sh` does the same unless explicit Pi CMake env flags request a reviewed non-default build scope;
+- when `VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=1`, the Pi script uses `core/build-pi-live-output-attach` by default instead of the ordinary `core/build-pi` cache.
 
 Current expected result after the serial writer library boundary exists but before it is attached:
 

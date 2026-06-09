@@ -1,5 +1,22 @@
 # Decisions
 
+## 2026-06-09 - Force Default Build Scripts To Clear Live-Output CMake Flags
+
+Decision:
+- Make the default desktop and Pi test scripts pass all live-output CMake options explicitly as `OFF`.
+- Add explicit Pi env controls for reviewed non-default live-output CMake scopes, using separate build directories for bench-scope and attach-capable builds unless the operator intentionally overrides `VISUAL_HOMING_PI_BUILD_DIR`.
+
+Why:
+- CMake option values are cached per build directory. If an attach-capable build ever reused `core/build-pi`, the ordinary wrapper could otherwise inherit `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=ON` from cache even when the command line looked like the default fail-closed wrapper.
+- The default path must be deterministic and fail-closed regardless of prior local experiments.
+
+Impact:
+- Ordinary `scripts/test-core.ps1`, `scripts/test-core-pi.sh`, and `scripts/run-live-output-bench-props-off-pi.sh` runs now actively force the unavailable/default build unless explicit Pi CMake env flags request a separate reviewed build scope.
+- Attach-capable Pi builds are separated into `core/build-pi-live-output-attach` by default.
+
+Risk:
+- Any future attach-build procedure must be explicit about the build directory and cannot rely on changing the default wrapper implicitly.
+
 ## 2026-06-09 - Accept Post-Attach-Flag Default Wrapper Evidence
 
 Decision:

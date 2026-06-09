@@ -3,9 +3,20 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 core_dir="${repo_root}/core"
-build_dir="${core_dir}/build-pi"
 build_type="${VISUAL_HOMING_PI_BUILD_TYPE:-MinSizeRel}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
+pi_cmake_live_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
+pi_cmake_bench_props_off_live_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT:-0}"
+pi_cmake_attach_bench_props_off_serial_writer="${VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER:-0}"
+if [[ -n "${VISUAL_HOMING_PI_BUILD_DIR:-}" ]]; then
+    build_dir="${VISUAL_HOMING_PI_BUILD_DIR}"
+elif [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" ]]; then
+    build_dir="${core_dir}/build-pi-live-output-attach"
+elif [[ "${pi_cmake_live_output}" == "1" || "${pi_cmake_bench_props_off_live_output}" == "1" ]]; then
+    build_dir="${core_dir}/build-pi-live-output-scope"
+else
+    build_dir="${core_dir}/build-pi"
+fi
 artifact_dir="${repo_root}/artifacts"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${artifact_dir}/logs}"
 route_output="${VISUAL_HOMING_ROUTE_OUTPUT:-${artifact_dir}/visual_homing_live_route.vhrs}"
@@ -111,9 +122,18 @@ for bool_env in \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
     VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
-    VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT; do
+    VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
+    VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT \
+    VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT \
+    VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER; do
     require_bool_env "${bool_env}"
 done
+
+if [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" \
+    && ( "${pi_cmake_live_output}" != "1" || "${pi_cmake_bench_props_off_live_output}" != "1" ) ]]; then
+    echo "VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=1 requires VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT=1 and VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=1" >&2
+    exit 2
+fi
 
 case "${live_route_match_expected_progress}" in
     any|forward|reverse)
@@ -142,7 +162,20 @@ finish_log() {
 }
 trap finish_log EXIT
 
-echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
+cmake_live_output_option=OFF
+cmake_bench_props_off_live_output_option=OFF
+cmake_attach_bench_props_off_serial_writer_option=OFF
+if [[ "${pi_cmake_live_output}" == "1" ]]; then
+    cmake_live_output_option=ON
+fi
+if [[ "${pi_cmake_bench_props_off_live_output}" == "1" ]]; then
+    cmake_bench_props_off_live_output_option=ON
+fi
+if [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" ]]; then
+    cmake_attach_bench_props_off_serial_writer_option=ON
+fi
+
+echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} build_dir=${build_dir} live_output_cmake=${cmake_live_output_option} bench_props_off_cmake=${cmake_bench_props_off_live_output_option} attach_writer_cmake=${cmake_attach_bench_props_off_serial_writer_option} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
 
 camera_target_override_args=()
 if [[ -n "${camera_target_width}" || -n "${camera_target_height}" ]]; then
@@ -267,7 +300,10 @@ fi
 cmake -S "${core_dir}" -B "${build_dir}" \
     "${generator_args[@]}" \
     -DCMAKE_BUILD_TYPE="${build_type}" \
-    -DVISUAL_HOMING_ENABLE_LIBCAMERA=ON
+    -DVISUAL_HOMING_ENABLE_LIBCAMERA=ON \
+    -DVISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT="${cmake_live_output_option}" \
+    -DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT="${cmake_bench_props_off_live_output_option}" \
+    -DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER="${cmake_attach_bench_props_off_serial_writer_option}"
 
 cmake --build "${build_dir}" --parallel "${build_jobs}"
 ctest --test-dir "${build_dir}" --output-on-failure

@@ -37,6 +37,12 @@ if ($Clean -and (Test-Path -LiteralPath $buildDir)) {
 
 & $devShell
 
-Invoke-Checked "cmake" @("-S", $coreDir, "-B", $buildDir)
+Invoke-Checked "cmake" @(
+    "-S", $coreDir,
+    "-B", $buildDir,
+    "-DVISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=OFF",
+    "-DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=OFF",
+    "-DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=OFF"
+)
 Invoke-Checked "cmake" @("--build", $buildDir, "--config", $Configuration)
 Invoke-Checked "ctest" @("--test-dir", $buildDir, "-C", $Configuration, "--output-on-failure")
