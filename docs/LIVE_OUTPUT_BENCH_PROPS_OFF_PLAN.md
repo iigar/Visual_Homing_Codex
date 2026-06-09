@@ -18,10 +18,10 @@ This plan does not authorize flight, tethered flight, ground movement, or autono
 
 - `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` without the reviewed bench scope still fails CMake configuration.
 - `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` is only valid together with `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON`.
-- The combined bench-scope build is allowed to configure only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and the bridge remains fail-closed.
+- The combined bench-scope build is allowed to configure, but the bridge remains fail-closed until the separate `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=ON` flag explicitly makes live output available.
 - Default `LiveMavlinkBridge` still rejects starts and sends when no reviewed writer is attached.
 - Dry-run route matching, dry-run commands, and session audit are validated.
-- No concrete serial MAVLink command writer exists yet.
+- A concrete serial MAVLink command writer library exists, but the ordinary/default Pi wrapper does not attach it.
 
 ## First Writer Scope
 
@@ -234,6 +234,18 @@ VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED
 ./scripts/run-live-output-bench-props-off-pi.sh
 ```
 
+For route/operator variability while still requiring endpoint completion, the wrapper may be run with a longer frame/count/time budget:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_CAMERA_FRAMES=225 \
+VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS=225 \
+VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS=15 \
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED \
+./scripts/run-live-output-bench-props-off-pi.sh
+```
+
 Current expected result before a concrete writer exists:
 
 - route matching and dry-run command quality must pass;
@@ -246,7 +258,7 @@ This wrapper is the command to revise before any future writer-enabled bench run
 Current expected result after the serial writer library boundary exists but before it is attached:
 
 - unchanged from above;
-- the runtime wrapper must still report `allowed=0 blocked=150 reason=live_output_unavailable`;
+- the runtime wrapper must still report `allowed=0 blocked=<auto> reason=live_output_unavailable` with `endpoint_stop=true` and `stop_reason=endpoint_progress_reached`;
 - `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE` remains `0`.
 
 Accepted fail-closed Pi evidence:
@@ -291,6 +303,23 @@ Endpoint-stop fail-closed Pi evidence:
 - telemetry health passed with `telemetry_bytes_dropped=0`;
 - dry-run command quality passed with 129/129 valid commands;
 - live-output decisions remained fail-closed: `allowed=0 blocked=129 reason=live_output_unavailable`.
+
+Post-attach-flag default-wrapper fail-closed Pi evidence:
+
+- `2026-06-09`, commit `375f6cd`;
+- run log: `artifacts/logs/bench-props-off-live-output-20260609T063923Z.log`;
+- audit log: `artifacts/logs/bench-props-off-live-output-audit-20260609T063923Z.log`;
+- Pi CTest passed 23/23 before the bench run;
+- the ordinary wrapper reported `live_output_writer_attached=false`;
+- live matching stopped at endpoint with `frames=117/225`, `endpoint_stop=true`, and `stop_reason=endpoint_progress_reached`;
+- live matching passed `directional_progress_passed=true`, `endpoint_progress_passed=true`, and `progress_gate_passed=true`;
+- telemetry health passed with `telemetry_bytes_dropped=0`;
+- dry-run command quality passed with 117/117 valid commands;
+- live-output decisions remained fail-closed: `allowed=0 blocked=117 reason=live_output_unavailable`.
+
+Non-evidence note:
+
+- `2026-06-09` run `artifacts/logs/bench-props-off-live-output-20260609T064000Z.log` preserved `live_output_writer_attached=false` and `live_output_unavailable:225`, but did not reach endpoint (`max_progress_seen=0.697987`, `endpoint_stop=false`, `stop_reason=frame_limit_reached`), so it is not accepted readiness evidence.
 
 ## Stop Conditions
 

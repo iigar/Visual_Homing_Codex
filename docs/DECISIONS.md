@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-06-09 - Accept Post-Attach-Flag Default Wrapper Evidence
+
+Decision:
+- Accept the `jtzero` bench props-off endpoint-stop fail-closed run at commit `375f6cd` as the current default-wrapper evidence after adding the explicit serial-writer attach flag.
+- Keep the ordinary Pi wrapper on the default unavailable build path where `live_output_writer_attached=false`.
+- Do not accept the later `20260609T064000Z` repeat as readiness evidence because the route pass failed before endpoint completion.
+
+Why:
+- The accepted run proves the attach flag did not accidentally attach the serial writer in the default Pi wrapper.
+- Pi CTest passed 23/23, live route matching stopped at `frames=117/225`, route progress gates passed, read-only telemetry stayed healthy, dry-run command quality passed, and both readiness and session-audit checkers passed.
+- All 117 live-output decisions remained blocked with `live_output_unavailable`.
+
+Impact:
+- The default/pre-attach boundary is now validated after the attach flag landed.
+- The next reviewed step can focus on an explicit attach-build bench validation rather than re-proving the ordinary unavailable wrapper.
+
+Risk:
+- This evidence still proves only the unavailable default-wrapper path. It does not prove serial writer attachment, hardware serial writes, flight-controller command acceptance, or flight behavior.
+
 ## 2026-06-09 - Add Explicit Serial Writer Attach Build Flag
 
 Decision:
