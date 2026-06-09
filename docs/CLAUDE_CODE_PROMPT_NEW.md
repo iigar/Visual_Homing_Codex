@@ -16,11 +16,12 @@ Primary outcome:
   - read-only MAVLink telemetry health is consumed;
   - bounded dry-run navigation commands are generated;
   - a non-live writer-shaped session audits every command decision;
-  - live MAVLink command output remains blocked;
-  - at least three clean Pi dry-run readiness logs are collected and validated before any live-output implementation is considered.
+  - a bench-only serial writer library can be reviewed and unit-tested without being attached by default;
+  - default live MAVLink command output remains blocked and unavailable;
+  - at least three clean Pi dry-run readiness logs and fail-closed bench props-off logs are collected and validated before any attach-build step is considered.
 
 Hard safety rule:
-Do not implement live MAVLink command output as an early step. Do not enable live output, flight, tethered flight, ground movement, pitch/roll/forward velocity, or autonomous return during this buildout. The first future live-output boundary, after readiness evidence and review, is bench-only, propellers removed, physically restrained, yaw-rate-only, `vx_mps=0`, audit log ready, explicit runtime enable, and explicit operator confirmation.
+Do not implement live MAVLink command output as an early step. Do not enable flight, tethered flight, ground movement, pitch/roll/forward velocity, altitude authority, or autonomous return during this buildout. The first future live-output boundary, after readiness evidence and review, is bench-only, propellers removed, physically restrained, yaw-rate-only, `vx_mps=0`, `vy_mps=0`, audit log ready, explicit compile-time scope, explicit runtime enable, hard command/duration limits, and exact operator confirmation. Default builds and ordinary wrappers must stay fail-closed even after a writer library exists.
 
 Implementation principles:
 - Prefer C++20 for the flight-critical core.
@@ -31,6 +32,7 @@ Implementation principles:
 - Avoid unbounded queues/state in future live paths.
 - Every frame, telemetry sample, match, and command must carry timestamps.
 - Low confidence, stale data, invalid input, bad telemetry, command out of bounds, or audit failure must fail closed.
+- A stale CMake cache must not be able to silently enable live output; ordinary scripts should explicitly pass live-output CMake options as OFF.
 - Keep UI/web/Python tooling out of the realtime scheduler.
 
 Repository structure:
@@ -178,6 +180,11 @@ Milestone 10: camera profiles
   - normalization hints.
 - Add profile validation, list/get/set active profile commands, and JSON output for future UI/API.
 - Use profile FOV to derive radians-per-pixel for matcher direction error.
+- Add FOV/altitude-derived ground footprint helpers:
+  - input: validated camera profile plus positive altitude/range;
+  - output: approximate ground width/height and meters-per-pixel for capture and target frames;
+  - reject non-finite and non-positive values.
+- Treat barometer/rangefinder altitude and image-scale drift as diagnostics first. Do not let visual scale or barometer scale affect live commands without dry-run evidence and a separate safety decision.
 - Add an initial IMX219 visible camera profile, but document that FOV must be measured for the real lens/crop.
 
 Milestone 11: Pi hardware capture
@@ -247,7 +254,7 @@ Milestone 13: non-live live-output safety scaffolding
 - Add fail-closed `LiveMavlinkBridge` stub:
   - compiled-out/disabled by default;
   - rejects starts/sends;
-  - CMake option for live output must fail configuration until reviewed.
+  - CMake live-output options must require an explicit bench props-off scope and remain unavailable unless a later attach flag is also set.
 - Add tests for every safety gate reason, audit readiness, stopped session, blocked decisions, allowed dry-run decisions, and unavailable live bridge.
 
 Milestone 14: readiness checkers and evidence
@@ -314,6 +321,53 @@ Milestone 16: first future live-output plan, not automatic implementation
   - single writer;
   - stop/kill behavior documented.
 - Do not start a flight ladder here.
+
+Milestone 17: bench props-off writer library and fail-closed wrapper
+- Add a concrete serial MAVLink writer library behind an injectable writer interface, but do not attach it to runtime by default.
+- Encode unsigned MAVLink2 `SET_POSITION_TARGET_LOCAL_NED` in a body-frame yaw-rate-only shape:
+  - yaw-rate active;
+  - position ignored;
+  - velocity and acceleration ignored by type mask;
+  - yaw ignored;
+  - `vx_mps=0`;
+  - `vy_mps=0`;
+  - reject non-finite, nonzero-forward/lateral, or out-of-bounds commands before bytes are written.
+- Add memory-transport unit tests for frame shape, sequence increments, start/stop behavior, and command rejection.
+- Split compile-time scope:
+  - default: live output disabled/unavailable;
+  - reviewed bench scope: explicit live-output + bench props-off CMake flags;
+  - attach-capable scope: a third explicit attach flag.
+- Ordinary desktop/Pi scripts must explicitly set all live-output CMake flags OFF.
+- Attach-capable Pi builds must use a separate build directory by default so stale cache state cannot affect ordinary runs.
+- Add a dedicated bench props-off wrapper:
+  - exact props-off confirmation required;
+  - CTest runs before hardware mode;
+  - operator cue/countdown;
+  - runtime live-output controls provided;
+  - max commands and max seconds;
+  - session audit path printed;
+  - readiness and audit checkers run after the session.
+- Before the attach flag is used, expected result is fail-closed:
+  - `live_output_writer_attached=false`;
+  - `allowed=0`;
+  - blocked reason `live_output_unavailable`;
+  - endpoint-stop runs may finish before the requested frame count if endpoint progress is reached.
+- The attach-build step must be a separate reviewed bench step, not the ordinary wrapper, and still does not authorize flight.
+
+Milestone 18: visual brake / station-keeping assist, separate future feature
+- Treat visual braking and station-keeping as a separate post-return feature, not part of the first return/live-output boundary.
+- Start dry-run-only:
+  - compare reference/current frames;
+  - estimate image displacement and scale drift;
+  - compensate with FC attitude;
+  - log proposed counter-commands only.
+- Keep ArduPilot responsible for real hover/hold/failsafe.
+- Require a reviewed scale source before any real lateral/forward station-keeping command:
+  - rangefinder;
+  - altitude model;
+  - optical-flow-like visual scale;
+  - VIO/UWB/other reviewed source.
+- Use deadbands, small gains, slew/rate limits, cooldowns, max-duration, and timeout-to-autopilot-hold. Never implement naive immediate opposite-direction commands.
 
 Representative Pi route recording command:
 ```bash
@@ -387,8 +441,10 @@ Acceptance criteria for "working state":
 - Live route matching dry-run passes on a good route.
 - Session audit artifact is generated and validated.
 - 3/3 readiness evidence is recorded.
-- Live MAVLink command output remains disabled and blocked.
-- The next step is a reviewed bench props-off plan, not flight.
+- A bench props-off fail-closed wrapper is available and validated with `live_output_unavailable` before writer attachment.
+- A serial writer library may exist, but ordinary/default builds still report writer unattached and unavailable.
+- Live MAVLink command output remains disabled and blocked in default builds.
+- The next step is a separate reviewed attach-build bench procedure, not flight.
 
 Work method:
 1. Inspect or create repository layout.
