@@ -37,12 +37,23 @@ struct CameraAngularScale {
     double radians_per_target_pixel_y = 0.0;
 };
 
+struct CameraGroundFootprint {
+    double altitude_m = 0.0;
+    double ground_width_m = 0.0;
+    double ground_height_m = 0.0;
+    double meters_per_capture_pixel_x = 0.0;
+    double meters_per_capture_pixel_y = 0.0;
+    double meters_per_target_pixel_x = 0.0;
+    double meters_per_target_pixel_y = 0.0;
+};
+
 struct CameraProfileRecord {
     std::string path;
     CameraProfile profile;
 };
 
 CameraAngularScale derive_camera_angular_scale(const CameraProfile& profile);
+CameraGroundFootprint derive_camera_ground_footprint(const CameraProfile& profile, double altitude_m);
 void validate_camera_profile(const CameraProfile& profile);
 CameraProfile load_camera_profile_file(const std::string& path);
 std::vector<CameraProfileRecord> list_camera_profile_directory(const std::string& directory_path);

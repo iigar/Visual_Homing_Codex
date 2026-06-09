@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -32,6 +33,17 @@ int main() {
     assert(close_to(scale.radians_per_capture_pixel_y, 0.9 / 240.0));
     assert(close_to(scale.radians_per_target_pixel_x, 1.2 / 32.0));
     assert(close_to(scale.radians_per_target_pixel_y, 0.9 / 24.0));
+
+    const auto footprint = vh::derive_camera_ground_footprint(profile, 10.0);
+    const auto expected_ground_width = 20.0 * std::tan(1.2 / 2.0);
+    const auto expected_ground_height = 20.0 * std::tan(0.9 / 2.0);
+    assert(close_to(footprint.altitude_m, 10.0));
+    assert(close_to(footprint.ground_width_m, expected_ground_width));
+    assert(close_to(footprint.ground_height_m, expected_ground_height));
+    assert(close_to(footprint.meters_per_capture_pixel_x, expected_ground_width / 320.0));
+    assert(close_to(footprint.meters_per_capture_pixel_y, expected_ground_height / 240.0));
+    assert(close_to(footprint.meters_per_target_pixel_x, expected_ground_width / 32.0));
+    assert(close_to(footprint.meters_per_target_pixel_y, expected_ground_height / 24.0));
 
     vh::CameraProfile thermal = profile;
     thermal.id = "thermal-test";
@@ -208,6 +220,24 @@ int main() {
         rejected_threshold = true;
     }
     assert(rejected_threshold);
+
+    bool rejected_altitude = false;
+    try {
+        (void)vh::derive_camera_ground_footprint(profile, 0.0);
+    } catch (const std::invalid_argument&) {
+        rejected_altitude = true;
+    }
+    assert(rejected_altitude);
+
+    bool rejected_non_finite = false;
+    try {
+        auto invalid = profile;
+        invalid.horizontal_fov_rad = std::nan("");
+        vh::validate_camera_profile(invalid);
+    } catch (const std::invalid_argument&) {
+        rejected_non_finite = true;
+    }
+    assert(rejected_non_finite);
 
     return 0;
 }

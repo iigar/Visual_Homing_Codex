@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-06-09 - Keep Visual Scale Altitude As Diagnostic Groundwork
+
+Decision:
+- Treat barometer/rangefinder-derived ground scale and image-scale drift as diagnostics before they can affect live commands.
+- Add `derive_camera_ground_footprint` to compute approximate ground footprint and meters-per-pixel from a validated camera profile and positive altitude.
+- Do not change `VHRS` v1 for precise altitude or visual-scale metadata yet.
+
+Why:
+- The current route format already carries coarse altitude bands and heading hints, and the telemetry adapter already exposes FC relative altitude through `NavigationEstimate::altitude_m`.
+- A small deterministic camera-profile utility makes future barometer-vs-visual-scale analysis easier without introducing new live authority or route-format compatibility risk.
+- Estimating altitude from visual scale alone is plausible only as a relative signal and needs dry-run comparison against FC altitude/rangefinder data before it can be trusted.
+
+Impact:
+- Future logs and matchers can derive expected ground meters-per-pixel from camera FOV and FC altitude.
+- Visual scale ratio work can start as offline/live dry-run telemetry, comparing current image scale against route-frame scale assumptions.
+- Live output behavior is unchanged and remains governed by the bench props-off safety gates.
+
+Risk:
+- Barometer altitude is relative and can drift; visual scale is scene-dependent and can be confused by texture, perspective, yaw/pitch, or repeated objects. Neither source is sufficient for hover/station-keeping authority without later validation and a separate safety decision.
+
 ## 2026-06-09 - Force Default Build Scripts To Clear Live-Output CMake Flags
 
 Decision:

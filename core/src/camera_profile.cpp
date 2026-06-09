@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -14,19 +15,19 @@ namespace vh {
 namespace {
 
 void reject_non_positive(double value, const char* name) {
-    if (value <= 0.0) {
+    if (!std::isfinite(value) || value <= 0.0) {
         throw std::invalid_argument(name);
     }
 }
 
 void reject_negative(double value, const char* name) {
-    if (value < 0.0) {
+    if (!std::isfinite(value) || value < 0.0) {
         throw std::invalid_argument(name);
     }
 }
 
 void reject_fraction(double value, const char* name) {
-    if (value < 0.0 || value > 1.0) {
+    if (!std::isfinite(value) || value < 0.0 || value > 1.0) {
         throw std::invalid_argument(name);
     }
 }
@@ -179,6 +180,28 @@ CameraAngularScale derive_camera_angular_scale(const CameraProfile& profile) {
         .radians_per_capture_pixel_y = profile.vertical_fov_rad / static_cast<double>(profile.capture_height),
         .radians_per_target_pixel_x = profile.horizontal_fov_rad / static_cast<double>(profile.target_width),
         .radians_per_target_pixel_y = profile.vertical_fov_rad / static_cast<double>(profile.target_height),
+    };
+}
+
+CameraGroundFootprint derive_camera_ground_footprint(const CameraProfile& profile, double altitude_m) {
+    validate_camera_profile(profile);
+    reject_non_positive(altitude_m, "Camera ground footprint altitude_m must be positive");
+
+    const auto ground_width_m = 2.0 * altitude_m * std::tan(profile.horizontal_fov_rad / 2.0);
+    const auto ground_height_m = 2.0 * altitude_m * std::tan(profile.vertical_fov_rad / 2.0);
+    if (!std::isfinite(ground_width_m) || !std::isfinite(ground_height_m) ||
+        ground_width_m <= 0.0 || ground_height_m <= 0.0) {
+        throw std::invalid_argument("Camera ground footprint FOV produced an invalid footprint");
+    }
+
+    return {
+        .altitude_m = altitude_m,
+        .ground_width_m = ground_width_m,
+        .ground_height_m = ground_height_m,
+        .meters_per_capture_pixel_x = ground_width_m / static_cast<double>(profile.capture_width),
+        .meters_per_capture_pixel_y = ground_height_m / static_cast<double>(profile.capture_height),
+        .meters_per_target_pixel_x = ground_width_m / static_cast<double>(profile.target_width),
+        .meters_per_target_pixel_y = ground_height_m / static_cast<double>(profile.target_height),
     };
 }
 
