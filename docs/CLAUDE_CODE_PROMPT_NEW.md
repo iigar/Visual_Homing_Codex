@@ -102,6 +102,7 @@ Milestone 5: route matching
   - per-frame brightness/range statistics;
   - optional mean/contrast normalization before matching;
   - route-quality warnings for low texture and ambiguous nearest neighbors;
+  - explicit warnings that `64x48` Gray8 plus MAD can work indoors yet fail on monotonic outdoor terrain, desert/field ground, repeated structure, or hard sun/shadow boundaries;
   - future fallback candidates such as gradient/census-like descriptors, feature/keypoint diagnostics, or multi-scale matching if brightness tests expose false drops.
 - Keep fallback matchers behind tests and explicit config; do not add heavy dependencies just to hide weak route evidence.
 
@@ -225,6 +226,11 @@ Milestone 11: Pi hardware capture
 
 Milestone 12: live route matching dry-run
 - Match live camera frames against existing route.
+- Treat route recording speed versus return/match speed as an explicit validation variable:
+  - windowed matching can tolerate local timing differences;
+  - large speed mismatches can still create route-index jumps, progress regressions, endpoint misses, or false endpoint passes;
+  - log requested FPS, effective FPS, elapsed time, first/last/min/max progress, regression counts, and rollback totals;
+  - collect dry-run evidence at the intended route speed before considering later field/flight-ladder work.
 - Support:
   - expected progress: any/forward/reverse;
   - endpoint progress gate;
@@ -316,6 +322,7 @@ Milestone 15: required 3/3 readiness state
   - a live match dry-run with 150/150 valid matches;
   - endpoint/progress gate passing;
   - preferably strict forward monotonic progress for the best evidence run;
+  - evidence that the route can be followed at the intended match speed, not only at the original recording speed;
   - telemetry health true and dropped bytes zero;
   - 150/150 valid dry-run commands;
   - zero live-output allowed frames;
@@ -355,6 +362,11 @@ Milestone 17: bench props-off writer library and fail-closed wrapper
   - `vy_mps=0`;
   - reject non-finite, nonzero-forward/lateral, or out-of-bounds commands before bytes are written.
 - Add memory-transport unit tests for frame shape, sequence increments, start/stop behavior, and command rejection.
+- Document that a correctly encoded `SET_POSITION_TARGET_LOCAL_NED` packet is not the same as flight-controller command acceptance:
+  - the reviewed attach bench step must state the expected ArduPilot mode/configuration for this command type;
+  - currently expect `Guided` or another explicitly reviewed equivalent mode;
+  - logs must include current FC mode, armed state, heartbeat freshness, and whether the safety gate considered the FC state acceptable;
+  - attach evidence must distinguish writer attachment, bytes written, FC acceptance/ignore behavior, and any vehicle motion boundary.
 - Split compile-time scope:
   - default: live output disabled/unavailable;
   - reviewed bench scope: explicit live-output + bench props-off CMake flags;
@@ -375,6 +387,7 @@ Milestone 17: bench props-off writer library and fail-closed wrapper
   - blocked reason `live_output_unavailable`;
   - endpoint-stop runs may finish before the requested frame count if endpoint progress is reached.
 - The attach-build step must be a separate reviewed bench step, not the ordinary wrapper, and still does not authorize flight.
+- Any attach-enabled bench run still remains propellers-removed and physically restrained; it must not become a tethered, ground-slide, or flight test.
 
 Milestone 18: visual brake / station-keeping assist, separate future feature
 - Treat visual braking and station-keeping as a separate post-return feature, not part of the first return/live-output boundary.
@@ -462,10 +475,12 @@ Acceptance criteria for "working state":
 - Route recording works with camera and optional read-only telemetry.
 - Route quality checker can reject weak routes and pass a good route.
 - Live route matching dry-run passes on a good route.
+- Readiness logs include enough FPS/elapsed/progress-regression data to interpret route speed mismatch risk.
 - Session audit artifact is generated and validated.
 - 3/3 readiness evidence is recorded.
 - A bench props-off fail-closed wrapper is available and validated with `live_output_unavailable` before writer attachment.
 - A serial writer library may exist, but ordinary/default builds still report writer unattached and unavailable.
+- Attach-build planning documents the FC mode required for `SET_POSITION_TARGET_LOCAL_NED` command acceptance.
 - Live MAVLink command output remains disabled and blocked in default builds.
 - The next step is a separate reviewed attach-build bench procedure, not flight.
 
