@@ -7,6 +7,8 @@ You are Claude Code working on a new flight-safety-oriented visual homing projec
 
 Build a replay-first, deterministic, testable C++ core for a coarse GPS-denied visual return system. The target hardware is a Raspberry Pi Zero 2W class companion computer with a Pi Camera or similar small camera, connected to an ArduPilot/Matek H743-class flight controller. The system goal is StabX-like coarse visual return/homing, not metric SLAM, not precision hover, and not autonomous flight authorization.
 
+This is not a direct port of a Python visual odometry system that feeds `VISION_POSITION_ESTIMATE` into ArduPilot EKF as an external navigation source. This project is a new conservative visual-route-following command-assist architecture: it estimates coarse route progress and direction error, then proposes bounded yaw-rate-only commands through explicit gates. Keep the EKF-position-estimate paradigm and the direct command-assist paradigm documented as different designs so later reviews do not compare them as if they were the same system.
+
 Primary outcome:
 - Build the project from an empty or rough repository to a working state where:
   - replay tests pass on desktop;
@@ -34,6 +36,12 @@ Implementation principles:
 - Low confidence, stale data, invalid input, bad telemetry, command out of bounds, or audit failure must fail closed.
 - A stale CMake cache must not be able to silently enable live output; ordinary scripts should explicitly pass live-output CMake options as OFF.
 - Keep UI/web/Python tooling out of the realtime scheduler.
+
+Session and context strategy:
+- This is too large for one uninterrupted Claude Code context. Build in separate coherent sessions by milestone or small milestone group.
+- Create and maintain `docs/PROJECT_MEMORY.md`, `docs/SESSION_LOG.md`, `docs/DECISIONS.md`, and `docs/ROADMAP.md` from the start.
+- At the start of each new session, read those files plus `git log -5` before editing.
+- Every session should leave the repo in a tested, documented, committed state, or explicitly document what remains incomplete.
 
 Repository structure:
 - `core/` for C++ flight-critical code.
@@ -89,6 +97,13 @@ Milestone 5: route matching
   - configurable `max_direction_shift_px`;
   - convert shift to radians with camera-profile-derived radians-per-pixel when profiles exist.
 - Add tests for aligned matches, brightness changes, deterministic noise, left/right shifts, malformed payloads, low-confidence rejection, and window behavior.
+- Treat normalized MAD as the first deterministic baseline, not the final perception algorithm.
+- Add illumination robustness notes and diagnostics:
+  - per-frame brightness/range statistics;
+  - optional mean/contrast normalization before matching;
+  - route-quality warnings for low texture and ambiguous nearest neighbors;
+  - future fallback candidates such as gradient/census-like descriptors, feature/keypoint diagnostics, or multi-scale matching if brightness tests expose false drops.
+- Keep fallback matchers behind tests and explicit config; do not add heavy dependencies just to hide weak route evidence.
 
 Milestone 6: route artifact validation and quality
 - Add stateless route self-match:
@@ -138,19 +153,7 @@ Milestone 7: navigation command model
   - slew-limit yaw rate.
 - Add tests for low confidence, stale match, invalid match, degraded health, non-finite values, clamp, slew limit, reset after invalid state, and zero-forward-speed policy.
 
-Milestone 8: dry-run MAVLink boundary
-- Implement `DryRunCommandSink`.
-- Implement dry-run MAVLink bridge:
-  - scripted heartbeat;
-  - armed state;
-  - mode;
-  - roll/pitch/yaw;
-  - relative altitude;
-  - command history with bounded retention and total counters.
-- Live MAVLink command output remains unavailable and fail-closed.
-- Add tests for send while stopped, bounded command history, telemetry polling, and single-writer semantics.
-
-Milestone 9: read-only MAVLink telemetry
+Milestone 8: read-only MAVLink telemetry
 - Add read-only MAVLink serial capture/streaming before any live command output:
   - heartbeat;
   - armed state;
@@ -165,6 +168,19 @@ Milestone 9: read-only MAVLink telemetry
   - attitude/altitude -> navigation estimate/route metadata.
 - Do not send any MAVLink commands in this milestone.
 - Add inspector/capture/validation scripts for Pi serial device, e.g. `/dev/serial0` at `115200`.
+
+Milestone 9: dry-run MAVLink boundary
+- Implement `DryRunCommandSink`.
+- Implement dry-run MAVLink bridge:
+  - scripted heartbeat and read-only telemetry snapshots;
+  - armed state;
+  - mode;
+  - roll/pitch/yaw;
+  - relative altitude;
+  - command history with bounded retention and total counters.
+- Feed read-only telemetry freshness into dry-run command validity; do not generate valid command proposals when FC state is stale or incompatible.
+- Live MAVLink command output remains unavailable and fail-closed.
+- Add tests for send while stopped, bounded command history, telemetry polling, stale telemetry blocking, and single-writer semantics.
 
 Milestone 10: camera profiles
 - Add explicit camera profile model and file format:
@@ -191,6 +207,11 @@ Milestone 11: Pi hardware capture
 - Add Pi camera backend behind compile-time and runtime gates.
 - Desktop builds should fail closed without live capture.
 - Pi builds can enable libcamera.
+- Define a Pi build strategy before hardware validation:
+  - native Pi builds are acceptable for small CTest runs but may be slow on Pi Zero 2W;
+  - keep incremental build directories stable and ignored;
+  - document an optional cross-compile/sysroot path for longer builds;
+  - never make cross-compilation a prerequisite for the first hardware smoke test unless native builds fail.
 - Add scripts:
   - bootstrap Pi dependencies;
   - configure/build/test on Pi;
@@ -214,7 +235,8 @@ Milestone 12: live route matching dry-run
   - read-only live MAVLink telemetry health gate.
 - Final compact log must include:
   - passed;
-  - frames=150/150;
+  - requested frame count and effective FPS, for example `frames=150/150` at about 15 FPS means about 10 seconds of live capture;
+  - configured capture FPS and elapsed milliseconds;
   - valid_matches=150;
   - progress range;
   - endpoint_passed;
@@ -436,6 +458,7 @@ Documentation to maintain:
 Acceptance criteria for "working state":
 - Desktop build/test passes.
 - Pi build/test passes.
+- Documentation explicitly states whether this project is a parallel replacement candidate or a companion experiment relative to any existing Python VO/EKF-position-estimate code; it must not be presented as a drop-in port unless the command/output paradigm is deliberately changed.
 - Route recording works with camera and optional read-only telemetry.
 - Route quality checker can reject weak routes and pass a good route.
 - Live route matching dry-run passes on a good route.
