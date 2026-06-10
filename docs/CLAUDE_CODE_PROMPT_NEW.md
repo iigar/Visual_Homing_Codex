@@ -58,6 +58,7 @@ Milestone 1: replay input
 
 Milestone 2: preprocessing and health
 - Implement deterministic Gray8 resize preprocessing, preferably block-average.
+- Start with a deterministic single-threaded pipeline unless measurements prove it cannot meet latency. If threading is added later, specify producer/consumer ownership, bounded queue sizes, drop policy, shutdown behavior, and timestamp ownership before implementation.
 - Implement `HealthSnapshot` and health monitor:
   - frames seen/dropped;
   - frame age;
@@ -203,6 +204,7 @@ Milestone 10: camera profiles
   - reject non-finite and non-positive values.
 - Treat barometer/rangefinder altitude and image-scale drift as diagnostics first. Do not let visual scale or barometer scale affect live commands without dry-run evidence and a separate safety decision.
 - Add an initial IMX219 visible camera profile, but document that FOV must be measured for the real lens/crop.
+- If a thermal camera such as Caddx Thermal 256 is a primary target, treat it as a separate hardware/capture milestone: define its capture transport, pixel format conversion, calibration, normalization, route-quality policy, and tests. Do not assume Pi libcamera support covers non-libcamera thermal devices.
 
 Milestone 11: Pi hardware capture
 - Add Pi camera backend behind compile-time and runtime gates.
@@ -223,6 +225,7 @@ Milestone 11: Pi hardware capture
   - match live route.
 - Live route recording/matching must print operator cues and countdowns so the human knows when to move.
 - Run CTest before hardware modes in the Pi script.
+- Keep visible Pi camera and thermal capture paths independently gated; a working IMX219/libcamera path is not evidence that thermal capture works.
 
 Milestone 12: live route matching dry-run
 - Match live camera frames against existing route.
@@ -234,6 +237,7 @@ Milestone 12: live route matching dry-run
 - Support:
   - expected progress: any/forward/reverse;
   - endpoint progress gate;
+  - explicit end-of-route dry-run action: stop command generation, emit a stop reason, and return control to the autopilot/no-live-output boundary rather than continuing to emit route-following commands past the endpoint;
   - route-window radius;
   - minimum confidence;
   - dry-run command generation;
@@ -278,7 +282,8 @@ Milestone 13: non-live live-output safety scaffolding
   - starts audit;
   - evaluates gate;
   - uses dry-run bridge or blocked live bridge;
-  - audits allowed and blocked decisions.
+  - audits allowed and blocked decisions;
+  - records explicit end-of-route action, such as `endpoint_progress_reached`, and stops writer command generation instead of issuing post-endpoint commands.
 - Add fail-closed `LiveMavlinkBridge` stub:
   - compiled-out/disabled by default;
   - rejects starts/sends;
@@ -310,7 +315,7 @@ Milestone 14: readiness checkers and evidence
   - every command `reason=vehicle_not_armed`;
   - every command `valid=true`;
   - every command `vx_mps=0`;
-  - one stop event with `reason=match_live_route_complete`.
+  - one stop event with `reason=match_live_route_complete` or a reviewed endpoint-stop reason such as `endpoint_progress_reached`.
 - Collect at least 3 clean Pi dry-run evidence logs before any live-output blocker change.
 - Store them in `docs/LIVE_OUTPUT_READINESS_RECORD.md`.
 - Evidence completion is not permission to enable live output.
@@ -321,6 +326,7 @@ Milestone 15: required 3/3 readiness state
   - a route-quality prechecked route with `quality_pass=true`;
   - a live match dry-run with 150/150 valid matches;
   - endpoint/progress gate passing;
+  - explicit end-of-route behavior in logs: endpoint reached, command generation stopped, final stop reason recorded, and no post-endpoint command tail required;
   - preferably strict forward monotonic progress for the best evidence run;
   - evidence that the route can be followed at the intended match speed, not only at the original recording speed;
   - telemetry health true and dropped bytes zero;
