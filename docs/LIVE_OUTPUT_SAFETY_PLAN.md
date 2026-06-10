@@ -15,6 +15,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - `LiveMavlinkOutputSession` is the non-live writer-shaped coordinator for audit readiness, safety-gate evaluation, and bridge sends; with the current blocked bridge it cannot produce live MAVLink output.
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
+- The concrete writer shape is `SET_POSITION_TARGET_LOCAL_NED`; flight-controller acceptance depends on ArduPilot mode and configuration. Any attach-enabled bench stage must explicitly verify and log the expected mode, currently `Guided`, before an allowed writer decision can be considered valid.
 
 ## First Future Live Test Boundary
 
@@ -29,6 +30,7 @@ The first possible live-output test, after this plan is complete, is:
 - operator physically present;
 - audit log enabled and ready before any command can pass;
 - explicit runtime enable and operator confirmation required.
+- flight controller mode explicitly verified for the writer command type before any allowed decision is accepted.
 
 The first live-output test is not:
 
@@ -120,6 +122,7 @@ Any future writer must be blocked unless all conditions are true:
 - MAVLink heartbeat is present and fresh;
 - vehicle is armed only for the later reviewed test stage that requires it;
 - vehicle mode is `Guided` only for the later reviewed test stage that requires it;
+- the expected FC mode for `SET_POSITION_TARGET_LOCAL_NED` acceptance is documented for the reviewed stage and logged in the run;
 - route match is valid, fresh, high-confidence, and finite;
 - command is valid, finite, and inside yaw-rate and forward-speed bounds;
 - forward speed remains exactly zero for the first writer scope.
@@ -152,6 +155,7 @@ Before implementing a real writer:
 - Add tests proving forward speed cannot become nonzero in the first writer scope.
 - Add tests proving compile-time disabled builds still reject live output.
 - Document the exact Pi command for the future bench props-off run.
+- Document the expected FC mode and how the run proves the FC accepted or rejected the writer command stream without leaving the props-off bench boundary.
 
 ## Completion Criteria For Milestone 6.7
 

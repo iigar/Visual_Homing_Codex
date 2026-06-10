@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-06-10 - Record Route-Speed, FC-Mode, And Terrain-Matcher Risks
+
+Decision:
+- Treat route recording speed versus return/match speed as a validation variable for live-route dry-runs.
+- Require the reviewed attach bench step to document and log the FC mode expected to accept `SET_POSITION_TARGET_LOCAL_NED`, currently `Guided`.
+- Keep `64x48` Gray8/MAD matching as a deterministic baseline, while documenting that low-texture outdoor terrain may require higher-resolution profiles, normalization, or stronger descriptors before field/flight-ladder use.
+
+Why:
+- Windowed matching tolerates local timing differences, but large speed mismatches can still cause progress jumps, regressions, or endpoint misses.
+- The serial writer can encode a valid MAVLink packet while the flight controller rejects or ignores it due to mode/configuration; safety evidence must distinguish writer bytes from FC acceptance.
+- Indoor route evidence does not prove outdoor route distinctiveness, especially over monotonic ground or repeated structure.
+
+Impact:
+- Current attach/bench planning must include mode evidence, not just serial-writer attachment evidence.
+- Future outdoor route work should use route-quality diagnostics as a filter and may need camera/profile/matcher upgrades before readiness evidence is meaningful.
+- No runtime behavior changes; live output remains blocked in default builds.
+
+Risk:
+- These are documented residual risks only. The current code still uses the baseline matcher and current progress gates until a later implementation specifically addresses speed adaptation, FC acceptance feedback, or stronger visual descriptors.
+
 ## 2026-06-09 - Keep Visual Scale Altitude As Diagnostic Groundwork
 
 Decision:
