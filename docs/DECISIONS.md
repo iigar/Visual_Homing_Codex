@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-06-11 - Record Modularity, Trust, And Extension Principles
+
+Decision:
+- State explicitly that the current system is operator-in-the-loop command assist, not an autonomous controller.
+- Keep module boundaries replaceable and independently testable across capture, preprocessing, route I/O, matching, telemetry, navigation, command output, audit, and safety gates.
+- Treat route artifacts and MAVLink serial bytes as untrusted inputs until validated, freshness-checked, and gated.
+- Record altitude/range versus resolution as an operational risk: higher altitude increases ground meters per pixel and can erase route texture.
+
+Why:
+- These principles were partly implicit in existing interfaces and fail-closed gates, but future work needs them written down before attach-build, thermal, rangefinder, stronger matcher, or field-readiness work.
+- Route artifact modification, malformed serial traffic, wrong sysid/compid, or stale telemetry should not become command permission.
+- Extension points for thermal cameras, rangefinders, optical flow, VIO/UWB, and alternative matchers should not require rewriting the realtime scheduler.
+
+Impact:
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/LIVE_OUTPUT_SAFETY_PLAN.md`, and `docs/PROJECT_MEMORY.md` now carry the same architecture intent.
+- No runtime behavior changes.
+
+Risk:
+- This records design intent only. Route digest/integrity checks, sysid/compid hardening, explicit watchdog timers, and scale-mismatch logs remain future implementation work.
+
 ## 2026-06-10 - Record Route-Speed, FC-Mode, And Terrain-Matcher Risks
 
 Decision:

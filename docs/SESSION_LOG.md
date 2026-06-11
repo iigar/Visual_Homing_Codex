@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-11
+
+- Applied the robustness principles from the Claude seed-prompt review to the active project docs. `docs/ARCHITECTURE.md` now states the operator-in-the-loop command-assist boundary, explicit replaceable module boundaries, extension points for future sensors/algorithms, altitude/range versus resolution risk, and route/serial trust boundaries. `docs/LIVE_OUTPUT_SAFETY_PLAN.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, and `docs/PROJECT_MEMORY.md` now carry matching notes for route artifact integrity, MAVLink serial trust, single-writer target ownership, and future implementation work. No runtime behavior changed.
+
 ## 2026-06-09
 
 - Added safe groundwork for future altitude/scale awareness. `CameraProfile` can now derive an approximate ground footprint and meters-per-pixel from validated FOV/camera dimensions plus a positive altitude, with unit coverage. Documented that barometer/rangefinder scale and visual image-scale changes remain dry-run diagnostics first and do not affect live output or `VHRS` v1.

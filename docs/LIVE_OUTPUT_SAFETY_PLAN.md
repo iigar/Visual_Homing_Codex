@@ -16,6 +16,8 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 - The concrete writer shape is `SET_POSITION_TARGET_LOCAL_NED`; flight-controller acceptance depends on ArduPilot mode and configuration. Any attach-enabled bench stage must explicitly verify and log the expected mode, currently `Guided`, before an allowed writer decision can be considered valid.
+- This is an operator-in-the-loop assist boundary, not an autonomous controller. ArduPilot remains responsible for stabilization, failsafe behavior, mode management, and motor mixing.
+- Route artifacts and serial telemetry are not trust authorities. Malformed route data, modified route artifacts, malformed MAVLink frames, wrong sysid/compid, stale heartbeat, or unexpected mode must fail closed.
 
 ## First Future Live Test Boundary
 
@@ -117,6 +119,7 @@ Any future writer must be blocked unless all conditions are true:
 - runtime live-output flag enabled;
 - operator confirmation provided for the current run;
 - single writer owns command output;
+- command target system/component ids match the reviewed configuration;
 - audit logging is enabled and ready before the writer starts;
 - dry-run command quality has passed;
 - MAVLink heartbeat is present and fresh;
@@ -142,6 +145,7 @@ Stop conditions include:
 - command becomes invalid, non-finite, or out of bounds;
 - audit log cannot be written;
 - single-writer ownership is lost.
+- command serial transport reports partial write, write failure, or unexpected target ownership.
 
 On stop, the writer must emit a final audit line with the stop reason and must not attempt to recover automatically in the same run.
 
