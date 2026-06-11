@@ -9,6 +9,8 @@ Build a replay-first, deterministic, testable C++ core for a coarse GPS-denied v
 
 This is not a direct port of a Python visual odometry system that feeds `VISION_POSITION_ESTIMATE` into ArduPilot EKF as an external navigation source. This project is a new conservative visual-route-following command-assist architecture: it estimates coarse route progress and direction error, then proposes bounded yaw-rate-only commands through explicit gates. Keep the EKF-position-estimate paradigm and the direct command-assist paradigm documented as different designs so later reviews do not compare them as if they were the same system.
 
+This is an operator-in-the-loop assist system during the safety-readiness stages, not an autonomous vehicle controller. The companion should remain independently fail-closed: it may compute route evidence and bounded command proposals, but ArduPilot remains responsible for primary stabilization, failsafe behavior, mode management, and motor mixing.
+
 Primary outcome:
 - Build the project from an empty or rough repository to a working state where:
   - replay tests pass on desktop;
@@ -31,10 +33,13 @@ Implementation principles:
 - Keep tests offline and deterministic by default.
 - Keep live camera, serial telemetry, and hardware paths opt-in.
 - Avoid OpenCV or heavy dependencies in the core baseline unless there is a clear reason.
+- Define explicit interfaces between pipeline stages: capture, preprocessing, route artifact I/O, matching, telemetry, navigation, command sink/output, audit, and safety gate. Each stage must be replaceable and testable independently.
+- Keep extension points explicit for future sensors and algorithms: additional camera sources, thermal sensors, rangefinders, optical-flow/VIO/UWB scale sources, alternative matchers, and stronger route-quality policies should plug in behind interfaces and config, not by rewriting the scheduler.
 - Avoid unbounded queues/state in future live paths.
 - Every frame, telemetry sample, match, and command must carry timestamps.
 - Low confidence, stale data, invalid input, bad telemetry, command out of bounds, or audit failure must fail closed.
 - A stale CMake cache must not be able to silently enable live output; ordinary scripts should explicitly pass live-output CMake options as OFF.
+- Treat artifact integrity and serial-link trust as safety concerns: validate route files before use, reject malformed or unexpectedly modified artifacts, and never treat unauthenticated serial bytes as command permission by themselves.
 - Keep UI/web/Python tooling out of the realtime scheduler.
 
 Session and context strategy:
@@ -80,6 +85,11 @@ Milestone 3: route signature artifact
 - Reserve room for Thermal16 or future sensor payloads.
 - Add writer/reader round-trip tests.
 - Add route inspection CLI/reporting: entry count, dimensions, payload sizes, timestamp monotonicity, pixel format, altitude/heading ranges.
+- Add route artifact integrity diagnostics:
+  - record payload/file digest or equivalent integrity metadata in logs or sidecar metadata;
+  - detect whether a route file changed between recording, validation, and matching;
+  - reject malformed, oversized, inconsistent, or unexpected-version artifacts before allocation or matching;
+  - document that integrity diagnostics protect against accidental or local tampering but are not a complete cryptographic trust model unless signed metadata is later added.
 
 Milestone 4: route recording
 - Implement `RouteSignatureRecorder`.
@@ -157,6 +167,7 @@ Milestone 7: navigation command model
 
 Milestone 8: read-only MAVLink telemetry
 - Add read-only MAVLink serial capture/streaming before any live command output:
+  - MAVLink v1 and MAVLink v2 framing;
   - heartbeat;
   - armed state;
   - mode label;
@@ -169,6 +180,7 @@ Milestone 8: read-only MAVLink telemetry
   - heartbeat + freshness -> mavlink_ok;
   - attitude/altitude -> navigation estimate/route metadata.
 - Do not send any MAVLink commands in this milestone.
+- Treat UART/serial telemetry as untrusted input for parsing robustness: malformed frames, injected-looking traffic, wrong sysid/compid, stale mode, or missing heartbeat must not create command permission.
 - Add inspector/capture/validation scripts for Pi serial device, e.g. `/dev/serial0` at `115200`.
 
 Milestone 9: dry-run MAVLink boundary
@@ -203,6 +215,7 @@ Milestone 10: camera profiles
   - output: approximate ground width/height and meters-per-pixel for capture and target frames;
   - reject non-finite and non-positive values.
 - Treat barometer/rangefinder altitude and image-scale drift as diagnostics first. Do not let visual scale or barometer scale affect live commands without dry-run evidence and a separate safety decision.
+- Document the resolution/altitude relationship explicitly: higher altitude or larger range increases ground meters per pixel, can erase texture, and can make a route recorded at one altitude mismatch a route matched at another altitude. Log expected ground footprint, route altitude/range assumptions, current altitude/range, and visual-scale mismatch diagnostics before any field-readiness evidence.
 - Add an initial IMX219 visible camera profile, but document that FOV must be measured for the real lens/crop.
 - If a thermal camera such as Caddx Thermal 256 is a primary target, treat it as a separate hardware/capture milestone: define its capture transport, pixel format conversion, calibration, normalization, route-quality policy, and tests. Do not assume Pi libcamera support covers non-libcamera thermal devices.
 
@@ -272,6 +285,11 @@ Milestone 13: non-live live-output safety scaffolding
   - finite bounded command;
   - exact zero forward speed for first scope;
   - block reasons must be explicit.
+- Add watchdog-style stale-data behavior for live paths:
+  - camera frame timeout and max match age both block output;
+  - telemetry timeout blocks output;
+  - audit write failure blocks output;
+  - process shutdown or operator stop emits a final stop record.
 - Add `LiveMavlinkOutputAuditLog`:
   - start record;
   - command decision records;
@@ -373,6 +391,11 @@ Milestone 17: bench props-off writer library and fail-closed wrapper
   - currently expect `Guided` or another explicitly reviewed equivalent mode;
   - logs must include current FC mode, armed state, heartbeat freshness, and whether the safety gate considered the FC state acceptable;
   - attach evidence must distinguish writer attachment, bytes written, FC acceptance/ignore behavior, and any vehicle motion boundary.
+- Keep serial output ownership hardened:
+  - one writer owns command output;
+  - no UI, script, or second module may write commands concurrently;
+  - wrong sysid/compid or unexpected command target must block or be rejected;
+  - serial write failures, partial writes, or transport errors stop the session and audit the reason.
 - Split compile-time scope:
   - default: live output disabled/unavailable;
   - reviewed bench scope: explicit live-output + bench props-off CMake flags;
