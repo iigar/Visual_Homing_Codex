@@ -3,6 +3,7 @@
 ## 2026-06-14
 
 - Added `scripts/run-live-output-bench-props-off-attach-pi.sh` as the separate reviewed attach-build bench command. It requires a distinct attach confirmation string, configures all three Pi live-output attach CMake flags through `test-core-pi.sh`, verifies `attach_writer_cmake=ON` and `live_output_writer_attached=true` in the run log, and defaults to `allowed=0 blocked=<auto> reason=vehicle_not_armed`. The ordinary fail-closed wrapper remains unchanged and still proves the unattached `live_output_unavailable` boundary.
+- Accepted the first `jtzero` reviewed attach-build bench evidence at commit `b58e5d5`: the attach wrapper reported `attach_writer_cmake=ON` and `live_output_writer_attached=true`, live matching stopped at endpoint with `frames=128/150`, route progress gates passed, telemetry health and dry-run command quality passed, readiness/session-audit checkers passed, and the safety gate blocked every command with `allowed=0 blocked=128 reason=vehicle_not_armed`.
 
 ## 2026-06-11
 

@@ -350,6 +350,19 @@ Non-evidence note:
 
 - `2026-06-09` run `artifacts/logs/bench-props-off-live-output-20260609T064000Z.log` preserved `live_output_writer_attached=false` and `live_output_unavailable:225`, but did not reach endpoint (`max_progress_seen=0.697987`, `endpoint_stop=false`, `stop_reason=frame_limit_reached`), so it is not accepted readiness evidence.
 
+Reviewed attach-build bench evidence:
+
+- `2026-06-13T21:40:02Z`, commit `b58e5d5`;
+- run log: `artifacts/logs/bench-props-off-live-output-attach-20260613T212813Z.log`;
+- audit log: `artifacts/logs/bench-props-off-live-output-attach-audit-20260613T212813Z.log`;
+- the attach wrapper reported `attach_writer_cmake=ON` and `live_output_writer_attached=true`;
+- live matching stopped at endpoint with `frames=128/150`, `endpoint_stop=true`, and `stop_reason=endpoint_progress_reached`;
+- live matching passed `directional_progress_passed=true`, `endpoint_progress_passed=true`, and `progress_gate_passed=true`;
+- telemetry health passed with `telemetry_bytes_dropped=0`;
+- dry-run command quality passed with 128/128 valid commands;
+- live-output decisions remained blocked by the safety gate: `allowed=0 blocked=128 reason=vehicle_not_armed`;
+- this proves writer attachment in the reviewed bench build while preserving the not-armed safety block. It is not flight, tethered-flight, ground-movement, or autonomous-return evidence.
+
 ## Stop Conditions
 
 The live writer must stop immediately when any of these happens:
