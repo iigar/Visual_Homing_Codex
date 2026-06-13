@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-14
+
+- Added `scripts/run-live-output-bench-props-off-attach-pi.sh` as the separate reviewed attach-build bench command. It requires a distinct attach confirmation string, configures all three Pi live-output attach CMake flags through `test-core-pi.sh`, verifies `attach_writer_cmake=ON` and `live_output_writer_attached=true` in the run log, and defaults to `allowed=0 blocked=<auto> reason=vehicle_not_armed`. The ordinary fail-closed wrapper remains unchanged and still proves the unattached `live_output_unavailable` boundary.
+
 ## 2026-06-11
 
 - Applied the robustness principles from the Claude seed-prompt review to the active project docs. `docs/ARCHITECTURE.md` now states the operator-in-the-loop command-assist boundary, explicit replaceable module boundaries, extension points for future sensors/algorithms, altitude/range versus resolution risk, and route/serial trust boundaries. `docs/LIVE_OUTPUT_SAFETY_PLAN.md`, `docs/ROADMAP.md`, `docs/DECISIONS.md`, and `docs/PROJECT_MEMORY.md` now carry matching notes for route artifact integrity, MAVLink serial trust, single-writer target ownership, and future implementation work. No runtime behavior changed.

@@ -544,6 +544,21 @@ allowed=0 blocked=150 reason=live_output_unavailable
 
 By default, the audit checker preserves the original readiness contract: one start event, `150` command audit records, one stop event with `reason=match_live_route_complete`, and every command record blocked with `allowed=false`, `reason=vehicle_not_armed`, `valid=true`, and `vx_mps=0`. The bench wrapper overrides the expected allowed/blocked counts and reason for its current fail-closed `live_output_unavailable` stage.
 
+## Reviewed Attach-Build Bench Step
+
+This is a separate reviewed bench step, not the ordinary wrapper. It configures the attach-capable Pi build directory, attaches the serial writer, requires a different confirmation string, and still does not authorize flight, tethered flight, ground movement, or autonomous return. Propellers must be removed and the vehicle must be physically restrained.
+
+The default expected result is still blocked by the safety gate, normally `vehicle_not_armed`, while proving the build/log path reports `attach_writer_cmake=ON` and `live_output_writer_attached=true`.
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_ATTACH_CONFIRM=I_UNDERSTAND_SERIAL_WRITER_IS_ATTACHED_AND_PROPS_ARE_REMOVED \
+./scripts/run-live-output-bench-props-off-attach-pi.sh
+```
+
+For a reviewed send-enabled bench attempt, do not use the ordinary wrapper. Set explicit expected allowed/blocked audit counts and expected gate reasons for that run; leave the default unless the operator has intentionally prepared the FC mode/configuration and reviewed the bench conditions.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

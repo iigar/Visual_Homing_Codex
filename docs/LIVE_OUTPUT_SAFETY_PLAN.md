@@ -16,6 +16,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - Current validated command shape is yaw-rate only with `vx_mps=0`.
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 - The concrete writer shape is `SET_POSITION_TARGET_LOCAL_NED`; flight-controller acceptance depends on ArduPilot mode and configuration. Any attach-enabled bench stage must explicitly verify and log the expected mode, currently `Guided`, before an allowed writer decision can be considered valid.
+- The attach-enabled bench stage must use the separate reviewed attach wrapper, not the ordinary fail-closed wrapper. The attach wrapper must require its own confirmation string, prove `attach_writer_cmake=ON` and `live_output_writer_attached=true`, and default to safety-gate blocking unless a send-enabled bench attempt explicitly overrides expected allowed/blocked counts and reasons.
 - This is an operator-in-the-loop assist boundary, not an autonomous controller. ArduPilot remains responsible for stabilization, failsafe behavior, mode management, and motor mixing.
 - Route artifacts and serial telemetry are not trust authorities. Malformed route data, modified route artifacts, malformed MAVLink frames, wrong sysid/compid, stale heartbeat, or unexpected mode must fail closed.
 

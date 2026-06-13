@@ -268,6 +268,28 @@ Current expected result after the serial writer library boundary exists but befo
 - the runtime wrapper must still report `allowed=0 blocked=<auto> reason=live_output_unavailable` with `endpoint_stop=true` and `stop_reason=endpoint_progress_reached`;
 - `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE` remains `0`.
 
+Reviewed attach-build bench wrapper:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_ATTACH_CONFIRM=I_UNDERSTAND_SERIAL_WRITER_IS_ATTACHED_AND_PROPS_ARE_REMOVED \
+./scripts/run-live-output-bench-props-off-attach-pi.sh
+```
+
+This wrapper is intentionally separate from `run-live-output-bench-props-off-pi.sh`. It configures the attach-capable Pi build with all three reviewed CMake flags, uses the separate `core/build-pi-live-output-attach` cache by default, and verifies that the run log contains `attach_writer_cmake=ON` and `live_output_writer_attached=true`.
+
+Default attach-build expected result:
+
+- route matching and dry-run command quality must pass;
+- endpoint-complete stop must remain enabled;
+- attached-writer evidence must be present in the run log;
+- safety gate must block all live-output decisions by default, normally with `vehicle_not_armed`;
+- session audit must report `allowed=0` and `blocked=<auto>`;
+- this is still a bench props-off step only and does not authorize flight, tethered flight, ground movement, or autonomous return.
+
+Any reviewed send-enabled bench attempt must override the expected allowed/blocked counts and gate reasons explicitly for that run. The ordinary wrapper must remain the default fail-closed unavailable-boundary command.
+
 Accepted fail-closed Pi evidence:
 
 - `2026-06-06`, commit `d355bf1`;

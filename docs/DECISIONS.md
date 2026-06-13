@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-06-14 - Add Separate Reviewed Attach-Build Bench Wrapper
+
+Decision:
+- Add `scripts/run-live-output-bench-props-off-attach-pi.sh` as a separate reviewed bench command for the serial-writer attach build.
+- Require a different confirmation string: `VISUAL_HOMING_LIVE_OUTPUT_BENCH_ATTACH_CONFIRM=I_UNDERSTAND_SERIAL_WRITER_IS_ATTACHED_AND_PROPS_ARE_REMOVED`.
+- Configure all three Pi CMake live-output attach flags only inside this wrapper and verify `attach_writer_cmake=ON` plus `live_output_writer_attached=true` in the run log.
+- Keep the ordinary `run-live-output-bench-props-off-pi.sh` unchanged as the default fail-closed unavailable-boundary wrapper.
+- Default the attach wrapper to `allowed=0 blocked=<auto> reason=vehicle_not_armed`; any send-enabled bench attempt must override expected allowed/blocked counts and gate reasons explicitly.
+
+Why:
+- The project needs a reviewed way to prove writer attachment without making the ordinary wrapper or default builds attach-capable.
+- A different confirmation string reduces accidental invocation of the attach-capable path.
+- The first attach-build evidence should distinguish writer attachment from FC acceptance, allowed sends, vehicle movement, or flight behavior.
+
+Impact:
+- The attach wrapper can build and run the separate `core/build-pi-live-output-attach` path through `test-core-pi.sh`.
+- Post-run checks now include attach evidence in addition to readiness and session-audit checks.
+- No default wrapper behavior changes; default builds still keep live output unavailable.
+
+Risk:
+- The attach wrapper can attach the serial writer in a props-off bench build. It must remain physically restrained, propellers removed, and operator-reviewed. It does not authorize flight, tethered flight, ground movement, or autonomous return.
+
 ## 2026-06-11 - Record Modularity, Trust, And Extension Principles
 
 Decision:
