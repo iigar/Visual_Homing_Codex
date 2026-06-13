@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-06-14 - Prepare Separate Send-Enabled Bench Wrapper
+
+Decision:
+- Add `scripts/run-live-output-bench-props-off-send-pi.sh` as a separate reviewed props-off bench wrapper for the first allowed-send evidence attempt.
+- Require two confirmations before it can run: one acknowledging bounded MAVLink sends with propellers removed, and one acknowledging the operator has verified the armed `Guided` bench state.
+- Reuse the reviewed attach wrapper internally so attach evidence remains mandatory.
+- Require `live_output_gate_allowed`/audit allowed counts to be positive, `blocked=0`, and `reason=allowed`.
+- Extend the readiness/session-audit checkers to accept `allowed=auto` for endpoint-stop sessions where the exact frame count is only known after the run.
+
+Why:
+- The project needs to distinguish attach evidence from allowed-send evidence without making the ordinary wrapper or attach-default wrapper send-enabled.
+- The exact endpoint-stop frame count depends on the physical route pass, so requiring a hard-coded allowed count would make the first send-enabled bench run brittle.
+- The current live route loop expects endpoint-stop evidence; the send wrapper therefore refuses `VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS < VISUAL_HOMING_CAMERA_FRAMES` instead of trying to create an early max-command stop mode.
+
+Impact:
+- A future operator-reviewed bench run has a dedicated command and evidence contract.
+- Default and attach-default wrappers remain conservative and unchanged in purpose.
+- This is preparation only; no send-enabled bench evidence has been accepted yet.
+
+Risk:
+- The send wrapper can write real MAVLink commands when the FC is armed and Guided. It remains props-off, physically restrained, and bench-only; it does not authorize flight, tethered flight, ground movement, or autonomous return.
+
 ## 2026-06-14 - Add Separate Reviewed Attach-Build Bench Wrapper
 
 Decision:

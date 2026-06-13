@@ -58,8 +58,11 @@ check_audit_log() {
     stop_count="$(grep -c '^live_output_audit event=stop ' "${audit_path}" || true)"
     local resolved_expected_commands resolved_expected_allowed resolved_expected_blocked
     resolved_expected_commands="$(resolve_expected_count "${expected_commands}" "${command_count}")"
-    resolved_expected_allowed="$(resolve_expected_count "${expected_allowed_commands}" "0")"
-    if [[ "${expected_blocked_commands}" == "auto" ]]; then
+    resolved_expected_allowed="${expected_allowed_commands}"
+    if [[ "${expected_allowed_commands}" != "auto" ]]; then
+        resolved_expected_allowed="$(resolve_expected_count "${expected_allowed_commands}" "0")"
+    fi
+    if [[ "${expected_blocked_commands}" == "auto" && "${resolved_expected_allowed}" != "auto" ]]; then
         if [[ ! "${resolved_expected_allowed}" =~ ^[0-9]+$ ]]; then
             echo "session_audit_log_check path=${audit_path} passed=false field=allowed_commands expected=uint actual=${resolved_expected_allowed}" >&2
             return 1
@@ -137,11 +140,11 @@ check_audit_log() {
         }
 
         END {
-            if (allowed_commands != expected_allowed_commands) {
+            if (expected_allowed_commands != "auto" && allowed_commands != expected_allowed_commands) {
                 printf "session_audit_log_check path=%s passed=false field=allowed_commands expected=%s actual=%d\n", audit_path, expected_allowed_commands, allowed_commands > "/dev/stderr"
                 bad = 1
             }
-            if (blocked_commands != expected_blocked_commands) {
+            if (expected_blocked_commands != "auto" && blocked_commands != expected_blocked_commands) {
                 printf "session_audit_log_check path=%s passed=false field=blocked_commands expected=%s actual=%d\n", audit_path, expected_blocked_commands, blocked_commands > "/dev/stderr"
                 bad = 1
             }

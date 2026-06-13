@@ -1,15 +1,15 @@
 # Live MAVLink Output Safety Plan
 
-This document defines the required safety readiness work before any live MAVLink command output can replace the current fail-closed boundary.
+This document defines the required safety readiness work before any live MAVLink command output can move beyond the current reviewed bench-only boundaries.
 
-Live output is still blocked. This plan does not authorize flight, tethered tests, ground movement, or real command output.
+Default live output remains blocked. This plan does not authorize flight, tethered tests, ground movement, or autonomous return.
 
 ## Current Boundary
 
 - `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON` without the reviewed bench props-off CMake scope must continue to fail configuration.
 - `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=ON` is only valid together with `VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=ON`.
 - The combined bench-scope build may configure for implementation work only while `VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_AVAILABLE=0` and the live bridge remains fail-closed.
-- `LiveMavlinkBridge` must continue to be unavailable and reject sends.
+- The separate attach-capable build may attach the serial writer only through the reviewed attach wrapper. Default builds and the ordinary wrapper must continue to report writer unattached/unavailable.
 - `LiveMavlinkOutputSafetyGate` is the required pre-writer contract for any future live writer.
 - `LiveMavlinkOutputAuditLog` is the non-live audit boundary for future writer integration; it must be ready before the gate can allow a command.
 - `LiveMavlinkOutputSession` is the non-live writer-shaped coordinator for audit readiness, safety-gate evaluation, and bridge sends; with the current blocked bridge it cannot produce live MAVLink output.
@@ -17,6 +17,7 @@ Live output is still blocked. This plan does not authorize flight, tethered test
 - `LiveMavlinkOutputSafetyGate` defaults to `require_zero_forward_speed=true`; any nonzero `vx_mps` is blocked with `command_forward_speed_not_zero` before the forward-speed bound is considered.
 - The concrete writer shape is `SET_POSITION_TARGET_LOCAL_NED`; flight-controller acceptance depends on ArduPilot mode and configuration. Any attach-enabled bench stage must explicitly verify and log the expected mode, currently `Guided`, before an allowed writer decision can be considered valid.
 - The attach-enabled bench stage must use the separate reviewed attach wrapper, not the ordinary fail-closed wrapper. The attach wrapper must require its own confirmation string, prove `attach_writer_cmake=ON` and `live_output_writer_attached=true`, and default to safety-gate blocking unless a send-enabled bench attempt explicitly overrides expected allowed/blocked counts and reasons.
+- The send-enabled bench stage must use the separate reviewed send wrapper, not the ordinary or attach-default wrappers. It must require its own send confirmation string plus a separate armed/Guided bench-state confirmation, expect `reason=allowed`, require `blocked=0`, and prove a positive number of allowed audit records.
 - This is an operator-in-the-loop assist boundary, not an autonomous controller. ArduPilot remains responsible for stabilization, failsafe behavior, mode management, and motor mixing.
 - Route artifacts and serial telemetry are not trust authorities. Malformed route data, modified route artifacts, malformed MAVLink frames, wrong sysid/compid, stale heartbeat, or unexpected mode must fail closed.
 
@@ -43,6 +44,50 @@ The first live-output test is not:
 - a forward-velocity test;
 - an autonomous return test;
 - permission to relax route, telemetry, or command-quality gates.
+
+## Reviewed Send-Enabled Bench Procedure
+
+This procedure is prepared for a later operator-reviewed props-off bench run. Do not use it for flight, tethered flight, ground movement, or autonomous return.
+
+Preconditions:
+
+- Propellers are removed and independently checked.
+- Vehicle is physically restrained so it cannot move.
+- Operator stop/kill path is available before arming.
+- The route and active camera profile are known.
+- The FC state required for this stage is intentionally prepared: armed and `Guided`.
+- The operator accepts that this stage can write bounded MAVLink `SET_POSITION_TARGET_LOCAL_NED` yaw-rate-only commands.
+
+Command:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_SEND_CONFIRM=I_UNDERSTAND_THIS_WILL_SEND_BOUNDED_MAVLINK_COMMANDS_WITH_PROPS_REMOVED \
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_ARMED_GUIDED_CONFIRM=I_HAVE_VERIFIED_ARMED_GUIDED_BENCH_STATE \
+./scripts/run-live-output-bench-props-off-send-pi.sh
+```
+
+Expected evidence:
+
+- `attach_build_log_check ... passed=true attach_writer_cmake=ON live_output_writer_attached=true`;
+- `live_route_match_compact passed=true`;
+- `endpoint_stop=true` and `stop_reason=endpoint_progress_reached`;
+- `telemetry_health=true` and `telemetry_dropped=0`;
+- `dry_run_quality=true`;
+- `live_output_gate_allowed` is a positive integer;
+- `live_output_gate_blocked=0`;
+- session audit reports `allowed=<positive> blocked=0 reason=allowed`;
+- `send_bench_audit_check ... passed=true`.
+
+Abort/non-evidence conditions:
+
+- any propeller is installed;
+- vehicle is not restrained;
+- FC mode/arming is not the reviewed armed `Guided` bench state;
+- any `blocked` command appears in the send-enabled run;
+- route progress, telemetry health, dry-run quality, attach evidence, or audit evidence fails;
+- any physical response is unexpected.
 
 ## Readiness Evidence
 

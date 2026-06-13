@@ -559,6 +559,33 @@ VISUAL_HOMING_LIVE_OUTPUT_BENCH_ATTACH_CONFIRM=I_UNDERSTAND_SERIAL_WRITER_IS_ATT
 
 For a reviewed send-enabled bench attempt, do not use the ordinary wrapper. Set explicit expected allowed/blocked audit counts and expected gate reasons for that run; leave the default unless the operator has intentionally prepared the FC mode/configuration and reviewed the bench conditions.
 
+## Reviewed Send-Enabled Bench Step
+
+This step is prepared for a later reviewed props-off bench run that can send bounded yaw-rate-only MAVLink commands. It is not the ordinary wrapper and not the attach-default wrapper. It does not authorize flight, tethered flight, ground movement, or autonomous return.
+
+Before running it, verify propellers are removed, the vehicle is physically restrained, the operator stop path is available, and the FC is intentionally in the armed `Guided` bench state required for this stage.
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_SEND_CONFIRM=I_UNDERSTAND_THIS_WILL_SEND_BOUNDED_MAVLINK_COMMANDS_WITH_PROPS_REMOVED \
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_ARMED_GUIDED_CONFIRM=I_HAVE_VERIFIED_ARMED_GUIDED_BENCH_STATE \
+./scripts/run-live-output-bench-props-off-send-pi.sh
+```
+
+Expected result:
+
+```text
+attach_writer_cmake=ON
+live_output_writer_attached=true
+allowed=<positive>
+blocked=0
+reason=allowed
+send_bench_audit_check passed=true
+```
+
+If any blocked command appears, route progress fails, telemetry health fails, dry-run command quality fails, or physical behavior is unexpected, treat the run as non-evidence and stop the bench sequence.
+
 ## Route Self-Match
 
 Self-match an existing route artifact without touching camera hardware:

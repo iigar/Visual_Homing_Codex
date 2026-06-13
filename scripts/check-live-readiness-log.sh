@@ -99,11 +99,30 @@ check_log() {
     else
         require_field "${log_path}" "${compact_line}" "dry_run_valid" "${expected_dry_run_valid}" || failed=1
     fi
-    require_field "${log_path}" "${compact_line}" "live_output_gate_allowed" "${expected_gate_allowed}" || failed=1
+    local gate_allowed_value gate_blocked_value
+    gate_allowed_value="$(extract_field "${compact_line}" "live_output_gate_allowed")"
+    gate_blocked_value="$(extract_field "${compact_line}" "live_output_gate_blocked")"
+    if [[ "${expected_gate_allowed}" == "auto" ]]; then
+        if [[ ! "${gate_allowed_value}" =~ ^[0-9]+$ ]]; then
+            echo "readiness_log_check path=${log_path} passed=false field=live_output_gate_allowed expected=uint actual=${gate_allowed_value:-missing}" >&2
+            failed=1
+        fi
+    else
+        require_field "${log_path}" "${compact_line}" "live_output_gate_allowed" "${expected_gate_allowed}" || failed=1
+    fi
     if [[ "${expected_gate_blocked}" == "auto" ]]; then
-        require_field "${log_path}" "${compact_line}" "live_output_gate_blocked" "${captured_frames}" || failed=1
+        if [[ ! "${gate_blocked_value}" =~ ^[0-9]+$ ]]; then
+            echo "readiness_log_check path=${log_path} passed=false field=live_output_gate_blocked expected=uint actual=${gate_blocked_value:-missing}" >&2
+            failed=1
+        fi
     else
         require_field "${log_path}" "${compact_line}" "live_output_gate_blocked" "${expected_gate_blocked}" || failed=1
+    fi
+    if [[ "${gate_allowed_value}" =~ ^[0-9]+$ && "${gate_blocked_value}" =~ ^[0-9]+$ && "${captured_frames}" =~ ^[0-9]+$ ]]; then
+        if [[ "$((gate_allowed_value + gate_blocked_value))" -ne "${captured_frames}" ]]; then
+            echo "readiness_log_check path=${log_path} passed=false field=live_output_gate_counts expected=sum_eq_frames actual=${gate_allowed_value}+${gate_blocked_value}/${captured_frames}" >&2
+            failed=1
+        fi
     fi
     if [[ "${expected_endpoint_stop}" != "any" ]]; then
         require_field "${log_path}" "${compact_line}" "endpoint_stop" "${expected_endpoint_stop}" || failed=1

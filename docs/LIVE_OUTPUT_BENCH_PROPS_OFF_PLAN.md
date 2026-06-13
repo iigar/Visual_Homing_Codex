@@ -290,6 +290,28 @@ Default attach-build expected result:
 
 Any reviewed send-enabled bench attempt must override the expected allowed/blocked counts and gate reasons explicitly for that run. The ordinary wrapper must remain the default fail-closed unavailable-boundary command.
 
+Reviewed send-enabled bench wrapper:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_SEND_CONFIRM=I_UNDERSTAND_THIS_WILL_SEND_BOUNDED_MAVLINK_COMMANDS_WITH_PROPS_REMOVED \
+VISUAL_HOMING_LIVE_OUTPUT_BENCH_ARMED_GUIDED_CONFIRM=I_HAVE_VERIFIED_ARMED_GUIDED_BENCH_STATE \
+./scripts/run-live-output-bench-props-off-send-pi.sh
+```
+
+This wrapper is intentionally separate from both `run-live-output-bench-props-off-pi.sh` and `run-live-output-bench-props-off-attach-pi.sh`. It reuses the reviewed attach wrapper but changes the evidence contract to an allowed-send bench contract:
+
+- all attach-build evidence must still pass;
+- endpoint-complete stop must still pass;
+- telemetry health and dry-run command quality must still pass;
+- `live_output_gate_allowed` may be auto-counted but must be positive;
+- `live_output_gate_blocked` must be `0`;
+- audit records must report `allowed=<positive> blocked=0 reason=allowed`;
+- `VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS` must be greater than or equal to `VISUAL_HOMING_CAMERA_FRAMES` so the current endpoint-stop evidence path is not converted into a premature max-command stop path.
+
+The send-enabled wrapper requires both a send confirmation string and a separate confirmation that the operator has intentionally verified the armed `Guided` bench state. It remains props-off and physically restrained only; it is not flight, tethered flight, ground movement, or autonomous return.
+
 Accepted fail-closed Pi evidence:
 
 - `2026-06-06`, commit `d355bf1`;
