@@ -125,7 +125,7 @@
   - separate audit log and readiness checker;
   - no simultaneous command-output authority during the first external-nav writer bench run;
   - clear distinction between "FC accepts external-nav position" and "vehicle may receive guided command output".
-- Status: planned. The trigger evidence is the `2026-06-14` `jtzero` setup attempt where `ExternalNav` was configured but no provider existed, so armed `Guided` still failed with `requires position`.
+- Status: started. The trigger evidence is the `2026-06-14` `jtzero` setup attempt where `ExternalNav` was configured but no provider existed, so armed `Guided` still failed with `requires position`. The first implementation step adds a dry-run-only `ExternalNavEstimate` model and route-progress estimator that produces loggable local pose estimates from valid route progress, configured nominal route length, fresh altitude/yaw telemetry, and explicit scale/quality gates. It has unit coverage and does not write `VISION_POSITION_ESTIMATE`, `ODOMETRY`, or any other MAVLink external-nav message.
 
 ## Milestone 7 - Flight Test Ladder
 
