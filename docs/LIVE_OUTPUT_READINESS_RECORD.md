@@ -46,6 +46,22 @@ This is separate from the ordinary fail-closed wrapper evidence. It proves the r
 | --- | --- | --- | --- | --- | --- |
 | 2026-06-13 UTC | `b58e5d5` | `artifacts/logs/bench-props-off-live-output-attach-20260613T212813Z.log` | `artifacts/logs/bench-props-off-live-output-attach-audit-20260613T212813Z.log` | `attach_build passed=true attach_writer_cmake=ON live_output_writer_attached=true; readiness passed=true live_output_gate_block_reasons=vehicle_not_armed:128; session_audit passed=true commands=128 allowed=0 blocked=128 reason=vehicle_not_armed stop_reason=endpoint_progress_reached` | The reviewed attach wrapper configured the attach build and reported `live_output_writer_attached=true`. Live route matching stopped at endpoint with `frames=128/150`, `endpoint_stop=true`, `stop_reason=endpoint_progress_reached`, `directional_progress_passed=true`, `endpoint_progress_passed=true`, `progress_gate_passed=true`, telemetry health passed with `telemetry_bytes_dropped=0`, dry-run command quality passed with 128/128 valid commands, and the safety gate blocked every command because the vehicle was not armed. |
 
+## Send-Enabled Bench Blocker
+
+The first send-enabled bench attempt remains blocked before execution.
+
+Observed setup result on `2026-06-14`:
+
+- ArduPilot rejects armed `Guided` with `Mode change to GUIDED failed: requires position`.
+- `ExternalNav` is selected in parameters, but no external navigation provider is currently sending accepted position/odometry data into the EKF.
+- Setting Home/EKF origin did not make armed `Guided` available because origin is not a position estimate stream.
+
+Conclusion:
+
+- Do not run `scripts/run-live-output-bench-props-off-send-pi.sh` until the FC can enter armed `Guided` without `requires position`.
+- The next implementation work is an external-navigation provider path, starting dry-run/log-only and not as live command authority.
+- This blocker is not a route-recording problem; recording a new visual route does not provide EKF position to ArduPilot.
+
 Rejected/non-evidence runs:
 
 - `artifacts/logs/bench-props-off-live-output-20260609T064000Z.log` is not readiness evidence. It preserved fail-closed output with `live_output_writer_attached=false` and `live_output_unavailable:225`, but the route pass did not reach endpoint (`max_progress_seen=0.697987`, `endpoint_stop=false`, `stop_reason=frame_limit_reached`, `passed=false`).

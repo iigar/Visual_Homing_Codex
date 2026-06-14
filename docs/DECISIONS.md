@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-06-14 - Add External Navigation Provider Milestone
+
+Decision:
+- Do not run the send-enabled bench wrapper while ArduPilot rejects armed `Guided` with `requires position`.
+- Treat the absence of an external navigation provider as a separate system blocker, not a route-recording issue.
+- Add Milestone 6.9 for an external-navigation provider path that starts dry-run/log-only before any `VISION_POSITION_ESTIMATE` or `ODOMETRY` writer is attached.
+- Keep external-nav writing separate from command-output writing; the first external-nav writer evidence must not also send guided yaw-rate commands.
+
+Why:
+- ArduPilot can be configured to use `ExternalNav`, but the FC still needs an actual accepted position/odometry stream before armed `Guided` is available.
+- Setting Home/EKF origin is not enough; it supplies an origin, not a continuous position estimate.
+- The current C++ system reads telemetry and can match visual route progress, but it does not yet provide EKF position estimates to the FC.
+
+Impact:
+- `scripts/run-live-output-bench-props-off-send-pi.sh` remains prepared but should not be run until the FC can enter armed `Guided` without `requires position`.
+- Roadmap now has an explicit Milestone 6.9 before the flight ladder.
+- The next engineering work should model, log, and validate external-nav estimates before adding any writer.
+
+Risk:
+- A visual route-progress estimate is not automatically a metric external-nav pose. Scale, yaw/attitude compensation, altitude/range, route ambiguity, covariance/quality, EKF origin, and stale data must be handled before FC authority is considered.
+
 ## 2026-06-14 - Prepare Separate Send-Enabled Bench Wrapper
 
 Decision:
