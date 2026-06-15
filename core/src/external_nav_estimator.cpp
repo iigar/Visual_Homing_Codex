@@ -50,6 +50,7 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
     estimate.telemetry_fresh = telemetry.heartbeat_seen
         && milliseconds_between(telemetry.timestamp, current_time) <= config.maximum_altitude_age_ms;
     estimate.altitude_valid = estimate.telemetry_fresh
+        && telemetry.relative_altitude_seen
         && finite_positive(telemetry.relative_altitude_m);
     estimate.scale_known = finite_positive(config.nominal_route_length_m) && estimate.altitude_valid;
 

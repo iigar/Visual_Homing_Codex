@@ -14,6 +14,7 @@ constexpr unsigned char mavlink2_stx = 0xFD;
 constexpr std::uint32_t msg_heartbeat = 0;
 constexpr std::uint32_t msg_attitude = 30;
 constexpr std::uint32_t msg_global_position_int = 33;
+constexpr std::uint32_t msg_altitude = 141;
 constexpr std::uint8_t mav_mode_flag_safety_armed = 128;
 
 std::uint32_t read_u32_le(const unsigned char* data) {
@@ -95,7 +96,20 @@ void inspect_payload(std::uint32_t message_id,
             return;
         }
         ++summary.global_position_int_messages;
+        ++summary.altitude_messages;
+        summary.latest.relative_altitude_seen = true;
         summary.latest.relative_altitude_m = static_cast<double>(read_i32_le(payload + 16)) / 1000.0;
+        return;
+    }
+
+    if (message_id == msg_altitude) {
+        if (payload_size < 32) {
+            ++summary.malformed_frames;
+            return;
+        }
+        ++summary.altitude_messages;
+        summary.latest.relative_altitude_seen = true;
+        summary.latest.relative_altitude_m = static_cast<double>(read_f32_le(payload + 20));
     }
 }
 
@@ -205,10 +219,12 @@ MavlinkTelemetryValidationResult validate_mavlink_telemetry(
     result.attitude_passed = summary.attitude_messages >= config.minimum_attitude_messages;
     result.global_position_int_passed =
         summary.global_position_int_messages >= config.minimum_global_position_int_messages;
+    result.altitude_passed = summary.altitude_messages > 0 || config.minimum_global_position_int_messages == 0;
     result.malformed_passed = summary.malformed_frames <= config.maximum_malformed_frames;
     result.passed = result.heartbeat_passed &&
                     result.attitude_passed &&
                     result.global_position_int_passed &&
+                    result.altitude_passed &&
                     result.malformed_passed;
     return result;
 }

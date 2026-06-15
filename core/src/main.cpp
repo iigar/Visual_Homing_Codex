@@ -283,6 +283,7 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " heartbeat_messages=" << summary.heartbeat_messages
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
+           << " altitude_messages=" << summary.altitude_messages
            << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
            << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
            << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
@@ -295,6 +296,7 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " roll_rad=" << summary.latest.roll_rad
            << " pitch_rad=" << summary.latest.pitch_rad
            << " yaw_rad=" << summary.latest.yaw_rad
+           << " relative_altitude_seen=" << (summary.latest.relative_altitude_seen ? "true" : "false")
            << " relative_altitude_m=" << summary.latest.relative_altitude_m
            << "\n";
 }
@@ -312,13 +314,16 @@ void print_mavlink_telemetry_validation(const std::string& path,
            << " heartbeat_messages=" << summary.heartbeat_messages
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
+           << " altitude_messages=" << summary.altitude_messages
            << " malformed_frames=" << summary.malformed_frames
            << " heartbeat_passed=" << (result.heartbeat_passed ? "true" : "false")
            << " attitude_passed=" << (result.attitude_passed ? "true" : "false")
            << " global_position_int_passed=" << (result.global_position_int_passed ? "true" : "false")
+           << " altitude_passed=" << (result.altitude_passed ? "true" : "false")
            << " malformed_passed=" << (result.malformed_passed ? "true" : "false")
            << " heartbeat_seen=" << (summary.latest.heartbeat_seen ? "true" : "false")
            << " mode=" << vh::to_string(summary.latest.mode)
+           << " relative_altitude_seen=" << (summary.latest.relative_altitude_seen ? "true" : "false")
            << " relative_altitude_m=" << summary.latest.relative_altitude_m
            << " passed=" << (result.passed ? "true" : "false")
            << "\n";

@@ -144,6 +144,7 @@ void copy_telemetry_stream_metrics(
     result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
     result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
     result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+    result.telemetry_altitude_messages = telemetry.inspection.altitude_messages;
 }
 
 void copy_telemetry_stream_metrics(
@@ -156,6 +157,16 @@ void copy_telemetry_stream_metrics(
     result.telemetry_heartbeat_messages = telemetry.inspection.heartbeat_messages;
     result.telemetry_attitude_messages = telemetry.inspection.attitude_messages;
     result.telemetry_global_position_int_messages = telemetry.inspection.global_position_int_messages;
+    result.telemetry_altitude_messages = telemetry.inspection.altitude_messages;
+}
+
+MavlinkTelemetryValidationConfig live_route_match_telemetry_validation_config(
+    const LiveRouteMatchingConfig& config) {
+    MavlinkTelemetryValidationConfig validation_config;
+    if (config.emit_external_nav_estimates) {
+        validation_config.minimum_global_position_int_messages = 0;
+    }
+    return validation_config;
 }
 
 LiveMavlinkOutputSafetyConfig live_output_gate_config_from_match_config(
@@ -397,7 +408,8 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                 << " frames_seen=" << result.telemetry_frames_seen
                 << " heartbeat_messages=" << result.telemetry_heartbeat_messages
                 << " attitude_messages=" << result.telemetry_attitude_messages
-                << " global_position_int_messages=" << result.telemetry_global_position_int_messages;
+                << " global_position_int_messages=" << result.telemetry_global_position_int_messages
+                << " altitude_messages=" << result.telemetry_altitude_messages;
         if (!telemetry_stream->last_error().empty()) {
             metrics << " error=" << telemetry_stream->last_error();
         }
@@ -747,7 +759,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         while (milliseconds_between(telemetry_warmup_started, now()) <
                static_cast<double>(config.telemetry_warmup_timeout_ms)) {
             const auto telemetry = telemetry_stream->snapshot();
-            const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+            const auto validation = validate_mavlink_telemetry(
+                telemetry.inspection,
+                live_route_match_telemetry_validation_config(config));
             copy_telemetry_stream_metrics(result, telemetry);
             if (validation.passed) {
                 result.telemetry_warmup_passed = true;
@@ -767,7 +781,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " frames_seen=" << result.telemetry_frames_seen
                 << " heartbeat_messages=" << result.telemetry_heartbeat_messages
                 << " attitude_messages=" << result.telemetry_attitude_messages
-                << " global_position_int_messages=" << result.telemetry_global_position_int_messages;
+                << " global_position_int_messages=" << result.telemetry_global_position_int_messages
+                << " altitude_messages=" << result.telemetry_altitude_messages;
         if (!telemetry_stream->last_error().empty()) {
             metrics << " error=" << telemetry_stream->last_error();
         }
@@ -781,6 +796,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
                     << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
                     << " telemetry_frames_seen=" << result.telemetry_frames_seen
+                    << " telemetry_altitude_messages=" << result.telemetry_altitude_messages
                     << " live_telemetry_health_passed=false"
                     << " passed=false\n";
             return result;
@@ -908,7 +924,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             health.set_route_match_confidence(match.confidence);
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
-                const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+                const auto validation = validate_mavlink_telemetry(
+                    telemetry.inspection,
+                    live_route_match_telemetry_validation_config(config));
                 copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
                     latest_gate_telemetry = telemetry.inspection.latest;
@@ -1190,6 +1208,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages
             << " telemetry_attitude_messages=" << result.telemetry_attitude_messages
             << " telemetry_global_position_int_messages=" << result.telemetry_global_position_int_messages
+            << " telemetry_altitude_messages=" << result.telemetry_altitude_messages
             << " telemetry_health_ready_frames=" << result.telemetry_health_ready_frames
             << " telemetry_health_degraded_frames=" << result.telemetry_health_degraded_frames
             << " live_telemetry_health_passed=" << (result.live_telemetry_health_passed ? "true" : "false")

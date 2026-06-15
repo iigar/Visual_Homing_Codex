@@ -16,6 +16,7 @@ struct MavlinkTelemetryInspectionSummary {
     std::uint64_t heartbeat_messages = 0;
     std::uint64_t attitude_messages = 0;
     std::uint64_t global_position_int_messages = 0;
+    std::uint64_t altitude_messages = 0;
     std::uint32_t heartbeat_custom_mode = 0;
     std::uint8_t heartbeat_type = 0;
     std::uint8_t heartbeat_autopilot = 0;
@@ -37,6 +38,7 @@ struct MavlinkTelemetryValidationResult {
     bool heartbeat_passed = false;
     bool attitude_passed = false;
     bool global_position_int_passed = false;
+    bool altitude_passed = false;
     bool malformed_passed = false;
 };
 

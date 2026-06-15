@@ -23,6 +23,7 @@ struct MavlinkTelemetry {
     double roll_rad = 0.0;
     double pitch_rad = 0.0;
     double yaw_rad = 0.0;
+    bool relative_altitude_seen = false;
     double relative_altitude_m = 0.0;
 };
 

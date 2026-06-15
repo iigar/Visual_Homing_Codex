@@ -72,6 +72,7 @@ struct LiveRouteRecordingResult {
     std::uint64_t telemetry_heartbeat_messages = 0;
     std::uint64_t telemetry_attitude_messages = 0;
     std::uint64_t telemetry_global_position_int_messages = 0;
+    std::uint64_t telemetry_altitude_messages = 0;
 };
 
 struct LiveRouteMatchingConfig {
@@ -152,6 +153,7 @@ struct LiveRouteMatchingResult {
     std::uint64_t telemetry_heartbeat_messages = 0;
     std::uint64_t telemetry_attitude_messages = 0;
     std::uint64_t telemetry_global_position_int_messages = 0;
+    std::uint64_t telemetry_altitude_messages = 0;
     std::uint64_t telemetry_health_ready_frames = 0;
     std::uint64_t telemetry_health_degraded_frames = 0;
     bool live_telemetry_health_passed = true;

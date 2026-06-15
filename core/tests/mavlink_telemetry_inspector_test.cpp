@@ -14,6 +14,12 @@ void append_u32(std::vector<unsigned char>& bytes, std::uint32_t value) {
     bytes.push_back(static_cast<unsigned char>((value >> 24) & 0xFF));
 }
 
+void append_u64(std::vector<unsigned char>& bytes, std::uint64_t value) {
+    for (int shift = 0; shift < 64; shift += 8) {
+        bytes.push_back(static_cast<unsigned char>((value >> shift) & 0xFF));
+    }
+}
+
 void append_i32(std::vector<unsigned char>& bytes, std::int32_t value) {
     append_u32(bytes, static_cast<std::uint32_t>(value));
 }
@@ -107,6 +113,7 @@ int main() {
     assert(summary.heartbeat_messages == 1);
     assert(summary.attitude_messages == 1);
     assert(summary.global_position_int_messages == 1);
+    assert(summary.altitude_messages == 1);
     assert(summary.heartbeat_custom_mode == 4);
     assert(summary.heartbeat_type == 2);
     assert(summary.heartbeat_autopilot == 3);
@@ -119,6 +126,7 @@ int main() {
     assert(summary.latest.roll_rad > 0.09 && summary.latest.roll_rad < 0.11);
     assert(summary.latest.pitch_rad < -0.19 && summary.latest.pitch_rad > -0.21);
     assert(summary.latest.yaw_rad > 1.29 && summary.latest.yaw_rad < 1.31);
+    assert(summary.latest.relative_altitude_seen);
     assert(summary.latest.relative_altitude_m == 42.5);
     assert(vh::to_string(summary.latest.mode) == "Guided");
 
@@ -127,6 +135,7 @@ int main() {
     assert(validation.heartbeat_passed);
     assert(validation.attitude_passed);
     assert(validation.global_position_int_passed);
+    assert(validation.altitude_passed);
     assert(validation.malformed_passed);
 
     vh::MavlinkTelemetryValidationConfig strict_validation_config;
@@ -136,7 +145,32 @@ int main() {
     assert(!strict_validation.heartbeat_passed);
     assert(strict_validation.attitude_passed);
     assert(strict_validation.global_position_int_passed);
+    assert(strict_validation.altitude_passed);
     assert(strict_validation.malformed_passed);
+
+    std::vector<unsigned char> altitude;
+    append_u64(altitude, 1000);
+    append_f32(altitude, 101.0F);
+    append_f32(altitude, 102.0F);
+    append_f32(altitude, 1.0F);
+    append_f32(altitude, 3.25F);
+    append_f32(altitude, 0.0F);
+    append_f32(altitude, 0.0F);
+    const auto altitude_only = vh::inspect_mavlink_telemetry_bytes(
+        mavlink2_frame(0, heartbeat) +
+        mavlink2_frame(30, attitude) +
+        mavlink2_frame(141, altitude));
+    assert(altitude_only.global_position_int_messages == 0);
+    assert(altitude_only.altitude_messages == 1);
+    assert(altitude_only.latest.relative_altitude_seen);
+    assert(altitude_only.latest.relative_altitude_m > 3.24);
+    assert(altitude_only.latest.relative_altitude_m < 3.26);
+    vh::MavlinkTelemetryValidationConfig relaxed_validation_config;
+    relaxed_validation_config.minimum_global_position_int_messages = 0;
+    const auto relaxed_validation = vh::validate_mavlink_telemetry(altitude_only, relaxed_validation_config);
+    assert(relaxed_validation.passed);
+    assert(relaxed_validation.global_position_int_passed);
+    assert(relaxed_validation.altitude_passed);
 
     std::vector<unsigned char> alt_hold_heartbeat;
     append_u32(alt_hold_heartbeat, 2);

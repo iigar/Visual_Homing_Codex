@@ -154,7 +154,7 @@ The underlying CLI is:
 ./core/build-pi/visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>
 ```
 
-The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `ATTITUDE`, and `GLOBAL_POSITION_INT` payloads for heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude. It does not validate MAVLink CRC yet and does not open a live device; it is a read-only diagnostic layer before adding serial transport.
+The inspector parses MAVLink v1/v2 framing and currently extracts `HEARTBEAT`, `ATTITUDE`, `GLOBAL_POSITION_INT`, and `ALTITUDE` payloads for heartbeat presence, armed state, coarse ArduPilot mode, roll/pitch/yaw, and relative altitude when a relative-altitude source is present. It does not validate MAVLink CRC yet and does not open a live device; it is a read-only diagnostic layer before adding serial transport.
 
 The heartbeat output includes raw `heartbeat_custom_mode`, `heartbeat_type`, `heartbeat_autopilot`, `heartbeat_base_mode`, `heartbeat_system_status`, and `heartbeat_mavlink_version` fields so unsupported vehicle mode mappings can be diagnosed without changing wiring.
 
@@ -496,7 +496,9 @@ VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS=500
 VISUAL_HOMING_EXTERNAL_NAV_SOURCE=visual_route_progress
 ```
 
-This writes one `external_nav_estimate` line per matched frame and adds `external_nav_valid_for_fc` plus `external_nav_invalid_reasons` to the final summaries. An estimate is marked FC-ready only when the route match is valid/confident, telemetry altitude/yaw is fresh, and nominal route scale is configured. This is Milestone 6.9 log evidence only; it does not make ArduPilot accept `Guided` and it does not attach an external-nav writer.
+For this external-nav dry-run mode only, live-route telemetry warmup accepts heartbeat plus attitude without requiring `GLOBAL_POSITION_INT`, because a GPS-denied FC may not publish that message before an external-navigation provider exists. If no `GLOBAL_POSITION_INT` or MAVLink `ALTITUDE` relative-height source is seen, the run can still collect route/matcher evidence, but each estimate remains `valid_for_fc=false` with an altitude/scale reason.
+
+This writes one `external_nav_estimate` line per matched frame and adds `external_nav_valid_for_fc` plus `external_nav_invalid_reasons` to the final summaries. An estimate is marked FC-ready only when the route match is valid/confident, telemetry relative altitude/yaw is fresh, and nominal route scale is configured. This is Milestone 6.9 log evidence only; it does not make ArduPilot accept `Guided` and it does not attach an external-nav writer.
 
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 

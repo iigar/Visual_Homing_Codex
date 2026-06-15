@@ -32,6 +32,7 @@ vh::MavlinkTelemetry fresh_telemetry() {
     telemetry.timestamp = at_ms(100);
     telemetry.heartbeat_seen = true;
     telemetry.yaw_rad = 0.25;
+    telemetry.relative_altitude_seen = true;
     telemetry.relative_altitude_m = 12.0;
     return telemetry;
 }
