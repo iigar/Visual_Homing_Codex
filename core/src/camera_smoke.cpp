@@ -990,6 +990,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     MavlinkTelemetry latest_gate_telemetry;
     std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
     std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
+    double visual_scale_ratio_sum = 0.0;
+    double visual_scale_confidence_sum = 0.0;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
@@ -1083,6 +1085,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     external_nav_estimate.visual_scale_confidence = visual_scale.confidence;
                 }
                 ++result.external_nav_estimates;
+                if (external_nav_estimate.visual_scale_valid) {
+                    ++result.visual_scale_valid;
+                    visual_scale_ratio_sum += external_nav_estimate.visual_scale_ratio;
+                    visual_scale_confidence_sum += external_nav_estimate.visual_scale_confidence;
+                    if (result.visual_scale_valid == 1) {
+                        result.visual_scale_ratio_min = external_nav_estimate.visual_scale_ratio;
+                        result.visual_scale_ratio_max = external_nav_estimate.visual_scale_ratio;
+                        result.visual_scale_confidence_min = external_nav_estimate.visual_scale_confidence;
+                    } else {
+                        result.visual_scale_ratio_min =
+                            std::min(result.visual_scale_ratio_min, external_nav_estimate.visual_scale_ratio);
+                        result.visual_scale_ratio_max =
+                            std::max(result.visual_scale_ratio_max, external_nav_estimate.visual_scale_ratio);
+                        result.visual_scale_confidence_min =
+                            std::min(result.visual_scale_confidence_min, external_nav_estimate.visual_scale_confidence);
+                    }
+                }
                 if (external_nav_estimate.valid_for_fc) {
                     ++result.external_nav_valid_for_fc;
                 } else {
@@ -1252,6 +1271,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
     result.external_nav_invalid_reasons = format_reason_counts(external_nav_invalid_reasons);
+    if (result.visual_scale_valid > 0) {
+        result.visual_scale_ratio_avg = visual_scale_ratio_sum / static_cast<double>(result.visual_scale_valid);
+        result.visual_scale_confidence_avg =
+            visual_scale_confidence_sum / static_cast<double>(result.visual_scale_valid);
+    }
 
     result.passed = result.started
         && live_route_match_has_required_frame_count(config, result)
@@ -1314,6 +1338,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_estimates=" << result.external_nav_estimates
             << " external_nav_valid_for_fc=" << result.external_nav_valid_for_fc
             << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
+            << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
+            << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min
+            << "/" << result.visual_scale_ratio_avg
+            << "/" << result.visual_scale_ratio_max
+            << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
+            << "/" << result.visual_scale_confidence_avg
             << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
@@ -1340,6 +1370,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " dry_run_valid=" << result.valid_dry_run_commands << "/" << result.dry_run_commands
             << " external_nav_valid=" << result.external_nav_valid_for_fc << "/" << result.external_nav_estimates
             << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
+            << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
+            << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min
+            << "/" << result.visual_scale_ratio_avg
+            << "/" << result.visual_scale_ratio_max
+            << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
+            << "/" << result.visual_scale_confidence_avg
             << " live_output_gate_allowed=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
