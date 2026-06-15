@@ -73,6 +73,8 @@ int main() {
     assert(log_line.find("relative_altitude_m=12") != std::string::npos);
     assert(log_line.find("bench_diagnostic_altitude_used=false") != std::string::npos);
     assert(log_line.find("scale_known=true") != std::string::npos);
+    assert(log_line.find("visual_scale_valid=false") != std::string::npos);
+    assert(log_line.find("visual_scale_ratio=0") != std::string::npos);
 
     auto low_confidence_match = good_match();
     low_confidence_match.confidence = 0.5;

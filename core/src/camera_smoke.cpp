@@ -6,12 +6,14 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <sstream>
 #include <thread>
+#include <vector>
 
 #include "visual_homing/bounded_navigator.hpp"
 #include "visual_homing/dry_run_command_sink.hpp"
@@ -132,6 +134,80 @@ std::uint64_t drain_pending_frames(PiCameraSource& source) {
         ++drained;
     }
     return drained;
+}
+
+struct VisualScaleDiagnostic {
+    bool valid = false;
+    double scale_ratio = 0.0;
+    double altitude_m = 0.0;
+    double confidence = 0.0;
+};
+
+double scaled_reference_distance(const Frame& current, const RouteSignatureEntry& reference, double scale_ratio) {
+    if (current.format != PixelFormat::Gray8 || reference.format != PixelFormat::Gray8
+        || current.width != reference.width || current.height != reference.height
+        || current.data.size() != reference.payload.size() || current.width <= 0 || current.height <= 0
+        || scale_ratio <= 0.0 || !std::isfinite(scale_ratio)) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    const double center_x = (static_cast<double>(current.width) - 1.0) * 0.5;
+    const double center_y = (static_cast<double>(current.height) - 1.0) * 0.5;
+    std::uint64_t sum = 0;
+    std::size_t count = 0;
+    for (int y = 0; y < current.height; ++y) {
+        for (int x = 0; x < current.width; ++x) {
+            const auto reference_x = static_cast<int>(
+                std::lround(center_x + (static_cast<double>(x) - center_x) / scale_ratio));
+            const auto reference_y = static_cast<int>(
+                std::lround(center_y + (static_cast<double>(y) - center_y) / scale_ratio));
+            if (reference_x < 0 || reference_x >= current.width || reference_y < 0 || reference_y >= current.height) {
+                continue;
+            }
+            const auto current_index = static_cast<std::size_t>(y) * static_cast<std::size_t>(current.width)
+                + static_cast<std::size_t>(x);
+            const auto reference_index = static_cast<std::size_t>(reference_y) * static_cast<std::size_t>(current.width)
+                + static_cast<std::size_t>(reference_x);
+            const auto delta = static_cast<int>(current.data[current_index]) - static_cast<int>(reference.payload[reference_index]);
+            sum += static_cast<std::uint64_t>(std::abs(delta));
+            ++count;
+        }
+    }
+
+    if (count == 0) {
+        return std::numeric_limits<double>::infinity();
+    }
+    return static_cast<double>(sum) / (static_cast<double>(count) * 255.0);
+}
+
+VisualScaleDiagnostic estimate_visual_scale_diagnostic(
+    const Frame& current,
+    const RouteSignatureEntry& reference,
+    double reference_altitude_m) {
+    VisualScaleDiagnostic diagnostic;
+    if (reference_altitude_m <= 0.0 || !std::isfinite(reference_altitude_m)) {
+        return diagnostic;
+    }
+
+    const std::vector<double> candidates{0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
+    double best_distance = std::numeric_limits<double>::infinity();
+    double best_scale = 1.0;
+    for (const auto scale : candidates) {
+        const auto distance = scaled_reference_distance(current, reference, scale);
+        if (distance < best_distance) {
+            best_distance = distance;
+            best_scale = scale;
+        }
+    }
+
+    if (!std::isfinite(best_distance)) {
+        return diagnostic;
+    }
+    diagnostic.valid = true;
+    diagnostic.scale_ratio = best_scale;
+    diagnostic.altitude_m = reference_altitude_m / best_scale;
+    diagnostic.confidence = std::clamp(1.0 - best_distance, 0.0, 1.0);
+    return diagnostic;
 }
 
 void copy_telemetry_stream_metrics(
@@ -990,12 +1066,22 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
             }
             if (config.emit_external_nav_estimates) {
-                const auto external_nav_estimate = make_route_progress_external_nav_estimate(
+                auto external_nav_estimate = make_route_progress_external_nav_estimate(
                     match,
                     route_summary,
                     latest_gate_telemetry,
                     processing_finished,
                     config.external_nav);
+                if (match.route_index < route.entries.size()) {
+                    const auto visual_scale = estimate_visual_scale_diagnostic(
+                        processed,
+                        route.entries[static_cast<std::size_t>(match.route_index)],
+                        config.external_nav.bench_diagnostic_altitude_m);
+                    external_nav_estimate.visual_scale_valid = visual_scale.valid;
+                    external_nav_estimate.visual_scale_ratio = visual_scale.scale_ratio;
+                    external_nav_estimate.visual_altitude_m = visual_scale.altitude_m;
+                    external_nav_estimate.visual_scale_confidence = visual_scale.confidence;
+                }
                 ++result.external_nav_estimates;
                 if (external_nav_estimate.valid_for_fc) {
                     ++result.external_nav_valid_for_fc;

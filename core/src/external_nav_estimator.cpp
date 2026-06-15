@@ -114,7 +114,11 @@ std::string external_nav_estimate_log_line(const ExternalNavEstimate& estimate) 
            << " telemetry_fresh=" << bool_text(estimate.telemetry_fresh)
            << " altitude_valid=" << bool_text(estimate.altitude_valid)
            << " bench_diagnostic_altitude_used=" << bool_text(estimate.bench_diagnostic_altitude_used)
-           << " scale_known=" << bool_text(estimate.scale_known);
+           << " scale_known=" << bool_text(estimate.scale_known)
+           << " visual_scale_valid=" << bool_text(estimate.visual_scale_valid)
+           << " visual_scale_ratio=" << estimate.visual_scale_ratio
+           << " visual_altitude_m=" << estimate.visual_altitude_m
+           << " visual_scale_confidence=" << estimate.visual_scale_confidence;
     return output.str();
 }
 

@@ -34,6 +34,10 @@ struct ExternalNavEstimate {
     bool altitude_valid = false;
     bool bench_diagnostic_altitude_used = false;
     bool scale_known = false;
+    bool visual_scale_valid = false;
+    double visual_scale_ratio = 0.0;
+    double visual_altitude_m = 0.0;
+    double visual_scale_confidence = 0.0;
     bool valid_for_fc = false;
     std::string source_tag;
     std::string reason;
