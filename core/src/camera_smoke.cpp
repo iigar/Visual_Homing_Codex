@@ -1284,6 +1284,18 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
         && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed);
 
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_session_reason = "not_requested";
+    } else if (!result.passed) {
+        result.external_nav_session_reason = "route_session_not_passed";
+    } else if (result.external_nav_valid_for_fc != result.external_nav_estimates) {
+        result.external_nav_session_reason = "per_frame_external_nav_invalid";
+    } else {
+        result.external_nav_session_ready = true;
+        result.external_nav_session_valid_for_fc = result.external_nav_valid_for_fc;
+        result.external_nav_session_reason = "valid";
+    }
+
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
             << " frames_captured=" << result.frames_captured
@@ -1338,6 +1350,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_estimates=" << result.external_nav_estimates
             << " external_nav_valid_for_fc=" << result.external_nav_valid_for_fc
             << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
+            << " external_nav_session_ready=" << bool_word(result.external_nav_session_ready)
+            << " external_nav_session_valid_for_fc=" << result.external_nav_session_valid_for_fc
+            << "/" << result.external_nav_estimates
+            << " external_nav_session_reason=" << result.external_nav_session_reason
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min
             << "/" << result.visual_scale_ratio_avg
@@ -1370,6 +1386,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " dry_run_valid=" << result.valid_dry_run_commands << "/" << result.dry_run_commands
             << " external_nav_valid=" << result.external_nav_valid_for_fc << "/" << result.external_nav_estimates
             << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
+            << " external_nav_session_ready=" << bool_word(result.external_nav_session_ready)
+            << " external_nav_session_valid=" << result.external_nav_session_valid_for_fc
+            << "/" << result.external_nav_estimates
+            << " external_nav_session_reason=" << result.external_nav_session_reason
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min
             << "/" << result.visual_scale_ratio_avg

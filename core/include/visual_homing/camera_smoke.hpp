@@ -172,6 +172,9 @@ struct LiveRouteMatchingResult {
     std::uint64_t external_nav_estimates = 0;
     std::uint64_t external_nav_valid_for_fc = 0;
     std::string external_nav_invalid_reasons;
+    bool external_nav_session_ready = false;
+    std::uint64_t external_nav_session_valid_for_fc = 0;
+    std::string external_nav_session_reason = "not_requested";
     std::uint64_t visual_scale_valid = 0;
     double visual_scale_ratio_min = 0.0;
     double visual_scale_ratio_avg = 0.0;
