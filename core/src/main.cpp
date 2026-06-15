@@ -186,6 +186,33 @@ void apply_live_route_match_telemetry_args(vh::LiveRouteMatchingConfig& config, 
     config.require_live_telemetry_health = parse_bool_arg(argv[first_index + 5]);
 }
 
+int external_nav_arg_offset(int argc, char** argv) {
+    for (int index = 1; index < argc; ++index) {
+        if (std::string(argv[index]) == "--external-nav-estimates") {
+            if (index + 6 != argc) {
+                throw std::invalid_argument("--external-nav-estimates must be the final match-live-route argument block");
+            }
+            return index;
+        }
+    }
+    return 0;
+}
+
+int argc_without_external_nav_args(int argc, char** argv) {
+    return external_nav_arg_offset(argc, argv) == 0 ? argc : argc - 6;
+}
+
+void apply_external_nav_estimate_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
+    config.emit_external_nav_estimates = parse_bool_arg(argv[first_index + 1]);
+    config.external_nav.nominal_route_length_m =
+        parse_double_arg(argv[first_index + 2], "external_nav_nominal_route_length_m");
+    config.external_nav.minimum_match_confidence =
+        parse_double_arg(argv[first_index + 3], "external_nav_minimum_match_confidence");
+    config.external_nav.maximum_altitude_age_ms =
+        parse_double_arg(argv[first_index + 4], "external_nav_maximum_altitude_age_ms");
+    config.external_nav.source_tag = argv[first_index + 5];
+}
+
 void apply_live_route_session_audit_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
     config.emit_live_output_session_audit = parse_bool_arg(argv[first_index]);
     config.live_output_session_audit_path = argv[first_index + 1];
@@ -808,26 +835,65 @@ int main(int argc, char** argv) {
         }
     }
 
-    if ((argc == 11 || argc == 12 || argc == 13 || argc == 14 || argc == 16 || argc == 17 || argc == 19
-            || argc == 20 || argc == 22 || argc == 27 || argc == 29 || argc == 33 || argc == 35
-            || argc == 39 || argc == 41 || argc == 43 || argc == 47 || argc == 48)
-        && std::string(argv[1]) == "--match-live-route-active-profile") {
+    if (argc >= 2 && std::string(argv[1]) == "--match-live-route-active-profile") {
         try {
+            const auto match_live_route_argc = argc_without_external_nav_args(argc, argv);
+            if (!(match_live_route_argc == 11 || match_live_route_argc == 12 || match_live_route_argc == 13
+                    || match_live_route_argc == 14 || match_live_route_argc == 16 || match_live_route_argc == 17
+                    || match_live_route_argc == 19 || match_live_route_argc == 20 || match_live_route_argc == 22
+                    || match_live_route_argc == 27 || match_live_route_argc == 29 || match_live_route_argc == 33
+                    || match_live_route_argc == 35 || match_live_route_argc == 39 || match_live_route_argc == 41
+                    || match_live_route_argc == 43 || match_live_route_argc == 47 || match_live_route_argc == 48)) {
+                throw std::invalid_argument("Invalid match-live-route-active-profile argument count");
+            }
+            const auto external_nav_args = external_nav_arg_offset(argc, argv);
             auto record = vh::load_active_camera_profile(argv[2], argv[3]);
-            if (argc == 16 || argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) {
+            if (match_live_route_argc == 16 || match_live_route_argc == 19 || match_live_route_argc == 22
+                || match_live_route_argc == 29 || match_live_route_argc == 35 || match_live_route_argc == 41
+                || match_live_route_argc == 43 || match_live_route_argc == 47 || match_live_route_argc == 48) {
                 record.profile = profile_with_target_override(
                     record.profile,
                     parse_int_arg(argv[14], "target_width"),
                     parse_int_arg(argv[15], "target_height"));
             }
             log_profile_hardware_config("live_route_match_active_profile", record, std::cout);
-            const auto endpoint_arg_offset = (argc == 17 || argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 14 : ((argc == 19 || argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 16 : 0);
-            const auto operator_cue_arg_offset = (argc == 20 || argc == 27 || argc == 33 || argc == 39) ? 17 : ((argc == 22 || argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 19 : 0);
-            const auto dry_run_command_arg_offset = (argc == 27 || argc == 33 || argc == 39) ? 20 : ((argc == 29 || argc == 35 || argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 22 : 0);
-            const auto live_telemetry_arg_offset = argc == 39 ? 33 : ((argc == 41 || argc == 43 || argc == 47 || argc == 48) ? 35 : 0);
-            const auto session_audit_arg_offset = (argc == 43 || argc == 47 || argc == 48) ? 41 : 0;
-            const auto live_output_runtime_arg_offset = (argc == 47 || argc == 48) ? 43 : 0;
-            const auto endpoint_stop_arg_offset = argc == 48 ? 47 : 0;
+            const auto endpoint_arg_offset =
+                (match_live_route_argc == 17 || match_live_route_argc == 20 || match_live_route_argc == 27
+                 || match_live_route_argc == 33 || match_live_route_argc == 39)
+                    ? 14
+                    : ((match_live_route_argc == 19 || match_live_route_argc == 22 || match_live_route_argc == 29
+                        || match_live_route_argc == 35 || match_live_route_argc == 41 || match_live_route_argc == 43
+                        || match_live_route_argc == 47 || match_live_route_argc == 48)
+                           ? 16
+                           : 0);
+            const auto operator_cue_arg_offset =
+                (match_live_route_argc == 20 || match_live_route_argc == 27 || match_live_route_argc == 33
+                 || match_live_route_argc == 39)
+                    ? 17
+                    : ((match_live_route_argc == 22 || match_live_route_argc == 29 || match_live_route_argc == 35
+                        || match_live_route_argc == 41 || match_live_route_argc == 43 || match_live_route_argc == 47
+                        || match_live_route_argc == 48)
+                           ? 19
+                           : 0);
+            const auto dry_run_command_arg_offset =
+                (match_live_route_argc == 27 || match_live_route_argc == 33 || match_live_route_argc == 39)
+                    ? 20
+                    : ((match_live_route_argc == 29 || match_live_route_argc == 35 || match_live_route_argc == 41
+                        || match_live_route_argc == 43 || match_live_route_argc == 47 || match_live_route_argc == 48)
+                           ? 22
+                           : 0);
+            const auto live_telemetry_arg_offset =
+                match_live_route_argc == 39
+                    ? 33
+                    : ((match_live_route_argc == 41 || match_live_route_argc == 43 || match_live_route_argc == 47
+                        || match_live_route_argc == 48)
+                           ? 35
+                           : 0);
+            const auto session_audit_arg_offset =
+                (match_live_route_argc == 43 || match_live_route_argc == 47 || match_live_route_argc == 48) ? 41 : 0;
+            const auto live_output_runtime_arg_offset =
+                (match_live_route_argc == 47 || match_live_route_argc == 48) ? 43 : 0;
+            const auto endpoint_stop_arg_offset = match_live_route_argc == 48 ? 47 : 0;
             auto config = live_route_matching_config_from_profile(
                 record.profile,
                 parse_int_arg(argv[4], "fps"),
@@ -847,10 +913,13 @@ int main(int argc, char** argv) {
                 apply_operator_cue_args(config, argv, operator_cue_arg_offset);
             }
             if (dry_run_command_arg_offset != 0) {
-                apply_live_route_dry_run_command_args(config, argv, dry_run_command_arg_offset, argc);
+                apply_live_route_dry_run_command_args(config, argv, dry_run_command_arg_offset, match_live_route_argc);
             }
             if (live_telemetry_arg_offset != 0) {
                 apply_live_route_match_telemetry_args(config, argv, live_telemetry_arg_offset);
+            }
+            if (external_nav_args != 0) {
+                apply_external_nav_estimate_args(config, argv, external_nav_args);
             }
             if (session_audit_arg_offset != 0) {
                 apply_live_route_session_audit_args(config, argv, session_audit_arg_offset);
@@ -954,7 +1023,11 @@ int main(int argc, char** argv) {
 
     if ((argc == 4 || argc == 5) && std::string(argv[1]) == "--export-route-keyframes") {
         try {
-            const auto scale = argc == 5 ? static_cast<std::uint16_t>(std::stoul(argv[4])) : 1;
+            const auto scale_value = argc == 5 ? parse_uint64_arg(argv[4], "scale") : 1;
+            if (scale_value > static_cast<std::uint64_t>(std::numeric_limits<std::uint16_t>::max())) {
+                throw std::invalid_argument("scale is outside uint16_t range");
+            }
+            const auto scale = static_cast<std::uint16_t>(scale_value);
             const auto keyframes_written = vh::export_route_signature_keyframes_file(argv[2], argv[3], scale);
             std::cout << "route_keyframes_export"
                       << " path=" << argv[2]
@@ -1079,7 +1152,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
-    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds [stop_at_endpoint_progress]]]]]]]]]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds [stop_at_endpoint_progress]]]]]]]]] [--external-nav-estimates enabled nominal_route_length_m minimum_match_confidence maximum_altitude_age_ms source_tag]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

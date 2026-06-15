@@ -10,6 +10,7 @@
 #include "visual_homing/mavlink_telemetry_stream.hpp"
 #include "visual_homing/pi_camera_source.hpp"
 #include "visual_homing/bounded_navigator.hpp"
+#include "visual_homing/external_nav_estimator.hpp"
 
 namespace vh {
 
@@ -101,6 +102,8 @@ struct LiveRouteMatchingConfig {
     std::uint64_t telemetry_warmup_timeout_ms = 1500;
     double telemetry_max_age_ms = 500.0;
     bool require_live_telemetry_health = false;
+    bool emit_external_nav_estimates = false;
+    ExternalNavEstimatorConfig external_nav{};
     bool require_dry_run_command_quality = false;
     double minimum_valid_dry_run_command_fraction = 0.95;
     std::uint64_t max_invalid_dry_run_command_streak = 3;
@@ -164,6 +167,9 @@ struct LiveRouteMatchingResult {
     std::uint64_t dry_run_yaw_rate_sign_flips = 0;
     double max_dry_run_yaw_rate_delta_radps = 0.0;
     bool dry_run_command_quality_passed = true;
+    std::uint64_t external_nav_estimates = 0;
+    std::uint64_t external_nav_valid_for_fc = 0;
+    std::string external_nav_invalid_reasons;
     std::uint64_t live_output_gate_allowed_frames = 0;
     std::uint64_t live_output_gate_blocked_frames = 0;
     bool final_live_output_gate_allowed = false;

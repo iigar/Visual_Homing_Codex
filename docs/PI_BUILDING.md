@@ -422,7 +422,7 @@ VISUAL_HOMING_MATCH_LIVE_ROUTE=1 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 ./scr
 The underlying CLI is:
 
 ```bash
-./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress]]]]
+./core/build-pi/visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress]]]] [--external-nav-estimates enabled nominal_route_length_m minimum_match_confidence maximum_altitude_age_ms source_tag]
 ```
 
 The Pi script reads `VISUAL_HOMING_ROUTE_OUTPUT` and does not write a new `VHRS` artifact. It logs each `live_route_match_frame` with route index, progress, confidence, validity, and FOV-derived direction error. The final `live_route_match_done` line reports captured frames, valid matches, forward and reverse progress regressions, rollback totals, endpoint progress, confidence summary, effective FPS, and `passed`.
@@ -485,6 +485,18 @@ VISUAL_HOMING_ROUTE_TELEMETRY_WARMUP_MS=1500
 This mode still sends no MAVLink commands. It opens the serial device read-only, waits for heartbeat, attitude, and global-position telemetry, then uses fresh heartbeat telemetry as the `mavlink_ok` health input for `BoundedNavigator`. The final `live_route_match_done` line reports telemetry byte/frame/message counts plus `telemetry_health_ready_frames`, `telemetry_health_degraded_frames`, and `live_telemetry_health_passed`.
 
 For bench dry-run matching, this health gate only checks read-only telemetry freshness. Armed/GUIDED command permission remains reserved for a later live-output safety step.
+
+To log proposed external-navigation estimates without sending `VISION_POSITION_ESTIMATE`, `ODOMETRY`, or command-output MAVLink messages, enable the external-nav dry-run block on top of live matching with read-only telemetry:
+
+```bash
+VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES=1
+VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M=<recorded-route-length-meters>
+VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE=0.90
+VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS=500
+VISUAL_HOMING_EXTERNAL_NAV_SOURCE=visual_route_progress
+```
+
+This writes one `external_nav_estimate` line per matched frame and adds `external_nav_valid_for_fc` plus `external_nav_invalid_reasons` to the final summaries. An estimate is marked FC-ready only when the route match is valid/confident, telemetry altitude/yaw is fresh, and nominal route scale is configured. This is Milestone 6.9 log evidence only; it does not make ArduPilot accept `Guided` and it does not attach an external-nav writer.
 
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 

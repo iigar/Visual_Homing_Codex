@@ -617,6 +617,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.telemetry_max_age_ms < 0.0) {
         throw std::invalid_argument("Live route matching telemetry_max_age_ms must be non-negative");
     }
+    if (config.emit_external_nav_estimates && !config.use_live_telemetry_stream) {
+        throw std::invalid_argument("Live route matching external-nav estimates require live telemetry stream");
+    }
     if (config.emit_live_output_session_audit) {
         if (!config.emit_dry_run_commands) {
             throw std::invalid_argument("Live route matching session audit requires dry-run commands");
@@ -635,6 +638,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
 
     const auto route = read_route_signature_file(config.route_path);
+    const auto route_summary = summarize_route_signature(route);
     Gray8RouteMatcherConfig matcher_config;
     matcher_config.window_radius = config.window_radius;
     matcher_config.minimum_confidence = config.minimum_confidence;
@@ -689,7 +693,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
             << " telemetry_max_age_ms=" << config.telemetry_max_age_ms
-            << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false");
+            << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false")
+            << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false");
+    if (config.emit_external_nav_estimates) {
+        metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
+                << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
+                << " external_nav_maximum_altitude_age_ms=" << config.external_nav.maximum_altitude_age_ms
+                << " external_nav_source=" << config.external_nav.source_tag;
+    }
     if (config.emit_dry_run_commands) {
         metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence
                 << " navigator_max_match_age_ms=" << config.navigator.max_match_age_ms
@@ -885,6 +896,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
     MavlinkTelemetry latest_gate_telemetry;
     std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
+    std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
@@ -957,6 +969,21 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++result.live_output_gate_blocked_frames;
                     ++live_output_gate_block_reasons[live_output_gate_result.reason];
                 }
+            }
+            if (config.emit_external_nav_estimates) {
+                const auto external_nav_estimate = make_route_progress_external_nav_estimate(
+                    match,
+                    route_summary,
+                    latest_gate_telemetry,
+                    processing_finished,
+                    config.external_nav);
+                ++result.external_nav_estimates;
+                if (external_nav_estimate.valid_for_fc) {
+                    ++result.external_nav_valid_for_fc;
+                } else {
+                    ++external_nav_invalid_reasons[external_nav_estimate.reason];
+                }
+                metrics << external_nav_estimate_log_line(external_nav_estimate) << "\n";
             }
 
             ++result.frames_captured;
@@ -1119,6 +1146,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.final_live_output_gate_reason = final_gate_result.reason;
     }
     result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
+    result.external_nav_invalid_reasons = format_reason_counts(external_nav_invalid_reasons);
 
     result.passed = result.started
         && live_route_match_has_required_frame_count(config, result)
@@ -1177,6 +1205,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " dry_run_yaw_rate_sign_flips=" << result.dry_run_yaw_rate_sign_flips
             << " max_dry_run_yaw_rate_delta_radps=" << result.max_dry_run_yaw_rate_delta_radps
             << " dry_run_command_quality_passed=" << (result.dry_run_command_quality_passed ? "true" : "false")
+            << " external_nav_estimates=" << result.external_nav_estimates
+            << " external_nav_valid_for_fc=" << result.external_nav_valid_for_fc
+            << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
             << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
@@ -1201,6 +1232,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " telemetry_dropped=" << result.telemetry_bytes_dropped
             << " dry_run_quality=" << bool_word(result.dry_run_command_quality_passed)
             << " dry_run_valid=" << result.valid_dry_run_commands << "/" << result.dry_run_commands
+            << " external_nav_valid=" << result.external_nav_valid_for_fc << "/" << result.external_nav_estimates
+            << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
             << " live_output_gate_allowed=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons

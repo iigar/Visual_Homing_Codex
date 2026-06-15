@@ -51,6 +51,11 @@ live_route_dry_run_max_yaw_rate_delta_radps="${VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_
 live_route_match_use_live_mavlink_telemetry="${VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY:-0}"
 live_route_match_telemetry_max_age_ms="${VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS:-500}"
 live_route_match_require_live_telemetry_health="${VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH:-0}"
+external_nav_estimates="${VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES:-0}"
+external_nav_nominal_route_length_m="${VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M:-0}"
+external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE:-0.90}"
+external_nav_maximum_altitude_age_ms="${VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS:-${live_route_match_telemetry_max_age_ms}}"
+external_nav_source="${VISUAL_HOMING_EXTERNAL_NAV_SOURCE:-visual_route_progress}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
 live_output_runtime_enabled="${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
 live_output_bench_props_off_confirm="${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
@@ -121,6 +126,7 @@ for bool_env in \
     VISUAL_HOMING_LIVE_ROUTE_DRY_RUN_REQUIRE_COMMAND_QUALITY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
+    VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES \
     VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
     VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT \
@@ -217,6 +223,21 @@ if [[ "${live_route_match_use_live_mavlink_telemetry}" == "1" ]]; then
         "${route_telemetry_warmup_ms}"
         "${live_route_match_telemetry_max_age_ms}"
         "${live_route_match_require_live_telemetry_health}"
+    )
+fi
+external_nav_estimate_args=()
+if [[ "${external_nav_estimates}" == "1" ]]; then
+    if [[ "${live_route_match_use_live_mavlink_telemetry}" != "1" ]]; then
+        echo "VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES=1 requires VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1" >&2
+        exit 2
+    fi
+    external_nav_estimate_args=(
+        "--external-nav-estimates"
+        "${external_nav_estimates}"
+        "${external_nav_nominal_route_length_m}"
+        "${external_nav_minimum_match_confidence}"
+        "${external_nav_maximum_altitude_age_ms}"
+        "${external_nav_source}"
     )
 fi
 live_route_session_audit_args=()
@@ -507,7 +528,8 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         "${live_route_dry_run_command_args[@]}" \
         "${live_route_match_telemetry_args[@]}" \
         "${live_route_session_audit_args[@]}" \
-        "${live_route_endpoint_stop_args[@]}"
+        "${live_route_endpoint_stop_args[@]}" \
+        "${external_nav_estimate_args[@]}"
 fi
 
 if [[ "${VISUAL_HOMING_VALIDATE_ROUTE:-0}" == "1" ]]; then
