@@ -189,7 +189,7 @@ void apply_live_route_match_telemetry_args(vh::LiveRouteMatchingConfig& config, 
 int external_nav_arg_offset(int argc, char** argv) {
     for (int index = 1; index < argc; ++index) {
         if (std::string(argv[index]) == "--external-nav-estimates") {
-            if (index + 6 != argc) {
+            if (index + 6 != argc && index + 7 != argc) {
                 throw std::invalid_argument("--external-nav-estimates must be the final match-live-route argument block");
             }
             return index;
@@ -199,10 +199,11 @@ int external_nav_arg_offset(int argc, char** argv) {
 }
 
 int argc_without_external_nav_args(int argc, char** argv) {
-    return external_nav_arg_offset(argc, argv) == 0 ? argc : argc - 6;
+    const auto offset = external_nav_arg_offset(argc, argv);
+    return offset == 0 ? argc : offset;
 }
 
-void apply_external_nav_estimate_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
+void apply_external_nav_estimate_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index, int argc) {
     config.emit_external_nav_estimates = parse_bool_arg(argv[first_index + 1]);
     config.external_nav.nominal_route_length_m =
         parse_double_arg(argv[first_index + 2], "external_nav_nominal_route_length_m");
@@ -211,6 +212,10 @@ void apply_external_nav_estimate_args(vh::LiveRouteMatchingConfig& config, char*
     config.external_nav.maximum_altitude_age_ms =
         parse_double_arg(argv[first_index + 4], "external_nav_maximum_altitude_age_ms");
     config.external_nav.source_tag = argv[first_index + 5];
+    if (first_index + 7 == argc) {
+        config.external_nav.bench_diagnostic_altitude_m =
+            parse_double_arg(argv[first_index + 6], "external_nav_bench_diagnostic_altitude_m");
+    }
 }
 
 void apply_live_route_session_audit_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
@@ -924,7 +929,7 @@ int main(int argc, char** argv) {
                 apply_live_route_match_telemetry_args(config, argv, live_telemetry_arg_offset);
             }
             if (external_nav_args != 0) {
-                apply_external_nav_estimate_args(config, argv, external_nav_args);
+                apply_external_nav_estimate_args(config, argv, external_nav_args, argc);
             }
             if (session_audit_arg_offset != 0) {
                 apply_live_route_session_audit_args(config, argv, session_audit_arg_offset);
@@ -1157,7 +1162,7 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-profile <camera.profile> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <altitude_m> [heading_hint_rad [warmup_frames [mavlink.bin]]] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
-    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds [stop_at_endpoint_progress]]]]]]]]] [--external-nav-estimates enabled nominal_route_length_m minimum_match_confidence maximum_altitude_age_ms source_tag]\n";
+    std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [max_progress_regressions [max_progress_rollback [target_width target_height] [require_endpoint_progress endpoint_start_progress endpoint_end_progress [operator_cue_enabled operator_cue_seconds operator_cue_bell [dry_run_commands navigator_minimum_confidence navigator_max_match_age_ms navigator_yaw_gain navigator_max_yaw_rate_radps navigator_max_yaw_accel_radps2 navigator_forward_speed_mps [require_command_quality minimum_valid_command_fraction max_invalid_command_streak max_abs_yaw_rate_radps max_yaw_rate_sign_flips max_yaw_rate_delta_radps [live_telemetry_stream mavlink_device baud_rate telemetry_warmup_timeout_ms telemetry_max_age_ms require_live_telemetry_health [session_audit session_audit_path [live_output_runtime_enabled bench_props_off_confirmation live_output_max_commands live_output_max_seconds [stop_at_endpoint_progress]]]]]]]]] [--external-nav-estimates enabled nominal_route_length_m minimum_match_confidence maximum_altitude_age_ms source_tag [bench_diagnostic_altitude_m]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";

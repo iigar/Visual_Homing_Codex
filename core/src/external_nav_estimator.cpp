@@ -37,6 +37,10 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
     if (!std::isfinite(config.nominal_route_length_m) || config.nominal_route_length_m < 0.0) {
         throw std::invalid_argument("ExternalNavEstimatorConfig nominal_route_length_m must be finite and non-negative");
     }
+    if (!std::isfinite(config.bench_diagnostic_altitude_m) || config.bench_diagnostic_altitude_m < 0.0) {
+        throw std::invalid_argument(
+            "ExternalNavEstimatorConfig bench_diagnostic_altitude_m must be finite and non-negative");
+    }
 
     ExternalNavEstimate estimate;
     estimate.timestamp = current_time;
@@ -46,19 +50,28 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
     estimate.route_entries = route.entry_count;
     estimate.route_match_valid = match.valid && match.confidence >= config.minimum_match_confidence;
     estimate.source_tag = config.source_tag;
+    estimate.relative_altitude_seen = telemetry.relative_altitude_seen;
+    estimate.relative_altitude_m = telemetry.relative_altitude_m;
 
     estimate.telemetry_fresh = telemetry.heartbeat_seen
         && milliseconds_between(telemetry.timestamp, current_time) <= config.maximum_altitude_age_ms;
     estimate.altitude_valid = estimate.telemetry_fresh
         && telemetry.relative_altitude_seen
         && finite_positive(telemetry.relative_altitude_m);
-    estimate.scale_known = finite_positive(config.nominal_route_length_m) && estimate.altitude_valid;
+    estimate.bench_diagnostic_altitude_used = estimate.telemetry_fresh
+        && !estimate.altitude_valid
+        && finite_positive(config.bench_diagnostic_altitude_m);
+    const auto altitude_for_scale_m = estimate.altitude_valid
+        ? telemetry.relative_altitude_m
+        : (estimate.bench_diagnostic_altitude_used ? config.bench_diagnostic_altitude_m : 0.0);
+    estimate.scale_known = finite_positive(config.nominal_route_length_m)
+        && (estimate.altitude_valid || estimate.bench_diagnostic_altitude_used);
 
     estimate.x_m = estimate.scale_known
         ? estimate.route_progress * config.nominal_route_length_m
         : 0.0;
     estimate.y_m = 0.0;
-    estimate.z_m = estimate.altitude_valid ? -telemetry.relative_altitude_m : 0.0;
+    estimate.z_m = estimate.scale_known ? -altitude_for_scale_m : 0.0;
     estimate.yaw_rad = std::isfinite(telemetry.yaw_rad) ? telemetry.yaw_rad : 0.0;
 
     if (route.entry_count == 0) {
@@ -67,6 +80,8 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
         estimate.reason = "route_match_not_valid";
     } else if (!estimate.telemetry_fresh) {
         estimate.reason = "telemetry_not_fresh";
+    } else if (estimate.bench_diagnostic_altitude_used) {
+        estimate.reason = "bench_diagnostic_altitude_not_fc_ready";
     } else if (!estimate.altitude_valid) {
         estimate.reason = "altitude_not_valid";
     } else if (!estimate.scale_known) {
@@ -93,9 +108,12 @@ std::string external_nav_estimate_log_line(const ExternalNavEstimate& estimate) 
            << " progress=" << estimate.route_progress
            << " route_index=" << estimate.route_index
            << " route_entries=" << estimate.route_entries
+           << " relative_altitude_seen=" << bool_text(estimate.relative_altitude_seen)
+           << " relative_altitude_m=" << estimate.relative_altitude_m
            << " route_match_valid=" << bool_text(estimate.route_match_valid)
            << " telemetry_fresh=" << bool_text(estimate.telemetry_fresh)
            << " altitude_valid=" << bool_text(estimate.altitude_valid)
+           << " bench_diagnostic_altitude_used=" << bool_text(estimate.bench_diagnostic_altitude_used)
            << " scale_known=" << bool_text(estimate.scale_known);
     return output.str();
 }

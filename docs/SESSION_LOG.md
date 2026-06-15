@@ -7,6 +7,7 @@
 - Prepared the separate reviewed send-enabled bench procedure. `scripts/run-live-output-bench-props-off-send-pi.sh` requires independent send and armed/Guided confirmations, reuses the attach wrapper, expects `allowed=<positive> blocked=0 reason=allowed`, and leaves the ordinary and attach-default wrappers unchanged. Checkers now support `allowed=auto` for endpoint-stop sessions whose exact frame count is known only after the run.
 - Recorded the send-enabled bench blocker: `jtzero` can configure `ExternalNav`, but without an actual external-navigation provider ArduPilot still rejects armed `Guided` with `requires position`. Added Milestone 6.9 for a dry-run-first external-navigation provider path before any external-nav writer or send-enabled Guided bench attempt.
 - Started Milestone 6.9 with a dry-run-only `ExternalNavEstimate` model and route-progress estimator. It converts valid route progress plus a configured nominal route length and fresh FC altitude/yaw telemetry into a loggable local pose estimate, marks scale/altitude/telemetry/match validity explicitly, and never writes MAVLink external-nav messages. Added unit coverage; desktop CTest now passes 24/24.
+- Added a bench-only external-nav diagnostic altitude fallback. `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` can compute loggable `x/y/z` scale when the FC reports zero or negative relative altitude, but those estimates remain `valid_for_fc=false` with `reason=bench_diagnostic_altitude_not_fc_ready`; per-frame logs now also include the FC-reported relative altitude fields.
 
 ## 2026-06-11
 

@@ -56,6 +56,7 @@ int main() {
     assert(estimate.route_match_valid);
     assert(estimate.telemetry_fresh);
     assert(estimate.altitude_valid);
+    assert(!estimate.bench_diagnostic_altitude_used);
     assert(estimate.scale_known);
     assert(estimate.x_m == 10.0);
     assert(estimate.y_m == 0.0);
@@ -68,6 +69,9 @@ int main() {
     assert(log_line.find("external_nav_estimate ") == 0);
     assert(log_line.find("valid_for_fc=true") != std::string::npos);
     assert(log_line.find("reason=valid") != std::string::npos);
+    assert(log_line.find("relative_altitude_seen=true") != std::string::npos);
+    assert(log_line.find("relative_altitude_m=12") != std::string::npos);
+    assert(log_line.find("bench_diagnostic_altitude_used=false") != std::string::npos);
     assert(log_line.find("scale_known=true") != std::string::npos);
 
     auto low_confidence_match = good_match();
@@ -103,6 +107,25 @@ int main() {
     assert(!no_altitude_estimate.valid_for_fc);
     assert(no_altitude_estimate.reason == "altitude_not_valid");
 
+    auto bench_altitude_config = config;
+    bench_altitude_config.bench_diagnostic_altitude_m = 0.5;
+    const auto bench_altitude = vh::make_route_progress_external_nav_estimate(
+        good_match(),
+        route_summary(),
+        no_altitude,
+        at_ms(150),
+        bench_altitude_config);
+    assert(!bench_altitude.valid_for_fc);
+    assert(bench_altitude.reason == "bench_diagnostic_altitude_not_fc_ready");
+    assert(!bench_altitude.altitude_valid);
+    assert(bench_altitude.bench_diagnostic_altitude_used);
+    assert(bench_altitude.scale_known);
+    assert(bench_altitude.x_m == 10.0);
+    assert(bench_altitude.z_m == -0.5);
+    const auto bench_log_line = vh::external_nav_estimate_log_line(bench_altitude);
+    assert(bench_log_line.find("bench_diagnostic_altitude_used=true") != std::string::npos);
+    assert(bench_log_line.find("valid_for_fc=false") != std::string::npos);
+
     auto no_scale_config = config;
     no_scale_config.nominal_route_length_m = 0.0;
     const auto no_scale = vh::make_route_progress_external_nav_estimate(
@@ -130,6 +153,21 @@ int main() {
     try {
         auto bad_config = config;
         bad_config.minimum_match_confidence = 2.0;
+        (void)vh::make_route_progress_external_nav_estimate(
+            good_match(),
+            route_summary(),
+            fresh_telemetry(),
+            at_ms(150),
+            bad_config);
+    } catch (const std::invalid_argument&) {
+        rejected_bad_config = true;
+    }
+    assert(rejected_bad_config);
+
+    rejected_bad_config = false;
+    try {
+        auto bad_config = config;
+        bad_config.bench_diagnostic_altitude_m = -1.0;
         (void)vh::make_route_progress_external_nav_estimate(
             good_match(),
             route_summary(),

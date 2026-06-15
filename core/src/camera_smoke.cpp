@@ -711,7 +711,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
                 << " external_nav_maximum_altitude_age_ms=" << config.external_nav.maximum_altitude_age_ms
-                << " external_nav_source=" << config.external_nav.source_tag;
+                << " external_nav_source=" << config.external_nav.source_tag
+                << " external_nav_bench_diagnostic_altitude_m=" << config.external_nav.bench_diagnostic_altitude_m;
     }
     if (config.emit_dry_run_commands) {
         metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence

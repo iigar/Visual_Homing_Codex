@@ -13,6 +13,7 @@ struct ExternalNavEstimatorConfig {
     double nominal_route_length_m = 0.0;
     double minimum_match_confidence = 0.9;
     double maximum_altitude_age_ms = 500.0;
+    double bench_diagnostic_altitude_m = 0.0;
     std::string source_tag = "visual_route_progress";
 };
 
@@ -26,9 +27,12 @@ struct ExternalNavEstimate {
     double route_progress = 0.0;
     std::uint64_t route_index = 0;
     std::uint64_t route_entries = 0;
+    bool relative_altitude_seen = false;
+    double relative_altitude_m = 0.0;
     bool route_match_valid = false;
     bool telemetry_fresh = false;
     bool altitude_valid = false;
+    bool bench_diagnostic_altitude_used = false;
     bool scale_known = false;
     bool valid_for_fc = false;
     std::string source_tag;
