@@ -80,7 +80,7 @@ void inspect_payload(std::uint32_t message_id,
     }
 
     if (message_id == msg_attitude) {
-        if (payload_size < 28) {
+        if (payload_size < 16) {
             ++summary.malformed_frames;
             return;
         }
@@ -92,7 +92,7 @@ void inspect_payload(std::uint32_t message_id,
     }
 
     if (message_id == msg_global_position_int) {
-        if (payload_size < 28) {
+        if (payload_size < 20) {
             ++summary.malformed_frames;
             return;
         }
@@ -104,7 +104,7 @@ void inspect_payload(std::uint32_t message_id,
     }
 
     if (message_id == msg_altitude) {
-        if (payload_size < 32) {
+        if (payload_size < 24) {
             ++summary.malformed_frames;
             return;
         }

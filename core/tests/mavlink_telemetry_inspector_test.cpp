@@ -152,6 +152,20 @@ int main() {
     assert(strict_validation.altitude_passed);
     assert(strict_validation.malformed_passed);
 
+    std::vector<unsigned char> truncated_global_position;
+    append_u32(truncated_global_position, 1000);
+    append_i32(truncated_global_position, 0);
+    append_i32(truncated_global_position, 0);
+    append_i32(truncated_global_position, 0);
+    append_i32(truncated_global_position, 42500);
+    const auto truncated_summary =
+        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(33, truncated_global_position));
+    assert(truncated_summary.malformed_frames == 0);
+    assert(truncated_summary.global_position_int_messages == 1);
+    assert(truncated_summary.altitude_messages == 1);
+    assert(truncated_summary.latest.relative_altitude_seen);
+    assert(truncated_summary.latest.relative_altitude_m == 42.5);
+
     std::vector<unsigned char> altitude;
     append_u64(altitude, 1000);
     append_f32(altitude, 101.0F);
@@ -175,6 +189,19 @@ int main() {
     assert(relaxed_validation.passed);
     assert(relaxed_validation.global_position_int_passed);
     assert(relaxed_validation.altitude_passed);
+
+    std::vector<unsigned char> truncated_altitude;
+    append_u64(truncated_altitude, 1000);
+    append_f32(truncated_altitude, 101.0F);
+    append_f32(truncated_altitude, 102.0F);
+    append_f32(truncated_altitude, 1.0F);
+    append_f32(truncated_altitude, 3.25F);
+    const auto truncated_altitude_summary =
+        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(141, truncated_altitude));
+    assert(truncated_altitude_summary.malformed_frames == 0);
+    assert(truncated_altitude_summary.altitude_messages == 1);
+    assert(truncated_altitude_summary.latest.relative_altitude_m > 3.24);
+    assert(truncated_altitude_summary.latest.relative_altitude_m < 3.26);
 
     std::vector<unsigned char> alt_hold_heartbeat;
     append_u32(alt_hold_heartbeat, 2);
