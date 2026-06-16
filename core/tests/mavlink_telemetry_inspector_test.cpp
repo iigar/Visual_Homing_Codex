@@ -114,6 +114,10 @@ int main() {
     assert(summary.attitude_messages == 1);
     assert(summary.global_position_int_messages == 1);
     assert(summary.altitude_messages == 1);
+    assert(summary.message_id_counts.at(0) == 1);
+    assert(summary.message_id_counts.at(30) == 1);
+    assert(summary.message_id_counts.at(33) == 1);
+    assert(vh::format_mavlink_message_id_counts(summary.message_id_counts) == "0:1,30:1,33:1");
     assert(summary.heartbeat_custom_mode == 4);
     assert(summary.heartbeat_type == 2);
     assert(summary.heartbeat_autopilot == 3);

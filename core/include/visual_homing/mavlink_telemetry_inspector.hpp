@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
 
 #include "visual_homing/mavlink.hpp"
@@ -17,6 +18,7 @@ struct MavlinkTelemetryInspectionSummary {
     std::uint64_t attitude_messages = 0;
     std::uint64_t global_position_int_messages = 0;
     std::uint64_t altitude_messages = 0;
+    std::map<std::uint32_t, std::uint64_t> message_id_counts;
     std::uint32_t heartbeat_custom_mode = 0;
     std::uint8_t heartbeat_type = 0;
     std::uint8_t heartbeat_autopilot = 0;
@@ -48,5 +50,6 @@ MavlinkTelemetryValidationResult validate_mavlink_telemetry(
     const MavlinkTelemetryInspectionSummary& summary,
     const MavlinkTelemetryValidationConfig& config);
 std::string to_string(FlightMode mode);
+std::string format_mavlink_message_id_counts(const std::map<std::uint32_t, std::uint64_t>& counts);
 
 } // namespace vh

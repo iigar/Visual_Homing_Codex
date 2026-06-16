@@ -289,6 +289,7 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
            << " altitude_messages=" << summary.altitude_messages
+           << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
            << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
            << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
            << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
@@ -320,6 +321,7 @@ void print_mavlink_telemetry_validation(const std::string& path,
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
            << " altitude_messages=" << summary.altitude_messages
+           << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
            << " malformed_frames=" << summary.malformed_frames
            << " heartbeat_passed=" << (result.heartbeat_passed ? "true" : "false")
            << " attitude_passed=" << (result.attitude_passed ? "true" : "false")

@@ -3,6 +3,7 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -138,6 +139,22 @@ std::string to_string(FlightMode mode) {
     return "Unknown";
 }
 
+std::string format_mavlink_message_id_counts(const std::map<std::uint32_t, std::uint64_t>& counts) {
+    if (counts.empty()) {
+        return "none";
+    }
+    std::ostringstream output;
+    bool first = true;
+    for (const auto& [message_id, count] : counts) {
+        if (!first) {
+            output << ",";
+        }
+        first = false;
+        output << message_id << ":" << count;
+    }
+    return output.str();
+}
+
 MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::string& bytes) {
     MavlinkTelemetryInspectionSummary summary;
     summary.bytes_read = bytes.size();
@@ -167,6 +184,7 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
             const auto* payload = reinterpret_cast<const unsigned char*>(bytes.data() + offset + header_size);
             ++summary.frames_seen;
             ++summary.mavlink1_frames;
+            ++summary.message_id_counts[message_id];
             inspect_payload(message_id, payload, payload_size, summary);
             offset += frame_size;
             continue;
@@ -194,6 +212,7 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
         const auto* payload = reinterpret_cast<const unsigned char*>(bytes.data() + offset + header_size);
         ++summary.frames_seen;
         ++summary.mavlink2_frames;
+        ++summary.message_id_counts[message_id];
         inspect_payload(message_id, payload, payload_size, summary);
         offset += frame_size;
     }
