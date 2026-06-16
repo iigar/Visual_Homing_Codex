@@ -174,6 +174,13 @@ struct LiveRouteMatchingResult {
     double external_nav_valid_fraction = 0.0;
     std::uint64_t external_nav_max_invalid_streak = 0;
     std::string external_nav_invalid_reasons;
+    std::uint64_t external_nav_altitude_valid_frames = 0;
+    std::uint64_t external_nav_bench_altitude_frames = 0;
+    std::uint64_t external_nav_altitude_invalid_frames = 0;
+    std::uint64_t external_nav_relative_altitude_seen_frames = 0;
+    double external_nav_relative_altitude_min_m = 0.0;
+    double external_nav_relative_altitude_avg_m = 0.0;
+    double external_nav_relative_altitude_max_m = 0.0;
     bool external_nav_session_ready = false;
     std::uint64_t external_nav_session_valid_for_fc = 0;
     std::string external_nav_session_reason = "not_requested";
