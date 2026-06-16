@@ -1315,6 +1315,21 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.visual_scale_confidence_avg =
             visual_scale_confidence_sum / static_cast<double>(result.visual_scale_valid);
     }
+    result.external_nav_latest_telemetry_armed = latest_gate_telemetry.armed;
+    result.external_nav_latest_telemetry_mode = to_string(latest_gate_telemetry.mode);
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_altitude_blocker = "not_requested";
+    } else if (result.external_nav_altitude_valid_frames > 0) {
+        result.external_nav_altitude_blocker = "none";
+    } else if (result.external_nav_relative_altitude_seen_frames == 0) {
+        result.external_nav_altitude_blocker = "relative_altitude_not_seen";
+    } else if (result.external_nav_relative_altitude_max_m <= 0.0) {
+        result.external_nav_altitude_blocker = "relative_altitude_non_positive";
+    } else if (result.external_nav_bench_altitude_frames > 0) {
+        result.external_nav_altitude_blocker = "bench_diagnostic_altitude_used";
+    } else {
+        result.external_nav_altitude_blocker = "altitude_not_valid";
+    }
 
     result.passed = result.started
         && live_route_match_has_required_frame_count(config, result)
@@ -1423,6 +1438,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_relative_altitude_min_avg_max_m=" << result.external_nav_relative_altitude_min_m
             << "/" << result.external_nav_relative_altitude_avg_m
             << "/" << result.external_nav_relative_altitude_max_m
+            << " external_nav_latest_telemetry_mode=" << result.external_nav_latest_telemetry_mode
+            << " external_nav_latest_telemetry_armed=" << bool_word(result.external_nav_latest_telemetry_armed)
+            << " external_nav_altitude_blocker=" << result.external_nav_altitude_blocker
             << " external_nav_session_ready=" << bool_word(result.external_nav_session_ready)
             << " external_nav_session_valid_for_fc=" << result.external_nav_session_valid_for_fc
             << "/" << result.external_nav_estimates
@@ -1475,6 +1493,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_relative_altitude_min_avg_max_m=" << result.external_nav_relative_altitude_min_m
             << "/" << result.external_nav_relative_altitude_avg_m
             << "/" << result.external_nav_relative_altitude_max_m
+            << " external_nav_latest_telemetry_mode=" << result.external_nav_latest_telemetry_mode
+            << " external_nav_latest_telemetry_armed=" << bool_word(result.external_nav_latest_telemetry_armed)
+            << " external_nav_altitude_blocker=" << result.external_nav_altitude_blocker
             << " external_nav_session_ready=" << bool_word(result.external_nav_session_ready)
             << " external_nav_session_valid=" << result.external_nav_session_valid_for_fc
             << "/" << result.external_nav_estimates

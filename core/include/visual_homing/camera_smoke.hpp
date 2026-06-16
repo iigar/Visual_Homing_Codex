@@ -181,6 +181,9 @@ struct LiveRouteMatchingResult {
     double external_nav_relative_altitude_min_m = 0.0;
     double external_nav_relative_altitude_avg_m = 0.0;
     double external_nav_relative_altitude_max_m = 0.0;
+    bool external_nav_latest_telemetry_armed = false;
+    std::string external_nav_latest_telemetry_mode = "Unknown";
+    std::string external_nav_altitude_blocker = "not_requested";
     bool external_nav_session_ready = false;
     std::uint64_t external_nav_session_valid_for_fc = 0;
     std::string external_nav_session_reason = "not_requested";
