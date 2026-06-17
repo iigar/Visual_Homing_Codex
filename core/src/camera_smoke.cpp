@@ -708,6 +708,20 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.emit_external_nav_estimates && !config.use_live_telemetry_stream) {
         throw std::invalid_argument("Live route matching external-nav estimates require live telemetry stream");
     }
+    if (config.emit_external_nav_estimates
+        && (config.external_nav_expected_relative_altitude_m != 0.0
+            || config.external_nav_expected_relative_altitude_tolerance_m != 0.0)) {
+        if (!std::isfinite(config.external_nav_expected_relative_altitude_m)
+            || config.external_nav_expected_relative_altitude_m <= 0.0) {
+            throw std::invalid_argument(
+                "Live route matching external-nav expected relative altitude must be finite and positive");
+        }
+        if (!std::isfinite(config.external_nav_expected_relative_altitude_tolerance_m)
+            || config.external_nav_expected_relative_altitude_tolerance_m <= 0.0) {
+            throw std::invalid_argument(
+                "Live route matching external-nav expected relative altitude tolerance must be finite and positive");
+        }
+    }
     if (config.emit_live_output_session_audit) {
         if (!config.emit_dry_run_commands) {
             throw std::invalid_argument("Live route matching session audit requires dry-run commands");
@@ -788,7 +802,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
                 << " external_nav_maximum_altitude_age_ms=" << config.external_nav.maximum_altitude_age_ms
                 << " external_nav_source=" << config.external_nav.source_tag
-                << " external_nav_bench_diagnostic_altitude_m=" << config.external_nav.bench_diagnostic_altitude_m;
+                << " external_nav_bench_diagnostic_altitude_m=" << config.external_nav.bench_diagnostic_altitude_m
+                << " external_nav_expected_relative_altitude_m="
+                << config.external_nav_expected_relative_altitude_m
+                << " external_nav_expected_relative_altitude_tolerance_m="
+                << config.external_nav_expected_relative_altitude_tolerance_m;
     }
     if (config.emit_dry_run_commands) {
         metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence
@@ -1310,6 +1328,21 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.external_nav_relative_altitude_avg_m = external_nav_relative_altitude_sum_m
             / static_cast<double>(result.external_nav_relative_altitude_seen_frames);
     }
+    result.external_nav_expected_relative_altitude_required = config.emit_external_nav_estimates
+        && std::isfinite(config.external_nav_expected_relative_altitude_m)
+        && config.external_nav_expected_relative_altitude_m > 0.0
+        && std::isfinite(config.external_nav_expected_relative_altitude_tolerance_m)
+        && config.external_nav_expected_relative_altitude_tolerance_m > 0.0;
+    if (result.external_nav_expected_relative_altitude_required) {
+        const auto altitude_min_allowed = config.external_nav_expected_relative_altitude_m
+            - config.external_nav_expected_relative_altitude_tolerance_m;
+        const auto altitude_max_allowed = config.external_nav_expected_relative_altitude_m
+            + config.external_nav_expected_relative_altitude_tolerance_m;
+        result.external_nav_relative_altitude_window_passed =
+            result.external_nav_relative_altitude_seen_frames == result.external_nav_estimates
+            && result.external_nav_relative_altitude_min_m >= altitude_min_allowed
+            && result.external_nav_relative_altitude_max_m <= altitude_max_allowed;
+    }
     if (result.visual_scale_valid > 0) {
         result.visual_scale_ratio_avg = visual_scale_ratio_sum / static_cast<double>(result.visual_scale_valid);
         result.visual_scale_confidence_avg =
@@ -1364,6 +1397,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.external_nav_quality_reason = "route_session_not_passed";
     } else if (config.require_live_telemetry_health && !result.live_telemetry_health_passed) {
         result.external_nav_quality_reason = "telemetry_health_not_passed";
+    } else if (result.external_nav_expected_relative_altitude_required
+               && !result.external_nav_relative_altitude_window_passed) {
+        result.external_nav_quality_reason = "relative_altitude_out_of_expected_window";
     } else if (result.external_nav_valid_fraction < kExternalNavMinimumValidFraction) {
         result.external_nav_quality_reason = "external_nav_valid_fraction_low";
     } else if (result.external_nav_max_invalid_streak > kExternalNavMaxInvalidStreak) {
@@ -1443,6 +1479,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_relative_altitude_min_avg_max_m=" << result.external_nav_relative_altitude_min_m
             << "/" << result.external_nav_relative_altitude_avg_m
             << "/" << result.external_nav_relative_altitude_max_m
+            << " external_nav_expected_relative_altitude_required="
+            << bool_word(result.external_nav_expected_relative_altitude_required)
+            << " external_nav_expected_relative_altitude_m="
+            << config.external_nav_expected_relative_altitude_m
+            << " external_nav_expected_relative_altitude_tolerance_m="
+            << config.external_nav_expected_relative_altitude_tolerance_m
+            << " external_nav_relative_altitude_window_passed="
+            << bool_word(result.external_nav_relative_altitude_window_passed)
             << " external_nav_latest_telemetry_mode=" << result.external_nav_latest_telemetry_mode
             << " external_nav_latest_telemetry_armed=" << bool_word(result.external_nav_latest_telemetry_armed)
             << " external_nav_altitude_blocker=" << result.external_nav_altitude_blocker
@@ -1499,6 +1543,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_relative_altitude_min_avg_max_m=" << result.external_nav_relative_altitude_min_m
             << "/" << result.external_nav_relative_altitude_avg_m
             << "/" << result.external_nav_relative_altitude_max_m
+            << " external_nav_expected_relative_altitude_required="
+            << bool_word(result.external_nav_expected_relative_altitude_required)
+            << " external_nav_expected_relative_altitude_m="
+            << config.external_nav_expected_relative_altitude_m
+            << " external_nav_expected_relative_altitude_tolerance_m="
+            << config.external_nav_expected_relative_altitude_tolerance_m
+            << " external_nav_relative_altitude_window_passed="
+            << bool_word(result.external_nav_relative_altitude_window_passed)
             << " external_nav_latest_telemetry_mode=" << result.external_nav_latest_telemetry_mode
             << " external_nav_latest_telemetry_armed=" << bool_word(result.external_nav_latest_telemetry_armed)
             << " external_nav_altitude_blocker=" << result.external_nav_altitude_blocker

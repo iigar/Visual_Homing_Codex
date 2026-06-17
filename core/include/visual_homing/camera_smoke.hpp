@@ -105,6 +105,8 @@ struct LiveRouteMatchingConfig {
     bool require_live_telemetry_health = false;
     bool emit_external_nav_estimates = false;
     ExternalNavEstimatorConfig external_nav{};
+    double external_nav_expected_relative_altitude_m = 0.0;
+    double external_nav_expected_relative_altitude_tolerance_m = 0.0;
     bool require_dry_run_command_quality = false;
     double minimum_valid_dry_run_command_fraction = 0.95;
     std::uint64_t max_invalid_dry_run_command_streak = 3;
@@ -181,6 +183,8 @@ struct LiveRouteMatchingResult {
     double external_nav_relative_altitude_min_m = 0.0;
     double external_nav_relative_altitude_avg_m = 0.0;
     double external_nav_relative_altitude_max_m = 0.0;
+    bool external_nav_expected_relative_altitude_required = false;
+    bool external_nav_relative_altitude_window_passed = true;
     bool external_nav_latest_telemetry_armed = false;
     std::string external_nav_latest_telemetry_mode = "Unknown";
     std::string external_nav_altitude_blocker = "not_requested";

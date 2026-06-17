@@ -229,6 +229,21 @@ int main() {
     }
     assert(rejected_match_rollback);
 
+    bool rejected_expected_altitude_tolerance = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.emit_external_nav_estimates = true;
+        invalid.use_live_telemetry_stream = true;
+        invalid.external_nav_expected_relative_altitude_m = 0.5;
+        invalid.external_nav_expected_relative_altitude_tolerance_m = 0.0;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_expected_altitude_tolerance = true;
+    }
+    assert(rejected_expected_altitude_tolerance);
+
     bool rejected_match_endpoint_start = false;
     try {
         vh::LiveRouteMatchingConfig invalid;

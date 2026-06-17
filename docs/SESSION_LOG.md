@@ -3,6 +3,7 @@
 ## 2026-06-17
 
 - Made the log-only external-nav quality gate treat camera-only visual-scale diagnostics as required only when a positive `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` is configured. Live-route summaries now include `visual_scale_required`, so FC-ready barometer-altitude dry-runs without bench scale diagnostics can report `external_nav_quality_ready=true` when the route, telemetry, and per-frame external-nav gates pass.
+- Added an optional expected relative-altitude window to the external-nav log-only quality gate. `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M` plus `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M` rejects physically implausible barometer-origin runs with `relative_altitude_out_of_expected_window`, while remaining disabled by default.
 
 ## 2026-06-14
 

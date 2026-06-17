@@ -57,6 +57,8 @@ external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATC
 external_nav_maximum_altitude_age_ms="${VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS:-${live_route_match_telemetry_max_age_ms}}"
 external_nav_source="${VISUAL_HOMING_EXTERNAL_NAV_SOURCE:-visual_route_progress}"
 external_nav_bench_diagnostic_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M:-0}"
+external_nav_expected_relative_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-0}"
+external_nav_expected_relative_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-0}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
 live_output_runtime_enabled="${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
 live_output_bench_props_off_confirm="${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
@@ -240,6 +242,8 @@ if [[ "${external_nav_estimates}" == "1" ]]; then
         "${external_nav_maximum_altitude_age_ms}"
         "${external_nav_source}"
         "${external_nav_bench_diagnostic_altitude_m}"
+        "${external_nav_expected_relative_altitude_m}"
+        "${external_nav_expected_relative_altitude_tolerance_m}"
     )
 fi
 live_route_session_audit_args=()

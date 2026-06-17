@@ -495,11 +495,15 @@ VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE=0.90
 VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS=500
 VISUAL_HOMING_EXTERNAL_NAV_SOURCE=visual_route_progress
 VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M=0
+VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M=0
+VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M=0
 ```
 
 For this external-nav dry-run mode only, live-route telemetry warmup accepts heartbeat plus attitude without requiring `GLOBAL_POSITION_INT`, because a GPS-denied FC may not publish that message before an external-navigation provider exists. If no `GLOBAL_POSITION_INT` or MAVLink `ALTITUDE` relative-height source is seen, the run can still collect route/matcher evidence, but each estimate remains `valid_for_fc=false` with an altitude/scale reason.
 
 This writes one `external_nav_estimate` line per matched frame and adds `external_nav_valid_for_fc` plus `external_nav_invalid_reasons` to the final summaries. An estimate is marked FC-ready only when the route match is valid/confident, telemetry relative altitude/yaw is fresh, and nominal route scale is configured. `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` is an optional bench-only diagnostic fallback for computing loggable `x/y/z` scale when the FC reports a zero or negative relative altitude; estimates that use it remain `valid_for_fc=false` with `reason=bench_diagnostic_altitude_not_fc_ready`. When that bench/reference altitude is positive, the same log line also includes a camera-only scale diagnostic: `visual_scale_valid`, `visual_scale_ratio`, `visual_altitude_m`, and `visual_scale_confidence`. This compares the live frame against nearby scaled versions of the matched route keyframe and is only a diagnostic for scale stability; it is not an FC-ready altitude source. Final summaries report `visual_scale_required`; it is `true` only for positive bench/reference-altitude diagnostic runs, so a barometer-altitude FC-ready run without bench altitude can pass external-nav quality with `visual_scale_required=false` and `visual_scale_valid=0/<frames>`. This is Milestone 6.9 log evidence only; it does not make ArduPilot accept `Guided` and it does not attach an external-nav writer.
+
+Set `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M` and `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M` together to require a physical barometer sanity window in the log-only quality gate. When enabled, final summaries report `external_nav_expected_relative_altitude_required`, the configured expected/tolerance values, and `external_nav_relative_altitude_window_passed`. If the observed relative-altitude min/max range is outside the expected window, `external_nav_quality_ready=false` with `external_nav_quality_reason=relative_altitude_out_of_expected_window`, even when the route match and telemetry stream otherwise pass. Leave both values at `0` to disable this check.
 
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 
