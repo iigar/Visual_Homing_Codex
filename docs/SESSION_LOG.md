@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-17
+
+- Made the log-only external-nav quality gate treat camera-only visual-scale diagnostics as required only when a positive `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` is configured. Live-route summaries now include `visual_scale_required`, so FC-ready barometer-altitude dry-runs without bench scale diagnostics can report `external_nav_quality_ready=true` when the route, telemetry, and per-frame external-nav gates pass.
+
 ## 2026-06-14
 
 - Added `scripts/run-live-output-bench-props-off-attach-pi.sh` as the separate reviewed attach-build bench command. It requires a distinct attach confirmation string, configures all three Pi live-output attach CMake flags through `test-core-pi.sh`, verifies `attach_writer_cmake=ON` and `live_output_writer_attached=true` in the run log, and defaults to `allowed=0 blocked=<auto> reason=vehicle_not_armed`. The ordinary fail-closed wrapper remains unchanged and still proves the unattached `live_output_unavailable` boundary.

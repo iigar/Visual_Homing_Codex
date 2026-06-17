@@ -1330,6 +1330,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     } else {
         result.external_nav_altitude_blocker = "altitude_not_valid";
     }
+    result.visual_scale_required = config.emit_external_nav_estimates
+        && std::isfinite(config.external_nav.bench_diagnostic_altitude_m)
+        && config.external_nav.bench_diagnostic_altitude_m > 0.0;
 
     result.passed = result.started
         && live_route_match_has_required_frame_count(config, result)
@@ -1365,10 +1368,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.external_nav_quality_reason = "external_nav_valid_fraction_low";
     } else if (result.external_nav_max_invalid_streak > kExternalNavMaxInvalidStreak) {
         result.external_nav_quality_reason = "external_nav_invalid_streak_high";
-    } else if (result.visual_scale_valid_fraction < kVisualScaleMinimumValidFraction) {
+    } else if (result.visual_scale_required
+               && result.visual_scale_valid_fraction < kVisualScaleMinimumValidFraction) {
         result.external_nav_quality_reason = "visual_scale_valid_fraction_low";
-    } else if (result.visual_scale_ratio_min < kVisualScaleMinimumRatio
-               || result.visual_scale_ratio_max > kVisualScaleMaximumRatio) {
+    } else if (result.visual_scale_required
+               && (result.visual_scale_ratio_min < kVisualScaleMinimumRatio
+                   || result.visual_scale_ratio_max > kVisualScaleMaximumRatio)) {
         result.external_nav_quality_reason = "visual_scale_ratio_out_of_range";
     } else {
         result.external_nav_quality_ready = true;
@@ -1447,6 +1452,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_session_reason=" << result.external_nav_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
+            << " visual_scale_required=" << bool_word(result.visual_scale_required)
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_valid_fraction=" << result.visual_scale_valid_fraction
             << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min
@@ -1502,6 +1508,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_session_reason=" << result.external_nav_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
+            << " visual_scale_required=" << bool_word(result.visual_scale_required)
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_valid_fraction=" << result.visual_scale_valid_fraction
             << " visual_scale_ratio_min_avg_max=" << result.visual_scale_ratio_min

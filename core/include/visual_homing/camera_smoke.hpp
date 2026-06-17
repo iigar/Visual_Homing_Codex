@@ -189,6 +189,7 @@ struct LiveRouteMatchingResult {
     std::string external_nav_session_reason = "not_requested";
     bool external_nav_quality_ready = false;
     std::string external_nav_quality_reason = "not_requested";
+    bool visual_scale_required = false;
     std::uint64_t visual_scale_valid = 0;
     double visual_scale_valid_fraction = 0.0;
     double visual_scale_ratio_min = 0.0;
