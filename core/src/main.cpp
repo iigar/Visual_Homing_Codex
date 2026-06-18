@@ -297,7 +297,20 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
            << " altitude_messages=" << summary.altitude_messages
+           << " distance_sensor_messages=" << summary.distance_sensor_messages
+           << " optical_flow_messages=" << summary.optical_flow_messages
+           << " optical_flow_rad_messages=" << summary.optical_flow_rad_messages
            << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
+           << " distance_sensor_seen=" << (summary.distance_sensor_seen ? "true" : "false")
+           << " distance_sensor_current_m=" << summary.distance_sensor_current_m
+           << " distance_sensor_min_max_m=" << summary.distance_sensor_min_m
+           << "/" << summary.distance_sensor_max_m
+           << " distance_sensor_type=" << static_cast<int>(summary.distance_sensor_type)
+           << " distance_sensor_id=" << static_cast<int>(summary.distance_sensor_id)
+           << " distance_sensor_orientation=" << static_cast<int>(summary.distance_sensor_orientation)
+           << " optical_flow_distance_seen=" << (summary.optical_flow_distance_seen ? "true" : "false")
+           << " optical_flow_distance_m=" << summary.optical_flow_distance_m
+           << " optical_flow_quality=" << static_cast<int>(summary.optical_flow_quality)
            << " heartbeat_custom_mode=" << summary.heartbeat_custom_mode
            << " heartbeat_type=" << static_cast<int>(summary.heartbeat_type)
            << " heartbeat_autopilot=" << static_cast<int>(summary.heartbeat_autopilot)
@@ -329,6 +342,9 @@ void print_mavlink_telemetry_validation(const std::string& path,
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages
            << " altitude_messages=" << summary.altitude_messages
+           << " distance_sensor_messages=" << summary.distance_sensor_messages
+           << " optical_flow_messages=" << summary.optical_flow_messages
+           << " optical_flow_rad_messages=" << summary.optical_flow_rad_messages
            << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
            << " malformed_frames=" << summary.malformed_frames
            << " heartbeat_passed=" << (result.heartbeat_passed ? "true" : "false")

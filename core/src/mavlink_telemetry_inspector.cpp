@@ -15,6 +15,9 @@ constexpr unsigned char mavlink2_stx = 0xFD;
 constexpr std::uint32_t msg_heartbeat = 0;
 constexpr std::uint32_t msg_attitude = 30;
 constexpr std::uint32_t msg_global_position_int = 33;
+constexpr std::uint32_t msg_optical_flow = 100;
+constexpr std::uint32_t msg_optical_flow_rad = 106;
+constexpr std::uint32_t msg_distance_sensor = 132;
 constexpr std::uint32_t msg_altitude = 141;
 constexpr std::uint8_t mav_mode_flag_safety_armed = 128;
 
@@ -100,6 +103,53 @@ void inspect_payload(std::uint32_t message_id,
         ++summary.altitude_messages;
         summary.latest.relative_altitude_seen = true;
         summary.latest.relative_altitude_m = static_cast<double>(read_i32_le(payload + 16)) / 1000.0;
+        return;
+    }
+
+    if (message_id == msg_optical_flow) {
+        if (payload_size < 26) {
+            ++summary.malformed_frames;
+            return;
+        }
+        ++summary.optical_flow_messages;
+        summary.optical_flow_distance_seen = true;
+        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 24));
+        if (payload_size >= 34) {
+            summary.optical_flow_quality = payload[33];
+        }
+        return;
+    }
+
+    if (message_id == msg_optical_flow_rad) {
+        if (payload_size < 44) {
+            ++summary.malformed_frames;
+            return;
+        }
+        ++summary.optical_flow_rad_messages;
+        summary.optical_flow_distance_seen = true;
+        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 40));
+        summary.optical_flow_quality = payload[35];
+        return;
+    }
+
+    if (message_id == msg_distance_sensor) {
+        if (payload_size < 10) {
+            ++summary.malformed_frames;
+            return;
+        }
+        ++summary.distance_sensor_messages;
+        summary.distance_sensor_seen = true;
+        summary.distance_sensor_min_m =
+            static_cast<double>(payload[4] | (static_cast<std::uint16_t>(payload[5]) << 8)) / 100.0;
+        summary.distance_sensor_max_m =
+            static_cast<double>(payload[6] | (static_cast<std::uint16_t>(payload[7]) << 8)) / 100.0;
+        summary.distance_sensor_current_m =
+            static_cast<double>(payload[8] | (static_cast<std::uint16_t>(payload[9]) << 8)) / 100.0;
+        if (payload_size >= 14) {
+            summary.distance_sensor_type = payload[10];
+            summary.distance_sensor_id = payload[11];
+            summary.distance_sensor_orientation = payload[12];
+        }
         return;
     }
 
