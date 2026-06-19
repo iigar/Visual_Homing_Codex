@@ -507,6 +507,23 @@ Set `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M` and `VISUAL_HOMING
 
 The MAVLink telemetry inspector also reports long-capture drift diagnostics: `relative_altitude_min_avg_max_m` and, when the FC publishes MAVLink `DISTANCE_SENSOR`, `distance_sensor_current_min_avg_max_m`. Rangefinder use remains optional; these fields are diagnostic until a later reviewed change explicitly gates or estimates against rangefinder telemetry.
 
+Before spending time on a route-match dry-run that depends on FC relative altitude, run the read-only preflight telemetry sanity checker. It captures MAVLink telemetry, inspects it, and fails before the route pass when the full observed relative-altitude range is outside the configured physical stand window:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE=/dev/serial0 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD=115200 \
+VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS=60000 \
+VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M=0.5 \
+VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M=0.25 \
+VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_MIN_RELATIVE_ALTITUDE_SAMPLES=5 \
+VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M=0.25 \
+./scripts/check-external-nav-telemetry-sanity-pi.sh
+```
+
+The checker prints a single `external_nav_telemetry_sanity` line with `passed=true|false`, the reason, the source log path, `relative_altitude_min_avg_max_m`, the accepted window, and the optional drift span check. `VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M=0` disables the span check. Leave `VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_REQUIRE_DISTANCE_SENSOR=0` unless the FC is actually publishing MAVLink `DISTANCE_SENSOR` on the Pi telemetry port.
+
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 
 ```bash

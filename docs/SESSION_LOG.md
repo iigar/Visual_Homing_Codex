@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-20
+
+- Added `scripts/check-external-nav-telemetry-sanity-pi.sh`, a read-only preflight telemetry sanity checker that captures and inspects MAVLink telemetry before a route-match dry-run, then rejects missing altitude, malformed frames, out-of-window relative altitude, optional excessive altitude span, or an explicitly required missing `DISTANCE_SENSOR`.
+
 ## 2026-06-17
 
 - Made the log-only external-nav quality gate treat camera-only visual-scale diagnostics as required only when a positive `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` is configured. Live-route summaries now include `visual_scale_required`, so FC-ready barometer-altitude dry-runs without bench scale diagnostics can report `external_nav_quality_ready=true` when the route, telemetry, and per-frame external-nav gates pass.
