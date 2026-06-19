@@ -114,6 +114,7 @@ int main() {
     assert(summary.attitude_messages == 1);
     assert(summary.global_position_int_messages == 1);
     assert(summary.altitude_messages == 1);
+    assert(summary.relative_altitude_samples == 1);
     assert(summary.message_id_counts.at(0) == 1);
     assert(summary.message_id_counts.at(30) == 1);
     assert(summary.message_id_counts.at(33) == 1);
@@ -132,6 +133,9 @@ int main() {
     assert(summary.latest.yaw_rad > 1.29 && summary.latest.yaw_rad < 1.31);
     assert(summary.latest.relative_altitude_seen);
     assert(summary.latest.relative_altitude_m == 42.5);
+    assert(summary.relative_altitude_min_m == 42.5);
+    assert(summary.relative_altitude_avg_m == 42.5);
+    assert(summary.relative_altitude_max_m == 42.5);
     assert(vh::to_string(summary.latest.mode) == "Guided");
 
     const auto validation = vh::validate_mavlink_telemetry(summary, {});
@@ -180,6 +184,7 @@ int main() {
         mavlink2_frame(141, altitude));
     assert(altitude_only.global_position_int_messages == 0);
     assert(altitude_only.altitude_messages == 1);
+    assert(altitude_only.relative_altitude_samples == 1);
     assert(altitude_only.latest.relative_altitude_seen);
     assert(altitude_only.latest.relative_altitude_m > 3.24);
     assert(altitude_only.latest.relative_altitude_m < 3.26);
@@ -220,6 +225,12 @@ int main() {
     assert(rangefinder_summary.distance_sensor_seen);
     assert(rangefinder_summary.distance_sensor_current_m > 0.72);
     assert(rangefinder_summary.distance_sensor_current_m < 0.74);
+    assert(rangefinder_summary.distance_sensor_current_min_m > 0.72);
+    assert(rangefinder_summary.distance_sensor_current_min_m < 0.74);
+    assert(rangefinder_summary.distance_sensor_current_avg_m > 0.72);
+    assert(rangefinder_summary.distance_sensor_current_avg_m < 0.74);
+    assert(rangefinder_summary.distance_sensor_current_max_m > 0.72);
+    assert(rangefinder_summary.distance_sensor_current_max_m < 0.74);
     assert(rangefinder_summary.distance_sensor_min_m > 0.19);
     assert(rangefinder_summary.distance_sensor_min_m < 0.21);
     assert(rangefinder_summary.distance_sensor_max_m > 1.99);

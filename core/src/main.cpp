@@ -300,9 +300,16 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " distance_sensor_messages=" << summary.distance_sensor_messages
            << " optical_flow_messages=" << summary.optical_flow_messages
            << " optical_flow_rad_messages=" << summary.optical_flow_rad_messages
+           << " relative_altitude_samples=" << summary.relative_altitude_samples
+           << " relative_altitude_min_avg_max_m=" << summary.relative_altitude_min_m
+           << "/" << summary.relative_altitude_avg_m
+           << "/" << summary.relative_altitude_max_m
            << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
            << " distance_sensor_seen=" << (summary.distance_sensor_seen ? "true" : "false")
            << " distance_sensor_current_m=" << summary.distance_sensor_current_m
+           << " distance_sensor_current_min_avg_max_m=" << summary.distance_sensor_current_min_m
+           << "/" << summary.distance_sensor_current_avg_m
+           << "/" << summary.distance_sensor_current_max_m
            << " distance_sensor_min_max_m=" << summary.distance_sensor_min_m
            << "/" << summary.distance_sensor_max_m
            << " distance_sensor_type=" << static_cast<int>(summary.distance_sensor_type)
@@ -345,6 +352,10 @@ void print_mavlink_telemetry_validation(const std::string& path,
            << " distance_sensor_messages=" << summary.distance_sensor_messages
            << " optical_flow_messages=" << summary.optical_flow_messages
            << " optical_flow_rad_messages=" << summary.optical_flow_rad_messages
+           << " relative_altitude_samples=" << summary.relative_altitude_samples
+           << " relative_altitude_min_avg_max_m=" << summary.relative_altitude_min_m
+           << "/" << summary.relative_altitude_avg_m
+           << "/" << summary.relative_altitude_max_m
            << " message_id_counts=" << vh::format_mavlink_message_id_counts(summary.message_id_counts)
            << " malformed_frames=" << summary.malformed_frames
            << " heartbeat_passed=" << (result.heartbeat_passed ? "true" : "false")

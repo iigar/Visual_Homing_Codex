@@ -1,5 +1,6 @@
 #include "visual_homing/mavlink_telemetry_inspector.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -20,6 +21,11 @@ constexpr std::uint32_t msg_optical_flow_rad = 106;
 constexpr std::uint32_t msg_distance_sensor = 132;
 constexpr std::uint32_t msg_altitude = 141;
 constexpr std::uint8_t mav_mode_flag_safety_armed = 128;
+
+struct InspectionAccumulation {
+    double relative_altitude_sum_m = 0.0;
+    double distance_sensor_current_sum_m = 0.0;
+};
 
 std::uint32_t read_u32_le(const unsigned char* data) {
     return static_cast<std::uint32_t>(data[0]) |
@@ -61,7 +67,8 @@ FlightMode ardupilot_custom_mode_to_flight_mode(std::uint32_t custom_mode) {
 void inspect_payload(std::uint32_t message_id,
                      const unsigned char* payload,
                      std::size_t payload_size,
-                     MavlinkTelemetryInspectionSummary& summary) {
+                     MavlinkTelemetryInspectionSummary& summary,
+                     InspectionAccumulation& accumulation) {
     if (message_id == msg_heartbeat) {
         if (payload_size < 9) {
             ++summary.malformed_frames;
@@ -103,6 +110,15 @@ void inspect_payload(std::uint32_t message_id,
         ++summary.altitude_messages;
         summary.latest.relative_altitude_seen = true;
         summary.latest.relative_altitude_m = static_cast<double>(read_i32_le(payload + 16)) / 1000.0;
+        ++summary.relative_altitude_samples;
+        accumulation.relative_altitude_sum_m += summary.latest.relative_altitude_m;
+        if (summary.relative_altitude_samples == 1) {
+            summary.relative_altitude_min_m = summary.latest.relative_altitude_m;
+            summary.relative_altitude_max_m = summary.latest.relative_altitude_m;
+        } else {
+            summary.relative_altitude_min_m = std::min(summary.relative_altitude_min_m, summary.latest.relative_altitude_m);
+            summary.relative_altitude_max_m = std::max(summary.relative_altitude_max_m, summary.latest.relative_altitude_m);
+        }
         return;
     }
 
@@ -145,6 +161,16 @@ void inspect_payload(std::uint32_t message_id,
             static_cast<double>(payload[6] | (static_cast<std::uint16_t>(payload[7]) << 8)) / 100.0;
         summary.distance_sensor_current_m =
             static_cast<double>(payload[8] | (static_cast<std::uint16_t>(payload[9]) << 8)) / 100.0;
+        accumulation.distance_sensor_current_sum_m += summary.distance_sensor_current_m;
+        if (summary.distance_sensor_messages == 1) {
+            summary.distance_sensor_current_min_m = summary.distance_sensor_current_m;
+            summary.distance_sensor_current_max_m = summary.distance_sensor_current_m;
+        } else {
+            summary.distance_sensor_current_min_m =
+                std::min(summary.distance_sensor_current_min_m, summary.distance_sensor_current_m);
+            summary.distance_sensor_current_max_m =
+                std::max(summary.distance_sensor_current_max_m, summary.distance_sensor_current_m);
+        }
         if (payload_size >= 14) {
             summary.distance_sensor_type = payload[10];
             summary.distance_sensor_id = payload[11];
@@ -161,6 +187,15 @@ void inspect_payload(std::uint32_t message_id,
         ++summary.altitude_messages;
         summary.latest.relative_altitude_seen = true;
         summary.latest.relative_altitude_m = static_cast<double>(read_f32_le(payload + 20));
+        ++summary.relative_altitude_samples;
+        accumulation.relative_altitude_sum_m += summary.latest.relative_altitude_m;
+        if (summary.relative_altitude_samples == 1) {
+            summary.relative_altitude_min_m = summary.latest.relative_altitude_m;
+            summary.relative_altitude_max_m = summary.latest.relative_altitude_m;
+        } else {
+            summary.relative_altitude_min_m = std::min(summary.relative_altitude_min_m, summary.latest.relative_altitude_m);
+            summary.relative_altitude_max_m = std::max(summary.relative_altitude_max_m, summary.latest.relative_altitude_m);
+        }
     }
 }
 
@@ -208,6 +243,7 @@ std::string format_mavlink_message_id_counts(const std::map<std::uint32_t, std::
 MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::string& bytes) {
     MavlinkTelemetryInspectionSummary summary;
     summary.bytes_read = bytes.size();
+    InspectionAccumulation accumulation;
 
     std::size_t offset = 0;
     while (offset < bytes.size()) {
@@ -235,7 +271,7 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
             ++summary.frames_seen;
             ++summary.mavlink1_frames;
             ++summary.message_id_counts[message_id];
-            inspect_payload(message_id, payload, payload_size, summary);
+            inspect_payload(message_id, payload, payload_size, summary, accumulation);
             offset += frame_size;
             continue;
         }
@@ -263,8 +299,17 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
         ++summary.frames_seen;
         ++summary.mavlink2_frames;
         ++summary.message_id_counts[message_id];
-        inspect_payload(message_id, payload, payload_size, summary);
+        inspect_payload(message_id, payload, payload_size, summary, accumulation);
         offset += frame_size;
+    }
+
+    if (summary.relative_altitude_samples > 0) {
+        summary.relative_altitude_avg_m =
+            accumulation.relative_altitude_sum_m / static_cast<double>(summary.relative_altitude_samples);
+    }
+    if (summary.distance_sensor_messages > 0) {
+        summary.distance_sensor_current_avg_m =
+            accumulation.distance_sensor_current_sum_m / static_cast<double>(summary.distance_sensor_messages);
     }
 
     return summary;

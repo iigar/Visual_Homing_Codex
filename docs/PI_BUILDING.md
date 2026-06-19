@@ -505,6 +505,8 @@ This writes one `external_nav_estimate` line per matched frame and adds `externa
 
 Set `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M` and `VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M` together to require a physical barometer sanity window in the log-only quality gate. When enabled, final summaries report `external_nav_expected_relative_altitude_required`, the configured expected/tolerance values, and `external_nav_relative_altitude_window_passed`. If the observed relative-altitude min/max range is outside the expected window, `external_nav_quality_ready=false` with `external_nav_quality_reason=relative_altitude_out_of_expected_window`, even when the route match and telemetry stream otherwise pass. Leave both values at `0` to disable this check.
 
+The MAVLink telemetry inspector also reports long-capture drift diagnostics: `relative_altitude_min_avg_max_m` and, when the FC publishes MAVLink `DISTANCE_SENSOR`, `distance_sensor_current_min_avg_max_m`. Rangefinder use remains optional; these fields are diagnostic until a later reviewed change explicitly gates or estimates against rangefinder telemetry.
+
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 
 ```bash

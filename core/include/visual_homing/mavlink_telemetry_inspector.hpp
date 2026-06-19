@@ -21,11 +21,18 @@ struct MavlinkTelemetryInspectionSummary {
     std::uint64_t distance_sensor_messages = 0;
     std::uint64_t optical_flow_messages = 0;
     std::uint64_t optical_flow_rad_messages = 0;
+    std::uint64_t relative_altitude_samples = 0;
+    double relative_altitude_min_m = 0.0;
+    double relative_altitude_avg_m = 0.0;
+    double relative_altitude_max_m = 0.0;
     std::map<std::uint32_t, std::uint64_t> message_id_counts;
     bool distance_sensor_seen = false;
     double distance_sensor_current_m = 0.0;
     double distance_sensor_min_m = 0.0;
     double distance_sensor_max_m = 0.0;
+    double distance_sensor_current_min_m = 0.0;
+    double distance_sensor_current_avg_m = 0.0;
+    double distance_sensor_current_max_m = 0.0;
     std::uint8_t distance_sensor_type = 0;
     std::uint8_t distance_sensor_id = 0;
     std::uint8_t distance_sensor_orientation = 0;
