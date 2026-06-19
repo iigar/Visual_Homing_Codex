@@ -191,6 +191,8 @@ struct LiveRouteMatchingResult {
     bool external_nav_session_ready = false;
     std::uint64_t external_nav_session_valid_for_fc = 0;
     std::string external_nav_session_reason = "not_requested";
+    bool external_nav_strict_session_ready = false;
+    std::string external_nav_strict_session_reason = "not_requested";
     bool external_nav_quality_ready = false;
     std::string external_nav_quality_reason = "not_requested";
     bool visual_scale_required = false;

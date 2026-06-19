@@ -3,6 +3,7 @@
 ## 2026-06-20
 
 - Added `scripts/check-external-nav-telemetry-sanity-pi.sh`, a read-only preflight telemetry sanity checker that captures and inspects MAVLink telemetry before a route-match dry-run, then rejects missing altitude, malformed frames, out-of-window relative altitude, optional excessive altitude span, or an explicitly required missing `DISTANCE_SENSOR`.
+- Made `external_nav_session_ready` follow the tolerant external-nav quality gate instead of requiring strict `150/150` FC-ready frames. The old all-frames requirement is now reported separately as `external_nav_strict_session_ready` and `external_nav_strict_session_reason`.
 
 ## 2026-06-17
 

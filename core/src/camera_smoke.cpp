@@ -1375,16 +1375,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed);
 
     if (result.external_nav_estimates == 0) {
-        result.external_nav_session_reason = "not_requested";
+        result.external_nav_strict_session_reason = "not_requested";
     } else if (!result.passed) {
-        result.external_nav_session_reason = "route_session_not_passed";
+        result.external_nav_strict_session_reason = "route_session_not_passed";
     } else if (result.external_nav_valid_for_fc != result.external_nav_estimates) {
-        result.external_nav_session_reason = "per_frame_external_nav_invalid";
+        result.external_nav_strict_session_reason = "per_frame_external_nav_invalid";
     } else {
-        result.external_nav_session_ready = true;
-        result.external_nav_session_valid_for_fc = result.external_nav_valid_for_fc;
-        result.external_nav_session_reason = "valid";
+        result.external_nav_strict_session_ready = true;
+        result.external_nav_strict_session_reason = "valid";
     }
+    result.external_nav_session_valid_for_fc = result.external_nav_valid_for_fc;
 
     constexpr double kExternalNavMinimumValidFraction = 0.95;
     constexpr std::uint64_t kExternalNavMaxInvalidStreak = 3;
@@ -1415,6 +1415,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.external_nav_quality_ready = true;
         result.external_nav_quality_reason = "valid";
     }
+    result.external_nav_session_ready = result.external_nav_quality_ready;
+    result.external_nav_session_reason = result.external_nav_quality_reason;
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
@@ -1494,6 +1496,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_session_valid_for_fc=" << result.external_nav_session_valid_for_fc
             << "/" << result.external_nav_estimates
             << " external_nav_session_reason=" << result.external_nav_session_reason
+            << " external_nav_strict_session_ready=" << bool_word(result.external_nav_strict_session_ready)
+            << " external_nav_strict_session_reason=" << result.external_nav_strict_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
             << " visual_scale_required=" << bool_word(result.visual_scale_required)
@@ -1558,6 +1562,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_session_valid=" << result.external_nav_session_valid_for_fc
             << "/" << result.external_nav_estimates
             << " external_nav_session_reason=" << result.external_nav_session_reason
+            << " external_nav_strict_session_ready=" << bool_word(result.external_nav_strict_session_ready)
+            << " external_nav_strict_session_reason=" << result.external_nav_strict_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
             << " visual_scale_required=" << bool_word(result.visual_scale_required)
