@@ -82,6 +82,9 @@ require_number_gt_zero "VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TO
 require_nonnegative_number "VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M" "${max_altitude_span_m}"
 require_bool "VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_REQUIRE_DISTANCE_SENSOR" "${require_distance_sensor}"
 
+run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+sanity_run_log="${VISUAL_HOMING_RUN_LOG:-${log_dir}/test-core-pi-${run_log_stamp}.log}"
+
 VISUAL_HOMING_CAPTURE_MAVLINK_TELEMETRY=1 \
 VISUAL_HOMING_INSPECT_MAVLINK_TELEMETRY=1 \
 VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY=0 \
@@ -97,9 +100,10 @@ VISUAL_HOMING_ROUTE_DISTINCTIVENESS=0 \
 VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE="${device}" \
 VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD="${baud}" \
 VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS="${duration_ms}" \
+VISUAL_HOMING_RUN_LOG="${sanity_run_log}" \
 "${repo_root}/scripts/test-core-pi.sh"
 
-latest_log="$(ls -t "${log_dir}"/test-core-pi-*.log | head -1)"
+latest_log="${sanity_run_log}"
 inspect_line="$(grep "mavlink_telemetry_inspect" "${latest_log}" | tail -1 || true)"
 if [[ -z "${inspect_line}" ]]; then
     echo "external_nav_telemetry_sanity passed=false reason=missing_inspect_line log_path=${latest_log}"
