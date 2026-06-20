@@ -526,18 +526,21 @@ VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M=0.25 \
 
 The checker prints a single `external_nav_telemetry_sanity` line with `passed=true|false`, the reason, the source log path, `relative_altitude_min_avg_max_m`, the accepted window, and the optional drift span check. `VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M=0` disables the span check. Leave `VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_REQUIRE_DISTANCE_SENSOR=0` unless the FC is actually publishing MAVLink `DISTANCE_SENSOR` on the Pi telemetry port.
 
+Set `VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=floor` to use the floor sanity defaults (`0.05 +/- 0.15 m`) or `VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=stand` to use the bench stand defaults (`0.5 +/- 0.25 m`). Use `custom` plus explicit expected/tolerance values for measured field setups.
+
 For the standard external-nav dry-run readiness sequence, use the wrapper that runs both the preflight sanity check and live route match, then validates the final compact line:
 
 ```bash
 cd ~/Visual_Homing_Codex
 
-VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M=0.5 \
-VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M=0.25 \
+VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=stand \
 VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE=0.82 \
 ./scripts/run-external-nav-dry-run-pi.sh
 ```
 
 The wrapper still sends no MAVLink commands and writes no external-nav MAVLink. It expects live output to remain blocked by the safety gate, normally `vehicle_not_armed:<frames>`, and prints `external_nav_readiness_log_check passed=true` only when the route, telemetry, dry-run command, altitude-window, and external-nav quality gates pass.
+
+The future Android companion UI should expose the same altitude preset as an operator choice, for example "Floor" and "Stand", before invoking the Pi readiness API. Android should send the preset/intent to the Pi and display the resolved expected altitude, tolerance, and final `external_nav_telemetry_sanity` or `external_nav_readiness_log_check` verdict; it should not silently invent or store a separate height calibration path.
 
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 

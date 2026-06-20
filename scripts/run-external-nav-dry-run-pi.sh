@@ -7,8 +7,32 @@ log_dir="${VISUAL_HOMING_LOG_DIR:-${repo_root}/artifacts/logs}"
 preflight_log="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_LOG:-${log_dir}/external-nav-preflight-${stamp}.log}"
 run_log="${VISUAL_HOMING_RUN_LOG:-${log_dir}/external-nav-dry-run-${stamp}.log}"
 
-expected_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-0.5}"
-expected_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-0.25}"
+altitude_preset="${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET:-stand}"
+case "${altitude_preset}" in
+    floor)
+        default_expected_altitude_m=0.05
+        default_altitude_tolerance_m=0.15
+        ;;
+    stand)
+        default_expected_altitude_m=0.5
+        default_altitude_tolerance_m=0.25
+        ;;
+    custom)
+        if [[ -z "${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-}" \
+            || -z "${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-}" ]]; then
+            echo "VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=custom requires VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M and VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M" >&2
+            exit 2
+        fi
+        default_expected_altitude_m=0
+        default_altitude_tolerance_m=0
+        ;;
+    *)
+        echo "VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET must be one of: custom, floor, stand" >&2
+        exit 2
+        ;;
+esac
+expected_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-${default_expected_altitude_m}}"
+expected_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-${default_altitude_tolerance_m}}"
 external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE:-0.82}"
 frames="${VISUAL_HOMING_CAMERA_FRAMES:-150}"
 target_width="${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-64}"
@@ -24,10 +48,14 @@ cat <<EOF
 ### external-nav log-quality gates.
 ### preflight_log=${preflight_log}
 ### run_log=${run_log}
+### altitude_preset=${altitude_preset}
+### expected_relative_altitude_m=${expected_altitude_m}
+### expected_relative_altitude_tolerance_m=${expected_altitude_tolerance_m}
 ###############################################################################
 EOF
 
 VISUAL_HOMING_RUN_LOG="${preflight_log}" \
+VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET="${altitude_preset}" \
 VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE="${VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE:-/dev/serial0}" \
 VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD="${VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD:-115200}" \
 VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_DURATION_MS:-60000}" \

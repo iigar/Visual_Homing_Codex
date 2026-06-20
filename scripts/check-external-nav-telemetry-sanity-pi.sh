@@ -7,8 +7,27 @@ log_dir="${VISUAL_HOMING_LOG_DIR:-${repo_root}/artifacts/logs}"
 device="${VISUAL_HOMING_MAVLINK_TELEMETRY_DEVICE:-/dev/serial0}"
 baud="${VISUAL_HOMING_MAVLINK_TELEMETRY_BAUD:-115200}"
 duration_ms="${VISUAL_HOMING_MAVLINK_TELEMETRY_DURATION_MS:-60000}"
-expected_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-0}"
-tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-0}"
+altitude_preset="${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET:-custom}"
+case "${altitude_preset}" in
+    floor)
+        default_expected_altitude_m=0.05
+        default_tolerance_m=0.15
+        ;;
+    stand)
+        default_expected_altitude_m=0.5
+        default_tolerance_m=0.25
+        ;;
+    custom)
+        default_expected_altitude_m=0
+        default_tolerance_m=0
+        ;;
+    *)
+        echo "VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET must be one of: custom, floor, stand" >&2
+        exit 2
+        ;;
+esac
+expected_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-${default_expected_altitude_m}}"
+tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-${default_tolerance_m}}"
 minimum_samples="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_MIN_RELATIVE_ALTITUDE_SAMPLES:-5}"
 max_malformed_frames="${VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES:-0}"
 max_altitude_span_m="${VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M:-0}"
@@ -156,7 +175,7 @@ elif [[ "${require_distance_sensor}" == "1" && "${distance_sensor_seen}" != "tru
     reason=distance_sensor_missing
 fi
 
-echo "external_nav_telemetry_sanity passed=${passed} reason=${reason} log_path=${latest_log} device=${device} baud_rate=${baud} duration_ms=${duration_ms} malformed_frames=${malformed_frames} max_malformed_frames=${max_malformed_frames} relative_altitude_seen=${relative_altitude_seen} relative_altitude_samples=${relative_altitude_samples} minimum_relative_altitude_samples=${minimum_samples} relative_altitude_min_avg_max_m=${relative_altitude_min_avg_max_m} expected_relative_altitude_m=${expected_altitude_m} expected_relative_altitude_tolerance_m=${tolerance_m} relative_altitude_window_m=${altitude_min_allowed}..${altitude_max_allowed} relative_altitude_span_m=${relative_altitude_span_m} max_relative_altitude_span_m=${max_altitude_span_m} distance_sensor_required=${require_distance_sensor} distance_sensor_seen=${distance_sensor_seen} distance_sensor_messages=${distance_sensor_messages} armed=${armed} mode=${mode}"
+echo "external_nav_telemetry_sanity passed=${passed} reason=${reason} log_path=${latest_log} device=${device} baud_rate=${baud} duration_ms=${duration_ms} altitude_preset=${altitude_preset} malformed_frames=${malformed_frames} max_malformed_frames=${max_malformed_frames} relative_altitude_seen=${relative_altitude_seen} relative_altitude_samples=${relative_altitude_samples} minimum_relative_altitude_samples=${minimum_samples} relative_altitude_min_avg_max_m=${relative_altitude_min_avg_max_m} expected_relative_altitude_m=${expected_altitude_m} expected_relative_altitude_tolerance_m=${tolerance_m} relative_altitude_window_m=${altitude_min_allowed}..${altitude_max_allowed} relative_altitude_span_m=${relative_altitude_span_m} max_relative_altitude_span_m=${max_altitude_span_m} distance_sensor_required=${require_distance_sensor} distance_sensor_seen=${distance_sensor_seen} distance_sensor_messages=${distance_sensor_messages} armed=${armed} mode=${mode}"
 
 if [[ "${passed}" == "true" ]]; then
     exit 0

@@ -1000,6 +1000,25 @@ Impact:
 Risk:
 - UI work before the Pi API exists could create a second configuration path. Keep Android profile selection blocked on Pi-owned profile file loading and API validation.
 
+## 2026-06-20 - Keep External-Nav Altitude Presets Pi-Owned
+
+Decision:
+- External-nav dry-run readiness uses Pi-owned altitude presets for common operator setups: `floor` and `stand`.
+- The Pi wrapper maps those presets to expected relative-altitude windows and logs the resolved preset, expected altitude, and tolerance.
+- A future Android companion should present these as operator choices and send the selected preset to the Pi instead of owning independent height calibration values.
+
+Why:
+- The barometer/EKF height origin can shift after power, waiting, or arm/disarm, so the physical placement used for preflight must be explicit and logged immediately before route dry-run.
+- Android should reduce operator mistakes, not become a second source of calibration truth.
+- The Pi/core already owns the deterministic readiness gate and can reject mismatched physical state before route matching starts.
+
+Impact:
+- Field workflow can use "Floor" or "Stand" selection in the future app while the Pi remains responsible for the actual expected altitude window and pass/fail verdict.
+- Custom measured setups remain possible through explicit expected/tolerance values.
+
+Risk:
+- Presets are only as good as the physical setup they describe. The UI must show the resolved values and the latest sanity verdict so the operator can catch a misplaced vehicle or stale height origin.
+
 ## 2026-05-31 - Use Strict Key-Value Camera Profile Files
 
 Decision:
