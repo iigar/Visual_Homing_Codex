@@ -7,6 +7,7 @@
 - Added `scripts/run-external-nav-dry-run-pi.sh` and `scripts/check-external-nav-readiness-log.sh` to make the preflight altitude sanity plus external-nav live-route dry-run a single repeatable Pi operator step with a compact pass/fail readiness verdict.
 - Added Pi-owned `VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=floor|stand|custom` handling for external-nav preflight/readiness wrappers, and documented the future Android UI requirement to expose floor/stand as operator choices while keeping the resolved altitude window and verdict on the Pi side.
 - Shortened the standard external-nav readiness wrapper defaults to a 15 second altitude preflight and 5 second operator cue; longer telemetry captures remain opt-in for drift/debug work.
+- Added `external_nav_operator_readiness=ready|marginal|blocked` plus `external_nav_operator_reason` to live-route summaries and the external-nav readiness checker output. This keeps hard gates unchanged while giving operators a non-binary status for soft route-progress or strict-diagnostic issues.
 
 ## 2026-06-17
 

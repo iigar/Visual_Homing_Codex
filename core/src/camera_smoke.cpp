@@ -1417,6 +1417,22 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     result.external_nav_session_ready = result.external_nav_quality_ready;
     result.external_nav_session_reason = result.external_nav_quality_reason;
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_operator_readiness = "not_requested";
+        result.external_nav_operator_reason = "not_requested";
+    } else if (!result.external_nav_quality_ready) {
+        result.external_nav_operator_readiness = "blocked";
+        result.external_nav_operator_reason = result.external_nav_quality_reason;
+    } else if (!result.directional_progress_passed) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "route_directional_progress_soft_high";
+    } else if (!result.external_nav_strict_session_ready) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "external_nav_strict_session_not_ready";
+    } else {
+        result.external_nav_operator_readiness = "ready";
+        result.external_nav_operator_reason = "valid";
+    }
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped
@@ -1500,6 +1516,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_strict_session_reason=" << result.external_nav_strict_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
+            << " external_nav_operator_readiness=" << result.external_nav_operator_readiness
+            << " external_nav_operator_reason=" << result.external_nav_operator_reason
             << " visual_scale_required=" << bool_word(result.visual_scale_required)
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_valid_fraction=" << result.visual_scale_valid_fraction
@@ -1566,6 +1584,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_strict_session_reason=" << result.external_nav_strict_session_reason
             << " external_nav_quality_ready=" << bool_word(result.external_nav_quality_ready)
             << " external_nav_quality_reason=" << result.external_nav_quality_reason
+            << " external_nav_operator_readiness=" << result.external_nav_operator_readiness
+            << " external_nav_operator_reason=" << result.external_nav_operator_reason
             << " visual_scale_required=" << bool_word(result.visual_scale_required)
             << " visual_scale_valid=" << result.visual_scale_valid << "/" << result.external_nav_estimates
             << " visual_scale_valid_fraction=" << result.visual_scale_valid_fraction

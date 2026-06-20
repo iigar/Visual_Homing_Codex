@@ -130,7 +130,7 @@ check_log() {
         return 1
     fi
 
-    echo "external_nav_readiness_log_check path=${log_path} passed=true external_nav_valid=$(extract_field "${compact_line}" "external_nav_valid") external_nav_session_ready=$(extract_field "${compact_line}" "external_nav_session_ready") external_nav_strict_session_ready=$(extract_field "${compact_line}" "external_nav_strict_session_ready")"
+    echo "external_nav_readiness_log_check path=${log_path} passed=true external_nav_valid=$(extract_field "${compact_line}" "external_nav_valid") external_nav_session_ready=$(extract_field "${compact_line}" "external_nav_session_ready") external_nav_strict_session_ready=$(extract_field "${compact_line}" "external_nav_strict_session_ready") external_nav_operator_readiness=$(extract_field "${compact_line}" "external_nav_operator_readiness") external_nav_operator_reason=$(extract_field "${compact_line}" "external_nav_operator_reason")"
 }
 
 overall_status=0

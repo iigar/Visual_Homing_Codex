@@ -1021,6 +1021,24 @@ Impact:
 Risk:
 - Presets are only as good as the physical setup they describe. The UI must show the resolved values and the latest sanity verdict so the operator can catch a misplaced vehicle or stale height origin.
 
+## 2026-06-20 - Add Non-Binary External-Nav Operator Readiness
+
+Decision:
+- Keep existing external-nav pass/fail and quality gates unchanged, but add `external_nav_operator_readiness=ready|marginal|blocked` plus `external_nav_operator_reason` to live-route summaries.
+- Treat failed tolerant quality gates as `blocked`.
+- Treat passed quality gates with soft diagnostics such as route directional progress regressions or strict all-frames diagnostic misses as `marginal`.
+
+Why:
+- The Pi dry-run evidence showed useful green safety/readiness passes that still had small route-progress regressions. Calling those hard failures is too noisy, but hiding them loses signal.
+- Operators need a compact status that separates unsafe/not-ready conditions from "usable, but not perfect" evidence.
+
+Impact:
+- Existing scripts can still require `passed=true` and `external_nav_quality_ready=true`.
+- Android can later display `ready`, `marginal`, or `blocked` without reimplementing the gate logic.
+
+Risk:
+- `marginal` must not be treated as permission for live MAVLink output. Writer enablement remains governed by the stricter reviewed live-output gates.
+
 ## 2026-05-31 - Use Strict Key-Value Camera Profile Files
 
 Decision:
