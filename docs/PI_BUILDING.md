@@ -544,6 +544,8 @@ The readiness wrapper defaults to a short operator workflow: `VISUAL_HOMING_EXTE
 
 The future Android companion UI should expose the same altitude preset as an operator choice, for example "Floor" and "Stand", before invoking the Pi readiness API. Android should send the preset/intent to the Pi and display the resolved expected altitude, tolerance, and final `external_nav_telemetry_sanity` or `external_nav_readiness_log_check` verdict; it should not silently invent or store a separate height calibration path.
 
+For the future Android readiness screen, keep the Pi as the source of truth and make the phone a visual explanation layer. The first viewport should show the top-level `external_nav_operator_readiness` as `READY`, `MARGINAL`, or `BLOCKED`, then group the reason into compact cards for Route, Altitude, Telemetry, ExternalNav, and Safety Gate. Good field UI should show the selected altitude preset, expected altitude window, observed min/avg/max altitude, route start/end progress, regressions against the operator threshold, external-nav valid counts, telemetry freshness, and the expected live-output block reason. Use calm green for ready, amber with subtle emphasis for marginal, and red blocked framing for blocked; avoid making Android a second calibration or gate-policy implementation.
+
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:
 
 ```bash

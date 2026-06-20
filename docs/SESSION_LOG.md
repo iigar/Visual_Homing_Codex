@@ -9,6 +9,7 @@
 - Shortened the standard external-nav readiness wrapper defaults to a 15 second altitude preflight and 5 second operator cue; longer telemetry captures remain opt-in for drift/debug work.
 - Added `external_nav_operator_readiness=ready|marginal|blocked` plus `external_nav_operator_reason` to live-route summaries and the external-nav readiness checker output. This keeps hard gates unchanged while giving operators a non-binary status for soft route-progress or strict-diagnostic issues.
 - Loosened the operator route-progress soft threshold separately from the core directional gate: stand dry-runs can now remain `external_nav_operator_readiness=ready` with up to `15` regressions and `1.0` rollback when endpoint and external-nav quality gates pass.
+- Captured the future Android readiness UI direction: Android should show Pi-owned `ready/marginal/blocked` status with visual route, altitude, telemetry, external-nav, and safety-gate cards, while leaving thresholds and gate decisions on the Pi.
 
 ## 2026-06-17
 

@@ -1041,6 +1041,31 @@ Impact:
 Risk:
 - `marginal` must not be treated as permission for live MAVLink output. Writer enablement remains governed by the stricter reviewed live-output gates.
 
+## 2026-06-21 - Future Android Readiness UI Explains Pi-Owned Gates
+
+Decision:
+- The future Android companion UI should present Pi-owned readiness as a compact operator dashboard, not as raw log text and not as independently computed flight state.
+- The top-level screen should emphasize `external_nav_operator_readiness=ready|marginal|blocked` and `external_nav_operator_reason`.
+- Android should visually group the underlying evidence into a few operator-facing cards: route, altitude, telemetry, external-nav estimate validity, and safety gate.
+- Android may use color and subtle motion to communicate state: calm green for `ready`, amber/glow or soft pulse for `marginal`, and red blocked framing for `blocked`.
+
+Why:
+- The dry-run logs now contain enough signal to explain what happened, but raw key-value fields are too easy to misread during field work.
+- Operators need to see both the single verdict and the reason behind it: for example, `ready` with route regressions inside the operator threshold is different from `blocked` because altitude is outside the stand/floor window.
+- The Pi must remain the source of truth for thresholds, altitude presets, route-progress classification, and safety/readiness decisions.
+
+Impact:
+- Android can later show a main status tile plus focused cards such as:
+  - Route: progress start/end, endpoint reached, regressions against operator threshold.
+  - Altitude: selected preset, expected window, observed min/avg/max on a small scale.
+  - Telemetry: health/freshness and dropped bytes.
+  - ExternalNav: valid estimates, valid fraction, invalid streak.
+  - Safety Gate: expected blocked reason such as `vehicle_not_armed`.
+- The UI should reveal details on tap, but the first screen should remain readable under field pressure.
+
+Risk:
+- Visual emphasis must not imply live-output permission. `ready` in the dry-run UI still means readiness evidence only until the separate reviewed live-output gates exist and pass.
+
 ## 2026-05-31 - Use Strict Key-Value Camera Profile Files
 
 Decision:
