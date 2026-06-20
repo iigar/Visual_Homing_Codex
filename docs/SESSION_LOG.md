@@ -6,6 +6,7 @@
 - Made `external_nav_session_ready` follow the tolerant external-nav quality gate instead of requiring strict `150/150` FC-ready frames. The old all-frames requirement is now reported separately as `external_nav_strict_session_ready` and `external_nav_strict_session_reason`.
 - Added `scripts/run-external-nav-dry-run-pi.sh` and `scripts/check-external-nav-readiness-log.sh` to make the preflight altitude sanity plus external-nav live-route dry-run a single repeatable Pi operator step with a compact pass/fail readiness verdict.
 - Added Pi-owned `VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET=floor|stand|custom` handling for external-nav preflight/readiness wrappers, and documented the future Android UI requirement to expose floor/stand as operator choices while keeping the resolved altitude window and verdict on the Pi side.
+- Shortened the standard external-nav readiness wrapper defaults to a 15 second altitude preflight and 5 second operator cue; longer telemetry captures remain opt-in for drift/debug work.
 
 ## 2026-06-17
 

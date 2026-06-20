@@ -540,6 +540,8 @@ VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE=0.82 \
 
 The wrapper still sends no MAVLink commands and writes no external-nav MAVLink. It expects live output to remain blocked by the safety gate, normally `vehicle_not_armed:<frames>`, and prints `external_nav_readiness_log_check passed=true` only when the route, telemetry, dry-run command, altitude-window, and external-nav quality gates pass.
 
+The readiness wrapper defaults to a short operator workflow: `VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_DURATION_MS=15000` and `VISUAL_HOMING_OPERATOR_CUE_SECONDS=5`. Override those values when deliberately running a longer drift/debug capture, but keep the short defaults for ordinary repeated stand/floor readiness checks.
+
 The future Android companion UI should expose the same altitude preset as an operator choice, for example "Floor" and "Stand", before invoking the Pi readiness API. Android should send the preset/intent to the Pi and display the resolved expected altitude, tolerance, and final `external_nav_telemetry_sanity` or `external_nav_readiness_log_check` verdict; it should not silently invent or store a separate height calibration path.
 
 To also create a real non-live session audit artifact during the full dry-run telemetry match path, enable:

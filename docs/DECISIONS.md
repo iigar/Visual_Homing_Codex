@@ -1006,6 +1006,7 @@ Decision:
 - External-nav dry-run readiness uses Pi-owned altitude presets for common operator setups: `floor` and `stand`.
 - The Pi wrapper maps those presets to expected relative-altitude windows and logs the resolved preset, expected altitude, and tolerance.
 - A future Android companion should present these as operator choices and send the selected preset to the Pi instead of owning independent height calibration values.
+- The standard readiness wrapper uses a short preflight and cue by default, while long telemetry captures remain explicit debug/drift tests.
 
 Why:
 - The barometer/EKF height origin can shift after power, waiting, or arm/disarm, so the physical placement used for preflight must be explicit and logged immediately before route dry-run.
@@ -1015,6 +1016,7 @@ Why:
 Impact:
 - Field workflow can use "Floor" or "Stand" selection in the future app while the Pi remains responsible for the actual expected altitude window and pass/fail verdict.
 - Custom measured setups remain possible through explicit expected/tolerance values.
+- Ordinary repeated dry-runs avoid unnecessary waiting: the wrapper defaults to a 15 second altitude preflight and 5 second operator cue unless overridden.
 
 Risk:
 - Presets are only as good as the physical setup they describe. The UI must show the resolved values and the latest sanity verdict so the operator can catch a misplaced vehicle or stale height origin.
