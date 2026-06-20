@@ -1027,10 +1027,12 @@ Decision:
 - Keep existing external-nav pass/fail and quality gates unchanged, but add `external_nav_operator_readiness=ready|marginal|blocked` plus `external_nav_operator_reason` to live-route summaries.
 - Treat failed tolerant quality gates as `blocked`.
 - Treat passed quality gates with soft diagnostics such as route directional progress regressions or strict all-frames diagnostic misses as `marginal`.
+- Use a looser route-progress soft threshold for operator status than the core directional gate: up to `15` progress regressions and `1.0` total rollback can still be `ready` when endpoint and quality gates pass.
 
 Why:
 - The Pi dry-run evidence showed useful green safety/readiness passes that still had small route-progress regressions. Calling those hard failures is too noisy, but hiding them loses signal.
 - Operators need a compact status that separates unsafe/not-ready conditions from "usable, but not perfect" evidence.
+- Recent stand runs repeatedly passed endpoint, altitude, telemetry, and 150/150 external-nav readiness while exceeding the inherited core directional threshold of `5` regressions. That threshold remains useful as a diagnostic, but it is too strict for the top-level operator label.
 
 Impact:
 - Existing scripts can still require `passed=true` and `external_nav_quality_ready=true`.

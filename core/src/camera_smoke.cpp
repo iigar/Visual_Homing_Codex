@@ -1417,13 +1417,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     result.external_nav_session_ready = result.external_nav_quality_ready;
     result.external_nav_session_reason = result.external_nav_quality_reason;
+    constexpr std::uint64_t kExternalNavOperatorMaxProgressRegressions = 15;
+    constexpr double kExternalNavOperatorMaxProgressRollback = 1.0;
+    const auto operator_progress_regressions =
+        config.expected_progress == "reverse" ? result.reverse_progress_regressions : result.progress_regressions;
+    const auto operator_progress_rollback =
+        config.expected_progress == "reverse" ? result.reverse_progress_rollback : result.progress_rollback;
+    const auto operator_directional_progress_soft_passed =
+        config.expected_progress == "any"
+        || (operator_progress_regressions <= kExternalNavOperatorMaxProgressRegressions
+            && operator_progress_rollback <= kExternalNavOperatorMaxProgressRollback);
     if (result.external_nav_estimates == 0) {
         result.external_nav_operator_readiness = "not_requested";
         result.external_nav_operator_reason = "not_requested";
     } else if (!result.external_nav_quality_ready) {
         result.external_nav_operator_readiness = "blocked";
         result.external_nav_operator_reason = result.external_nav_quality_reason;
-    } else if (!result.directional_progress_passed) {
+    } else if (!operator_directional_progress_soft_passed) {
         result.external_nav_operator_readiness = "marginal";
         result.external_nav_operator_reason = "route_directional_progress_soft_high";
     } else if (!result.external_nav_strict_session_ready) {
