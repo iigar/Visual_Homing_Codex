@@ -6,6 +6,7 @@ stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 log_dir="${VISUAL_HOMING_LOG_DIR:-${repo_root}/artifacts/logs}"
 preflight_log="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_LOG:-${log_dir}/external-nav-preflight-${stamp}.log}"
 run_log="${VISUAL_HOMING_RUN_LOG:-${log_dir}/external-nav-dry-run-${stamp}.log}"
+readiness_json="${VISUAL_HOMING_EXTERNAL_NAV_READINESS_JSON:-${run_log%.log}.json}"
 
 altitude_preset="${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET:-stand}"
 case "${altitude_preset}" in
@@ -50,6 +51,7 @@ cat <<EOF
 ### external-nav log-quality gates.
 ### preflight_log=${preflight_log}
 ### run_log=${run_log}
+### readiness_json=${readiness_json}
 ### altitude_preset=${altitude_preset}
 ### expected_relative_altitude_m=${expected_altitude_m}
 ### expected_relative_altitude_tolerance_m=${expected_altitude_tolerance_m}
@@ -93,6 +95,9 @@ VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE="${external_nav_minimum_matc
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M="${expected_altitude_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_altitude_tolerance_m}" \
 "${repo_root}/scripts/test-core-pi.sh"
+
+VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET="${altitude_preset}" \
+"${repo_root}/scripts/export-external-nav-readiness-json.sh" "${run_log}" "${readiness_json}"
 
 VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES:-${frames}/${frames}}" \
 VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES:-${frames}}" \

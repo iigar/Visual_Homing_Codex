@@ -1066,6 +1066,26 @@ Impact:
 Risk:
 - Visual emphasis must not imply live-output permission. `ready` in the dry-run UI still means readiness evidence only until the separate reviewed live-output gates exist and pass.
 
+## 2026-06-22 - Export External-Nav Readiness JSON From Compact Logs
+
+Decision:
+- Add a dependency-free shell exporter for `visual_homing.external_nav_readiness.v1` JSON from the final `live_route_match_compact` line.
+- Keep the C++ compact key-value log as the primary low-level artifact and derive the first Android/API contract from that existing line.
+- Make the standard external-nav dry-run wrapper write the JSON artifact next to the run log.
+
+Why:
+- Pi Zero class hardware benefits from avoiding Python, `jq`, Node, SQLite, or an HTTP server while the contract is still stabilizing.
+- Android should consume structured Pi-owned readiness data instead of parsing raw logs or reimplementing thresholds.
+- Exporting from the compact line keeps old field-debug workflows intact and gives us a cheap bridge toward a future Pi API.
+
+Impact:
+- A successful readiness wrapper run produces both the existing `.log` and a sibling `.json`.
+- Existing scripts and grep-based checks continue to work unchanged.
+- Future Android work can start from `schema=visual_homing.external_nav_readiness.v1`.
+
+Risk:
+- The shell JSON exporter must stay simple and limited to fields already present in the compact line. If the contract grows significantly, move JSON emission into a dedicated Pi API layer rather than teaching Android to infer missing state.
+
 ## 2026-05-31 - Use Strict Key-Value Camera Profile Files
 
 Decision:

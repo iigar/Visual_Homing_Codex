@@ -11,6 +11,10 @@
 - Loosened the operator route-progress soft threshold separately from the core directional gate: stand dry-runs can now remain `external_nav_operator_readiness=ready` with up to `15` regressions and `1.0` rollback when endpoint and external-nav quality gates pass.
 - Captured the future Android readiness UI direction: Android should show Pi-owned `ready/marginal/blocked` status with visual route, altitude, telemetry, external-nav, and safety-gate cards, while leaving thresholds and gate decisions on the Pi.
 
+## 2026-06-22
+
+- Added `scripts/export-external-nav-readiness-json.sh`, a dependency-free shell exporter that converts the final `live_route_match_compact` line into `visual_homing.external_nav_readiness.v1` JSON for the future Android/Pi API contract. The external-nav readiness wrapper now writes a sibling `.json` artifact next to the dry-run log.
+
 ## 2026-06-17
 
 - Made the log-only external-nav quality gate treat camera-only visual-scale diagnostics as required only when a positive `VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M` is configured. Live-route summaries now include `visual_scale_required`, so FC-ready barometer-altitude dry-runs without bench scale diagnostics can report `external_nav_quality_ready=true` when the route, telemetry, and per-frame external-nav gates pass.
