@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-24
+
+- Added `docs/FIELD_DRY_RUN_PLAN.md` and `scripts/run-field-route-record-pi.sh` for the next short outdoor field-readiness stage: record a fresh `5-20 m` route, export keyframes, validate route quality, then run the existing external-nav readiness wrapper with live output still blocked.
+
 ## 2026-06-23
 
 - Extended the external-nav readiness JSON contract with Pi-owned `operator_inputs`, `resolved_config`, `handoff`, and `jt_zero` sections. Android can later send per-run altitude/handoff intent and display the resolved decision, while Visual Homing/JT_Zero handoff remains a Pi-owned candidate-only contract until JT_Zero is integrated on the same Raspberry Pi.

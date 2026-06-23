@@ -548,6 +548,17 @@ If preflight altitude sanity fails, the wrapper stops before camera route matchi
 
 The readiness wrapper defaults to a short operator workflow: `VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_DURATION_MS=15000` and `VISUAL_HOMING_OPERATOR_CUE_SECONDS=5`. Override those values when deliberately running a longer drift/debug capture, but keep the short defaults for ordinary repeated stand/floor readiness checks.
 
+For the first short outdoor route-recording evidence, use the field-route wrapper before running external-nav readiness. It records a route, exports keyframes, runs inspection/self-match/perturbation/distinctiveness, and checks the final route-quality log:
+
+```bash
+cd ~/Visual_Homing_Codex
+
+VISUAL_HOMING_FIELD_ROUTE_USE_LIVE_TELEMETRY=1 \
+./scripts/run-field-route-record-pi.sh
+```
+
+The wrapper writes a timestamped route under `artifacts/field_routes/` and prints `field_route_record_ready` only after `check-route-quality-log.sh` passes. This is still read-only with respect to flight control: it sends no MAVLink commands and writes no external-nav MAVLink.
+
 The future Android companion UI should expose the same altitude preset as an operator choice, for example "Floor" and "Stand", before invoking the Pi readiness API. Android should send the preset/intent to the Pi and display the resolved expected altitude, tolerance, and final `external_nav_telemetry_sanity` or `external_nav_readiness_log_check` verdict; it should not silently invent or store a separate height calibration path.
 
 For the future Android readiness screen, keep the Pi as the source of truth and make the phone a visual explanation layer. The first viewport should show the top-level `external_nav_operator_readiness` as `READY`, `MARGINAL`, or `BLOCKED`, then group the reason into compact cards for Route, Altitude, Telemetry, ExternalNav, Safety Gate, and Handoff Candidate. Good field UI should show the selected altitude preset, expected altitude window, observed min/avg/max altitude, route start/end progress, regressions against the operator threshold, external-nav valid counts, telemetry freshness, the expected live-output block reason, and the current handoff state. Android may send per-run requested values, but it must not keep independent thresholds or decide whether handoff/live output is allowed. Use calm green for ready, amber with subtle emphasis for marginal, and red blocked framing for blocked; avoid making Android a second calibration or gate-policy implementation.
