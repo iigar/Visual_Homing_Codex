@@ -44,6 +44,194 @@ operator_cue_seconds="${VISUAL_HOMING_OPERATOR_CUE_SECONDS:-5}"
 
 mkdir -p "${log_dir}"
 
+json_string() {
+    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g'
+}
+
+json_bool() {
+    case "$1" in
+        true|false)
+            printf '%s' "$1"
+            ;;
+        *)
+            printf 'null'
+            ;;
+    esac
+}
+
+json_number() {
+    if [[ "$1" =~ ^-?[0-9]+([.][0-9]+)?([eE][-+]?[0-9]+)?$ ]]; then
+        printf '%s' "$1"
+    else
+        printf 'null'
+    fi
+}
+
+extract_field() {
+    local line="$1"
+    local key="$2"
+    local token
+    token="$(printf '%s\n' "${line}" | tr ' ' '\n' | awk -F= -v key="${key}" '$1 == key { print $2; exit }')"
+    printf '%s' "${token}"
+}
+
+triple_first() {
+    local value="$1"
+    printf '%s' "${value%%/*}"
+}
+
+triple_second() {
+    local value="$1"
+    value="${value#*/}"
+    printf '%s' "${value%%/*}"
+}
+
+triple_third() {
+    local value="$1"
+    printf '%s' "${value##*/}"
+}
+
+write_preflight_blocked_json() {
+    local sanity_line="$1"
+    local reason
+    local altitude_min_avg_max
+    local mode
+    local armed
+    local telemetry_health
+    local relative_altitude_samples
+    local relative_altitude_window_m
+    local relative_altitude_span_m
+    local distance_sensor_seen
+
+    reason="$(extract_field "${sanity_line}" reason)"
+    altitude_min_avg_max="$(extract_field "${sanity_line}" relative_altitude_min_avg_max_m)"
+    mode="$(extract_field "${sanity_line}" mode)"
+    armed="$(extract_field "${sanity_line}" armed)"
+    relative_altitude_samples="$(extract_field "${sanity_line}" relative_altitude_samples)"
+    relative_altitude_window_m="$(extract_field "${sanity_line}" relative_altitude_window_m)"
+    relative_altitude_span_m="$(extract_field "${sanity_line}" relative_altitude_span_m)"
+    distance_sensor_seen="$(extract_field "${sanity_line}" distance_sensor_seen)"
+    telemetry_health=false
+    if [[ "$(extract_field "${sanity_line}" relative_altitude_seen)" == "true" ]]; then
+        telemetry_health=true
+    fi
+
+    mkdir -p "$(dirname "${readiness_json}")"
+    cat > "${readiness_json}" <<EOF
+{
+  "schema": "visual_homing.external_nav_readiness.v1",
+  "source_log": "$(json_string "${preflight_log}")",
+  "stage": "preflight",
+  "operator_inputs": {
+    "altitude_preset": "$(json_string "${altitude_preset}")",
+    "requested_handoff_distance_m": $(json_number "${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}"),
+    "requested_handoff_altitude_m": $(json_number "${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}")
+  },
+  "resolved_config": {
+    "altitude_expected_m": $(json_number "${expected_altitude_m}"),
+    "altitude_tolerance_m": $(json_number "${expected_altitude_tolerance_m}"),
+    "nominal_route_length_m": $(json_number "${nominal_route_length_m}"),
+    "handoff_distance_supported": false,
+    "handoff_distance_reason": "route_metric_scale_not_authoritative"
+  },
+  "operator": {
+    "readiness": "blocked",
+    "reason": "$(json_string "${reason}")"
+  },
+  "handoff": {
+    "route_complete": false,
+    "visual_homing_ready": false,
+    "candidate": false,
+    "decision": "blocked",
+    "reason": "$(json_string "${reason}")"
+  },
+  "jt_zero": {
+    "available": false,
+    "ready": false,
+    "reason": "not_integrated"
+  },
+  "route": {
+    "passed": false,
+    "frames_captured": 0,
+    "frames_requested": $(json_number "${frames}"),
+    "valid_matches": 0,
+    "progress_start": null,
+    "progress_end": null,
+    "progress_min": null,
+    "progress_max": null,
+    "endpoint_passed": false,
+    "progress_gate_passed": false,
+    "endpoint_stop": false,
+    "stop_reason": "preflight_failed",
+    "confidence_min": null,
+    "confidence_avg": null
+  },
+  "altitude": {
+    "preset": "$(json_string "${altitude_preset}")",
+    "expected_required": true,
+    "expected_m": $(json_number "${expected_altitude_m}"),
+    "tolerance_m": $(json_number "${expected_altitude_tolerance_m}"),
+    "observed_min_m": $(json_number "$(triple_first "${altitude_min_avg_max}")"),
+    "observed_avg_m": $(json_number "$(triple_second "${altitude_min_avg_max}")"),
+    "observed_max_m": $(json_number "$(triple_third "${altitude_min_avg_max}")"),
+    "window_passed": false,
+    "blocker": "$(json_string "${reason}")"
+  },
+  "telemetry": {
+    "health": $(json_bool "${telemetry_health}"),
+    "dropped_bytes": null,
+    "mode": "$(json_string "${mode}")",
+    "armed": $(json_bool "${armed}")
+  },
+  "dry_run_command": {
+    "quality": false,
+    "valid": 0,
+    "total": 0
+  },
+  "external_nav": {
+    "session_ready": false,
+    "session_reason": "$(json_string "${reason}")",
+    "strict_session_ready": false,
+    "strict_session_reason": "$(json_string "${reason}")",
+    "quality_ready": false,
+    "quality_reason": "$(json_string "${reason}")",
+    "valid": 0,
+    "total": 0,
+    "valid_fraction": 0,
+    "max_invalid_streak": 0,
+    "invalid_reasons": "$(json_string "${reason}")"
+  },
+  "visual_scale": {
+    "required": false,
+    "valid": 0,
+    "total": 0,
+    "valid_fraction": 0,
+    "ratio_min": 0,
+    "ratio_avg": 0,
+    "ratio_max": 0,
+    "confidence_min": 0,
+    "confidence_avg": 0
+  },
+  "safety_gate": {
+    "live_output_allowed": 0,
+    "live_output_blocked": 0,
+    "block_reasons": "preflight_failed",
+    "final_reason": "preflight_failed"
+  },
+  "preflight": {
+    "passed": false,
+    "reason": "$(json_string "${reason}")",
+    "log_path": "$(json_string "${preflight_log}")",
+    "relative_altitude_samples": $(json_number "${relative_altitude_samples}"),
+    "relative_altitude_window_m": "$(json_string "${relative_altitude_window_m}")",
+    "relative_altitude_span_m": $(json_number "${relative_altitude_span_m}"),
+    "distance_sensor_seen": $(json_bool "${distance_sensor_seen}")
+  }
+}
+EOF
+    echo "external_nav_readiness_json path=${readiness_json} schema=visual_homing.external_nav_readiness.v1 stage=preflight reason=${reason}"
+}
+
 cat <<EOF
 ###############################################################################
 ### EXTERNAL-NAV DRY-RUN READINESS
@@ -74,7 +262,13 @@ VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_al
 VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_MIN_RELATIVE_ALTITUDE_SAMPLES="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_MIN_RELATIVE_ALTITUDE_SAMPLES:-5}" \
 VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M="${VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M:-0.25}" \
 VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_REQUIRE_DISTANCE_SENSOR="${VISUAL_HOMING_EXTERNAL_NAV_PREFLIGHT_REQUIRE_DISTANCE_SENSOR:-0}" \
-"${repo_root}/scripts/check-external-nav-telemetry-sanity-pi.sh"
+"${repo_root}/scripts/check-external-nav-telemetry-sanity-pi.sh" || {
+    sanity_line="$(grep '^external_nav_telemetry_sanity ' "${preflight_log}" | tail -1 || true)"
+    if [[ -n "${sanity_line}" ]]; then
+        write_preflight_blocked_json "${sanity_line}"
+    fi
+    exit 2
+}
 
 VISUAL_HOMING_RUN_LOG="${run_log}" \
 VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1 \

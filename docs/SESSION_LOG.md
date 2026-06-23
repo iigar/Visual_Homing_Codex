@@ -3,6 +3,7 @@
 ## 2026-06-23
 
 - Extended the external-nav readiness JSON contract with Pi-owned `operator_inputs`, `resolved_config`, `handoff`, and `jt_zero` sections. Android can later send per-run altitude/handoff intent and display the resolved decision, while Visual Homing/JT_Zero handoff remains a Pi-owned candidate-only contract until JT_Zero is integrated on the same Raspberry Pi.
+- Made the external-nav readiness wrapper emit a current blocked readiness JSON when preflight altitude sanity fails before live route matching. This avoids stale successful dry-run JSON being mistaken for the latest run after a floor/stand preset mismatch.
 
 ## 2026-06-20
 
