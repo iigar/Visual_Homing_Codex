@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-06-23 - Keep Android Handoff Inputs Pi-Owned
+
+Decision:
+- Treat Android readiness controls as per-run operator inputs, not as a second gate-policy implementation.
+- Extend the external-nav readiness JSON contract with `operator_inputs`, `resolved_config`, `handoff`, and a placeholder `jt_zero` block.
+- Keep handoff as `candidate_only` until a same-Pi JT_Zero module is integrated and reports its own availability/readiness through the Pi-owned contract.
+- Do not let Android decide whether Visual Homing output, JT_Zero handoff, or live output is allowed.
+
+Why:
+- Android should make field operation clearer by showing camera/feature diagnostics, readiness cards, selected altitude preset, requested handoff intent, and the Pi's resolved decision.
+- The safety-relevant thresholds and handoff state must stay close to the process that owns telemetry, route matching, JT_Zero integration, and live-output gates.
+- JT_Zero is planned as code running on the same Raspberry Pi, not separate hardware, so handoff should be a local Pi coordination contract exposed to Android for display/control.
+
+Impact:
+- `scripts/run-external-nav-dry-run-pi.sh` can forward optional requested handoff distance/altitude values into the readiness artifact.
+- `scripts/export-external-nav-readiness-json.sh` now exposes handoff candidate state without changing any route, altitude, external-nav, or live-output pass/fail gates.
+- Android can later consume one JSON/API shape instead of parsing raw logs or duplicating readiness policy.
+
+Risk:
+- Requested handoff distance is informational until route metric scale and JT_Zero readiness are authoritative. The JSON explicitly reports `handoff_distance_supported=false` for the current stage.
+
 ## 2026-06-14 - Add External Navigation Provider Milestone
 
 Decision:

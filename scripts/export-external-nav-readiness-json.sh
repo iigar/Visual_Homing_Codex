@@ -13,6 +13,9 @@ fi
 log_path="$1"
 output_path="${2:-}"
 altitude_preset="${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET:-unknown}"
+nominal_route_length_m="${VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M:-unknown}"
+requested_handoff_distance_m="${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}"
+requested_handoff_altitude_m="${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}"
 
 if [[ ! -f "${log_path}" ]]; then
     echo "external_nav_readiness_json passed=false error=log_not_found path=${log_path}" >&2
@@ -107,14 +110,65 @@ visual_scale_valid="$(field visual_scale_valid)"
 visual_scale_ratio_min_avg_max="$(field visual_scale_ratio_min_avg_max)"
 visual_scale_confidence_min_avg="$(field visual_scale_confidence_min_avg)"
 
+route_complete=false
+if [[ "$(field endpoint_passed)" == "true" && "$(field progress_gate_passed)" == "true" ]]; then
+    route_complete=true
+fi
+
+operator_readiness="$(field external_nav_operator_readiness)"
+operator_reason="$(field external_nav_operator_reason)"
+visual_homing_ready=false
+if [[ "${operator_readiness}" == "ready" ]]; then
+    visual_homing_ready=true
+fi
+
+handoff_candidate=false
+handoff_decision=blocked
+handoff_reason="${operator_reason}"
+if [[ "${route_complete}" == "true" && "${visual_homing_ready}" == "true" ]]; then
+    handoff_candidate=true
+    handoff_decision=candidate_only
+    handoff_reason=jt_zero_not_integrated
+elif [[ "${route_complete}" != "true" ]]; then
+    handoff_reason=route_not_complete
+elif [[ "${operator_readiness}" == "marginal" ]]; then
+    handoff_reason=visual_homing_marginal
+elif [[ -z "${handoff_reason}" || "${operator_readiness}" != "blocked" ]]; then
+    handoff_reason=visual_homing_not_ready
+fi
+
 json="$(
 cat <<EOF
 {
   "schema": "visual_homing.external_nav_readiness.v1",
   "source_log": "$(json_string "${log_path}")",
+  "operator_inputs": {
+    "altitude_preset": "$(json_string "${altitude_preset}")",
+    "requested_handoff_distance_m": $(json_number "${requested_handoff_distance_m}"),
+    "requested_handoff_altitude_m": $(json_number "${requested_handoff_altitude_m}")
+  },
+  "resolved_config": {
+    "altitude_expected_m": $(json_number "$(field external_nav_expected_relative_altitude_m)"),
+    "altitude_tolerance_m": $(json_number "$(field external_nav_expected_relative_altitude_tolerance_m)"),
+    "nominal_route_length_m": $(json_number "${nominal_route_length_m}"),
+    "handoff_distance_supported": false,
+    "handoff_distance_reason": "route_metric_scale_not_authoritative"
+  },
   "operator": {
-    "readiness": "$(json_string "$(field external_nav_operator_readiness)")",
-    "reason": "$(json_string "$(field external_nav_operator_reason)")"
+    "readiness": "$(json_string "${operator_readiness}")",
+    "reason": "$(json_string "${operator_reason}")"
+  },
+  "handoff": {
+    "route_complete": $(json_bool "${route_complete}"),
+    "visual_homing_ready": $(json_bool "${visual_homing_ready}"),
+    "candidate": $(json_bool "${handoff_candidate}"),
+    "decision": "$(json_string "${handoff_decision}")",
+    "reason": "$(json_string "${handoff_reason}")"
+  },
+  "jt_zero": {
+    "available": false,
+    "ready": false,
+    "reason": "not_integrated"
   },
   "route": {
     "passed": $(json_bool "$(field passed)"),

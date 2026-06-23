@@ -35,6 +35,7 @@ esac
 expected_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-${default_expected_altitude_m}}"
 expected_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-${default_altitude_tolerance_m}}"
 external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE:-0.82}"
+nominal_route_length_m="${VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M:-1.0}"
 frames="${VISUAL_HOMING_CAMERA_FRAMES:-150}"
 target_width="${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-64}"
 target_height="${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-48}"
@@ -55,6 +56,9 @@ cat <<EOF
 ### altitude_preset=${altitude_preset}
 ### expected_relative_altitude_m=${expected_altitude_m}
 ### expected_relative_altitude_tolerance_m=${expected_altitude_tolerance_m}
+### nominal_route_length_m=${nominal_route_length_m}
+### requested_handoff_distance_m=${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}
+### requested_handoff_altitude_m=${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}
 ### preflight_duration_ms=${preflight_duration_ms}
 ### operator_cue_seconds=${operator_cue_seconds}
 ###############################################################################
@@ -90,13 +94,16 @@ VISUAL_HOMING_CAMERA_TARGET_HEIGHT="${target_height}" \
 VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS="${VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS:-forward}" \
 VISUAL_HOMING_LIVE_ROUTE_MATCH_REQUIRE_ENDPOINT_PROGRESS=1 \
 VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES=1 \
-VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M:-1.0}" \
+VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE="${external_nav_minimum_match_confidence}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M="${expected_altitude_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_altitude_tolerance_m}" \
 "${repo_root}/scripts/test-core-pi.sh"
 
 VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET="${altitude_preset}" \
+VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
+VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}" \
+VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}" \
 "${repo_root}/scripts/export-external-nav-readiness-json.sh" "${run_log}" "${readiness_json}"
 
 VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES:-${frames}/${frames}}" \

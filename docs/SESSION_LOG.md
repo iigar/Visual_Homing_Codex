@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-23
+
+- Extended the external-nav readiness JSON contract with Pi-owned `operator_inputs`, `resolved_config`, `handoff`, and `jt_zero` sections. Android can later send per-run altitude/handoff intent and display the resolved decision, while Visual Homing/JT_Zero handoff remains a Pi-owned candidate-only contract until JT_Zero is integrated on the same Raspberry Pi.
+
 ## 2026-06-20
 
 - Added `scripts/check-external-nav-telemetry-sanity-pi.sh`, a read-only preflight telemetry sanity checker that captures and inspects MAVLink telemetry before a route-match dry-run, then rejects missing altitude, malformed frames, out-of-window relative altitude, optional excessive altitude span, or an explicitly required missing `DISTANCE_SENSOR`.
