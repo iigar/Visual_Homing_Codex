@@ -232,6 +232,14 @@ EOF
     echo "external_nav_readiness_json path=${readiness_json} schema=visual_homing.external_nav_readiness.v1 stage=preflight reason=${reason}"
 }
 
+export_route_readiness_json() {
+    VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET="${altitude_preset}" \
+    VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
+    VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}" \
+    VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}" \
+    "${repo_root}/scripts/export-external-nav-readiness-json.sh" "${run_log}" "${readiness_json}"
+}
+
 cat <<EOF
 ###############################################################################
 ### EXTERNAL-NAV DRY-RUN READINESS
@@ -292,13 +300,14 @@ VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE="${external_nav_minimum_match_confidence}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M="${expected_altitude_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_altitude_tolerance_m}" \
-"${repo_root}/scripts/test-core-pi.sh"
+"${repo_root}/scripts/test-core-pi.sh" || {
+    if grep -q '^live_route_match_compact ' "${run_log}"; then
+        export_route_readiness_json
+    fi
+    exit 2
+}
 
-VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_PRESET="${altitude_preset}" \
-VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
-VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}" \
-VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M="${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}" \
-"${repo_root}/scripts/export-external-nav-readiness-json.sh" "${run_log}" "${readiness_json}"
+export_route_readiness_json
 
 VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES:-${frames}/${frames}}" \
 VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES:-${frames}}" \
