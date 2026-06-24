@@ -3,6 +3,7 @@
 ## 2026-06-24
 
 - Added `docs/FIELD_DRY_RUN_PLAN.md` and `scripts/run-field-route-record-pi.sh` for the next short outdoor field-readiness stage: record a fresh `5-20 m` route, export keyframes, validate route quality, then run the existing external-nav readiness wrapper with live output still blocked.
+- Added `docs/VISUAL_SCALE_ALTITUDE_STRATEGY.md` to restore altitude/scale handling as a first-class design topic. The strategy records the current `96x72` outdoor baseline, rejects full-route high-resolution brute force as the default Pi Zero 2W answer, and defines the next direction as coarse matching plus temporal progress tracking, visual-scale diagnostics, and optional higher-resolution candidate refinement.
 
 ## 2026-06-23
 

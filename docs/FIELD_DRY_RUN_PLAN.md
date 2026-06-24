@@ -7,6 +7,7 @@ This plan defines the next project stage: prove short outdoor Visual Homing rout
 Working and validated:
 
 - Pi camera active-profile capture, route recording, live route matching, and `64x48` route signatures.
+- `96x72` short outdoor route recording is now the preferred field baseline after `64x48` showed excessive ambiguity on the first outdoor route.
 - Route artifact inspection, keyframe export, self-match, perturbation checks, and route distinctiveness diagnostics.
 - Read-only MAVLink telemetry capture/inspection/streaming with heartbeat, attitude, global position, altitude, mode, armed state, and freshness metrics.
 - External-nav dry-run estimates, altitude-window sanity, operator readiness, and `visual_homing.external_nav_readiness.v1` JSON.
@@ -15,9 +16,10 @@ Working and validated:
 
 Not yet proven:
 
-- Outdoor route distinctiveness and repeatability over a real short route.
+- Outdoor route distinctiveness and repeatability over a real short route with progress/scale stability strong enough for live authority.
 - Accepted ExternalNav writer or FC position-provider evidence.
 - Allowed-send bench, real return flight, and JT_Zero runtime handoff.
+- Scale-aware route matching under meaningful altitude changes.
 
 ## Stage 1 - Bench Baseline Freeze
 
@@ -68,6 +70,20 @@ Accept dry-run evidence when:
 - JSON `operator.readiness` is `ready`, or `marginal` only for a documented soft diagnostic;
 - JSON `handoff.candidate=true`, `decision=candidate_only`, and `reason=jt_zero_not_integrated`;
 - live output remains blocked, normally `vehicle_not_armed:<frames>`.
+
+`marginal` evidence is acceptable for this stage when the only issue is documented soft directional progress jitter and the route, altitude, telemetry, external-nav, and safety gates are otherwise coherent. Live authority or real handoff will require stronger progress/scale stability than hand-carried dry-run evidence.
+
+## Scale And Jitter Notes
+
+The controlling design note is `docs/VISUAL_SCALE_ALTITUDE_STRATEGY.md`.
+
+For current field dry-runs:
+
+- prefer `96x72` over `64x48`;
+- do not assume full-route `320x240` or `640x480` matching is viable on Pi Zero 2W;
+- record and inspect altitude windows, but treat visual scale as diagnostic until implemented;
+- expect hand-carried runs to show more pitch/viewpoint jitter than a stabilized flight path;
+- use `marginal` to describe soft progress jitter, not route loss.
 
 ## Stage 4 - ExternalNav Before Command Output
 

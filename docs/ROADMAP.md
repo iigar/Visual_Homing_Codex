@@ -69,6 +69,7 @@
 - Capture profile fields: camera id/name, sensor type, pixel format, capture size, target resize, horizontal/vertical FOV, crop policy, exposure/normalization hints, matcher thresholds, route-quality thresholds, and derived radians-per-pixel values.
 - Add FOV-aware direction-error conversion using camera profile data instead of ad hoc `radians_per_pixel`.
 - Document altitude/range versus resolution explicitly: ground meters per pixel grows with altitude/range, which can erase texture and create scale mismatch between route recording and matching.
+- Maintain the detailed altitude/scale direction in `docs/VISUAL_SCALE_ALTITUDE_STRATEGY.md`: low-resolution coarse matching remains the Pi Zero 2W baseline, higher resolutions should be used as candidate/ROI refinement rather than full-route brute force, and visual-scale diagnostics plus temporal progress tracking must be proven before live authority.
 - Add profile documentation/template so different visible-light and thermal cameras can be configured repeatably.
 - Add Pi-owned camera profile files plus an API contract for companion UI selection; Android may use the reference Kotlin/Compose codebase, but the active profile must be stored and validated on the Pi/core side.
 - Add thermal profile placeholder and thermal normalization policy; the `VHRS` format already reserves `Thermal16`, but matching/preprocessing still needs an implementation.
