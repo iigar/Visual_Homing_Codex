@@ -324,8 +324,12 @@ double live_route_match_next_tracked_progress(const std::string& expected_progre
     const auto expected_direction =
         expected_progress == "forward" ? 1.0 : (expected_progress == "reverse" ? -1.0 : 0.0);
     const auto follows_expected_direction = expected_direction == 0.0 || delta * expected_direction >= 0.0;
-    const auto alpha = expected_direction == 0.0 ? 0.35 : (follows_expected_direction ? 0.45 : 0.08);
-    const auto max_step = expected_direction == 0.0 ? 0.06 : (follows_expected_direction ? 0.06 : 0.015);
+    if (expected_direction != 0.0 && !follows_expected_direction) {
+        return previous_tracked_progress;
+    }
+
+    const auto alpha = expected_direction == 0.0 ? 0.35 : 0.45;
+    const auto max_step = expected_direction == 0.0 ? 0.06 : 0.06;
     const auto step = std::clamp(delta * alpha, -max_step, max_step);
     return std::clamp(previous_tracked_progress + step, 0.0, 1.0);
 }

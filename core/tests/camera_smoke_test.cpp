@@ -187,11 +187,12 @@ int main() {
     assert(reverse_toward_start < 0.8);
     assert(reverse_toward_start > 0.7);
     const auto reverse_against_direction = vh::live_route_match_next_tracked_progress("reverse", 0.8, 0.95);
-    assert(reverse_against_direction > 0.8);
-    assert(reverse_against_direction < 0.82);
+    assert(reverse_against_direction == 0.8);
     const auto forward_toward_end = vh::live_route_match_next_tracked_progress("forward", 0.2, 0.8);
     assert(forward_toward_end > 0.2);
     assert(forward_toward_end < 0.3);
+    const auto forward_against_direction = vh::live_route_match_next_tracked_progress("forward", 0.2, 0.05);
+    assert(forward_against_direction == 0.2);
     const auto any_smoothed = vh::live_route_match_next_tracked_progress("any", 0.2, 0.8);
     assert(any_smoothed > 0.2);
     assert(any_smoothed < 0.3);

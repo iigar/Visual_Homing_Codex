@@ -4,6 +4,7 @@
 
 - Added the first dry-run temporal route-progress tracker to live route matching. Logs now keep raw progress/regression fields and add tracked progress/regression fields; operator route-progress readiness uses the tracked soft diagnostic so vibration/pitch/viewpoint jitter can remain visible without automatically downgrading otherwise coherent endpoint/telemetry/external-nav evidence.
 - Tuned tracked progress regression counting to ignore micro-corrections at or below `0.01` route-progress units while still accumulating tracked rollback. This keeps tiny smoothing bounces from dominating operator readiness while preserving the total opposite-direction motion diagnostic.
+- Changed the tracked progress model from a bidirectional low-pass smoother to a directional envelope: `reverse` tracked progress ignores short raw moves toward higher route progress, while `forward` ignores short raw moves toward lower route progress. Raw progress fields remain the diagnostic source for actual jitter.
 
 ## 2026-06-24
 
