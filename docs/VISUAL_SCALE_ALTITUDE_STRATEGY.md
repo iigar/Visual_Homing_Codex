@@ -168,7 +168,7 @@ The tracker should not hide failures. It should log both:
 - raw matcher progress/confidence;
 - smoothed tracker progress/confidence/reason.
 
-The first tracker implementation reports `tracked_progress`, `tracked_minmax_progress`, `tracked_regressions`, `tracked_rollback`, and `tracked_directional_progress` next to the raw progress fields. Operator readiness is allowed to use the tracked soft diagnostic, while raw jitter remains visible for field analysis and future tuning.
+The first tracker implementation reports `tracked_progress`, `tracked_minmax_progress`, `tracked_regressions`, `tracked_rollback`, and `tracked_directional_progress` next to the raw progress fields. Operator readiness is allowed to use the tracked soft diagnostic, while raw jitter remains visible for field analysis and future tuning. Tracked rollback should remain sensitive, but tracked regression counts should ignore tiny micro-corrections so vibration is not over-counted as repeated route reversals.
 
 ## Android UI Implications
 

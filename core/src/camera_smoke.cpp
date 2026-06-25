@@ -34,6 +34,8 @@ namespace vh {
 
 namespace {
 
+constexpr double kTrackedProgressRegressionDeadband = 0.01;
+
 std::string wall_time_utc_iso8601() {
     const auto current = std::chrono::system_clock::now();
     const auto current_time = std::chrono::system_clock::to_time_t(current);
@@ -1226,13 +1228,19 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     result.max_tracked_progress_seen = tracked_progress;
                 } else {
                     if (tracked_progress < *last_tracked_progress) {
-                        ++result.tracked_progress_regressions;
-                        result.tracked_progress_rollback += *last_tracked_progress - tracked_progress;
+                        const auto rollback = *last_tracked_progress - tracked_progress;
+                        if (rollback > kTrackedProgressRegressionDeadband) {
+                            ++result.tracked_progress_regressions;
+                        }
+                        result.tracked_progress_rollback += rollback;
                         result.tracked_progress_monotonic = false;
                     }
                     if (tracked_progress > *last_tracked_progress) {
-                        ++result.tracked_reverse_progress_regressions;
-                        result.tracked_reverse_progress_rollback += tracked_progress - *last_tracked_progress;
+                        const auto rollback = tracked_progress - *last_tracked_progress;
+                        if (rollback > kTrackedProgressRegressionDeadband) {
+                            ++result.tracked_reverse_progress_regressions;
+                        }
+                        result.tracked_reverse_progress_rollback += rollback;
                         result.tracked_reverse_progress_monotonic = false;
                     }
                     result.min_tracked_progress_seen =
