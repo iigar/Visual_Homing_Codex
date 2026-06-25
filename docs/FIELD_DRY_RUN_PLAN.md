@@ -73,6 +73,28 @@ Accept dry-run evidence when:
 
 `marginal` evidence is acceptable for this stage when the only issue is documented soft directional progress jitter and the route, altitude, telemetry, external-nav, and safety gates are otherwise coherent. Live authority or real handoff will require stronger progress/scale stability than hand-carried dry-run evidence.
 
+### Accepted Field Evidence - 2026-06-25
+
+The first accepted short outdoor dry-run evidence uses the `96x72` field route:
+
+- route: `/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260624T210459Z.vhrs`;
+- route-quality log: `/home/pi/Visual_Homing_Codex/artifacts/logs/field-route-record-20260624T210459Z.log`;
+- reverse dry-run log: `/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-dry-run-20260625T210832Z.log`;
+- readiness JSON: `/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-dry-run-20260625T210832Z.json`.
+
+Accepted signal:
+
+- `external_nav_operator_readiness=ready`, `external_nav_operator_reason=valid`;
+- `external_nav_valid=150/150`, `external_nav_session_ready=true`, `external_nav_strict_session_ready=true`, `external_nav_quality_ready=true`;
+- route recognition stayed strong: `valid_matches=150/150`, confidence min/avg `0.838374/0.923113`;
+- endpoint and route gates passed: `endpoint_passed=true`, `progress_gate_passed=true`;
+- raw progress remained noisy, but the directional tracked progress passed for reverse return: `tracked_directional_progress=true`, `tracked_regressions=12/0`, `tracked_rollback=0.596757/0`;
+- altitude was coherent for the configured custom window: expected `0.75 +/- 0.25 m`, observed `0.613/0.80012/0.904 m`, `external_nav_relative_altitude_window_passed=true`;
+- handoff is only a candidate: JSON reports `handoff.candidate=true`, `decision=candidate_only`, `reason=jt_zero_not_integrated`;
+- live output remained blocked: `vehicle_not_armed:150`.
+
+This evidence proves a hand-carried short outdoor Visual Homing return dry-run can reach Pi-owned `READY` with temporal directional progress tracking. It does not prove live command output, ExternalNav writer acceptance, real flight return, or JT_Zero handoff.
+
 ## Scale And Jitter Notes
 
 The controlling design note is `docs/VISUAL_SCALE_ALTITUDE_STRATEGY.md`.

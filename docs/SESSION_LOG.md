@@ -5,6 +5,7 @@
 - Added the first dry-run temporal route-progress tracker to live route matching. Logs now keep raw progress/regression fields and add tracked progress/regression fields; operator route-progress readiness uses the tracked soft diagnostic so vibration/pitch/viewpoint jitter can remain visible without automatically downgrading otherwise coherent endpoint/telemetry/external-nav evidence.
 - Tuned tracked progress regression counting to ignore micro-corrections at or below `0.01` route-progress units while still accumulating tracked rollback. This keeps tiny smoothing bounces from dominating operator readiness while preserving the total opposite-direction motion diagnostic.
 - Changed the tracked progress model from a bidirectional low-pass smoother to a directional envelope: `reverse` tracked progress ignores short raw moves toward higher route progress, while `forward` ignores short raw moves toward lower route progress. Raw progress fields remain the diagnostic source for actual jitter.
+- Accepted the first short outdoor `96x72` reverse dry-run evidence against route `field-route-20260624T210459Z.vhrs`: 150/150 valid matches, confidence min/avg `0.838374/0.923113`, endpoint/progress gates passed, external-nav/session/strict/quality ready, altitude window passed for `0.75 +/- 0.25 m`, directional tracked progress passed with `tracked_regressions=12/0`, and operator readiness reached `ready`. Handoff remains `candidate_only` with `jt_zero_not_integrated`, and live output stayed blocked by `vehicle_not_armed:150`.
 
 ## 2026-06-24
 
