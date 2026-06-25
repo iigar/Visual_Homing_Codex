@@ -102,6 +102,11 @@ triple_third() {
 frames="$(field frames)"
 progress="$(field progress)"
 minmax_progress="$(field minmax_progress)"
+tracked_progress="$(field tracked_progress)"
+tracked_minmax_progress="$(field tracked_minmax_progress)"
+tracked_directional_progress="$(field tracked_directional_progress)"
+tracked_regressions="$(field tracked_regressions)"
+tracked_rollback="$(field tracked_rollback)"
 confidence_min_avg="$(field confidence_min_avg)"
 dry_run_valid="$(field dry_run_valid)"
 external_nav_valid="$(field external_nav_valid)"
@@ -179,6 +184,15 @@ cat <<EOF
     "progress_end": $(json_number "$(range_right "${progress}")"),
     "progress_min": $(json_number "$(range_left "${minmax_progress}")"),
     "progress_max": $(json_number "$(range_right "${minmax_progress}")"),
+    "tracked_progress_start": $(json_number "$(range_left "${tracked_progress}")"),
+    "tracked_progress_end": $(json_number "$(range_right "${tracked_progress}")"),
+    "tracked_progress_min": $(json_number "$(range_left "${tracked_minmax_progress}")"),
+    "tracked_progress_max": $(json_number "$(range_right "${tracked_minmax_progress}")"),
+    "tracked_directional_progress": $(json_bool "${tracked_directional_progress}"),
+    "tracked_regressions_forward": $(json_number "$(pair_left "${tracked_regressions}")"),
+    "tracked_regressions_reverse": $(json_number "$(pair_right "${tracked_regressions}")"),
+    "tracked_rollback_forward": $(json_number "$(pair_left "${tracked_rollback}")"),
+    "tracked_rollback_reverse": $(json_number "$(pair_right "${tracked_rollback}")"),
     "endpoint_passed": $(json_bool "$(field endpoint_passed)"),
     "progress_gate_passed": $(json_bool "$(field progress_gate_passed)"),
     "endpoint_stop": $(json_bool "$(field endpoint_stop)"),

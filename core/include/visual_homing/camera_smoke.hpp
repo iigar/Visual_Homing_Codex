@@ -132,15 +132,26 @@ struct LiveRouteMatchingResult {
     std::uint64_t empty_polls = 0;
     double progress_rollback = 0.0;
     double reverse_progress_rollback = 0.0;
+    std::uint64_t tracked_progress_regressions = 0;
+    std::uint64_t tracked_reverse_progress_regressions = 0;
+    double tracked_progress_rollback = 0.0;
+    double tracked_reverse_progress_rollback = 0.0;
     double minimum_confidence_seen = 0.0;
     double average_confidence = 0.0;
     double first_progress = 0.0;
     double last_progress = 0.0;
     double min_progress_seen = 0.0;
     double max_progress_seen = 0.0;
+    double first_tracked_progress = 0.0;
+    double last_tracked_progress = 0.0;
+    double min_tracked_progress_seen = 0.0;
+    double max_tracked_progress_seen = 0.0;
     bool progress_monotonic = true;
     bool reverse_progress_monotonic = true;
+    bool tracked_progress_monotonic = true;
+    bool tracked_reverse_progress_monotonic = true;
     bool directional_progress_passed = true;
+    bool tracked_directional_progress_passed = true;
     bool endpoint_progress_passed = true;
     bool progress_gate_passed = true;
     bool endpoint_stop_triggered = false;
@@ -220,6 +231,9 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
 bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress);
 bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result);
+double live_route_match_next_tracked_progress(const std::string& expected_progress,
+                                              double previous_tracked_progress,
+                                              double raw_progress);
 LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics);
 
 } // namespace vh

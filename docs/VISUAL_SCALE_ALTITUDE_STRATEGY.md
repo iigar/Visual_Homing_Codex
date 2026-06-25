@@ -34,7 +34,7 @@ Accepted short-field evidence on `2026-06-24`:
 - Reverse endpoint evidence reached approximately `0.97 -> 0.04` route progress.
 - Altitude-window checks passed when configured to the measured hand-carried height.
 - Live output stayed blocked by `vehicle_not_armed`.
-- Operator readiness was `marginal` because of `route_directional_progress_soft_high`, not because Visual Homing lost the route.
+- Operator readiness was `marginal` because of route directional progress jitter, not because Visual Homing lost the route.
 
 Interpretation:
 
@@ -168,7 +168,7 @@ The tracker should not hide failures. It should log both:
 - raw matcher progress/confidence;
 - smoothed tracker progress/confidence/reason.
 
-Operator readiness should be based more on the smoothed tracker and endpoint evidence, while raw jitter remains a diagnostic.
+The first tracker implementation reports `tracked_progress`, `tracked_minmax_progress`, `tracked_regressions`, `tracked_rollback`, and `tracked_directional_progress` next to the raw progress fields. Operator readiness is allowed to use the tracked soft diagnostic, while raw jitter remains visible for field analysis and future tuning.
 
 ## Android UI Implications
 
@@ -210,4 +210,3 @@ Flight-readiness implication:
 
 - A route dry-run can be accepted as evidence with `operator_readiness=marginal` if endpoint, confidence, altitude, telemetry, and safety are good and the only issue is documented soft progress jitter.
 - A live output or real handoff decision should require stronger progress/scale stability than the current hand-carried dry-run evidence.
-
