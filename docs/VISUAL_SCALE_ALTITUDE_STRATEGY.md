@@ -217,6 +217,34 @@ Later flight-scale testing should be a separate evidence ladder after the system
 - compare route confidence, tracked progress, visual-scale ratio, and telemetry altitude;
 - only then decide whether higher-resolution candidate refinement, route pyramids, or altitude-banded route records are required.
 
+### First Field Scale Evidence - 2026-06-26
+
+The first three hand-carried field scale runs used the accepted `96x72` route
+`field-route-20260624T210459Z.vhrs`, reverse progress, and
+`VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M=0.75`.
+
+Observed results:
+
+| Expected height | Observed relative altitude min/avg/max | Operator readiness | Visual scale min/avg/max | Visual scale confidence min/avg |
+| --- | --- | --- | --- | --- |
+| `0.65 m` | `0.508/0.63858/0.7 m` | `ready` | `0.5/0.931667/1.25` | `0.849034/0.926032` |
+| `0.95 m` | `1.014/1.14841/1.217 m` | `blocked` by altitude window | `0.5/0.890333/1.25` | `0.86822/0.925884` |
+| `1.5 m` | `1.333/1.49387/1.585 m` | `ready` | `0.5/0.777667/1.25` | `0.872125/0.928726` |
+
+Interpretation:
+
+- route recognition stayed strong across the three heights: each run had `valid_matches=150/150`;
+- tracked reverse progress stayed coherent: each run had `tracked_directional_progress=true` and zero reverse tracked regressions;
+- the average visual scale ratio moved in the expected direction as height increased: about `0.93`, `0.89`, then `0.78`;
+- the visual scale min/max repeatedly hit the candidate bounds `0.5` and `1.25`, so this diagnostic is not yet stable enough to be used as a metric altitude estimator or a handoff/live-output gate.
+
+Next scale work should improve the estimator before using it in readiness:
+
+- inspect per-frame scale distributions instead of only min/avg/max;
+- add temporal smoothing or a scale tracker, similar to route progress tracking;
+- consider ROI or higher-resolution refinement around the matched route keyframe;
+- keep field scale diagnostics log-only until the ratio no longer repeatedly hits candidate bounds in otherwise clean route runs.
+
 ## Milestone Direction
 
 Near-term field work:
