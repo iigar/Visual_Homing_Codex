@@ -267,6 +267,25 @@ and adds a log-only tracked visual-scale ratio with a bounded per-frame step.
 The raw histogram remains visible; the tracked ratio is intended to show the
 session trend without allowing one noisy frame to redefine scale readiness.
 
+The first repeat after widening the candidate range used log
+`external-nav-dry-run-20260626T220034Z.log`. The route still matched every frame
+with confidence min/avg `0.857079/0.919244`, but the route session failed endpoint
+completion: progress ended at `0.657718`, `endpoint_passed=false`, and
+`external_nav_operator_readiness=blocked` with `route_session_not_passed`. Scale
+diagnostics became more informative:
+
+```text
+visual_scale_ratio_histogram=0.3:53,0.35:6,0.4:6,0.45:8,0.5:4,0.55:1,0.65:4,0.75:3,0.8:1,0.85:1,0.9:6,0.95:3,1:22,1.1:3,1.15:1,1.2:7,1.25:3,1.3:5,1.35:2,1.4:1,1.5:10
+tracked_visual_scale_ratio=0.3..0.65
+tracked_visual_scale_ratio_min_avg_max=0.3/0.658667/1.15
+```
+
+This confirms that larger-height runs can require raw scale below `0.5`, but also
+that scale-only improvements do not solve route endpoint stability at this field
+height. The next useful implementation should be selective higher-resolution or
+ROI refinement around the matched route candidate, while preserving the fast
+`96x72` coarse matcher.
+
 ## Milestone Direction
 
 Near-term field work:
