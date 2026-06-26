@@ -258,6 +258,34 @@ int main() {
     }
     assert(rejected_expected_altitude_tolerance);
 
+    bool rejected_visual_scale_without_external_nav = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.visual_scale_diagnostics = true;
+        invalid.visual_scale_reference_altitude_m = 0.75;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_visual_scale_without_external_nav = true;
+    }
+    assert(rejected_visual_scale_without_external_nav);
+
+    bool rejected_visual_scale_reference_altitude = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.emit_external_nav_estimates = true;
+        invalid.use_live_telemetry_stream = true;
+        invalid.visual_scale_diagnostics = true;
+        invalid.visual_scale_reference_altitude_m = 0.0;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_visual_scale_reference_altitude = true;
+    }
+    assert(rejected_visual_scale_reference_altitude);
+
     bool rejected_match_endpoint_start = false;
     try {
         vh::LiveRouteMatchingConfig invalid;

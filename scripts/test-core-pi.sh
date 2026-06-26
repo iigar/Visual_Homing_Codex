@@ -57,6 +57,8 @@ external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATC
 external_nav_maximum_altitude_age_ms="${VISUAL_HOMING_EXTERNAL_NAV_MAXIMUM_ALTITUDE_AGE_MS:-${live_route_match_telemetry_max_age_ms}}"
 external_nav_source="${VISUAL_HOMING_EXTERNAL_NAV_SOURCE:-visual_route_progress}"
 external_nav_bench_diagnostic_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_BENCH_ALTITUDE_M:-0}"
+visual_scale_diagnostics="${VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS:-0}"
+visual_scale_reference_altitude_m="${VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M:-0}"
 external_nav_expected_relative_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-0}"
 external_nav_expected_relative_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-0}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
@@ -130,6 +132,7 @@ for bool_env in \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
     VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES \
+    VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS \
     VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
     VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT \
@@ -244,6 +247,8 @@ if [[ "${external_nav_estimates}" == "1" ]]; then
         "${external_nav_bench_diagnostic_altitude_m}"
         "${external_nav_expected_relative_altitude_m}"
         "${external_nav_expected_relative_altitude_tolerance_m}"
+        "${visual_scale_diagnostics}"
+        "${visual_scale_reference_altitude_m}"
     )
 fi
 live_route_session_audit_args=()

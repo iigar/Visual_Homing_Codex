@@ -191,7 +191,8 @@ VisualScaleDiagnostic estimate_visual_scale_diagnostic(
         return diagnostic;
     }
 
-    const std::vector<double> candidates{0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15};
+    const std::vector<double> candidates{
+        0.50, 0.60, 0.70, 0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15, 1.25};
     double best_distance = std::numeric_limits<double>::infinity();
     double best_scale = 1.0;
     for (const auto scale : candidates) {
@@ -739,6 +740,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.emit_external_nav_estimates && !config.use_live_telemetry_stream) {
         throw std::invalid_argument("Live route matching external-nav estimates require live telemetry stream");
     }
+    if (config.visual_scale_diagnostics) {
+        if (!config.emit_external_nav_estimates) {
+            throw std::invalid_argument("Live route matching visual-scale diagnostics require external-nav estimates");
+        }
+        if (!std::isfinite(config.visual_scale_reference_altitude_m)
+            || config.visual_scale_reference_altitude_m <= 0.0) {
+            throw std::invalid_argument(
+                "Live route matching visual-scale reference altitude must be finite and positive");
+        }
+    }
     if (config.emit_external_nav_estimates
         && (config.external_nav_expected_relative_altitude_m != 0.0
             || config.external_nav_expected_relative_altitude_tolerance_m != 0.0)) {
@@ -827,7 +838,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
             << " telemetry_max_age_ms=" << config.telemetry_max_age_ms
             << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false")
-            << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false");
+            << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false")
+            << " visual_scale_diagnostics=" << (config.visual_scale_diagnostics ? "true" : "false")
+            << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m;
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
@@ -1126,11 +1139,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     latest_gate_telemetry,
                     processing_finished,
                     config.external_nav);
-                if (match.route_index < route.entries.size()) {
+                const auto visual_scale_reference_altitude_m = config.visual_scale_diagnostics
+                    ? config.visual_scale_reference_altitude_m
+                    : config.external_nav.bench_diagnostic_altitude_m;
+                if (match.route_index < route.entries.size() && visual_scale_reference_altitude_m > 0.0) {
                     const auto visual_scale = estimate_visual_scale_diagnostic(
                         processed,
                         route.entries[static_cast<std::size_t>(match.route_index)],
-                        config.external_nav.bench_diagnostic_altitude_m);
+                        visual_scale_reference_altitude_m);
                     external_nav_estimate.visual_scale_valid = visual_scale.valid;
                     external_nav_estimate.visual_scale_ratio = visual_scale.scale_ratio;
                     external_nav_estimate.visual_altitude_m = visual_scale.altitude_m;

@@ -195,6 +195,28 @@ For UI clarity:
 
 The UI may allow operator inputs such as altitude preset, expected handoff altitude, requested handoff distance, and selected route. The Pi must resolve those inputs into final readiness.
 
+## Field Scale Characterization
+
+The first field scale characterization should use the accepted short `96x72` route and repeat reverse dry-runs at roughly:
+
+- `0.65 m`;
+- `0.95 m`;
+- `1.5 m`.
+
+These heights intentionally cover a larger ratio than the current `0.75 m` accepted run while staying practical for hand-carried testing. This is not a substitute for later large-altitude testing. A `0.65..1.5 m` range is about a `2.3x` altitude change, while a future `20..200 m` scenario is a `10x` change and also changes texture density, haze, lighting, camera exposure, and field-of-view content. The short test only proves that the diagnostic channel reacts coherently to scale changes and gives a first estimate of jitter/confidence behavior.
+
+For this stage, use field visual-scale diagnostics as log-only evidence:
+
+- enable `VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS=1`;
+- set `VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M` to the route-recording height or the best accepted reference height;
+- keep `visual_scale_required=false` for readiness so a deliberate scale stress-test can be recorded without being treated as a live-authority gate failure.
+
+Later flight-scale testing should be a separate evidence ladder after the system can fly the route safely:
+
+- repeat the same route at progressively larger altitude deltas;
+- compare route confidence, tracked progress, visual-scale ratio, and telemetry altitude;
+- only then decide whether higher-resolution candidate refinement, route pyramids, or altitude-banded route records are required.
+
 ## Milestone Direction
 
 Near-term field work:
