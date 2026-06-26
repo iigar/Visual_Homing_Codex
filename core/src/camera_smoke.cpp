@@ -35,6 +35,7 @@ namespace vh {
 namespace {
 
 constexpr double kTrackedProgressRegressionDeadband = 0.01;
+constexpr double kTrackedVisualScaleMaxStep = 0.05;
 
 std::string wall_time_utc_iso8601() {
     const auto current = std::chrono::system_clock::now();
@@ -209,7 +210,9 @@ VisualScaleDiagnostic estimate_visual_scale_diagnostic(
     }
 
     const std::vector<double> candidates{
-        0.50, 0.60, 0.70, 0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15, 1.25};
+        0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75,
+        0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15, 1.20, 1.25,
+        1.30, 1.35, 1.40, 1.50};
     double best_distance = std::numeric_limits<double>::infinity();
     double best_scale = 1.0;
     for (const auto scale : candidates) {
@@ -350,6 +353,20 @@ double live_route_match_next_tracked_progress(const std::string& expected_progre
     const auto max_step = expected_direction == 0.0 ? 0.06 : 0.06;
     const auto step = std::clamp(delta * alpha, -max_step, max_step);
     return std::clamp(previous_tracked_progress + step, 0.0, 1.0);
+}
+
+double live_route_match_next_tracked_visual_scale_ratio(double previous_tracked_scale_ratio,
+                                                        double raw_scale_ratio) {
+    if (!std::isfinite(previous_tracked_scale_ratio) || !std::isfinite(raw_scale_ratio)) {
+        throw std::invalid_argument("live route visual-scale tracker requires finite scale ratio values");
+    }
+    if (previous_tracked_scale_ratio <= 0.0 || raw_scale_ratio <= 0.0) {
+        throw std::invalid_argument("live route visual-scale tracker scale ratios must be positive");
+    }
+
+    const auto delta = raw_scale_ratio - previous_tracked_scale_ratio;
+    const auto step = std::clamp(delta, -kTrackedVisualScaleMaxStep, kTrackedVisualScaleMaxStep);
+    return previous_tracked_scale_ratio + step;
 }
 
 namespace {
@@ -1073,6 +1090,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     double visual_scale_ratio_sum = 0.0;
     double visual_scale_confidence_sum = 0.0;
     std::map<double, std::uint64_t> visual_scale_ratio_histogram;
+    std::optional<double> last_tracked_visual_scale_ratio;
+    double tracked_visual_scale_ratio_sum = 0.0;
     double external_nav_relative_altitude_sum_m = 0.0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
@@ -1199,10 +1218,20 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     visual_scale_ratio_sum += external_nav_estimate.visual_scale_ratio;
                     visual_scale_confidence_sum += external_nav_estimate.visual_scale_confidence;
                     ++visual_scale_ratio_histogram[external_nav_estimate.visual_scale_ratio];
+                    const auto tracked_visual_scale_ratio = last_tracked_visual_scale_ratio
+                        ? live_route_match_next_tracked_visual_scale_ratio(
+                            *last_tracked_visual_scale_ratio,
+                            external_nav_estimate.visual_scale_ratio)
+                        : external_nav_estimate.visual_scale_ratio;
+                    last_tracked_visual_scale_ratio = tracked_visual_scale_ratio;
+                    tracked_visual_scale_ratio_sum += tracked_visual_scale_ratio;
                     if (result.visual_scale_valid == 1) {
                         result.visual_scale_ratio_min = external_nav_estimate.visual_scale_ratio;
                         result.visual_scale_ratio_max = external_nav_estimate.visual_scale_ratio;
                         result.visual_scale_confidence_min = external_nav_estimate.visual_scale_confidence;
+                        result.first_tracked_visual_scale_ratio = tracked_visual_scale_ratio;
+                        result.tracked_visual_scale_ratio_min = tracked_visual_scale_ratio;
+                        result.tracked_visual_scale_ratio_max = tracked_visual_scale_ratio;
                     } else {
                         result.visual_scale_ratio_min =
                             std::min(result.visual_scale_ratio_min, external_nav_estimate.visual_scale_ratio);
@@ -1210,7 +1239,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                             std::max(result.visual_scale_ratio_max, external_nav_estimate.visual_scale_ratio);
                         result.visual_scale_confidence_min =
                             std::min(result.visual_scale_confidence_min, external_nav_estimate.visual_scale_confidence);
+                        result.tracked_visual_scale_ratio_min =
+                            std::min(result.tracked_visual_scale_ratio_min, tracked_visual_scale_ratio);
+                        result.tracked_visual_scale_ratio_max =
+                            std::max(result.tracked_visual_scale_ratio_max, tracked_visual_scale_ratio);
                     }
+                    result.last_tracked_visual_scale_ratio = tracked_visual_scale_ratio;
                 }
                 if (external_nav_estimate.valid_for_fc) {
                     ++result.external_nav_valid_for_fc;
@@ -1457,6 +1491,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.visual_scale_ratio_avg = visual_scale_ratio_sum / static_cast<double>(result.visual_scale_valid);
         result.visual_scale_confidence_avg =
             visual_scale_confidence_sum / static_cast<double>(result.visual_scale_valid);
+        result.tracked_visual_scale_ratio_avg =
+            tracked_visual_scale_ratio_sum / static_cast<double>(result.visual_scale_valid);
     }
     result.visual_scale_ratio_histogram = ratio_histogram_text(visual_scale_ratio_histogram);
     result.external_nav_latest_telemetry_armed = latest_gate_telemetry.armed;
@@ -1661,6 +1697,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
             << "/" << result.visual_scale_confidence_avg
             << " visual_scale_ratio_histogram=" << result.visual_scale_ratio_histogram
+            << " tracked_visual_scale_ratio=" << result.first_tracked_visual_scale_ratio
+            << ".." << result.last_tracked_visual_scale_ratio
+            << " tracked_visual_scale_ratio_min_avg_max=" << result.tracked_visual_scale_ratio_min
+            << "/" << result.tracked_visual_scale_ratio_avg
+            << "/" << result.tracked_visual_scale_ratio_max
             << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
@@ -1738,6 +1779,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
             << "/" << result.visual_scale_confidence_avg
             << " visual_scale_ratio_histogram=" << result.visual_scale_ratio_histogram
+            << " tracked_visual_scale_ratio=" << result.first_tracked_visual_scale_ratio
+            << ".." << result.last_tracked_visual_scale_ratio
+            << " tracked_visual_scale_ratio_min_avg_max=" << result.tracked_visual_scale_ratio_min
+            << "/" << result.tracked_visual_scale_ratio_avg
+            << "/" << result.tracked_visual_scale_ratio_max
             << " live_output_gate_allowed=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons

@@ -219,6 +219,11 @@ struct LiveRouteMatchingResult {
     double visual_scale_confidence_min = 0.0;
     double visual_scale_confidence_avg = 0.0;
     std::string visual_scale_ratio_histogram;
+    double first_tracked_visual_scale_ratio = 0.0;
+    double last_tracked_visual_scale_ratio = 0.0;
+    double tracked_visual_scale_ratio_min = 0.0;
+    double tracked_visual_scale_ratio_avg = 0.0;
+    double tracked_visual_scale_ratio_max = 0.0;
     std::uint64_t live_output_gate_allowed_frames = 0;
     std::uint64_t live_output_gate_blocked_frames = 0;
     bool final_live_output_gate_allowed = false;
@@ -237,6 +242,8 @@ bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& co
 double live_route_match_next_tracked_progress(const std::string& expected_progress,
                                               double previous_tracked_progress,
                                               double raw_progress);
+double live_route_match_next_tracked_visual_scale_ratio(double previous_tracked_scale_ratio,
+                                                        double raw_scale_ratio);
 LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics);
 
 } // namespace vh

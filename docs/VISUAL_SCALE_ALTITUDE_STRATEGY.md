@@ -262,6 +262,11 @@ but saturates at the lower candidate bound for larger height deltas. The next
 implementation step should widen/improve candidate search and add temporal scale
 tracking before visual scale is considered for readiness.
 
+The first follow-up implementation widens raw scale candidates to `0.30..1.50`
+and adds a log-only tracked visual-scale ratio with a bounded per-frame step.
+The raw histogram remains visible; the tracked ratio is intended to show the
+session trend without allowing one noisy frame to redefine scale readiness.
+
 ## Milestone Direction
 
 Near-term field work:

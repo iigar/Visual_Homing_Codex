@@ -196,6 +196,22 @@ int main() {
     const auto any_smoothed = vh::live_route_match_next_tracked_progress("any", 0.2, 0.8);
     assert(any_smoothed > 0.2);
     assert(any_smoothed < 0.3);
+    const auto tracked_scale_large_drop = vh::live_route_match_next_tracked_visual_scale_ratio(1.0, 0.3);
+    assert(tracked_scale_large_drop > 0.94);
+    assert(tracked_scale_large_drop < 1.0);
+    const auto tracked_scale_large_rise = vh::live_route_match_next_tracked_visual_scale_ratio(1.0, 1.5);
+    assert(tracked_scale_large_rise > 1.0);
+    assert(tracked_scale_large_rise < 1.06);
+    const auto tracked_scale_small_change = vh::live_route_match_next_tracked_visual_scale_ratio(1.0, 1.02);
+    assert(tracked_scale_small_change == 1.02);
+
+    bool rejected_tracked_scale = false;
+    try {
+        (void)vh::live_route_match_next_tracked_visual_scale_ratio(1.0, 0.0);
+    } catch (const std::invalid_argument&) {
+        rejected_tracked_scale = true;
+    }
+    assert(rejected_tracked_scale);
 
     bool rejected_match_frames = false;
     try {

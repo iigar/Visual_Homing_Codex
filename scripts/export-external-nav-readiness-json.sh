@@ -115,6 +115,8 @@ visual_scale_valid="$(field visual_scale_valid)"
 visual_scale_ratio_min_avg_max="$(field visual_scale_ratio_min_avg_max)"
 visual_scale_confidence_min_avg="$(field visual_scale_confidence_min_avg)"
 visual_scale_ratio_histogram="$(field visual_scale_ratio_histogram)"
+tracked_visual_scale_ratio="$(field tracked_visual_scale_ratio)"
+tracked_visual_scale_ratio_min_avg_max="$(field tracked_visual_scale_ratio_min_avg_max)"
 
 route_complete=false
 if [[ "$(field endpoint_passed)" == "true" && "$(field progress_gate_passed)" == "true" ]]; then
@@ -276,7 +278,12 @@ cat <<EOF
     "confidence_min": $(json_number "$(pair_left "${visual_scale_confidence_min_avg}")"),
     "confidence_avg": $(json_number "$(pair_right "${visual_scale_confidence_min_avg}")"),
     "ratio_histogram": "$(json_string "${visual_scale_ratio_histogram}")",
-    "ratio_histogram_counts": $(histogram_json_object "${visual_scale_ratio_histogram}")
+    "ratio_histogram_counts": $(histogram_json_object "${visual_scale_ratio_histogram}"),
+    "tracked_ratio_start": $(json_number "$(range_left "${tracked_visual_scale_ratio}")"),
+    "tracked_ratio_end": $(json_number "$(range_right "${tracked_visual_scale_ratio}")"),
+    "tracked_ratio_min": $(json_number "$(triple_first "${tracked_visual_scale_ratio_min_avg_max}")"),
+    "tracked_ratio_avg": $(json_number "$(triple_second "${tracked_visual_scale_ratio_min_avg_max}")"),
+    "tracked_ratio_max": $(json_number "$(triple_third "${tracked_visual_scale_ratio_min_avg_max}")")
   },
   "safety_gate": {
     "live_output_allowed": $(json_number "$(field live_output_gate_allowed)"),
