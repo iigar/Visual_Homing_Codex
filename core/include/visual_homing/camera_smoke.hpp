@@ -218,6 +218,7 @@ struct LiveRouteMatchingResult {
     double visual_scale_ratio_max = 0.0;
     double visual_scale_confidence_min = 0.0;
     double visual_scale_confidence_avg = 0.0;
+    std::string visual_scale_ratio_histogram;
     std::uint64_t live_output_gate_allowed_frames = 0;
     std::uint64_t live_output_gate_blocked_frames = 0;
     bool final_live_output_gate_allowed = false;

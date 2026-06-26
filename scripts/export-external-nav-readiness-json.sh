@@ -114,6 +114,7 @@ altitude_min_avg_max="$(field external_nav_relative_altitude_min_avg_max_m)"
 visual_scale_valid="$(field visual_scale_valid)"
 visual_scale_ratio_min_avg_max="$(field visual_scale_ratio_min_avg_max)"
 visual_scale_confidence_min_avg="$(field visual_scale_confidence_min_avg)"
+visual_scale_ratio_histogram="$(field visual_scale_ratio_histogram)"
 
 route_complete=false
 if [[ "$(field endpoint_passed)" == "true" && "$(field progress_gate_passed)" == "true" ]]; then
@@ -141,6 +142,35 @@ elif [[ "${operator_readiness}" == "marginal" ]]; then
 elif [[ -z "${handoff_reason}" || "${operator_readiness}" != "blocked" ]]; then
     handoff_reason=visual_homing_not_ready
 fi
+
+histogram_json_object() {
+    local value="$1"
+    if [[ -z "${value}" || "${value}" == "none" ]]; then
+        printf '{}'
+        return
+    fi
+
+    local output="{"
+    local first=1
+    local item
+    local key
+    local count
+    IFS=',' read -ra items <<< "${value}"
+    for item in "${items[@]}"; do
+        key="${item%%:*}"
+        count="${item##*:}"
+        if [[ -z "${key}" || -z "${count}" ]]; then
+            continue
+        fi
+        if [[ "${first}" == "0" ]]; then
+            output+=", "
+        fi
+        first=0
+        output+="\"$(json_string "${key}")\": $(json_number "${count}")"
+    done
+    output+="}"
+    printf '%s' "${output}"
+}
 
 json="$(
 cat <<EOF
@@ -244,7 +274,9 @@ cat <<EOF
     "ratio_avg": $(json_number "$(triple_second "${visual_scale_ratio_min_avg_max}")"),
     "ratio_max": $(json_number "$(triple_third "${visual_scale_ratio_min_avg_max}")"),
     "confidence_min": $(json_number "$(pair_left "${visual_scale_confidence_min_avg}")"),
-    "confidence_avg": $(json_number "$(pair_right "${visual_scale_confidence_min_avg}")")
+    "confidence_avg": $(json_number "$(pair_right "${visual_scale_confidence_min_avg}")"),
+    "ratio_histogram": "$(json_string "${visual_scale_ratio_histogram}")",
+    "ratio_histogram_counts": $(histogram_json_object "${visual_scale_ratio_histogram}")
   },
   "safety_gate": {
     "live_output_allowed": $(json_number "$(field live_output_gate_allowed)"),

@@ -50,6 +50,23 @@ std::string wall_time_utc_iso8601() {
     return output.str();
 }
 
+std::string ratio_histogram_text(const std::map<double, std::uint64_t>& histogram) {
+    if (histogram.empty()) {
+        return "none";
+    }
+
+    std::ostringstream output;
+    bool first = true;
+    for (const auto& [ratio, count] : histogram) {
+        if (!first) {
+            output << ",";
+        }
+        first = false;
+        output << ratio << ":" << count;
+    }
+    return output.str();
+}
+
 void emit_bells(std::ostream& metrics, int count) {
     for (int index = 0; index < count; ++index) {
         metrics << '\a';
@@ -1055,6 +1072,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
     double visual_scale_ratio_sum = 0.0;
     double visual_scale_confidence_sum = 0.0;
+    std::map<double, std::uint64_t> visual_scale_ratio_histogram;
     double external_nav_relative_altitude_sum_m = 0.0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
@@ -1180,6 +1198,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++result.visual_scale_valid;
                     visual_scale_ratio_sum += external_nav_estimate.visual_scale_ratio;
                     visual_scale_confidence_sum += external_nav_estimate.visual_scale_confidence;
+                    ++visual_scale_ratio_histogram[external_nav_estimate.visual_scale_ratio];
                     if (result.visual_scale_valid == 1) {
                         result.visual_scale_ratio_min = external_nav_estimate.visual_scale_ratio;
                         result.visual_scale_ratio_max = external_nav_estimate.visual_scale_ratio;
@@ -1439,6 +1458,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.visual_scale_confidence_avg =
             visual_scale_confidence_sum / static_cast<double>(result.visual_scale_valid);
     }
+    result.visual_scale_ratio_histogram = ratio_histogram_text(visual_scale_ratio_histogram);
     result.external_nav_latest_telemetry_armed = latest_gate_telemetry.armed;
     result.external_nav_latest_telemetry_mode = to_string(latest_gate_telemetry.mode);
     if (result.external_nav_estimates == 0) {
@@ -1640,6 +1660,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << "/" << result.visual_scale_ratio_max
             << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
             << "/" << result.visual_scale_confidence_avg
+            << " visual_scale_ratio_histogram=" << result.visual_scale_ratio_histogram
             << " live_output_gate_allowed_frames=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked_frames=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
@@ -1716,6 +1737,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << "/" << result.visual_scale_ratio_max
             << " visual_scale_confidence_min_avg=" << result.visual_scale_confidence_min
             << "/" << result.visual_scale_confidence_avg
+            << " visual_scale_ratio_histogram=" << result.visual_scale_ratio_histogram
             << " live_output_gate_allowed=" << result.live_output_gate_allowed_frames
             << " live_output_gate_blocked=" << result.live_output_gate_blocked_frames
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons

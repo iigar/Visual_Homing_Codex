@@ -245,6 +245,8 @@ Next scale work should improve the estimator before using it in readiness:
 - consider ROI or higher-resolution refinement around the matched route keyframe;
 - keep field scale diagnostics log-only until the ratio no longer repeatedly hits candidate bounds in otherwise clean route runs.
 
+The next diagnostic output adds `visual_scale_ratio_histogram` to the compact log and readiness JSON. This should be used before changing thresholds because min/avg/max alone can hide a bimodal or bound-hitting scale estimate.
+
 ## Milestone Direction
 
 Near-term field work:
