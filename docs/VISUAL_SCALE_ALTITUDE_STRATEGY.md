@@ -247,6 +247,21 @@ Next scale work should improve the estimator before using it in readiness:
 
 The next diagnostic output adds `visual_scale_ratio_histogram` to the compact log and readiness JSON. This should be used before changing thresholds because min/avg/max alone can hide a bimodal or bound-hitting scale estimate.
 
+The first histogram repeat at the `1.5 m` target used log
+`external-nav-dry-run-20260626T210401Z.log`. The run stayed route-ready:
+`valid_matches=150/150`, `external_nav_operator_readiness=ready`,
+`tracked_directional_progress=true`, altitude `1.339/1.38882/1.446 m`, and
+confidence min/avg `0.853823/0.923017`. The visual-scale histogram was:
+
+```text
+0.5:110,0.7:2,0.8:2,0.9:1,0.95:8,1:6,1.05:2,1.1:5,1.15:12,1.25:2
+```
+
+This confirms that the current scale diagnostic has a useful directional signal
+but saturates at the lower candidate bound for larger height deltas. The next
+implementation step should widen/improve candidate search and add temporal scale
+tracking before visual scale is considered for readiness.
+
 ## Milestone Direction
 
 Near-term field work:
