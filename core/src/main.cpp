@@ -254,6 +254,9 @@ void apply_live_output_runtime_args(vh::LiveRouteMatchingConfig& config, char** 
 }
 
 void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig& config) {
+    if (const char* stop_at_endpoint = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS")) {
+        config.stop_at_endpoint_progress = parse_bool_arg(stop_at_endpoint);
+    }
     if (const char* enabled = std::getenv("VISUAL_HOMING_SCALE_REFINEMENT")) {
         config.scale_refinement_enabled = parse_bool_arg(enabled);
     }

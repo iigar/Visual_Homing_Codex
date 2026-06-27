@@ -292,11 +292,7 @@ if [[ "${live_route_session_audit}" == "1" ]]; then
 fi
 
 if [[ "${live_route_match_stop_at_endpoint_progress}" == "1" ]]; then
-    if [[ ${#live_route_session_audit_args[@]} -lt 6 ]]; then
-        echo "VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS currently requires live-output runtime session args" >&2
-        exit 2
-    fi
-    live_route_endpoint_stop_args=("${live_route_match_stop_at_endpoint_progress}")
+    live_route_endpoint_stop_args=()
 fi
 
 clean=0

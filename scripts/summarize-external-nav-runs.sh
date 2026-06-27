@@ -41,7 +41,7 @@ range_delta() {
 }
 
 print_header() {
-    printf 'log\tpassed\toperator\treason\tframes\tfps\telapsed_ms\tstop_reason\tconfidence_min\tconfidence_avg\talt_min\talt_avg\talt_max\tprogress\tprogress_delta\ttracked_progress\ttracked_delta\ttracked_ok\tendpoint\tquality\tdry_run\tscale_avg\ttracked_scale\tscale_histogram\n'
+    printf 'log\tpassed\toperator\treason\tframes\tfps\telapsed_ms\tstop_reason\tconfidence_min\tconfidence_avg\talt_min\talt_avg\talt_max\tprogress\tprogress_delta\ttracked_progress\ttracked_delta\ttracked_ok\tendpoint\tendpoint_stop\tquality\tdry_run\tscale_avg\ttracked_scale\tscale_histogram\n'
 }
 
 summarize_log() {
@@ -85,6 +85,7 @@ summarize_log() {
     printf '%s\t' "$(range_delta "${tracked_progress}")"
     printf '%s\t' "$(extract_field "${compact_line}" tracked_directional_progress)"
     printf '%s\t' "$(extract_field "${compact_line}" endpoint_passed)"
+    printf '%s\t' "$(extract_field "${compact_line}" endpoint_stop)"
     printf '%s\t' "$(extract_field "${compact_line}" dry_run_quality)"
     printf '%s\t' "$(extract_field "${compact_line}" dry_run_valid)"
     printf '%s\t' "$(triple_second "${scale_ratio}")"
