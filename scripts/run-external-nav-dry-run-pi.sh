@@ -321,9 +321,21 @@ VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_al
 
 export_route_readiness_json
 
-VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES:-${frames}/${frames}}" \
-VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES:-${frames}}" \
-VISUAL_HOMING_EXPECTED_LIVE_ROUTE_DRY_RUN_VALID="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_DRY_RUN_VALID:-${frames}/${frames}}" \
-VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS="${VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS:-vehicle_not_armed:${frames}}" \
+if [[ "${VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS:-0}" == "1" ]]; then
+    expected_live_route_frames_default="auto"
+    expected_live_route_valid_matches_default="auto"
+    expected_live_route_dry_run_valid_default="auto"
+    expected_live_output_gate_block_reasons_default="vehicle_not_armed:auto"
+else
+    expected_live_route_frames_default="${frames}/${frames}"
+    expected_live_route_valid_matches_default="${frames}"
+    expected_live_route_dry_run_valid_default="${frames}/${frames}"
+    expected_live_output_gate_block_reasons_default="vehicle_not_armed:${frames}"
+fi
+
+VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_FRAMES:-${expected_live_route_frames_default}}" \
+VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_VALID_MATCHES:-${expected_live_route_valid_matches_default}}" \
+VISUAL_HOMING_EXPECTED_LIVE_ROUTE_DRY_RUN_VALID="${VISUAL_HOMING_EXPECTED_LIVE_ROUTE_DRY_RUN_VALID:-${expected_live_route_dry_run_valid_default}}" \
+VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS="${VISUAL_HOMING_EXPECTED_LIVE_OUTPUT_GATE_BLOCK_REASONS:-${expected_live_output_gate_block_reasons_default}}" \
 VISUAL_HOMING_EXPECTED_EXTERNAL_NAV_STRICT_SESSION_READY="${VISUAL_HOMING_EXPECTED_EXTERNAL_NAV_STRICT_SESSION_READY:-0}" \
 "${repo_root}/scripts/check-external-nav-readiness-log.sh" "${run_log}"
