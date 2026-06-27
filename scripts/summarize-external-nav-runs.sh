@@ -29,8 +29,19 @@ triple_second() {
     printf '%s' "${value%%/*}"
 }
 
+range_delta() {
+    local value="$1"
+    if [[ ! "${value}" =~ ^-?[0-9]+([.][0-9]+)?[.][.]-?[0-9]+([.][0-9]+)?$ ]]; then
+        printf ''
+        return
+    fi
+    local start="${value%%..*}"
+    local end="${value##*..}"
+    awk -v start="${start}" -v end="${end}" 'BEGIN { printf "%.6f", start - end }'
+}
+
 print_header() {
-    printf 'log\tpassed\toperator\treason\tframes\tfps\tconfidence_min\tconfidence_avg\talt_min\talt_avg\talt_max\tprogress\ttracked_progress\ttracked_ok\tendpoint\tquality\tdry_run\tscale_avg\ttracked_scale\tscale_histogram\n'
+    printf 'log\tpassed\toperator\treason\tframes\tfps\telapsed_ms\tstop_reason\tconfidence_min\tconfidence_avg\talt_min\talt_avg\talt_max\tprogress\tprogress_delta\ttracked_progress\ttracked_delta\ttracked_ok\tendpoint\tquality\tdry_run\tscale_avg\ttracked_scale\tscale_histogram\n'
 }
 
 summarize_log() {
@@ -48,10 +59,12 @@ summarize_log() {
         return 1
     fi
 
-    local confidence altitude scale_ratio
+    local confidence altitude scale_ratio progress tracked_progress
     confidence="$(extract_field "${compact_line}" confidence_min_avg)"
     altitude="$(extract_field "${compact_line}" external_nav_relative_altitude_min_avg_max_m)"
     scale_ratio="$(extract_field "${compact_line}" visual_scale_ratio_min_avg_max)"
+    progress="$(extract_field "${compact_line}" progress)"
+    tracked_progress="$(extract_field "${compact_line}" tracked_progress)"
 
     printf '%s\t' "${log_path}"
     printf '%s\t' "$(extract_field "${compact_line}" passed)"
@@ -59,13 +72,17 @@ summarize_log() {
     printf '%s\t' "$(extract_field "${compact_line}" external_nav_operator_reason)"
     printf '%s\t' "$(extract_field "${compact_line}" frames)"
     printf '%s\t' "$(extract_field "${done_line}" effective_fps)"
+    printf '%s\t' "$(extract_field "${done_line}" elapsed_ms)"
+    printf '%s\t' "$(extract_field "${compact_line}" stop_reason)"
     printf '%s\t' "$(triple_first "${confidence}")"
     printf '%s\t' "$(triple_second "${confidence}")"
     printf '%s\t' "$(triple_first "${altitude}")"
     printf '%s\t' "$(triple_second "${altitude}")"
     printf '%s\t' "$(printf '%s' "${altitude##*/}")"
-    printf '%s\t' "$(extract_field "${compact_line}" progress)"
-    printf '%s\t' "$(extract_field "${compact_line}" tracked_progress)"
+    printf '%s\t' "${progress}"
+    printf '%s\t' "$(range_delta "${progress}")"
+    printf '%s\t' "${tracked_progress}"
+    printf '%s\t' "$(range_delta "${tracked_progress}")"
     printf '%s\t' "$(extract_field "${compact_line}" tracked_directional_progress)"
     printf '%s\t' "$(extract_field "${compact_line}" endpoint_passed)"
     printf '%s\t' "$(extract_field "${compact_line}" dry_run_quality)"
