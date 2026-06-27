@@ -90,6 +90,17 @@ int main() {
     assert(noisy.route_index == 2);
     assert(noisy.confidence > 0.97);
 
+    vh::Gray8RouteMatcher scale_refinement_matcher(textured_route, {
+        .window_radius = 1,
+        .minimum_confidence = 0.8,
+        .enable_scale_refinement = true,
+        .scale_refinement_radius = 1,
+    });
+    const auto scale_refined = scale_refinement_matcher.match(frame(402, {28, 35, 215, 225}));
+    assert(scale_refined.valid);
+    assert(scale_refined.route_index == 2);
+    assert(scale_refined.confidence > 0.97);
+
     vh::RouteSignatureFile shift_route;
     shift_route.entries.push_back(entry(0, {
         10, 30, 90, 170,

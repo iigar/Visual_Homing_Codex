@@ -54,6 +54,58 @@ double shifted_normalized_mean_absolute_difference(
     return static_cast<double>(sum) / (static_cast<double>(count) * 255.0);
 }
 
+double scaled_normalized_mean_absolute_difference(
+    const Frame& current,
+    const RouteSignatureEntry& reference,
+    double scale_ratio) {
+    if (scale_ratio <= 0.0 || !std::isfinite(scale_ratio)) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    const double center_x = (static_cast<double>(current.width) - 1.0) * 0.5;
+    const double center_y = (static_cast<double>(current.height) - 1.0) * 0.5;
+    std::uint64_t sum = 0;
+    std::size_t count = 0;
+    for (int y = 0; y < current.height; ++y) {
+        for (int x = 0; x < current.width; ++x) {
+            const auto reference_x = static_cast<int>(
+                std::lround(center_x + (static_cast<double>(x) - center_x) / scale_ratio));
+            const auto reference_y = static_cast<int>(
+                std::lround(center_y + (static_cast<double>(y) - center_y) / scale_ratio));
+            if (reference_x < 0 || reference_x >= current.width || reference_y < 0 || reference_y >= current.height) {
+                continue;
+            }
+
+            const auto current_index = static_cast<std::size_t>(y) * static_cast<std::size_t>(current.width)
+                + static_cast<std::size_t>(x);
+            const auto reference_index = static_cast<std::size_t>(reference_y) * static_cast<std::size_t>(current.width)
+                + static_cast<std::size_t>(reference_x);
+            const auto delta = static_cast<int>(current.data[current_index]) - static_cast<int>(reference.payload[reference_index]);
+            sum += static_cast<std::uint64_t>(std::abs(delta));
+            ++count;
+        }
+    }
+
+    if (count == 0) {
+        return std::numeric_limits<double>::infinity();
+    }
+    return static_cast<double>(sum) / (static_cast<double>(count) * 255.0);
+}
+
+double best_scaled_normalized_mean_absolute_difference(
+    const Frame& current,
+    const RouteSignatureEntry& reference) {
+    const double candidates[] = {
+        0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75,
+        0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15, 1.20, 1.25,
+        1.30, 1.35, 1.40, 1.50};
+    double best_distance = std::numeric_limits<double>::infinity();
+    for (const auto scale : candidates) {
+        best_distance = std::min(best_distance, scaled_normalized_mean_absolute_difference(current, reference, scale));
+    }
+    return best_distance;
+}
+
 double estimate_direction_error_rad(
     const Frame& current,
     const RouteSignatureEntry& reference,
@@ -121,6 +173,21 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         if (distance < best_distance) {
             best_distance = distance;
             best_index = index;
+        }
+    }
+
+    if (config_.enable_scale_refinement) {
+        const auto refine_begin = best_index > config_.scale_refinement_radius
+            ? std::max(begin, best_index - config_.scale_refinement_radius)
+            : begin;
+        const auto refine_end = std::min(end, best_index + config_.scale_refinement_radius + 1);
+        for (std::size_t index = refine_begin; index < refine_end; ++index) {
+            const auto& entry = route_.entries[index];
+            const auto distance = best_scaled_normalized_mean_absolute_difference(frame, entry);
+            if (distance < best_distance) {
+                best_distance = distance;
+                best_index = index;
+            }
         }
     }
 

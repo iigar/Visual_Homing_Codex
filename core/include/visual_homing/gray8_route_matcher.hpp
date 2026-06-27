@@ -13,6 +13,8 @@ struct Gray8RouteMatcherConfig {
     double minimum_confidence = 0.0;
     int max_direction_shift_px = 0;
     double radians_per_pixel = 0.0;
+    bool enable_scale_refinement = false;
+    std::size_t scale_refinement_radius = 6;
 };
 
 class Gray8RouteMatcher final : public RouteMatcher {

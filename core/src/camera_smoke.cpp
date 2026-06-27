@@ -822,6 +822,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.minimum_confidence = config.minimum_confidence;
     matcher_config.max_direction_shift_px = config.max_direction_shift_px;
     matcher_config.radians_per_pixel = config.radians_per_pixel;
+    matcher_config.enable_scale_refinement = config.visual_scale_diagnostics;
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
@@ -874,7 +875,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false")
             << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false")
             << " visual_scale_diagnostics=" << (config.visual_scale_diagnostics ? "true" : "false")
-            << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m;
+            << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m
+            << " scale_refinement=" << (matcher_config.enable_scale_refinement ? "true" : "false")
+            << " scale_refinement_radius=" << matcher_config.scale_refinement_radius;
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence

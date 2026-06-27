@@ -286,6 +286,13 @@ height. The next useful implementation should be selective higher-resolution or
 ROI refinement around the matched route candidate, while preserving the fast
 `96x72` coarse matcher.
 
+The first implementation step toward refinement is a scale-aware local matcher
+pass. When field visual-scale diagnostics are enabled, `Gray8RouteMatcher` keeps
+the normal fast coarse search, then rechecks a small neighborhood around the
+coarse route index with scaled Gray8 MAD candidates. This is intentionally still
+cheap and uses the existing `96x72` route artifact; it is not a replacement for a
+future route pyramid or real higher-resolution candidate refinement.
+
 ## Milestone Direction
 
 Near-term field work:
