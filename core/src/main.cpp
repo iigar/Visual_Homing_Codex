@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <cstdlib>
 #include <cstdint>
 #include <ctime>
 #include <exception>
@@ -250,6 +251,15 @@ void apply_live_output_runtime_args(vh::LiveRouteMatchingConfig& config, char** 
     config.live_output_max_commands = parse_uint64_arg(argv[first_index + 2], "live_output_max_commands");
     config.live_output_max_duration_ms =
         parse_double_arg(argv[first_index + 3], "live_output_max_seconds") * 1000.0;
+}
+
+void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig& config) {
+    if (const char* enabled = std::getenv("VISUAL_HOMING_SCALE_REFINEMENT")) {
+        config.scale_refinement_enabled = parse_bool_arg(enabled);
+    }
+    if (const char* radius = std::getenv("VISUAL_HOMING_SCALE_REFINEMENT_RADIUS")) {
+        config.scale_refinement_radius = parse_size_arg(radius, "VISUAL_HOMING_SCALE_REFINEMENT_RADIUS");
+    }
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {
@@ -988,6 +998,7 @@ int main(int argc, char** argv) {
             if (endpoint_stop_arg_offset != 0) {
                 config.stop_at_endpoint_progress = parse_bool_arg(argv[endpoint_stop_arg_offset]);
             }
+            apply_live_route_matching_environment_overrides(config);
             const auto result = vh::match_live_camera_route(config, std::cout);
             return result.passed ? 0 : 2;
         } catch (const std::exception& error) {

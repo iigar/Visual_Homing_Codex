@@ -107,6 +107,8 @@ struct LiveRouteMatchingConfig {
     ExternalNavEstimatorConfig external_nav{};
     bool visual_scale_diagnostics = false;
     double visual_scale_reference_altitude_m = 0.0;
+    bool scale_refinement_enabled = false;
+    std::size_t scale_refinement_radius = 1;
     double external_nav_expected_relative_altitude_m = 0.0;
     double external_nav_expected_relative_altitude_tolerance_m = 0.0;
     bool require_dry_run_command_quality = false;

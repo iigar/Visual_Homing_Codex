@@ -38,6 +38,8 @@ external_nav_minimum_match_confidence="${VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATC
 nominal_route_length_m="${VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M:-1.0}"
 visual_scale_diagnostics="${VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS:-0}"
 visual_scale_reference_altitude_m="${VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M:-${expected_altitude_m}}"
+scale_refinement="${VISUAL_HOMING_SCALE_REFINEMENT:-0}"
+scale_refinement_radius="${VISUAL_HOMING_SCALE_REFINEMENT_RADIUS:-1}"
 frames="${VISUAL_HOMING_CAMERA_FRAMES:-150}"
 target_width="${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-64}"
 target_height="${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-48}"
@@ -257,6 +259,8 @@ cat <<EOF
 ### nominal_route_length_m=${nominal_route_length_m}
 ### visual_scale_diagnostics=${visual_scale_diagnostics}
 ### visual_scale_reference_altitude_m=${visual_scale_reference_altitude_m}
+### scale_refinement=${scale_refinement}
+### scale_refinement_radius=${scale_refinement_radius}
 ### requested_handoff_distance_m=${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}
 ### requested_handoff_altitude_m=${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}
 ### preflight_duration_ms=${preflight_duration_ms}
@@ -304,6 +308,8 @@ VISUAL_HOMING_EXTERNAL_NAV_NOMINAL_ROUTE_LENGTH_M="${nominal_route_length_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_MINIMUM_MATCH_CONFIDENCE="${external_nav_minimum_match_confidence}" \
 VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS="${visual_scale_diagnostics}" \
 VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M="${visual_scale_reference_altitude_m}" \
+VISUAL_HOMING_SCALE_REFINEMENT="${scale_refinement}" \
+VISUAL_HOMING_SCALE_REFINEMENT_RADIUS="${scale_refinement_radius}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M="${expected_altitude_m}" \
 VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M="${expected_altitude_tolerance_m}" \
 "${repo_root}/scripts/test-core-pi.sh" || {

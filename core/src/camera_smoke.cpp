@@ -822,7 +822,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.minimum_confidence = config.minimum_confidence;
     matcher_config.max_direction_shift_px = config.max_direction_shift_px;
     matcher_config.radians_per_pixel = config.radians_per_pixel;
-    matcher_config.enable_scale_refinement = config.visual_scale_diagnostics;
+    matcher_config.enable_scale_refinement = config.scale_refinement_enabled;
+    matcher_config.scale_refinement_radius = config.scale_refinement_radius;
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);

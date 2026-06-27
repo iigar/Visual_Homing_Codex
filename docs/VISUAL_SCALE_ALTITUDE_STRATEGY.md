@@ -287,11 +287,19 @@ ROI refinement around the matched route candidate, while preserving the fast
 `96x72` coarse matcher.
 
 The first implementation step toward refinement is a scale-aware local matcher
-pass. When field visual-scale diagnostics are enabled, `Gray8RouteMatcher` keeps
-the normal fast coarse search, then rechecks a small neighborhood around the
-coarse route index with scaled Gray8 MAD candidates. This is intentionally still
-cheap and uses the existing `96x72` route artifact; it is not a replacement for a
-future route pyramid or real higher-resolution candidate refinement.
+pass. `Gray8RouteMatcher` keeps the normal fast coarse search, then can recheck a
+small neighborhood around the coarse route index with scaled Gray8 MAD
+candidates. This is intentionally still cheap and uses the existing `96x72`
+route artifact; it is not a replacement for a future route pyramid or real
+higher-resolution candidate refinement.
+
+Field testing on Pi Zero 2W showed that running this scale-aware refinement on
+every frame with a wide radius is too expensive for the control loop. Visual
+scale diagnostics and matcher refinement are therefore separate controls:
+`VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS=1` keeps the scale histogram/tracker
+log-only path enabled, while `VISUAL_HOMING_SCALE_REFINEMENT=1` explicitly opts
+into the heavier matcher refinement. The default refinement radius is `1` so the
+feature remains a local experiment rather than a second full matcher.
 
 ## Milestone Direction
 
