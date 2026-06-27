@@ -518,6 +518,15 @@ if [[ "${VISUAL_HOMING_MATCH_LIVE_ROUTE:-0}" == "1" ]]; then
         echo "VISUAL_HOMING_MATCH_LIVE_ROUTE=1 currently requires VISUAL_HOMING_USE_ACTIVE_CAMERA_PROFILE=1" >&2
         exit 2
     fi
+    if [[ -n "${camera_target_width}" && -n "${camera_target_height}" ]]; then
+        route_inspect_line="$("${build_dir}/visual_homing_core" --inspect-route "${route_output}" | tee /dev/stderr | grep '^route_inspect ' | tail -1 || true)"
+        route_size="$(printf '%s\n' "${route_inspect_line}" | tr ' ' '\n' | awk -F= '$1 == "size" { print $2; exit }')"
+        expected_size="${camera_target_width}x${camera_target_height}"
+        if [[ -n "${route_size}" && "${route_size}" != "${expected_size}" ]]; then
+            echo "live_route_match_route_target_mismatch route=${route_output} route_size=${route_size} target=${expected_size} hint=set_VISUAL_HOMING_ROUTE_OUTPUT_to_the_route_recorded_with_this_target_or_match_VISUAL_HOMING_CAMERA_TARGET_WIDTH_HEIGHT_to_route_size" >&2
+            exit 2
+        fi
+    fi
     "${build_dir}/visual_homing_core" --match-live-route-active-profile \
         "${camera_profile_dir}" \
         "${active_camera_profile}" \
