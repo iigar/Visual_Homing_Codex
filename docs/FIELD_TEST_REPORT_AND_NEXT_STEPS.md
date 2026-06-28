@@ -2,6 +2,8 @@
 
 This document summarizes the Visual Homing field tests completed so far, the conclusions we can safely draw from them, and the recommended commands for the next field session.
 
+Ukrainian version: [`FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md).
+
 ## Current Status
 
 The current proven baseline is a hand-carried Visual Homing return dry-run using:

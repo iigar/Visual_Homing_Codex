@@ -2,8 +2,10 @@
 
 This plan defines the next project stage: prove short outdoor Visual Homing route recording and return matching without live command output.
 
-For the latest consolidated field-test report, conclusions, and next-session command checklist, see
-[`FIELD_TEST_REPORT_AND_NEXT_STEPS.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS.md).
+For the latest consolidated field-test report, conclusions, and next-session command checklist, see:
+
+- English: [`FIELD_TEST_REPORT_AND_NEXT_STEPS.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS.md)
+- Ukrainian: [`FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md)
 
 ## Current Inventory
 
