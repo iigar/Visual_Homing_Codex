@@ -42,6 +42,7 @@ scale_refinement="${VISUAL_HOMING_SCALE_REFINEMENT:-0}"
 scale_refinement_radius="${VISUAL_HOMING_SCALE_REFINEMENT_RADIUS:-1}"
 top_k_diagnostics="${VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS:-0}"
 top_k="${VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K:-5}"
+zone_probes="${VISUAL_HOMING_LIVE_ROUTE_MATCH_ZONE_PROBES:-0}"
 frames="${VISUAL_HOMING_CAMERA_FRAMES:-150}"
 target_width="${VISUAL_HOMING_CAMERA_TARGET_WIDTH:-64}"
 target_height="${VISUAL_HOMING_CAMERA_TARGET_HEIGHT:-48}"
@@ -265,6 +266,7 @@ cat <<EOF
 ### scale_refinement_radius=${scale_refinement_radius}
 ### top_k_diagnostics=${top_k_diagnostics}
 ### top_k=${top_k}
+### zone_probes=${zone_probes}
 ### requested_handoff_distance_m=${VISUAL_HOMING_HANDOFF_REQUESTED_DISTANCE_M:-}
 ### requested_handoff_altitude_m=${VISUAL_HOMING_HANDOFF_REQUESTED_ALTITUDE_M:-}
 ### preflight_duration_ms=${preflight_duration_ms}

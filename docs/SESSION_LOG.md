@@ -3,6 +3,7 @@
 ## 2026-06-30
 
 - Added log-only top-k route-match diagnostics as the first ORB/refinement preparation step. `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS=1` with `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K=<n>` now keeps the normal `Gray8RouteMatcher` result unchanged while logging the best candidate list as `route_index:progress:confidence` plus first-vs-second confidence gap. This gives field evidence for endpoint/mid-route aliasing and lets a future ORB or higher-detail refinement check only the small candidate set instead of brute-forcing the whole route on Pi Zero 2W.
+- Added log-only progress-zone probes behind `VISUAL_HOMING_LIVE_ROUTE_MATCH_ZONE_PROBES=1`. Live route frame logs now include the best Gray8 candidate in `start`, `early`, `mid`, `late`, and `end` route zones plus `end_zone_gap_vs_best`; summaries report `zone_probe_frames` and `end_zone_gap_min_avg`. This directly measures whether the endpoint zone is only slightly worse than the selected alias or completely absent from the coarse candidate set.
 
 ## 2026-06-27
 

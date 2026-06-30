@@ -111,6 +111,7 @@ struct LiveRouteMatchingConfig {
     std::size_t scale_refinement_radius = 1;
     bool top_match_diagnostics = false;
     std::size_t top_match_count = 5;
+    bool zone_probe_diagnostics = false;
     double external_nav_expected_relative_altitude_m = 0.0;
     double external_nav_expected_relative_altitude_tolerance_m = 0.0;
     bool require_dry_run_command_quality = false;
@@ -147,6 +148,9 @@ struct LiveRouteMatchingResult {
     std::uint64_t top_match_diagnostic_frames = 0;
     double top_match_gap_min = 0.0;
     double top_match_gap_avg = 0.0;
+    std::uint64_t zone_probe_diagnostic_frames = 0;
+    double end_zone_gap_min = 0.0;
+    double end_zone_gap_avg = 0.0;
     double first_progress = 0.0;
     double last_progress = 0.0;
     double min_progress_seen = 0.0;

@@ -22,4 +22,12 @@ struct RouteMatchCandidate {
     double confidence = 0.0;
 };
 
+struct RouteMatchZoneCandidate {
+    const char* name = "";
+    double start_progress = 0.0;
+    double end_progress = 0.0;
+    RouteMatchCandidate candidate{};
+    bool valid = false;
+};
+
 } // namespace vh

@@ -269,6 +269,9 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K")) {
         config.top_match_count = parse_size_arg(count, "VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K");
     }
+    if (const char* enabled = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_ZONE_PROBES")) {
+        config.zone_probe_diagnostics = parse_bool_arg(enabled);
+    }
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {

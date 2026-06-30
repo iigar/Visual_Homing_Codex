@@ -25,6 +25,7 @@ public:
 
     RouteMatch match(const Frame& frame) override;
     const std::vector<RouteMatchCandidate>& recent_top_candidates() const noexcept;
+    std::vector<RouteMatchZoneCandidate> probe_progress_zones(const Frame& frame) const;
 
 private:
     RouteSignatureFile route_;

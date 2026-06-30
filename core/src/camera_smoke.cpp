@@ -409,6 +409,40 @@ std::string format_top_match_candidates(const std::vector<RouteMatchCandidate>& 
     return output.str();
 }
 
+std::string format_zone_probe_candidates(const std::vector<RouteMatchZoneCandidate>& zones) {
+    if (zones.empty()) {
+        return "none";
+    }
+
+    std::ostringstream output;
+    for (std::size_t index = 0; index < zones.size(); ++index) {
+        if (index != 0) {
+            output << ",";
+        }
+        const auto& zone = zones[index];
+        output << zone.name << "=";
+        if (zone.valid) {
+            output << zone.candidate.route_index
+                   << ":" << zone.candidate.progress
+                   << ":" << zone.candidate.confidence;
+        } else {
+            output << "none";
+        }
+    }
+    return output.str();
+}
+
+std::optional<RouteMatchCandidate> find_zone_candidate(
+    const std::vector<RouteMatchZoneCandidate>& zones,
+    const std::string& name) {
+    for (const auto& zone : zones) {
+        if (zone.valid && std::string(zone.name) == name) {
+            return zone.candidate;
+        }
+    }
+    return std::nullopt;
+}
+
 } // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
@@ -901,7 +935,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " scale_refinement=" << (matcher_config.enable_scale_refinement ? "true" : "false")
             << " scale_refinement_radius=" << matcher_config.scale_refinement_radius
             << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
-            << " top_match_count=" << matcher_config.top_candidate_count;
+            << " top_match_count=" << matcher_config.top_candidate_count
+            << " zone_probe_diagnostics=" << bool_word(config.zone_probe_diagnostics);
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
@@ -1121,6 +1156,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     double tracked_visual_scale_ratio_sum = 0.0;
     double external_nav_relative_altitude_sum_m = 0.0;
     double top_match_gap_sum = 0.0;
+    double end_zone_gap_sum = 0.0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
@@ -1129,6 +1165,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto processed = preprocessor.process(*frame);
             const auto match = matcher.match(processed);
             const auto& top_candidates = matcher.recent_top_candidates();
+            const auto zone_candidates = config.zone_probe_diagnostics
+                ? matcher.probe_progress_zones(processed)
+                : std::vector<RouteMatchZoneCandidate>{};
             std::optional<double> top_match_gap;
             if (config.top_match_diagnostics && top_candidates.size() >= 2) {
                 top_match_gap = top_candidates[0].confidence - top_candidates[1].confidence;
@@ -1137,6 +1176,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 result.top_match_gap_min = result.top_match_diagnostic_frames == 1
                     ? *top_match_gap
                     : std::min(result.top_match_gap_min, *top_match_gap);
+            }
+            std::optional<double> end_zone_gap;
+            if (config.zone_probe_diagnostics) {
+                if (const auto end_candidate = find_zone_candidate(zone_candidates, "end")) {
+                    end_zone_gap = match.confidence - end_candidate->confidence;
+                    ++result.zone_probe_diagnostic_frames;
+                    end_zone_gap_sum += *end_zone_gap;
+                    result.end_zone_gap_min = result.zone_probe_diagnostic_frames == 1
+                        ? *end_zone_gap
+                        : std::min(result.end_zone_gap_min, *end_zone_gap);
+                }
             }
             const auto processing_finished = now();
             const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
@@ -1391,6 +1441,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 metrics << " top_matches=" << format_top_match_candidates(top_candidates)
                         << " top_match_gap=" << (top_match_gap ? *top_match_gap : 0.0);
             }
+            if (config.zone_probe_diagnostics) {
+                metrics << " zone_probes=" << format_zone_probe_candidates(zone_candidates)
+                        << " end_zone_gap_vs_best=" << (end_zone_gap ? *end_zone_gap : 0.0);
+            }
             metrics << "\n";
 
             if (config.stop_at_endpoint_progress
@@ -1441,6 +1495,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         : 0.0;
     result.top_match_gap_avg = result.top_match_diagnostic_frames > 0
         ? top_match_gap_sum / static_cast<double>(result.top_match_diagnostic_frames)
+        : 0.0;
+    result.end_zone_gap_avg = result.zone_probe_diagnostic_frames > 0
+        ? end_zone_gap_sum / static_cast<double>(result.zone_probe_diagnostic_frames)
         : 0.0;
     if (config.expected_progress == "forward") {
         result.directional_progress_passed =
@@ -1659,6 +1716,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " top_match_frames=" << result.top_match_diagnostic_frames
             << " top_match_gap_min_avg=" << result.top_match_gap_min
             << "/" << result.top_match_gap_avg
+            << " zone_probe_diagnostics=" << bool_word(config.zone_probe_diagnostics)
+            << " zone_probe_frames=" << result.zone_probe_diagnostic_frames
+            << " end_zone_gap_min_avg=" << result.end_zone_gap_min
+            << "/" << result.end_zone_gap_avg
             << " first_progress=" << result.first_progress
             << " last_progress=" << result.last_progress
             << " min_progress_seen=" << result.min_progress_seen
@@ -1783,6 +1844,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " top_match_frames=" << result.top_match_diagnostic_frames
             << " top_match_gap_min_avg=" << result.top_match_gap_min
             << "/" << result.top_match_gap_avg
+            << " zone_probe_diagnostics=" << bool_word(config.zone_probe_diagnostics)
+            << " zone_probe_frames=" << result.zone_probe_diagnostic_frames
+            << " end_zone_gap_min_avg=" << result.end_zone_gap_min
+            << "/" << result.end_zone_gap_avg
             << " telemetry_health=" << bool_word(result.live_telemetry_health_passed)
             << " telemetry_dropped=" << result.telemetry_bytes_dropped
             << " dry_run_quality=" << bool_word(result.dry_run_command_quality_passed)

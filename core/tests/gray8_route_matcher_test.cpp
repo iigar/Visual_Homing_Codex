@@ -1,6 +1,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -98,6 +99,29 @@ int main() {
     assert(window_candidates[0].route_index == 2);
     assert(window_candidates[1].route_index == 1);
     assert(window_candidates[2].route_index == 0);
+
+    vh::RouteSignatureFile zone_route;
+    zone_route.entries.push_back(entry(0, {0, 0, 0, 0}));
+    zone_route.entries.push_back(entry(1, {20, 20, 20, 20}));
+    zone_route.entries.push_back(entry(2, {40, 40, 40, 40}));
+    zone_route.entries.push_back(entry(3, {80, 80, 80, 80}));
+    zone_route.entries.push_back(entry(4, {120, 120, 120, 120}));
+    zone_route.entries.push_back(entry(5, {160, 160, 160, 160}));
+    zone_route.entries.push_back(entry(6, {200, 200, 200, 200}));
+    zone_route.entries.push_back(entry(7, {240, 240, 240, 240}));
+    vh::Gray8RouteMatcher zone_matcher(zone_route, {.window_radius = 0, .minimum_confidence = 0.0});
+    const auto zones = zone_matcher.probe_progress_zones(frame(220, {205, 205, 205, 205}));
+    assert(zones.size() == 5);
+    assert(std::string(zones[0].name) == "start");
+    assert(std::string(zones[2].name) == "mid");
+    assert(std::string(zones[4].name) == "end");
+    assert(zones[0].valid);
+    assert(zones[2].valid);
+    assert(zones[4].valid);
+    assert(zones[0].candidate.route_index == 1);
+    assert(zones[2].candidate.route_index == 4);
+    assert(zones[4].candidate.route_index == 6);
+    assert(zones[4].candidate.confidence > zones[2].candidate.confidence);
 
     vh::Gray8RouteMatcher strict(route, {.window_radius = 0, .minimum_confidence = 0.9});
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));

@@ -161,6 +161,18 @@ void insert_top_candidate(std::vector<RouteMatchCandidate>& candidates,
     }
 }
 
+RouteMatchCandidate candidate_from_distance(const RouteSignatureFile& route,
+                                            std::size_t index,
+                                            double distance) {
+    return RouteMatchCandidate{
+        index,
+        route.entries.size() > 1
+            ? static_cast<double>(index) / static_cast<double>(route.entries.size() - 1)
+            : 1.0,
+        std::clamp(1.0 - distance, 0.0, 1.0),
+    };
+}
+
 } // namespace
 
 Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcherConfig config)
@@ -194,13 +206,7 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         insert_top_candidate(
             recent_top_candidates_,
             config_.top_candidate_count,
-            RouteMatchCandidate{
-                index,
-                route_.entries.size() > 1
-                    ? static_cast<double>(index) / static_cast<double>(route_.entries.size() - 1)
-                    : 1.0,
-                std::clamp(1.0 - distance, 0.0, 1.0),
-            });
+            candidate_from_distance(route_, index, distance));
         if (distance < best_distance) {
             best_distance = distance;
             best_index = index;
@@ -246,6 +252,39 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
 
 const std::vector<RouteMatchCandidate>& Gray8RouteMatcher::recent_top_candidates() const noexcept {
     return recent_top_candidates_;
+}
+
+std::vector<RouteMatchZoneCandidate> Gray8RouteMatcher::probe_progress_zones(const Frame& frame) const {
+    std::vector<RouteMatchZoneCandidate> zones{
+        {"start", 0.0, 0.20, {}, false},
+        {"early", 0.20, 0.40, {}, false},
+        {"mid", 0.40, 0.60, {}, false},
+        {"late", 0.60, 0.80, {}, false},
+        {"end", 0.80, 1.0, {}, false},
+    };
+
+    std::vector<double> best_distances(zones.size(), std::numeric_limits<double>::infinity());
+    for (std::size_t index = 0; index < route_.entries.size(); ++index) {
+        const auto& entry = route_.entries[index];
+        validate_frame_against_entry(frame, entry);
+        const auto progress = route_.entries.size() > 1
+            ? static_cast<double>(index) / static_cast<double>(route_.entries.size() - 1)
+            : 1.0;
+        const auto distance = normalized_mean_absolute_difference(frame.data, entry.payload);
+        for (std::size_t zone_index = 0; zone_index < zones.size(); ++zone_index) {
+            const auto& zone = zones[zone_index];
+            const bool in_zone = zone_index + 1 == zones.size()
+                ? (progress >= zone.start_progress && progress <= zone.end_progress)
+                : (progress >= zone.start_progress && progress < zone.end_progress);
+            if (in_zone && distance < best_distances[zone_index]) {
+                best_distances[zone_index] = distance;
+                zones[zone_index].candidate = candidate_from_distance(route_, index, distance);
+                zones[zone_index].valid = true;
+            }
+        }
+    }
+
+    return zones;
 }
 
 } // namespace vh
