@@ -392,6 +392,23 @@ const char* bool_word(const bool value) {
     return value ? "true" : "false";
 }
 
+std::string format_top_match_candidates(const std::vector<RouteMatchCandidate>& candidates) {
+    if (candidates.empty()) {
+        return "none";
+    }
+
+    std::ostringstream output;
+    for (std::size_t index = 0; index < candidates.size(); ++index) {
+        if (index != 0) {
+            output << ",";
+        }
+        output << candidates[index].route_index
+               << ":" << candidates[index].progress
+               << ":" << candidates[index].confidence;
+    }
+    return output.str();
+}
+
 } // namespace
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics) {
@@ -814,6 +831,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         }
 #endif
     }
+    if (config.top_match_diagnostics && config.top_match_count == 0) {
+        throw std::invalid_argument("Live route matching top_match_count must be positive when top diagnostics are enabled");
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     const auto route_summary = summarize_route_signature(route);
@@ -824,6 +844,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.radians_per_pixel = config.radians_per_pixel;
     matcher_config.enable_scale_refinement = config.scale_refinement_enabled;
     matcher_config.scale_refinement_radius = config.scale_refinement_radius;
+    matcher_config.top_candidate_count = config.top_match_diagnostics ? config.top_match_count : 0;
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
@@ -878,7 +899,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " visual_scale_diagnostics=" << (config.visual_scale_diagnostics ? "true" : "false")
             << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m
             << " scale_refinement=" << (matcher_config.enable_scale_refinement ? "true" : "false")
-            << " scale_refinement_radius=" << matcher_config.scale_refinement_radius;
+            << " scale_refinement_radius=" << matcher_config.scale_refinement_radius
+            << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
+            << " top_match_count=" << matcher_config.top_candidate_count;
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
@@ -1097,6 +1120,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<double> last_tracked_visual_scale_ratio;
     double tracked_visual_scale_ratio_sum = 0.0;
     double external_nav_relative_altitude_sum_m = 0.0;
+    double top_match_gap_sum = 0.0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
     while (result.frames_captured < config.frames_to_capture) {
@@ -1104,6 +1128,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto processing_started = now();
             const auto processed = preprocessor.process(*frame);
             const auto match = matcher.match(processed);
+            const auto& top_candidates = matcher.recent_top_candidates();
+            std::optional<double> top_match_gap;
+            if (config.top_match_diagnostics && top_candidates.size() >= 2) {
+                top_match_gap = top_candidates[0].confidence - top_candidates[1].confidence;
+                ++result.top_match_diagnostic_frames;
+                top_match_gap_sum += *top_match_gap;
+                result.top_match_gap_min = result.top_match_diagnostic_frames == 1
+                    ? *top_match_gap
+                    : std::min(result.top_match_gap_min, *top_match_gap);
+            }
             const auto processing_finished = now();
             const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
             health.set_route_match_confidence(match.confidence);
@@ -1353,6 +1387,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         << " telemetry_frames_seen=" << result.telemetry_frames_seen
                         << " telemetry_heartbeat_messages=" << result.telemetry_heartbeat_messages;
             }
+            if (config.top_match_diagnostics) {
+                metrics << " top_matches=" << format_top_match_candidates(top_candidates)
+                        << " top_match_gap=" << (top_match_gap ? *top_match_gap : 0.0);
+            }
             metrics << "\n";
 
             if (config.stop_at_endpoint_progress
@@ -1400,6 +1438,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         : 0.0;
     result.average_confidence = result.frames_captured > 0
         ? confidence_sum / static_cast<double>(result.frames_captured)
+        : 0.0;
+    result.top_match_gap_avg = result.top_match_diagnostic_frames > 0
+        ? top_match_gap_sum / static_cast<double>(result.top_match_diagnostic_frames)
         : 0.0;
     if (config.expected_progress == "forward") {
         result.directional_progress_passed =
@@ -1614,6 +1655,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " empty_polls=" << result.empty_polls
             << " minimum_confidence_seen=" << result.minimum_confidence_seen
             << " average_confidence=" << result.average_confidence
+            << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
+            << " top_match_frames=" << result.top_match_diagnostic_frames
+            << " top_match_gap_min_avg=" << result.top_match_gap_min
+            << "/" << result.top_match_gap_avg
             << " first_progress=" << result.first_progress
             << " last_progress=" << result.last_progress
             << " min_progress_seen=" << result.min_progress_seen
@@ -1734,6 +1779,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_stop=" << bool_word(result.endpoint_stop_triggered)
             << " stop_reason=" << result.stop_reason
             << " confidence_min_avg=" << result.minimum_confidence_seen << "/" << result.average_confidence
+            << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
+            << " top_match_frames=" << result.top_match_diagnostic_frames
+            << " top_match_gap_min_avg=" << result.top_match_gap_min
+            << "/" << result.top_match_gap_avg
             << " telemetry_health=" << bool_word(result.live_telemetry_health_passed)
             << " telemetry_dropped=" << result.telemetry_bytes_dropped
             << " dry_run_quality=" << bool_word(result.dry_run_command_quality_passed)

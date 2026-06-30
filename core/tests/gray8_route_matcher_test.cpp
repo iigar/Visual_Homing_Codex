@@ -60,6 +60,21 @@ int main() {
     assert(near_third.progress > 0.66);
     assert(near_third.progress < 0.67);
 
+    vh::Gray8RouteMatcher top_k_matcher(route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .top_candidate_count = 3,
+    });
+    const auto top_k_match = top_k_matcher.match(frame(150, {42, 42, 42, 42}));
+    assert(top_k_match.route_index == 1);
+    const auto& top_candidates = top_k_matcher.recent_top_candidates();
+    assert(top_candidates.size() == 3);
+    assert(top_candidates[0].route_index == 1);
+    assert(top_candidates[1].route_index == 0);
+    assert(top_candidates[2].route_index == 2);
+    assert(top_candidates[0].confidence > top_candidates[1].confidence);
+    assert(top_candidates[1].confidence > top_candidates[2].confidence);
+
     vh::Gray8RouteMatcher windowed(route, {.window_radius = 1, .minimum_confidence = 0.0});
     const auto first = windowed.match(frame(200, {40, 40, 40, 40}));
     assert(first.route_index == 1);
@@ -68,6 +83,21 @@ int main() {
     assert(constrained.valid);
     assert(constrained.route_index == 2);
     assert(constrained.confidence < 0.6);
+
+    vh::Gray8RouteMatcher windowed_top_k(route, {
+        .window_radius = 1,
+        .minimum_confidence = 0.0,
+        .top_candidate_count = 3,
+    });
+    const auto window_anchor = windowed_top_k.match(frame(210, {40, 40, 40, 40}));
+    assert(window_anchor.route_index == 1);
+    const auto window_limited = windowed_top_k.match(frame(211, {240, 240, 240, 240}));
+    assert(window_limited.route_index == 2);
+    const auto& window_candidates = windowed_top_k.recent_top_candidates();
+    assert(window_candidates.size() == 3);
+    assert(window_candidates[0].route_index == 2);
+    assert(window_candidates[1].route_index == 1);
+    assert(window_candidates[2].route_index == 0);
 
     vh::Gray8RouteMatcher strict(route, {.window_radius = 0, .minimum_confidence = 0.9});
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));

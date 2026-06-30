@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <vector>
 
 #include "visual_homing/interfaces.hpp"
 #include "visual_homing/route_signature.hpp"
@@ -15,6 +16,7 @@ struct Gray8RouteMatcherConfig {
     double radians_per_pixel = 0.0;
     bool enable_scale_refinement = false;
     std::size_t scale_refinement_radius = 1;
+    std::size_t top_candidate_count = 0;
 };
 
 class Gray8RouteMatcher final : public RouteMatcher {
@@ -22,11 +24,13 @@ public:
     Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcherConfig config);
 
     RouteMatch match(const Frame& frame) override;
+    const std::vector<RouteMatchCandidate>& recent_top_candidates() const noexcept;
 
 private:
     RouteSignatureFile route_;
     Gray8RouteMatcherConfig config_;
     std::optional<std::size_t> last_index_;
+    std::vector<RouteMatchCandidate> recent_top_candidates_;
 };
 
 } // namespace vh

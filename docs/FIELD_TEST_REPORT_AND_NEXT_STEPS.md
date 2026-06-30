@@ -88,6 +88,8 @@ No Lucas-Kanade, Farneback, KLT, ORB-flow, or dense optical-flow method is curre
 - temporal tracked progress;
 - optional visual-scale diagnostics.
 
+After the field aliasing runs, log-only top-k candidate diagnostics were added. This is not ORB yet, but it is the preparation layer for ORB: `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS=1` reports the best Gray8 candidates as `route_index:progress:confidence` plus `top_match_gap`. Future ORB/refinement should check these top-k candidates instead of brute-forcing the whole route.
+
 MAVLink optical-flow messages can be inspected if present, but they are not currently used by Visual Homing.
 
 ## Existing Commands Used So Far

@@ -88,6 +88,8 @@ Visual scale diagnostics рухаються в очікуваному загал
 - temporal tracked progress;
 - optional visual-scale diagnostics.
 
+Після польових aliasing-прогонів додано log-only top-k candidate diagnostics. Це ще не ORB, але це потрібний шар перед ORB: `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS=1` показує кілька найкращих Gray8-кандидатів у форматі `route_index:progress:confidence` і `top_match_gap`. Майбутній ORB/refinement має перевіряти саме ці top-k кандидати, а не весь маршрут brute-force.
+
 MAVLink optical-flow повідомлення можна інспектувати, якщо вони присутні, але Visual Homing їх зараз не використовує.
 
 ## Команди, Які Вже Використовувались

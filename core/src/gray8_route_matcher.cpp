@@ -5,6 +5,7 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace vh {
 namespace {
@@ -141,6 +142,25 @@ void validate_frame_against_entry(const Frame& frame, const RouteSignatureEntry&
     }
 }
 
+void insert_top_candidate(std::vector<RouteMatchCandidate>& candidates,
+                          std::size_t max_candidates,
+                          RouteMatchCandidate candidate) {
+    if (max_candidates == 0) {
+        return;
+    }
+    const auto position = std::lower_bound(
+        candidates.begin(),
+        candidates.end(),
+        candidate,
+        [](const RouteMatchCandidate& lhs, const RouteMatchCandidate& rhs) {
+            return lhs.confidence > rhs.confidence;
+        });
+    candidates.insert(position, candidate);
+    if (candidates.size() > max_candidates) {
+        candidates.pop_back();
+    }
+}
+
 } // namespace
 
 Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcherConfig config)
@@ -157,6 +177,7 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
 }
 
 RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
+    recent_top_candidates_.clear();
     std::size_t begin = 0;
     std::size_t end = route_.entries.size();
     if (last_index_.has_value() && config_.window_radius > 0) {
@@ -170,6 +191,16 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         const auto& entry = route_.entries[index];
         validate_frame_against_entry(frame, entry);
         const auto distance = normalized_mean_absolute_difference(frame.data, entry.payload);
+        insert_top_candidate(
+            recent_top_candidates_,
+            config_.top_candidate_count,
+            RouteMatchCandidate{
+                index,
+                route_.entries.size() > 1
+                    ? static_cast<double>(index) / static_cast<double>(route_.entries.size() - 1)
+                    : 1.0,
+                std::clamp(1.0 - distance, 0.0, 1.0),
+            });
         if (distance < best_distance) {
             best_distance = distance;
             best_index = index;
@@ -211,6 +242,10 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
     match.confidence = confidence;
     match.valid = valid;
     return match;
+}
+
+const std::vector<RouteMatchCandidate>& Gray8RouteMatcher::recent_top_candidates() const noexcept {
+    return recent_top_candidates_;
 }
 
 } // namespace vh

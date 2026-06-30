@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-06-30
+
+- Added log-only top-k route-match diagnostics as the first ORB/refinement preparation step. `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS=1` with `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K=<n>` now keeps the normal `Gray8RouteMatcher` result unchanged while logging the best candidate list as `route_index:progress:confidence` plus first-vs-second confidence gap. This gives field evidence for endpoint/mid-route aliasing and lets a future ORB or higher-detail refinement check only the small candidate set instead of brute-forcing the whole route on Pi Zero 2W.
+
 ## 2026-06-27
 
 - Captured a successful high-handheld reverse dry-run after splitting visual-scale diagnostics from matcher refinement. Route `field-route-20260624T210459Z.vhrs` at `96x72` completed `150/150` frames at about `15.02 fps` with `150/150` valid matches, `dry_run_valid=150/150`, confidence min/avg `0.866995/0.915743`, endpoint/progress gates passed, tracked reverse progress coherent (`tracked_progress=0.812081..0.0337913`, `tracked_reverse_progress_monotonic=true`), and `external_nav_operator_readiness=ready`. Altitude was stable and inside the custom window (`1.497/1.52778/1.551 m` observed against `1.4 +/- 0.45 m`). Visual scale remained diagnostics-only (`visual_scale_required=false`) with a broad/saturated histogram and tracked scale `0.4..0.95`, confirming it is useful evidence but not yet a readiness gate.
