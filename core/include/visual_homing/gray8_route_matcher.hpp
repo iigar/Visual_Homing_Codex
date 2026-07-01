@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
 
@@ -26,12 +27,14 @@ public:
     RouteMatch match(const Frame& frame) override;
     const std::vector<RouteMatchCandidate>& recent_top_candidates() const noexcept;
     std::vector<RouteMatchZoneCandidate> probe_progress_zones(const Frame& frame) const;
+    RouteMatchEdgeDiagnostics probe_edge_diagnostics(const Frame& frame, std::size_t top_candidate_count) const;
 
 private:
     RouteSignatureFile route_;
     Gray8RouteMatcherConfig config_;
     std::optional<std::size_t> last_index_;
     std::vector<RouteMatchCandidate> recent_top_candidates_;
+    std::vector<std::vector<std::uint8_t>> route_edge_payloads_;
 };
 
 } // namespace vh

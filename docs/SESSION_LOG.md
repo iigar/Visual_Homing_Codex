@@ -1,5 +1,9 @@
 # Session Log
 
+## 2026-07-01
+
+- Added log-only edge/gradient route-match diagnostics behind `VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_DIAGNOSTICS=1` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K=<n>`. The matcher now caches a cheap Gray8 edge payload for each route entry, and live frame logs can report `edge_top_matches`, `edge_top_match_gap`, `edge_zone_probes`, and `edge_end_zone_gap_vs_best` without changing the normal Gray8/MAD match, readiness gates, dry-run commands, or live-output safety behavior. This is the next diagnostic after outdoor `128x96` runs showed good route recording quality but persistent start/end and mid-route aliasing in single-frame Gray8 scores.
+
 ## 2026-06-30
 
 - Added log-only top-k route-match diagnostics as the first ORB/refinement preparation step. `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K_DIAGNOSTICS=1` with `VISUAL_HOMING_LIVE_ROUTE_MATCH_TOP_K=<n>` now keeps the normal `Gray8RouteMatcher` result unchanged while logging the best candidate list as `route_index:progress:confidence` plus first-vs-second confidence gap. This gives field evidence for endpoint/mid-route aliasing and lets a future ORB or higher-detail refinement check only the small candidate set instead of brute-forcing the whole route on Pi Zero 2W.

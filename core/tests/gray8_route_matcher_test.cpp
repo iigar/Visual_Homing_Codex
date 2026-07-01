@@ -123,6 +123,20 @@ int main() {
     assert(zones[4].candidate.route_index == 6);
     assert(zones[4].candidate.confidence > zones[2].candidate.confidence);
 
+    vh::RouteSignatureFile edge_route;
+    edge_route.entries.push_back(entry(0, {0, 0, 0, 0}));
+    edge_route.entries.push_back(entry(1, {0, 255, 0, 255}));
+    edge_route.entries.push_back(entry(2, {0, 0, 255, 255}));
+    edge_route.entries.push_back(entry(3, {255, 0, 255, 0}));
+    edge_route.entries.push_back(entry(4, {255, 255, 0, 0}));
+    vh::Gray8RouteMatcher edge_matcher(edge_route, {.window_radius = 0, .minimum_confidence = 0.0});
+    const auto edge_diagnostics = edge_matcher.probe_edge_diagnostics(frame(230, {5, 250, 5, 250}), 3);
+    assert(edge_diagnostics.top_candidates.size() == 3);
+    assert(edge_diagnostics.zone_candidates.size() == 5);
+    assert(edge_diagnostics.top_candidates[0].route_index == 1 || edge_diagnostics.top_candidates[0].route_index == 3);
+    assert(edge_diagnostics.top_candidates[0].confidence > edge_diagnostics.top_candidates[2].confidence);
+    assert(edge_diagnostics.zone_candidates[0].valid);
+
     vh::Gray8RouteMatcher strict(route, {.window_radius = 0, .minimum_confidence = 0.9});
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));
     assert(!poor.valid);

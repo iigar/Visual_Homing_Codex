@@ -30,4 +30,9 @@ struct RouteMatchZoneCandidate {
     bool valid = false;
 };
 
+struct RouteMatchEdgeDiagnostics {
+    std::vector<RouteMatchCandidate> top_candidates;
+    std::vector<RouteMatchZoneCandidate> zone_candidates;
+};
+
 } // namespace vh

@@ -24,6 +24,31 @@ double normalized_mean_absolute_difference(const std::vector<std::uint8_t>& curr
     return static_cast<double>(sum) / (static_cast<double>(current.size()) * 255.0);
 }
 
+std::vector<std::uint8_t> gray8_edge_payload(int width, int height, const std::vector<std::uint8_t>& data) {
+    const auto expected_size = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+    if (width <= 0 || height <= 0 || data.size() != expected_size) {
+        throw std::runtime_error("Gray8 edge diagnostics received malformed payload");
+    }
+
+    std::vector<std::uint8_t> edges(expected_size, 0);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const auto index = static_cast<std::size_t>(y) * static_cast<std::size_t>(width)
+                + static_cast<std::size_t>(x);
+            const int center = static_cast<int>(data[index]);
+            int gradient = 0;
+            if (x + 1 < width) {
+                gradient += std::abs(static_cast<int>(data[index + 1]) - center);
+            }
+            if (y + 1 < height) {
+                gradient += std::abs(static_cast<int>(data[index + static_cast<std::size_t>(width)]) - center);
+            }
+            edges[index] = static_cast<std::uint8_t>(std::min(gradient, 255));
+        }
+    }
+    return edges;
+}
+
 double shifted_normalized_mean_absolute_difference(
     const Frame& current,
     const RouteSignatureEntry& reference,
@@ -186,6 +211,14 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
     if (config_.radians_per_pixel < 0.0) {
         throw std::invalid_argument("Gray8RouteMatcher radians_per_pixel must be non-negative");
     }
+
+    route_edge_payloads_.reserve(route_.entries.size());
+    for (const auto& entry : route_.entries) {
+        if (entry.format != PixelFormat::Gray8) {
+            throw std::runtime_error("Gray8 route matcher only accepts Gray8 route entries");
+        }
+        route_edge_payloads_.push_back(gray8_edge_payload(entry.width, entry.height, entry.payload));
+    }
 }
 
 RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
@@ -285,6 +318,45 @@ std::vector<RouteMatchZoneCandidate> Gray8RouteMatcher::probe_progress_zones(con
     }
 
     return zones;
+}
+
+RouteMatchEdgeDiagnostics Gray8RouteMatcher::probe_edge_diagnostics(
+    const Frame& frame,
+    std::size_t top_candidate_count) const {
+    RouteMatchEdgeDiagnostics diagnostics;
+    diagnostics.zone_candidates = {
+        {"start", 0.0, 0.20, {}, false},
+        {"early", 0.20, 0.40, {}, false},
+        {"mid", 0.40, 0.60, {}, false},
+        {"late", 0.60, 0.80, {}, false},
+        {"end", 0.80, 1.0, {}, false},
+    };
+
+    const auto current_edges = gray8_edge_payload(frame.width, frame.height, frame.data);
+    std::vector<double> best_distances(
+        diagnostics.zone_candidates.size(),
+        std::numeric_limits<double>::infinity());
+    for (std::size_t index = 0; index < route_.entries.size(); ++index) {
+        const auto& entry = route_.entries[index];
+        validate_frame_against_entry(frame, entry);
+        const auto distance = normalized_mean_absolute_difference(current_edges, route_edge_payloads_[index]);
+        const auto candidate = candidate_from_distance(route_, index, distance);
+        insert_top_candidate(diagnostics.top_candidates, top_candidate_count, candidate);
+        const auto progress = candidate.progress;
+        for (std::size_t zone_index = 0; zone_index < diagnostics.zone_candidates.size(); ++zone_index) {
+            const auto& zone = diagnostics.zone_candidates[zone_index];
+            const bool in_zone = zone_index + 1 == diagnostics.zone_candidates.size()
+                ? (progress >= zone.start_progress && progress <= zone.end_progress)
+                : (progress >= zone.start_progress && progress < zone.end_progress);
+            if (in_zone && distance < best_distances[zone_index]) {
+                best_distances[zone_index] = distance;
+                diagnostics.zone_candidates[zone_index].candidate = candidate;
+                diagnostics.zone_candidates[zone_index].valid = true;
+            }
+        }
+    }
+
+    return diagnostics;
 }
 
 } // namespace vh
