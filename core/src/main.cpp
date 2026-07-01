@@ -278,6 +278,21 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K")) {
         config.edge_match_top_count = parse_size_arg(count, "VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K");
     }
+    const char* initial_progress_min = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN");
+    const char* initial_progress_max = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MAX");
+    if (initial_progress_min != nullptr || initial_progress_max != nullptr) {
+        if (initial_progress_min == nullptr || initial_progress_max == nullptr) {
+            throw std::invalid_argument(
+                "VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN/MAX must be provided together");
+        }
+        config.initial_progress_window_enabled = true;
+        config.initial_progress_min = parse_double_arg(
+            initial_progress_min,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN");
+        config.initial_progress_max = parse_double_arg(
+            initial_progress_max,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MAX");
+    }
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {

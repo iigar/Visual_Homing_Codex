@@ -18,6 +18,9 @@ struct Gray8RouteMatcherConfig {
     bool enable_scale_refinement = false;
     std::size_t scale_refinement_radius = 1;
     std::size_t top_candidate_count = 0;
+    bool initial_progress_window_enabled = false;
+    double initial_progress_min = 0.0;
+    double initial_progress_max = 1.0;
 };
 
 class Gray8RouteMatcher final : public RouteMatcher {

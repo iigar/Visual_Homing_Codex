@@ -198,6 +198,12 @@ RouteMatchCandidate candidate_from_distance(const RouteSignatureFile& route,
     };
 }
 
+double route_progress_for_index(const RouteSignatureFile& route, std::size_t index) {
+    return route.entries.size() > 1
+        ? static_cast<double>(index) / static_cast<double>(route.entries.size() - 1)
+        : 1.0;
+}
+
 } // namespace
 
 Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcherConfig config)
@@ -210,6 +216,13 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
     }
     if (config_.radians_per_pixel < 0.0) {
         throw std::invalid_argument("Gray8RouteMatcher radians_per_pixel must be non-negative");
+    }
+    if (config_.initial_progress_window_enabled) {
+        if (!std::isfinite(config_.initial_progress_min) || !std::isfinite(config_.initial_progress_max)
+            || config_.initial_progress_min < 0.0 || config_.initial_progress_max > 1.0
+            || config_.initial_progress_min > config_.initial_progress_max) {
+            throw std::invalid_argument("Gray8RouteMatcher initial progress window must be within 0..1");
+        }
     }
 
     route_edge_payloads_.reserve(route_.entries.size());
@@ -232,10 +245,17 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
 
     double best_distance = std::numeric_limits<double>::infinity();
     std::size_t best_index = begin;
+    bool evaluated_candidate = false;
     for (std::size_t index = begin; index < end; ++index) {
+        const auto progress = route_progress_for_index(route_, index);
+        if (!last_index_.has_value() && config_.initial_progress_window_enabled
+            && (progress < config_.initial_progress_min || progress > config_.initial_progress_max)) {
+            continue;
+        }
         const auto& entry = route_.entries[index];
         validate_frame_against_entry(frame, entry);
         const auto distance = normalized_mean_absolute_difference(frame.data, entry.payload);
+        evaluated_candidate = true;
         insert_top_candidate(
             recent_top_candidates_,
             config_.top_candidate_count,
@@ -244,6 +264,9 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
             best_distance = distance;
             best_index = index;
         }
+    }
+    if (!evaluated_candidate) {
+        throw std::runtime_error("Gray8 route matcher initial progress window selected no route entries");
     }
 
     if (config_.enable_scale_refinement) {

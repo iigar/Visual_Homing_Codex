@@ -114,6 +114,9 @@ struct LiveRouteMatchingConfig {
     bool zone_probe_diagnostics = false;
     bool edge_match_diagnostics = false;
     std::size_t edge_match_top_count = 5;
+    bool initial_progress_window_enabled = false;
+    double initial_progress_min = 0.0;
+    double initial_progress_max = 1.0;
     double external_nav_expected_relative_altitude_m = 0.0;
     double external_nav_expected_relative_altitude_tolerance_m = 0.0;
     bool require_dry_run_command_quality = false;

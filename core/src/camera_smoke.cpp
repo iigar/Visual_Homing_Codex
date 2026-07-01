@@ -882,6 +882,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.enable_scale_refinement = config.scale_refinement_enabled;
     matcher_config.scale_refinement_radius = config.scale_refinement_radius;
     matcher_config.top_candidate_count = config.top_match_diagnostics ? config.top_match_count : 0;
+    matcher_config.initial_progress_window_enabled = config.initial_progress_window_enabled;
+    matcher_config.initial_progress_min = config.initial_progress_min;
+    matcher_config.initial_progress_max = config.initial_progress_max;
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
@@ -941,7 +944,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " top_match_count=" << matcher_config.top_candidate_count
             << " zone_probe_diagnostics=" << bool_word(config.zone_probe_diagnostics)
             << " edge_match_diagnostics=" << bool_word(config.edge_match_diagnostics)
-            << " edge_match_top_count=" << config.edge_match_top_count;
+            << " edge_match_top_count=" << config.edge_match_top_count
+            << " initial_progress_window=" << bool_word(config.initial_progress_window_enabled)
+            << " initial_progress_min_max=" << config.initial_progress_min
+            << "/" << config.initial_progress_max;
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence

@@ -137,6 +137,17 @@ int main() {
     assert(edge_diagnostics.top_candidates[0].confidence > edge_diagnostics.top_candidates[2].confidence);
     assert(edge_diagnostics.zone_candidates[0].valid);
 
+    vh::Gray8RouteMatcher initial_window_matcher(route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .initial_progress_window_enabled = true,
+        .initial_progress_min = 0.75,
+        .initial_progress_max = 1.0,
+    });
+    const auto initial_window_match = initial_window_matcher.match(frame(240, {40, 40, 40, 40}));
+    assert(initial_window_match.route_index == 3);
+    assert(initial_window_match.progress > 0.99);
+
     vh::Gray8RouteMatcher strict(route, {.window_radius = 0, .minimum_confidence = 0.9});
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));
     assert(!poor.valid);
