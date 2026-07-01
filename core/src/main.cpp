@@ -293,6 +293,14 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
             initial_progress_max,
             "VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MAX");
     }
+    if (const char* enabled = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_SEARCH")) {
+        config.directional_search_enabled = parse_bool_arg(enabled);
+    }
+    if (const char* bias = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_BIAS")) {
+        config.directional_search_bias = parse_double_arg(
+            bias,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_BIAS");
+    }
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {

@@ -21,6 +21,8 @@ struct Gray8RouteMatcherConfig {
     bool initial_progress_window_enabled = false;
     double initial_progress_min = 0.0;
     double initial_progress_max = 1.0;
+    int directional_search_direction = 0;
+    double directional_search_bias = 0.0;
 };
 
 class Gray8RouteMatcher final : public RouteMatcher {

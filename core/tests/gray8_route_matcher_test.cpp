@@ -148,6 +148,22 @@ int main() {
     assert(initial_window_match.route_index == 3);
     assert(initial_window_match.progress > 0.99);
 
+    vh::RouteSignatureFile directional_route;
+    directional_route.entries.push_back(entry(0, {0, 0, 0, 0}));
+    directional_route.entries.push_back(entry(1, {100, 100, 100, 100}));
+    directional_route.entries.push_back(entry(2, {102, 102, 102, 102}));
+    directional_route.entries.push_back(entry(3, {104, 104, 104, 104}));
+    vh::Gray8RouteMatcher reverse_directional_matcher(directional_route, {
+        .window_radius = 3,
+        .minimum_confidence = 0.0,
+        .directional_search_direction = -1,
+        .directional_search_bias = 0.01,
+    });
+    const auto reverse_anchor = reverse_directional_matcher.match(frame(250, {104, 104, 104, 104}));
+    assert(reverse_anchor.route_index == 3);
+    const auto reverse_step = reverse_directional_matcher.match(frame(251, {103, 103, 103, 103}));
+    assert(reverse_step.route_index == 2);
+
     vh::Gray8RouteMatcher strict(route, {.window_radius = 0, .minimum_confidence = 0.9});
     const auto poor = strict.match(frame(300, {180, 180, 180, 180}));
     assert(!poor.valid);

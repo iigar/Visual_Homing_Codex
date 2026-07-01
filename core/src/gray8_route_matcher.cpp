@@ -224,6 +224,12 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
             throw std::invalid_argument("Gray8RouteMatcher initial progress window must be within 0..1");
         }
     }
+    if (config_.directional_search_direction < -1 || config_.directional_search_direction > 1) {
+        throw std::invalid_argument("Gray8RouteMatcher directional search direction must be -1, 0, or 1");
+    }
+    if (config_.directional_search_bias < 0.0 || !std::isfinite(config_.directional_search_bias)) {
+        throw std::invalid_argument("Gray8RouteMatcher directional search bias must be non-negative");
+    }
 
     route_edge_payloads_.reserve(route_.entries.size());
     for (const auto& entry : route_.entries) {
@@ -241,9 +247,15 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
     if (last_index_.has_value() && config_.window_radius > 0) {
         begin = (*last_index_ > config_.window_radius) ? *last_index_ - config_.window_radius : 0;
         end = std::min(route_.entries.size(), *last_index_ + config_.window_radius + 1);
+        if (config_.directional_search_direction < 0) {
+            end = std::min(end, *last_index_ + 1);
+        } else if (config_.directional_search_direction > 0) {
+            begin = std::max(begin, *last_index_);
+        }
     }
 
     double best_distance = std::numeric_limits<double>::infinity();
+    double best_raw_distance = std::numeric_limits<double>::infinity();
     std::size_t best_index = begin;
     bool evaluated_candidate = false;
     for (std::size_t index = begin; index < end; ++index) {
@@ -256,12 +268,26 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         validate_frame_against_entry(frame, entry);
         const auto distance = normalized_mean_absolute_difference(frame.data, entry.payload);
         evaluated_candidate = true;
+        double ranked_distance = distance;
+        if (last_index_.has_value() && config_.directional_search_bias > 0.0
+            && config_.directional_search_direction != 0) {
+            const bool moves_in_expected_direction =
+                (config_.directional_search_direction < 0 && index < *last_index_)
+                || (config_.directional_search_direction > 0 && index > *last_index_);
+            if (moves_in_expected_direction) {
+                const auto step_fraction = static_cast<double>(
+                    index > *last_index_ ? index - *last_index_ : *last_index_ - index)
+                    / static_cast<double>(std::max<std::size_t>(route_.entries.size() - 1, 1));
+                ranked_distance -= config_.directional_search_bias * step_fraction;
+            }
+        }
         insert_top_candidate(
             recent_top_candidates_,
             config_.top_candidate_count,
             candidate_from_distance(route_, index, distance));
-        if (distance < best_distance) {
-            best_distance = distance;
+        if (ranked_distance < best_distance) {
+            best_distance = ranked_distance;
+            best_raw_distance = distance;
             best_index = index;
         }
     }
@@ -279,12 +305,13 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
             const auto distance = best_scaled_normalized_mean_absolute_difference(frame, entry);
             if (distance < best_distance) {
                 best_distance = distance;
+                best_raw_distance = distance;
                 best_index = index;
             }
         }
     }
 
-    const auto confidence = std::clamp(1.0 - best_distance, 0.0, 1.0);
+    const auto confidence = std::clamp(1.0 - best_raw_distance, 0.0, 1.0);
     const auto valid = confidence >= config_.minimum_confidence;
     if (valid) {
         last_index_ = best_index;

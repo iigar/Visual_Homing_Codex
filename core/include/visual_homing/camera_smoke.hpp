@@ -117,6 +117,8 @@ struct LiveRouteMatchingConfig {
     bool initial_progress_window_enabled = false;
     double initial_progress_min = 0.0;
     double initial_progress_max = 1.0;
+    bool directional_search_enabled = false;
+    double directional_search_bias = 0.0;
     double external_nav_expected_relative_altitude_m = 0.0;
     double external_nav_expected_relative_altitude_tolerance_m = 0.0;
     bool require_dry_run_command_quality = false;

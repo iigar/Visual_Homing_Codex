@@ -4,6 +4,7 @@
 
 - Added log-only edge/gradient route-match diagnostics behind `VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_DIAGNOSTICS=1` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K=<n>`. The matcher now caches a cheap Gray8 edge payload for each route entry, and live frame logs can report `edge_top_matches`, `edge_top_match_gap`, `edge_zone_probes`, and `edge_end_zone_gap_vs_best` without changing the normal Gray8/MAD match, readiness gates, dry-run commands, or live-output safety behavior. This is the next diagnostic after outdoor `128x96` runs showed good route recording quality but persistent start/end and mid-route aliasing in single-frame Gray8 scores.
 - Added an opt-in initial progress search window for live route matching through `VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN/MAX`. This constrains only the first route match before the normal tracked/windowed matcher has a valid route index, so reverse runs can deliberately bootstrap in the end zone (`0.80..1.00`) instead of letting a start/end alias lock the tracker onto the wrong part of the route.
+- Added opt-in directional route search through `VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_SEARCH=1` and `VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_BIAS=<value>`. Once an initial match exists, reverse/forward sessions can use an asymmetric search window plus a small ranked-distance bias toward the expected direction, addressing field evidence where reverse runs bootstrapped in the end zone but then stayed pinned to the same late-route index despite physical motion toward the start.
 
 ## 2026-06-30
 

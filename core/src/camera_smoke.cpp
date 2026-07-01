@@ -885,6 +885,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.initial_progress_window_enabled = config.initial_progress_window_enabled;
     matcher_config.initial_progress_min = config.initial_progress_min;
     matcher_config.initial_progress_max = config.initial_progress_max;
+    if (config.directional_search_enabled) {
+        if (config.expected_progress == "reverse") {
+            matcher_config.directional_search_direction = -1;
+        } else if (config.expected_progress == "forward") {
+            matcher_config.directional_search_direction = 1;
+        }
+    }
+    matcher_config.directional_search_bias = config.directional_search_bias;
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
@@ -947,7 +955,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " edge_match_top_count=" << config.edge_match_top_count
             << " initial_progress_window=" << bool_word(config.initial_progress_window_enabled)
             << " initial_progress_min_max=" << config.initial_progress_min
-            << "/" << config.initial_progress_max;
+            << "/" << config.initial_progress_max
+            << " directional_search=" << bool_word(config.directional_search_enabled)
+            << " directional_search_direction=" << matcher_config.directional_search_direction
+            << " directional_search_bias=" << matcher_config.directional_search_bias;
     if (config.emit_external_nav_estimates) {
         metrics << " external_nav_nominal_route_length_m=" << config.external_nav.nominal_route_length_m
                 << " external_nav_minimum_match_confidence=" << config.external_nav.minimum_match_confidence
