@@ -251,8 +251,13 @@ Status on 2026-07-03:
 - session gates `output_available`, `runtime_enabled`, `operator_confirmed`, `audit_log_enabled`, `audit_log_ready`, `single_writer`, and FC-ready `ExternalNavEstimate`;
 - session records every allowed/blocked estimate through an injectable audit sink;
 - session fails closed on audit record failure, writer start failure, writer send failure, max message count, and max duration;
-- no file audit wrapper, Pi runtime attachment, or provider send wrapper exists yet;
-- WSL CMake/Ninja CTest passed `26/26`.
+- implemented file audit boundary:
+  - `core/include/visual_homing/live_external_nav_output_audit_log.hpp`
+  - `core/src/live_external_nav_output_audit_log.cpp`
+  - `core/tests/live_external_nav_output_audit_log_test.cpp`
+- audit records `external_nav_output_audit` start/estimate/stop lines with allowed/sent decision, reason, `time_usec`, FC-ready state, pose, route progress, altitude, telemetry freshness, and scale flags;
+- no Pi runtime attachment or provider send wrapper exists yet;
+- WSL CMake/Ninja CTest passed `27/27`.
 
 ### Phase 3 - Pi Wrapper: Attach-Only Props-Off Evidence
 

@@ -37,6 +37,7 @@ add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
+    src/live_external_nav_output_audit_log.cpp
     src/live_external_nav_output_session.cpp
     src/live_mavlink_bridge.cpp
     src/live_mavlink_external_nav_writer.cpp
@@ -308,6 +309,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME live_mavlink_external_nav_writer COMMAND live_mavlink_external_nav_writer_test)
+
+    add_executable(live_external_nav_output_audit_log_test
+        tests/live_external_nav_output_audit_log_test.cpp
+    )
+
+    target_link_libraries(live_external_nav_output_audit_log_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_external_nav_output_audit_log_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_external_nav_output_audit_log COMMAND live_external_nav_output_audit_log_test)
 
     add_executable(live_external_nav_output_session_test
         tests/live_external_nav_output_session_test.cpp

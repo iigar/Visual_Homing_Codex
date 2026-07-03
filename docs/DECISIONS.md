@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-07-03 - Use Separate External-Nav Output Audit Log Format
+
+Decision:
+- Add `LiveExternalNavOutputAuditLog` instead of reusing `LiveMavlinkOutputAuditLog`.
+- Use `external_nav_output_audit` start/estimate/stop records for external-nav provider evidence.
+- Record provider-specific fields: allowed/sent decision, reason, `time_usec`, `valid_for_fc`, estimate reason/source, pose, yaw, confidence, route progress/index, relative altitude, route/telemetry/altitude validity, and scale flags.
+- Keep this file-audit boundary library-only until the Pi attach wrapper is implemented.
+
+Why:
+- The command-output audit log records `NavigationCommand` fields such as `vx_mps`, `vy_mps`, and `yaw_rate_radps`; those are the wrong primary fields for a position-provider handoff.
+- Phase 3 attach-only evidence needs an audit artifact that can prove "session existed and blocked/sent zero provider estimates" without implying command-output authority.
+
+Impact:
+- Added:
+  - `core/include/visual_homing/live_external_nav_output_audit_log.hpp`
+  - `core/src/live_external_nav_output_audit_log.cpp`
+  - `core/tests/live_external_nav_output_audit_log_test.cpp`
+- WSL CMake/Ninja validation passed with CTest `27/27`.
+
+Risk:
+- The audit format is still a key-value text contract. Future wrapper/checker code must parse it conservatively and should not depend on field order beyond the event prefix.
+
 ## 2026-07-03 - Keep External-Nav Output Session Separate From Command Output Session
 
 Decision:
