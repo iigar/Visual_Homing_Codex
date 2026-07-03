@@ -264,7 +264,10 @@ Status on 2026-07-03:
   - `core/include/visual_homing/live_external_nav_output_audit_log.hpp`
   - `core/src/live_external_nav_output_audit_log.cpp`
   - `core/tests/live_external_nav_output_audit_log_test.cpp`
+- implemented audit checker:
+  - `scripts/check-external-nav-output-audit-log.sh`
 - audit records `external_nav_output_audit` start/estimate/stop lines with allowed/sent decision, reason, `time_usec`, FC-ready state, pose, route progress, altitude, telemetry freshness, and scale flags;
+- checker can validate expected estimate count, allowed/sent/blocked counts, blocker reason, stop reason, FC-ready state, and required readiness flags;
 - no Pi runtime attachment or provider send wrapper exists yet;
 - WSL CMake/Ninja CTest passed `27/27`.
 

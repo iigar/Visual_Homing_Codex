@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-03 - Add External-Nav Output Audit Checker Before Pi Wrapper
+
+Decision:
+- Add `scripts/check-external-nav-output-audit-log.sh` before adding any Pi attach/send wrapper.
+- Validate `external_nav_output_audit` files by start/stop count, estimate count, allowed/sent/blocked counts, reason, stop reason, FC-ready state, and readiness flags.
+- Default the checker toward attach-only evidence: `allowed=0`, `sent=0`, `blocked=auto`, and reason wildcard unless a wrapper sets a stricter expected reason.
+
+Why:
+- Phase 3 attach-only evidence should be machine-checkable before the operator is asked to run anything on `jtzero`.
+- The checker gives the future wrapper a clear pass/fail contract for "writer/session attached but no provider messages were sent".
+- Keeping this separate from `check-live-session-audit-log.sh` preserves the command-output versus provider-output boundary.
+
+Impact:
+- A synthetic local attach-only audit passed with `estimates=2`, `allowed=0`, `sent=0`, `blocked=2`, and `reason=runtime_disabled`.
+- No Pi runtime path, wrapper, or field evidence was added.
+
+Risk:
+- The checker validates audit shape and counts only. It does not prove FC/JT_Zero provider acceptance and must not be used as provider-send readiness.
+
 ## 2026-07-03 - Add Cache-Safe External-Nav Output Compile-Time Flags
 
 Decision:
