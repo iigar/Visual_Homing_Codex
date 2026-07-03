@@ -241,6 +241,19 @@ Exit criteria:
 - tests cover blocked/no writer/audit failure/send failure/max count/max duration;
 - default `test-core-pi.sh` still logs estimates only and sends nothing.
 
+Status on 2026-07-03:
+
+- implemented first session boundary:
+  - `core/include/visual_homing/live_external_nav_output_session.hpp`
+  - `core/src/live_external_nav_output_session.cpp`
+  - `core/tests/live_external_nav_output_session_test.cpp`
+- session is separate from `LiveMavlinkOutputSession` and does not use `NavigationCommand`;
+- session gates `output_available`, `runtime_enabled`, `operator_confirmed`, `audit_log_enabled`, `audit_log_ready`, `single_writer`, and FC-ready `ExternalNavEstimate`;
+- session records every allowed/blocked estimate through an injectable audit sink;
+- session fails closed on audit record failure, writer start failure, writer send failure, max message count, and max duration;
+- no file audit wrapper, Pi runtime attachment, or provider send wrapper exists yet;
+- WSL CMake/Ninja CTest passed `26/26`.
+
 ### Phase 3 - Pi Wrapper: Attach-Only Props-Off Evidence
 
 Add a Pi wrapper for reviewed external-nav writer attach, analogous to but separate from command-output attach:

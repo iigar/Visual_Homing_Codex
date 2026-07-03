@@ -6,6 +6,7 @@
 - Kept the existing yaw-rate command-output path separate from the new external-nav provider path. The Phase 1 writer validates `valid_for_fc=true`, `reason=valid`, route/telemetry/altitude/scale readiness flags, and finite pose fields before any byte write; invalid estimates fail closed.
 - Used an explicit `time_usec` argument for `VISION_POSITION_ESTIMATE` rather than deriving it from the internal steady-clock timestamp. This keeps the encoder deterministic and avoids hiding clock-domain assumptions before JT_Zero/ArduPilot provider acceptance is tested.
 - Validated the desktop/WSL C++ path after the encode-only writer work: CMake/Ninja build succeeded in `core/build-wsl-external-nav`, and CTest passed `25/25`. No Pi runtime behavior or live external-nav output behavior was changed.
+- Added the first Phase 2 external-nav output session boundary, separate from `LiveMavlinkOutputSession` and `NavigationCommand`. It gates output availability, runtime/operator enablement, audit readiness, single-writer ownership, max message count, max duration, and FC-ready `ExternalNavEstimate`; it records every allowed/blocked estimate through an injectable audit sink and fails closed on audit/write failures. WSL CTest passed `26/26`. This still does not attach the writer to Pi runtime or send provider messages.
 
 ## 2026-07-02
 

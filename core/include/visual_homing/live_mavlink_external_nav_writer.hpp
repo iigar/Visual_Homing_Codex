@@ -16,16 +16,26 @@ struct LiveMavlinkExternalNavWriterConfig {
     std::uint8_t source_component = 1;
 };
 
-class LiveMavlinkExternalNavWriter final {
+class ExternalNavWriter {
+public:
+    virtual ~ExternalNavWriter() = default;
+    virtual bool start() = 0;
+    virtual void stop() = 0;
+    virtual void send_vision_position_estimate(const ExternalNavEstimate& estimate, std::uint64_t time_usec) = 0;
+    virtual bool running() const = 0;
+    virtual std::string unavailable_reason() const = 0;
+};
+
+class LiveMavlinkExternalNavWriter final : public ExternalNavWriter {
 public:
     LiveMavlinkExternalNavWriter(LiveMavlinkExternalNavWriterConfig config,
                                  LiveMavlinkByteTransport& transport);
 
-    bool start();
-    void stop();
-    void send_vision_position_estimate(const ExternalNavEstimate& estimate, std::uint64_t time_usec);
-    bool running() const;
-    std::string unavailable_reason() const;
+    bool start() override;
+    void stop() override;
+    void send_vision_position_estimate(const ExternalNavEstimate& estimate, std::uint64_t time_usec) override;
+    bool running() const override;
+    std::string unavailable_reason() const override;
 
 private:
     void validate_estimate(const ExternalNavEstimate& estimate) const;

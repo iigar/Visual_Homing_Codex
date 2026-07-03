@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-03 - Keep External-Nav Output Session Separate From Command Output Session
+
+Decision:
+- Add a dedicated `LiveExternalNavOutputSession` for external-nav provider estimates instead of reusing `LiveMavlinkOutputSession`.
+- Gate `ExternalNavEstimate` output with external-nav-specific fields: output availability, runtime enablement, operator confirmation, audit readiness, single-writer ownership, max message count, max duration, and FC-ready estimate validity.
+- Keep the session testable through injectable audit and writer interfaces.
+- Do not attach the session to Pi runtime or send provider messages in this phase.
+
+Why:
+- The existing `LiveMavlinkOutputSession` is intentionally shaped around `NavigationCommand` and yaw-rate command output.
+- The JT_Zero handoff path is a position-provider path; reusing the command session would blur the boundary between "command authority" and "external-nav estimate provider".
+- Phase 2 needs fail-closed lifecycle/audit behavior without changing current field wrappers or enabling serial output.
+
+Impact:
+- Added:
+  - `core/include/visual_homing/live_external_nav_output_session.hpp`
+  - `core/src/live_external_nav_output_session.cpp`
+  - `core/tests/live_external_nav_output_session_test.cpp`
+- Added an `ExternalNavWriter` interface so the concrete `LiveMavlinkExternalNavWriter` can be used behind a session boundary.
+- WSL CMake/Ninja validation passed with CTest `26/26`.
+
+Risk:
+- This is still not FC/JT_Zero acceptance evidence. The next stage needs a file audit/log format and attach-only props-off wrapper before any provider-send bench work.
+
 ## 2026-07-03 - Start External-Nav Writer With VISION_POSITION_ESTIMATE Encode-Only Boundary
 
 Decision:
