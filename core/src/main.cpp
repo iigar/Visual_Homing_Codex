@@ -253,6 +253,46 @@ void apply_live_output_runtime_args(vh::LiveRouteMatchingConfig& config, char** 
         parse_double_arg(argv[first_index + 3], "live_output_max_seconds") * 1000.0;
 }
 
+void apply_external_nav_output_environment_overrides(vh::LiveRouteMatchingConfig& config) {
+    const char* audit_enabled = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT");
+    const char* audit_path = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT_PATH");
+    const char* runtime_enabled = std::getenv("VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT");
+    const char* operator_confirm = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_PROPS_OFF_CONFIRM");
+    const char* single_writer_confirm = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SINGLE_WRITER_CONFIRM");
+    const char* max_messages = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES");
+    const char* max_seconds = std::getenv("VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS");
+
+    if (audit_enabled != nullptr) {
+        config.emit_external_nav_output_session_audit = parse_bool_arg(audit_enabled);
+    }
+    if (audit_path != nullptr) {
+        config.external_nav_output_session_audit_path = audit_path;
+    }
+    if (runtime_enabled != nullptr || operator_confirm != nullptr || single_writer_confirm != nullptr
+        || max_messages != nullptr || max_seconds != nullptr) {
+        config.external_nav_output_runtime_controls_provided = true;
+    }
+    if (runtime_enabled != nullptr) {
+        config.external_nav_output_runtime_enabled = parse_bool_arg(runtime_enabled);
+    }
+    if (operator_confirm != nullptr) {
+        config.external_nav_output_operator_confirmed =
+            std::string(operator_confirm) == "I_UNDERSTAND_PROPS_ARE_REMOVED";
+    }
+    if (single_writer_confirm != nullptr) {
+        config.external_nav_output_single_writer_confirmed =
+            std::string(single_writer_confirm) == "I_UNDERSTAND_EXTERNAL_NAV_IS_THE_ONLY_POSITION_PROVIDER";
+    }
+    if (max_messages != nullptr) {
+        config.external_nav_output_max_messages =
+            parse_uint64_arg(max_messages, "VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES");
+    }
+    if (max_seconds != nullptr) {
+        config.external_nav_output_max_duration_ms =
+            parse_double_arg(max_seconds, "VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS") * 1000.0;
+    }
+}
+
 void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig& config) {
     if (const char* stop_at_endpoint = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS")) {
         config.stop_at_endpoint_progress = parse_bool_arg(stop_at_endpoint);
@@ -301,6 +341,7 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
             bias,
             "VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_BIAS");
     }
+    apply_external_nav_output_environment_overrides(config);
 }
 
 vh::CameraProfile profile_with_target_override(vh::CameraProfile profile, int target_width, int target_height) {

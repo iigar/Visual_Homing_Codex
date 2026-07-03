@@ -101,18 +101,18 @@ LiveExternalNavOutputResult LiveExternalNavOutputSession::process(
         writer_started_ = true;
     }
 
-    record_or_stop(snapshot, result);
-
     try {
         writer_.send_vision_position_estimate(snapshot.estimate, snapshot.time_usec);
     } catch (const std::exception&) {
         result = LiveExternalNavOutputResult{false, false, "send_failed"};
+        record_or_stop(snapshot, result);
         stop("send_failed");
         return result;
     }
 
     ++messages_sent_;
     result.sent = true;
+    record_or_stop(snapshot, result);
     return result;
 }
 

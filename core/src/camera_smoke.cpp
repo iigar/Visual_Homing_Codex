@@ -20,6 +20,8 @@
 #include "visual_homing/gray8_resize_preprocessor.hpp"
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
+#include "visual_homing/live_external_nav_output_audit_log.hpp"
+#include "visual_homing/live_external_nav_output_session.hpp"
 #include "visual_homing/live_mavlink_bridge.hpp"
 #include "visual_homing/live_mavlink_external_nav_writer.hpp"
 #include "visual_homing/live_mavlink_output_audit_log.hpp"
@@ -37,6 +39,32 @@ namespace {
 
 constexpr double kTrackedProgressRegressionDeadband = 0.01;
 constexpr double kTrackedVisualScaleMaxStep = 0.05;
+
+std::uint64_t monotonic_time_usec(const Timestamp timestamp) {
+    return static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch()).count());
+}
+
+class DisabledExternalNavWriter final : public ExternalNavWriter {
+public:
+    bool start() override {
+        return false;
+    }
+
+    void stop() override {}
+
+    void send_vision_position_estimate(const ExternalNavEstimate&, std::uint64_t) override {
+        throw std::runtime_error("External-nav output writer is not attached");
+    }
+
+    bool running() const override {
+        return false;
+    }
+
+    std::string unavailable_reason() const override {
+        return "external_nav_writer_not_attached";
+    }
+};
 
 std::string wall_time_utc_iso8601() {
     const auto current = std::chrono::system_clock::now();
@@ -909,6 +937,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<LiveMavlinkSerialCommandWriter> live_output_writer;
     std::optional<LiveMavlinkBridge> live_output_bridge;
     std::optional<LiveMavlinkOutputSession> live_output_session;
+    std::optional<LiveExternalNavOutputAuditLog> external_nav_output_audit_log;
+    DisabledExternalNavWriter disabled_external_nav_writer;
+    std::optional<PosixSerialByteTransport> external_nav_output_transport;
+    std::optional<LiveMavlinkExternalNavWriter> external_nav_output_writer;
+    std::optional<LiveExternalNavOutputSession> external_nav_output_session;
     HealthMonitor health(now());
     health.set_links(true, config.emit_dry_run_commands && !config.use_live_telemetry_stream, true);
     std::optional<MavlinkTelemetryStream> telemetry_stream;
@@ -1010,6 +1043,27 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             }
 #endif
         }
+    }
+    if (config.emit_external_nav_output_session_audit) {
+        metrics << " external_nav_output_session_audit=true"
+                << " external_nav_output_session_audit_path="
+                << config.external_nav_output_session_audit_path.string()
+                << " external_nav_output_runtime_controls_provided="
+                << bool_word(config.external_nav_output_runtime_controls_provided)
+                << " external_nav_output_runtime_enabled="
+                << bool_word(config.external_nav_output_runtime_enabled)
+                << " external_nav_output_operator_confirmed="
+                << bool_word(config.external_nav_output_operator_confirmed)
+                << " external_nav_output_single_writer_confirmed="
+                << bool_word(config.external_nav_output_single_writer_confirmed)
+                << " external_nav_output_max_messages=" << config.external_nav_output_max_messages
+                << " external_nav_output_max_duration_ms=" << config.external_nav_output_max_duration_ms;
+#if VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE
+        if (config.external_nav_output_runtime_controls_provided) {
+            metrics << " external_nav_output_device=" << config.telemetry_stream.device_path
+                    << " external_nav_output_baud=" << config.telemetry_stream.baud_rate;
+        }
+#endif
     }
     metrics << "\n";
 
@@ -1169,6 +1223,73 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         }
     }
 
+    if (config.emit_external_nav_output_session_audit) {
+        if (!config.emit_external_nav_estimates) {
+            source.stop();
+            command_sink.stop();
+            if (live_output_session) {
+                live_output_session->stop("external_nav_output_requires_external_nav_estimates");
+            }
+            if (telemetry_stream) {
+                telemetry_stream->stop();
+            }
+            metrics << "live_route_match_external_nav_output_audit_start"
+                    << " path=" << config.external_nav_output_session_audit_path.string()
+                    << " started=false reason=external_nav_estimates_disabled\n";
+            metrics << "live_route_match_done started=false warmup_frames_dropped=" << result.warmup_frames_dropped
+                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=" << result.empty_polls
+                    << " external_nav_output_session_audit_started=false passed=false\n";
+            return result;
+        }
+
+        external_nav_output_audit_log.emplace(
+            LiveExternalNavOutputAuditLogConfig{config.external_nav_output_session_audit_path, false});
+        ExternalNavWriter* external_nav_writer = &disabled_external_nav_writer;
+#if VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE
+        if (config.external_nav_output_runtime_controls_provided) {
+            LiveMavlinkExternalNavWriterConfig writer_config;
+            writer_config.device_path = config.telemetry_stream.device_path;
+            writer_config.baud_rate = config.telemetry_stream.baud_rate;
+            external_nav_output_transport.emplace(writer_config.device_path, writer_config.baud_rate);
+            external_nav_output_writer.emplace(writer_config, *external_nav_output_transport);
+            external_nav_writer = &*external_nav_output_writer;
+        }
+#endif
+        external_nav_output_session.emplace(
+            LiveExternalNavOutputSessionConfig{
+                "match_live_route_external_nav",
+                LiveMavlinkExternalNavWriter::external_nav_output_available(),
+                config.external_nav_output_runtime_enabled,
+                config.external_nav_output_operator_confirmed,
+                config.emit_external_nav_output_session_audit,
+                config.external_nav_output_single_writer_confirmed,
+                config.external_nav_output_max_messages,
+                config.external_nav_output_max_duration_ms,
+            },
+            *external_nav_output_audit_log,
+            *external_nav_writer);
+        result.external_nav_output_session_audit_path =
+            config.external_nav_output_session_audit_path.string();
+        result.external_nav_output_session_audit_started = external_nav_output_session->start();
+        metrics << "live_route_match_external_nav_output_audit_start"
+                << " path=" << result.external_nav_output_session_audit_path
+                << " started=" << bool_word(result.external_nav_output_session_audit_started) << "\n";
+        if (!result.external_nav_output_session_audit_started) {
+            source.stop();
+            command_sink.stop();
+            if (live_output_session) {
+                live_output_session->stop("external_nav_output_audit_start_failed");
+            }
+            if (telemetry_stream) {
+                telemetry_stream->stop();
+            }
+            metrics << "live_route_match_done started=false warmup_frames_dropped=" << result.warmup_frames_dropped
+                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=" << result.empty_polls
+                    << " external_nav_output_session_audit_started=false passed=false\n";
+            return result;
+        }
+    }
+
     const auto capture_started_at = now();
     const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
@@ -1180,6 +1301,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     MavlinkTelemetry latest_gate_telemetry;
     std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
     std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
+    std::map<std::string, std::uint64_t> external_nav_output_block_reasons;
     double visual_scale_ratio_sum = 0.0;
     double visual_scale_confidence_sum = 0.0;
     std::map<double, std::uint64_t> visual_scale_ratio_histogram;
@@ -1401,6 +1523,24 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         std::max(result.external_nav_max_invalid_streak, current_external_nav_invalid_streak);
                 }
                 metrics << external_nav_estimate_log_line(external_nav_estimate) << "\n";
+                if (external_nav_output_session) {
+                    const auto output_result = external_nav_output_session->process(
+                        LiveExternalNavOutputSnapshot{
+                            processing_finished,
+                            external_nav_estimate,
+                            monotonic_time_usec(processing_finished),
+                        });
+                    result.final_external_nav_output_reason = output_result.reason;
+                    if (output_result.allowed) {
+                        ++result.external_nav_output_allowed_frames;
+                    } else {
+                        ++result.external_nav_output_blocked_frames;
+                        ++external_nav_output_block_reasons[output_result.reason];
+                    }
+                    if (output_result.sent) {
+                        ++result.external_nav_output_sent_frames;
+                    }
+                }
             }
 
             ++result.frames_captured;
@@ -1537,6 +1677,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (live_output_session) {
         live_output_session->stop(result.endpoint_stop_triggered ? "endpoint_progress_reached" : "match_live_route_complete");
     }
+    if (external_nav_output_session) {
+        external_nav_output_session->stop(
+            result.endpoint_stop_triggered ? "endpoint_progress_reached" : "match_live_route_complete");
+    }
     if (config.emit_dry_run_commands) {
         command_sink.stop();
     }
@@ -1633,6 +1777,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
     result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
     result.external_nav_invalid_reasons = format_reason_counts(external_nav_invalid_reasons);
+    result.external_nav_output_block_reasons = format_reason_counts(external_nav_output_block_reasons);
     if (result.external_nav_estimates > 0) {
         result.external_nav_valid_fraction =
             static_cast<double>(result.external_nav_valid_for_fc) / static_cast<double>(result.external_nav_estimates);
@@ -1894,6 +2039,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
             << " live_output_session_audit_started=" << (result.live_output_session_audit_started ? "true" : "false")
             << " live_output_session_audit_path=" << result.live_output_session_audit_path
+            << " external_nav_output_allowed_frames=" << result.external_nav_output_allowed_frames
+            << " external_nav_output_sent_frames=" << result.external_nav_output_sent_frames
+            << " external_nav_output_blocked_frames=" << result.external_nav_output_blocked_frames
+            << " external_nav_output_block_reasons=" << result.external_nav_output_block_reasons
+            << " final_external_nav_output_reason=" << result.final_external_nav_output_reason
+            << " external_nav_output_session_audit_started="
+            << (result.external_nav_output_session_audit_started ? "true" : "false")
+            << " external_nav_output_session_audit_path=" << result.external_nav_output_session_audit_path
             << " passed=" << (result.passed ? "true" : "false") << "\n";
 
     metrics << "live_route_match_compact"
@@ -1988,6 +2141,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " live_output_gate_block_reasons=" << result.live_output_gate_block_reasons
             << " final_live_output_gate_reason=" << result.final_live_output_gate_reason
             << " live_output_session_audit=" << bool_word(result.live_output_session_audit_started)
+            << " external_nav_output_allowed=" << result.external_nav_output_allowed_frames
+            << " external_nav_output_sent=" << result.external_nav_output_sent_frames
+            << " external_nav_output_blocked=" << result.external_nav_output_blocked_frames
+            << " external_nav_output_block_reasons=" << result.external_nav_output_block_reasons
+            << " final_external_nav_output_reason=" << result.final_external_nav_output_reason
+            << " external_nav_output_session_audit="
+            << bool_word(result.external_nav_output_session_audit_started)
             << "\n";
     return result;
 }

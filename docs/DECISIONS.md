@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-03 - Wire External-Nav Output Runtime Audit Before Pi Wrapper
+
+Decision:
+- Wire `LiveExternalNavOutputSession` into live route matching behind explicit external-nav output audit/runtime controls.
+- Keep default behavior off: no audit, no writer start, and no provider send unless external-nav output env controls are explicitly supplied.
+- Use a disabled no-op writer by default and attach `LiveMavlinkExternalNavWriter` only in builds where external-nav output is compile-time available.
+- Add Pi script guards for runtime send: external-nav estimates, live telemetry, attach CMake, props-off confirmation, single-position-provider confirmation, and positive message/time limits are required.
+- Record successful external-nav output audit entries after `send_vision_position_estimate`, so `sent=true` means the writer send call returned successfully.
+
+Why:
+- The future Pi attach wrapper needs real runtime audit records, not just compile-state logs.
+- External-nav output must remain separate from live yaw command output and must fail closed until explicitly enabled.
+- The audit log must distinguish `allowed` from actually `sent`; otherwise the evidence would overstate provider-output behavior.
+
+Impact:
+- `live_route_match_start`, `live_route_match_done`, and `live_route_match_compact` now expose external-nav output audit/runtime counters and blocker reasons.
+- `test-core-pi.sh` can pass external-nav output audit controls through the environment and refuses unsafe runtime combinations.
+- Default WSL CTest passed `27/27`.
+- External-nav attach-scope WSL CTest passed `27/27`.
+- No Pi wrapper, Pi attach run, FC provider integration, or field test was run.
+
+Risk:
+- Runtime output still depends on a future Pi wrapper and field-reviewed procedure; local tests only prove build/runtime gating and audit semantics.
+
 ## 2026-07-03 - Log External-Nav Output Compile State Before Attach Wrapper
 
 Decision:

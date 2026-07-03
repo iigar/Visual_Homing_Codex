@@ -297,6 +297,9 @@ Pre-wrapper local status on 2026-07-03:
 
 - build/log fields required for wrapper grep evidence exist;
 - local attach-scope WSL CMake/Ninja CTest passed `27/27`;
+- runtime external-nav output audit wiring exists behind explicit env controls;
+- `test-core-pi.sh` refuses runtime external-nav output unless external-nav estimates, live telemetry, attach CMake, props-off confirmation, single-provider confirmation, and positive message/time limits are present;
+- default and attach-scope WSL CTest both passed `27/27`;
 - no Pi wrapper command has been added or run yet.
 
 Exit criteria:

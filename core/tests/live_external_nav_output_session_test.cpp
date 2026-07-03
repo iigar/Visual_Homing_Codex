@@ -320,7 +320,7 @@ int main() {
         assert(!writer.running());
         assert(writer.starts == 1);
         assert(writer.stops == 1);
-        assert(audit.records[1] == "estimate:allowed");
+        assert(audit.records[1] == "estimate:send_failed");
         assert(audit.records[2] == "stop:send_failed");
     }
 
@@ -341,7 +341,7 @@ int main() {
         assert(!session.running());
         assert(!writer.running());
         assert(writer.starts == 1);
-        assert(writer.sends == 0);
+        assert(writer.sends == 1);
         assert(writer.stops == 1);
         assert(audit.records[1] == "stop:audit_record_failed");
     }

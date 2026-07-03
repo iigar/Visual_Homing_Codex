@@ -77,6 +77,12 @@ live_output_runtime_enabled="${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
 live_output_bench_props_off_confirm="${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
 live_output_max_commands="${VISUAL_HOMING_LIVE_OUTPUT_MAX_COMMANDS:-0}"
 live_output_max_seconds="${VISUAL_HOMING_LIVE_OUTPUT_MAX_SECONDS:-0}"
+external_nav_output_session_audit="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT:-0}"
+external_nav_output_runtime_enabled="${VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT:-0}"
+external_nav_output_bench_props_off_confirm="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
+external_nav_output_single_writer_confirm="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SINGLE_WRITER_CONFIRM:-}"
+external_nav_output_max_messages="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES:-0}"
+external_nav_output_max_seconds="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS:-0}"
 camera_profile_dir="${VISUAL_HOMING_CAMERA_PROFILE_DIR:-${repo_root}/config/camera_profiles}"
 camera_profile="${VISUAL_HOMING_CAMERA_PROFILE:-${repo_root}/config/camera_profiles/imx219-visible-wide.profile}"
 active_camera_profile="${VISUAL_HOMING_ACTIVE_CAMERA_PROFILE:-${artifact_dir}/active_camera_profile.txt}"
@@ -97,6 +103,7 @@ run_log_stamp="$(date -u +"%Y%m%dT%H%M%SZ")"
 run_started_epoch="$(date +%s)"
 run_log_file="${VISUAL_HOMING_RUN_LOG:-${log_dir}/test-core-pi-${run_log_stamp}.log}"
 live_route_session_audit_path="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT_PATH:-${artifact_dir}/logs/live-output-session-audit-${run_log_stamp}.log}"
+external_nav_output_session_audit_path="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT_PATH:-${artifact_dir}/logs/external-nav-output-audit-${run_log_stamp}.log}"
 
 require_bool_env() {
     local name="$1"
@@ -150,6 +157,8 @@ for bool_env in \
     VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS \
     VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
     VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
+    VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT \
+    VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER \
@@ -183,6 +192,38 @@ esac
 if [[ "${live_route_match_stop_at_endpoint_progress}" == "1" && "${live_route_match_expected_progress}" == "any" ]]; then
     echo "VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS=1 requires VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPECTED_PROGRESS=forward or reverse" >&2
     exit 2
+fi
+
+if [[ "${external_nav_output_session_audit}" == "1" && "${external_nav_estimates}" != "1" ]]; then
+    echo "VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT=1 requires VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES=1" >&2
+    exit 2
+fi
+
+if [[ "${external_nav_output_runtime_enabled}" == "1" ]]; then
+    if [[ "${external_nav_output_session_audit}" != "1" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT=1" >&2
+        exit 2
+    fi
+    if [[ "${live_route_match_use_live_mavlink_telemetry}" != "1" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY=1" >&2
+        exit 2
+    fi
+    if [[ "${pi_cmake_attach_bench_props_off_external_nav_writer}" != "1" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=1" >&2
+        exit 2
+    fi
+    if [[ "${external_nav_output_bench_props_off_confirm}" != "I_UNDERSTAND_PROPS_ARE_REMOVED" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_PROPS_OFF_CONFIRM=I_UNDERSTAND_PROPS_ARE_REMOVED" >&2
+        exit 2
+    fi
+    if [[ "${external_nav_output_single_writer_confirm}" != "I_UNDERSTAND_EXTERNAL_NAV_IS_THE_ONLY_POSITION_PROVIDER" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SINGLE_WRITER_CONFIRM=I_UNDERSTAND_EXTERNAL_NAV_IS_THE_ONLY_POSITION_PROVIDER" >&2
+        exit 2
+    fi
+    if [[ "${external_nav_output_max_messages}" == "0" || "${external_nav_output_max_seconds}" == "0" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires positive VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES and VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS" >&2
+        exit 2
+    fi
 fi
 
 if [[ "${VISUAL_HOMING_DISABLE_RUN_LOG:-0}" != "1" ]]; then
@@ -223,7 +264,7 @@ if [[ "${pi_cmake_attach_bench_props_off_external_nav_writer}" == "1" ]]; then
     cmake_attach_bench_props_off_external_nav_writer_option=ON
 fi
 
-echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} build_dir=${build_dir} live_output_cmake=${cmake_live_output_option} bench_props_off_cmake=${cmake_bench_props_off_live_output_option} attach_writer_cmake=${cmake_attach_bench_props_off_serial_writer_option} external_nav_output_cmake=${cmake_external_nav_output_option} external_nav_bench_props_off_cmake=${cmake_bench_props_off_external_nav_output_option} external_nav_attach_writer_cmake=${cmake_attach_bench_props_off_external_nav_writer_option} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
+echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} build_dir=${build_dir} live_output_cmake=${cmake_live_output_option} bench_props_off_cmake=${cmake_bench_props_off_live_output_option} attach_writer_cmake=${cmake_attach_bench_props_off_serial_writer_option} external_nav_output_cmake=${cmake_external_nav_output_option} external_nav_bench_props_off_cmake=${cmake_bench_props_off_external_nav_output_option} external_nav_attach_writer_cmake=${cmake_attach_bench_props_off_external_nav_writer_option} external_nav_output_session_audit=${external_nav_output_session_audit} external_nav_output_runtime_enabled=${external_nav_output_runtime_enabled} external_nav_output_max_messages=${external_nav_output_max_messages} external_nav_output_max_seconds=${external_nav_output_max_seconds} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
 
 camera_target_override_args=()
 if [[ -n "${camera_target_width}" || -n "${camera_target_height}" ]]; then
@@ -286,6 +327,17 @@ if [[ "${external_nav_estimates}" == "1" ]]; then
         "${visual_scale_diagnostics}"
         "${visual_scale_reference_altitude_m}"
     )
+fi
+
+if [[ "${external_nav_output_session_audit}" == "1" ]]; then
+    mkdir -p "$(dirname "${external_nav_output_session_audit_path}")"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT="${external_nav_output_session_audit}"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT_PATH="${external_nav_output_session_audit_path}"
+    export VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT="${external_nav_output_runtime_enabled}"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_PROPS_OFF_CONFIRM="${external_nav_output_bench_props_off_confirm}"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SINGLE_WRITER_CONFIRM="${external_nav_output_single_writer_confirm}"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES="${external_nav_output_max_messages}"
+    export VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS="${external_nav_output_max_seconds}"
 fi
 live_route_session_audit_args=()
 live_route_endpoint_stop_args=()

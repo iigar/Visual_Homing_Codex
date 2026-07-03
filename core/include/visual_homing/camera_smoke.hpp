@@ -134,6 +134,14 @@ struct LiveRouteMatchingConfig {
     bool live_output_operator_confirmed = false;
     std::uint64_t live_output_max_commands = 0;
     double live_output_max_duration_ms = 0.0;
+    bool emit_external_nav_output_session_audit = false;
+    std::filesystem::path external_nav_output_session_audit_path;
+    bool external_nav_output_runtime_controls_provided = false;
+    bool external_nav_output_runtime_enabled = false;
+    bool external_nav_output_operator_confirmed = false;
+    bool external_nav_output_single_writer_confirmed = false;
+    std::uint64_t external_nav_output_max_messages = 0;
+    double external_nav_output_max_duration_ms = 0.0;
 };
 
 struct LiveRouteMatchingResult {
@@ -254,6 +262,13 @@ struct LiveRouteMatchingResult {
     std::string live_output_gate_block_reasons;
     bool live_output_session_audit_started = false;
     std::string live_output_session_audit_path;
+    std::uint64_t external_nav_output_allowed_frames = 0;
+    std::uint64_t external_nav_output_sent_frames = 0;
+    std::uint64_t external_nav_output_blocked_frames = 0;
+    std::string external_nav_output_block_reasons;
+    std::string final_external_nav_output_reason;
+    bool external_nav_output_session_audit_started = false;
+    std::string external_nav_output_session_audit_path;
     bool passed = false;
 };
 
