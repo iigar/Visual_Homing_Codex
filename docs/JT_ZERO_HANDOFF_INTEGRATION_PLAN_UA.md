@@ -124,6 +124,9 @@ Status on 2026-07-03:
 - `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=ON` requires both scope flags;
 - default desktop and Pi scripts force these flags `OFF`;
 - bench-scope `ON/ON/OFF` configures locally but keeps `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE=0`.
+- attach-scope `ON/ON/ON` builds locally and sets compile-time `external_nav_writer_attached=true`;
+- `test-core-pi.sh` now logs `external_nav_attach_writer_cmake=<ON|OFF>` in `pi_test_run_start`;
+- `live_route_match_start` now logs external-nav output compile state: `external_nav_output_build_requested`, `external_nav_output_bench_scope`, `external_nav_output_available`, and `external_nav_writer_attached`.
 
 Runtime flags, proposed:
 
@@ -289,6 +292,12 @@ reason=<reviewed blocker, e.g. vehicle_not_armed or runtime_send_disabled>
 ```
 
 This phase proves the writer can be built and attached without sending provider messages.
+
+Pre-wrapper local status on 2026-07-03:
+
+- build/log fields required for wrapper grep evidence exist;
+- local attach-scope WSL CMake/Ninja CTest passed `27/27`;
+- no Pi wrapper command has been added or run yet.
 
 Exit criteria:
 

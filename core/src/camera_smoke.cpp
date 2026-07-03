@@ -21,6 +21,7 @@
 #include "visual_homing/gray8_route_matcher.hpp"
 #include "visual_homing/health_monitor.hpp"
 #include "visual_homing/live_mavlink_bridge.hpp"
+#include "visual_homing/live_mavlink_external_nav_writer.hpp"
 #include "visual_homing/live_mavlink_output_audit_log.hpp"
 #include "visual_homing/live_mavlink_output_session.hpp"
 #include "visual_homing/live_mavlink_output_safety_gate.hpp"
@@ -943,6 +944,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
             << " telemetry_max_age_ms=" << config.telemetry_max_age_ms
             << " require_live_telemetry_health=" << (config.require_live_telemetry_health ? "true" : "false")
+            << " external_nav_output_build_requested="
+            << (LiveMavlinkExternalNavWriter::build_requested() ? "true" : "false")
+            << " external_nav_output_bench_scope="
+            << (LiveMavlinkExternalNavWriter::bench_props_off_scope() ? "true" : "false")
+            << " external_nav_output_available="
+            << (LiveMavlinkExternalNavWriter::external_nav_output_available() ? "true" : "false")
+            << " external_nav_writer_attached="
+            << (LiveMavlinkExternalNavWriter::writer_attached() ? "true" : "false")
             << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false")
             << " visual_scale_diagnostics=" << (config.visual_scale_diagnostics ? "true" : "false")
             << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m

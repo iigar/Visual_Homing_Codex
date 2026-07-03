@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-07-03 - Log External-Nav Output Compile State Before Attach Wrapper
+
+Decision:
+- Add external-nav output compile-state fields to existing run logs before introducing the Pi attach wrapper.
+- `test-core-pi.sh` reports external-nav CMake state in `pi_test_run_start`.
+- `live_route_match_start` reports `external_nav_output_build_requested`, `external_nav_output_bench_scope`, `external_nav_output_available`, and `external_nav_writer_attached`.
+
+Why:
+- The future attach-only wrapper needs machine-checkable evidence that the attach-capable build was selected and that the external-nav writer compile state is attached.
+- Adding observability first keeps the next wrapper small and avoids relying on chat notes or manual CMake cache inspection.
+- This remains separate from provider-send behavior; log visibility is not runtime integration.
+
+Impact:
+- Default WSL build and CTest passed `27/27`.
+- External-nav attach-scope WSL build with attach `ON` passed `27/27`.
+- No Pi wrapper, runtime output path, provider send, or field evidence was added.
+
+Risk:
+- `external_nav_writer_attached=true` will mean compile-time attach state only until runtime session wiring is added and separately audited.
+
 ## 2026-07-03 - Add External-Nav Output Audit Checker Before Pi Wrapper
 
 Decision:
