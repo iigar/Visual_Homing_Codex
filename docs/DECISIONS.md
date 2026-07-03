@@ -1,5 +1,31 @@
 # Decisions
 
+## 2026-07-03 - Add Cache-Safe External-Nav Output Compile-Time Flags
+
+Decision:
+- Add three CMake flags for the external-nav provider output path:
+  - `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_OUTPUT`
+  - `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT`
+  - `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER`
+- Require the bench props-off scope whenever external-nav output is requested.
+- Require both scope flags before the attach flag can configure.
+- Define default build macros with external-nav provider output unavailable and unattached.
+- Make desktop and Pi default build scripts explicitly pass all external-nav output flags as `OFF`.
+
+Why:
+- CMake cache state must not be able to silently carry an attach-capable external-nav writer into ordinary builds.
+- The project needs a reviewed bench scope before any provider-output runtime wiring, matching the existing command-output safety pattern.
+- This step should allow local bench-scope compilation work while keeping default runtime behavior unchanged.
+
+Impact:
+- Default WSL build and CTest passed `27/27`.
+- External-nav bench-scope build with attach `OFF` passed `27/27` and still compiled with provider output unavailable.
+- Invalid configure with `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_OUTPUT=ON` and bench scope `OFF` failed at CMake configure time.
+- No Pi runtime path, wrapper, or field evidence was added.
+
+Risk:
+- The attach flag can now be represented at compile time, but no accepted attach-only props-off evidence exists yet. It must not be treated as provider-send readiness.
+
 ## 2026-07-03 - Use Separate External-Nav Output Audit Log Format
 
 Decision:

@@ -42,7 +42,10 @@ Invoke-Checked "cmake" @(
     "-B", $buildDir,
     "-DVISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT=OFF",
     "-DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=OFF",
-    "-DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=OFF"
+    "-DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=OFF",
+    "-DVISUAL_HOMING_ENABLE_EXTERNAL_NAV_OUTPUT=OFF",
+    "-DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT=OFF",
+    "-DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=OFF"
 )
 Invoke-Checked "cmake" @("--build", $buildDir, "--config", $Configuration)
 Invoke-Checked "ctest" @("--test-dir", $buildDir, "-C", $Configuration, "--output-on-failure")

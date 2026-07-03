@@ -8,8 +8,15 @@ build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 pi_cmake_live_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
 pi_cmake_bench_props_off_live_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT:-0}"
 pi_cmake_attach_bench_props_off_serial_writer="${VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER:-0}"
+pi_cmake_external_nav_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_EXTERNAL_NAV_OUTPUT:-0}"
+pi_cmake_bench_props_off_external_nav_output="${VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT:-0}"
+pi_cmake_attach_bench_props_off_external_nav_writer="${VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER:-0}"
 if [[ -n "${VISUAL_HOMING_PI_BUILD_DIR:-}" ]]; then
     build_dir="${VISUAL_HOMING_PI_BUILD_DIR}"
+elif [[ "${pi_cmake_attach_bench_props_off_external_nav_writer}" == "1" ]]; then
+    build_dir="${core_dir}/build-pi-external-nav-output-attach"
+elif [[ "${pi_cmake_external_nav_output}" == "1" || "${pi_cmake_bench_props_off_external_nav_output}" == "1" ]]; then
+    build_dir="${core_dir}/build-pi-external-nav-output-scope"
 elif [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" ]]; then
     build_dir="${core_dir}/build-pi-live-output-attach"
 elif [[ "${pi_cmake_live_output}" == "1" || "${pi_cmake_bench_props_off_live_output}" == "1" ]]; then
@@ -145,13 +152,22 @@ for bool_env in \
     VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT \
     VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT \
-    VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER; do
+    VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER \
+    VISUAL_HOMING_PI_CMAKE_ENABLE_EXTERNAL_NAV_OUTPUT \
+    VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT \
+    VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER; do
     require_bool_env "${bool_env}"
 done
 
 if [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" \
     && ( "${pi_cmake_live_output}" != "1" || "${pi_cmake_bench_props_off_live_output}" != "1" ) ]]; then
     echo "VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER=1 requires VISUAL_HOMING_PI_CMAKE_ENABLE_LIVE_MAVLINK_OUTPUT=1 and VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT=1" >&2
+    exit 2
+fi
+
+if [[ "${pi_cmake_attach_bench_props_off_external_nav_writer}" == "1" \
+    && ( "${pi_cmake_external_nav_output}" != "1" || "${pi_cmake_bench_props_off_external_nav_output}" != "1" ) ]]; then
+    echo "VISUAL_HOMING_PI_CMAKE_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=1 requires VISUAL_HOMING_PI_CMAKE_ENABLE_EXTERNAL_NAV_OUTPUT=1 and VISUAL_HOMING_PI_CMAKE_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT=1" >&2
     exit 2
 fi
 
@@ -185,6 +201,9 @@ trap finish_log EXIT
 cmake_live_output_option=OFF
 cmake_bench_props_off_live_output_option=OFF
 cmake_attach_bench_props_off_serial_writer_option=OFF
+cmake_external_nav_output_option=OFF
+cmake_bench_props_off_external_nav_output_option=OFF
+cmake_attach_bench_props_off_external_nav_writer_option=OFF
 if [[ "${pi_cmake_live_output}" == "1" ]]; then
     cmake_live_output_option=ON
 fi
@@ -194,8 +213,17 @@ fi
 if [[ "${pi_cmake_attach_bench_props_off_serial_writer}" == "1" ]]; then
     cmake_attach_bench_props_off_serial_writer_option=ON
 fi
+if [[ "${pi_cmake_external_nav_output}" == "1" ]]; then
+    cmake_external_nav_output_option=ON
+fi
+if [[ "${pi_cmake_bench_props_off_external_nav_output}" == "1" ]]; then
+    cmake_bench_props_off_external_nav_output_option=ON
+fi
+if [[ "${pi_cmake_attach_bench_props_off_external_nav_writer}" == "1" ]]; then
+    cmake_attach_bench_props_off_external_nav_writer_option=ON
+fi
 
-echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} build_dir=${build_dir} live_output_cmake=${cmake_live_output_option} bench_props_off_cmake=${cmake_bench_props_off_live_output_option} attach_writer_cmake=${cmake_attach_bench_props_off_serial_writer_option} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
+echo "pi_test_run_start wall_time_utc=${run_started_wall_time_utc} log_path=${run_log_file} repo_root=${repo_root} build_dir=${build_dir} live_output_cmake=${cmake_live_output_option} bench_props_off_cmake=${cmake_bench_props_off_live_output_option} attach_writer_cmake=${cmake_attach_bench_props_off_serial_writer_option} external_nav_output_cmake=${cmake_external_nav_output_option} external_nav_bench_props_off_cmake=${cmake_bench_props_off_external_nav_output_option} external_nav_attach_writer_cmake=${cmake_attach_bench_props_off_external_nav_writer_option} route_output=${route_output} route_warmup_frames=${route_warmup_frames}"
 
 camera_target_override_args=()
 if [[ -n "${camera_target_width}" || -n "${camera_target_height}" ]]; then
@@ -339,7 +367,10 @@ cmake -S "${core_dir}" -B "${build_dir}" \
     -DVISUAL_HOMING_ENABLE_LIBCAMERA=ON \
     -DVISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT="${cmake_live_output_option}" \
     -DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_LIVE_OUTPUT="${cmake_bench_props_off_live_output_option}" \
-    -DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER="${cmake_attach_bench_props_off_serial_writer_option}"
+    -DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER="${cmake_attach_bench_props_off_serial_writer_option}" \
+    -DVISUAL_HOMING_ENABLE_EXTERNAL_NAV_OUTPUT="${cmake_external_nav_output_option}" \
+    -DVISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT="${cmake_bench_props_off_external_nav_output_option}" \
+    -DVISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER="${cmake_attach_bench_props_off_external_nav_writer_option}"
 
 cmake --build "${build_dir}" --parallel "${build_jobs}"
 ctest --test-dir "${build_dir}" --output-on-failure

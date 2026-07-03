@@ -116,6 +116,15 @@ VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT=ON
 VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=ON
 ```
 
+Status on 2026-07-03:
+
+- compile-time flags added to CMake;
+- `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_OUTPUT=ON` without bench scope fails CMake configure;
+- `VISUAL_HOMING_ENABLE_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT=ON` without external-nav output scope fails CMake configure;
+- `VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER=ON` requires both scope flags;
+- default desktop and Pi scripts force these flags `OFF`;
+- bench-scope `ON/ON/OFF` configures locally but keeps `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE=0`.
+
 Runtime flags, proposed:
 
 ```bash

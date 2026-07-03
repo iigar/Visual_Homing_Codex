@@ -121,6 +121,26 @@ void assert_frame_shape(const std::vector<std::uint8_t>& frame, std::uint8_t seq
 } // namespace
 
 int main() {
+#if VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE
+    static_assert(VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BLOCKED == 0);
+    static_assert(vh::LiveMavlinkExternalNavWriter::external_nav_output_available());
+    static_assert(!vh::LiveMavlinkExternalNavWriter::external_nav_output_compiled_out());
+    static_assert(vh::LiveMavlinkExternalNavWriter::writer_attached());
+#else
+    static_assert(VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BLOCKED == 1);
+    static_assert(VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE == 0);
+    static_assert(!vh::LiveMavlinkExternalNavWriter::external_nav_output_available());
+    static_assert(vh::LiveMavlinkExternalNavWriter::external_nav_output_compiled_out());
+    static_assert(!vh::LiveMavlinkExternalNavWriter::writer_attached());
+#endif
+#if VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BUILD_REQUESTED
+    static_assert(vh::LiveMavlinkExternalNavWriter::build_requested());
+    static_assert(vh::LiveMavlinkExternalNavWriter::bench_props_off_scope());
+#else
+    static_assert(!vh::LiveMavlinkExternalNavWriter::build_requested());
+    static_assert(!vh::LiveMavlinkExternalNavWriter::bench_props_off_scope());
+#endif
+
     {
         const auto frame = vh::encode_mavlink2_vision_position_estimate(
             ready_estimate(),

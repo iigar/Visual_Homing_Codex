@@ -7,6 +7,22 @@
 #include "visual_homing/external_nav_estimator.hpp"
 #include "visual_homing/live_mavlink_serial_writer.hpp"
 
+#ifndef VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BUILD_REQUESTED
+#define VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BUILD_REQUESTED 0
+#endif
+
+#ifndef VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT_SCOPE
+#define VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT_SCOPE 0
+#endif
+
+#ifndef VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE
+#define VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE 0
+#endif
+
+#ifndef VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER_ATTACHED
+#define VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER_ATTACHED 0
+#endif
+
 namespace vh {
 
 struct LiveMavlinkExternalNavWriterConfig {
@@ -30,6 +46,26 @@ class LiveMavlinkExternalNavWriter final : public ExternalNavWriter {
 public:
     LiveMavlinkExternalNavWriter(LiveMavlinkExternalNavWriterConfig config,
                                  LiveMavlinkByteTransport& transport);
+
+    static constexpr bool external_nav_output_compiled_out() noexcept {
+        return VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE == 0;
+    }
+
+    static constexpr bool external_nav_output_available() noexcept {
+        return VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_AVAILABLE == 1;
+    }
+
+    static constexpr bool build_requested() noexcept {
+        return VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BUILD_REQUESTED == 1;
+    }
+
+    static constexpr bool bench_props_off_scope() noexcept {
+        return VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_OUTPUT_SCOPE == 1;
+    }
+
+    static constexpr bool writer_attached() noexcept {
+        return VISUAL_HOMING_BENCH_PROPS_OFF_EXTERNAL_NAV_WRITER_ATTACHED == 1;
+    }
 
     bool start() override;
     void stop() override;
