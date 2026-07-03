@@ -24,6 +24,25 @@ Impact:
 Risk:
 - Runtime output still depends on a future Pi wrapper and field-reviewed procedure; local tests only prove build/runtime gating and audit semantics.
 
+## 2026-07-03 - Add Attach-Only External-Nav Output Pi Wrapper
+
+Decision:
+- Add `scripts/run-external-nav-output-bench-props-off-attach-pi.sh` as the first external-nav output Pi wrapper.
+- The wrapper forces external-nav output attach CMake `ON/ON/ON`, enables external-nav output audit, and keeps `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=0`.
+- It checks compile/runtime evidence after the run: external-nav output build requested, bench scope enabled, output available, writer attached, output audit started, allowed `0`, sent `0`, and final reason `runtime_disabled`.
+- It also runs `scripts/check-external-nav-output-audit-log.sh` against the produced audit log.
+
+Why:
+- Phase 3 needs a repeatable operator command for attach-only evidence before any provider-send bench work.
+- The wrapper proves the writer can be compiled/attached and audited without sending `VISION_POSITION_ESTIMATE`.
+
+Impact:
+- The wrapper is available locally and documented.
+- It has not been run on `jtzero` and is not field evidence yet.
+
+Risk:
+- The wrapper still requires a reviewed props-off Pi run before it can count as accepted attach evidence.
+
 ## 2026-07-03 - Log External-Nav Output Compile State Before Attach Wrapper
 
 Decision:

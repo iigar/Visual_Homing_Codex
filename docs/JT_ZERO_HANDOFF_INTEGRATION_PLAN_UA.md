@@ -293,14 +293,17 @@ reason=<reviewed blocker, e.g. vehicle_not_armed or runtime_send_disabled>
 
 This phase proves the writer can be built and attached without sending provider messages.
 
-Pre-wrapper local status on 2026-07-03:
+Wrapper local status on 2026-07-03:
 
 - build/log fields required for wrapper grep evidence exist;
 - local attach-scope WSL CMake/Ninja CTest passed `27/27`;
 - runtime external-nav output audit wiring exists behind explicit env controls;
 - `test-core-pi.sh` refuses runtime external-nav output unless external-nav estimates, live telemetry, attach CMake, props-off confirmation, single-provider confirmation, and positive message/time limits are present;
+- `scripts/run-external-nav-output-bench-props-off-attach-pi.sh` exists and forces external-nav output attach CMake `ON/ON/ON`;
+- the attach-only wrapper enables external-nav output audit but keeps `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=0`;
+- the wrapper checks `external_nav_writer_attached=true`, `external_nav_output_allowed=0`, `external_nav_output_sent=0`, and audit `reason=runtime_disabled`;
 - default and attach-scope WSL CTest both passed `27/27`;
-- no Pi wrapper command has been added or run yet.
+- no Pi wrapper command has been run yet.
 
 Exit criteria:
 
