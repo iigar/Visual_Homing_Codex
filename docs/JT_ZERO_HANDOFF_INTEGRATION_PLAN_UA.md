@@ -78,7 +78,7 @@ jt_zero.reason=not_integrated
 
 ## Candidate Message Path
 
-Потрібно вибрати і зафіксувати один provider message path перед імплементацією.
+Перший provider message path для encode-only boundary: `VISION_POSITION_ESTIMATE`.
 
 Кандидати:
 
@@ -87,13 +87,21 @@ VISION_POSITION_ESTIMATE
 ODOMETRY
 ```
 
-Рекомендація для першого reviewed implementation pass: почати з `VISION_POSITION_ESTIMATE`, якщо конфігурація ArduPilot/JT_Zero приймає цей provider path у нашому setup. Причина: поточний `ExternalNavEstimate` вже має мінімальні поля `x_m`, `y_m`, `z_m`, `yaw_rad`, timestamp, confidence і validity reason. `ODOMETRY` має сенс як наступний крок, якщо потрібні covariance/frame semantics або якщо JT_Zero очікує саме odometry stream.
+Рішення для першого reviewed implementation pass: почати з `VISION_POSITION_ESTIMATE` як library-only encoder. Причина: поточний `ExternalNavEstimate` вже має мінімальні поля `x_m`, `y_m`, `z_m`, `yaw_rad`, timestamp, confidence і validity reason. `ODOMETRY` має сенс як наступний крок, якщо потрібні covariance/frame semantics або якщо JT_Zero очікує саме odometry stream.
 
-Перед кодуванням треба підтвердити:
+Стан на 2026-07-03:
 
-- який message реально очікує JT_Zero/ArduPilot у цьому setup;
+- додано encode-only `VISION_POSITION_ESTIMATE` writer boundary;
+- message id `102`, payload length `117`, CRC extra `158`;
+- `time_usec` передається явно, без неявного перетворення internal steady-clock timestamp;
+- runtime live-route loop, Pi wrappers, live send, attach/send gates не змінені;
+- output залишається disabled/unattached by default.
+
+Перед runtime attach/send треба підтвердити:
+
+- що JT_Zero/ArduPilot у цьому setup реально приймає цей provider path;
 - які FC params потрібні для прийняття external-nav source;
-- чи `VISION_POSITION_ESTIMATE` достатньо для mode/provider readiness;
+- чи `VISION_POSITION_ESTIMATE` достатньо для mode/provider readiness, або треба перейти на `ODOMETRY`;
 - який component id/source system безпечний для Pi-owned provider.
 
 ## Proposed Runtime Gates
@@ -195,6 +203,17 @@ Exit criteria:
 - unit tests pass;
 - default builds still do not expose any external-nav output;
 - no Pi runtime change.
+
+Status on 2026-07-03:
+
+- implemented:
+  - `core/include/visual_homing/live_mavlink_external_nav_writer.hpp`
+  - `core/src/live_mavlink_external_nav_writer.cpp`
+  - `core/tests/live_mavlink_external_nav_writer_test.cpp`
+- writer uses injectable `LiveMavlinkByteTransport`;
+- writer rejects non-running sends, invalid/non-finite estimates, `valid_for_fc=false`, non-`valid` reason, stale route/telemetry/altitude/scale flags;
+- only byte encoding and validation are covered; no runtime attachment exists yet;
+- WSL CMake/Ninja CTest passed `25/25`.
 
 ### Phase 2 - External-Nav Output Bridge And Session Gate
 

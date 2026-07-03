@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-07-03
+
+- Started JT_Zero handoff Phase 1 with an encode-only `VISION_POSITION_ESTIMATE` writer boundary. The new writer converts validated `ExternalNavEstimate` values into MAVLink2 provider bytes through an injectable byte transport and does not attach to the live route runtime, Pi wrappers, or any serial send path.
+- Kept the existing yaw-rate command-output path separate from the new external-nav provider path. The Phase 1 writer validates `valid_for_fc=true`, `reason=valid`, route/telemetry/altitude/scale readiness flags, and finite pose fields before any byte write; invalid estimates fail closed.
+- Used an explicit `time_usec` argument for `VISION_POSITION_ESTIMATE` rather than deriving it from the internal steady-clock timestamp. This keeps the encoder deterministic and avoids hiding clock-domain assumptions before JT_Zero/ArduPilot provider acceptance is tested.
+- Validated the desktop/WSL C++ path after the encode-only writer work: CMake/Ninja build succeeded in `core/build-wsl-external-nav`, and CTest passed `25/25`. No Pi runtime behavior or live external-nav output behavior was changed.
+
 ## 2026-07-02
 
 - Recorded and accepted a new outdoor `128x96`, 360-entry route at a new location: `/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260702T153722Z.vhrs`. Route checks passed (`route_self_match`, perturbation, and `route_distinctiveness quality_pass=true`) with a distinctiveness warning limited to `3/360` ambiguous nearest entries (`0.00833333`) and no low-texture or exact-duplicate entries. Keyframes were exported on the Pi and copied to the laptop under `keyframes/field-route-20260702T153722Z-keyframes`.

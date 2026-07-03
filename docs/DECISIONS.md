@@ -1,5 +1,31 @@
 # Decisions
 
+## 2026-07-03 - Start External-Nav Writer With VISION_POSITION_ESTIMATE Encode-Only Boundary
+
+Decision:
+- Use MAVLink2 `VISION_POSITION_ESTIMATE` as the first external-nav provider message encoder for the JT_Zero handoff path.
+- Keep this as an encode-only library boundary for Phase 1: no live-route runtime attachment, no Pi wrapper send path, and no change to the existing yaw-rate command-output writer.
+- Pass `time_usec` explicitly into the encoder instead of deriving it from the internal steady-clock timestamp.
+- Keep `ODOMETRY` as a later option if JT_Zero/ArduPilot acceptance requires stronger frame/covariance semantics.
+
+Why:
+- The accepted 2026-07-02 external-nav dry-runs already produce `ExternalNavEstimate` fields that map directly to `VISION_POSITION_ESTIMATE`: `x_m`, `y_m`, `z_m`, `yaw_rad`, route confidence, route progress, telemetry freshness, altitude validity, and scale-known readiness.
+- `VISION_POSITION_ESTIMATE` is a smaller first integration target than `ODOMETRY` and matches the current project stage: prove byte encoding and estimate rejection first, then test provider acceptance separately.
+- Explicit timestamp input avoids clock-domain assumptions before the flight controller/JT_Zero acceptance path is measured.
+
+Impact:
+- Added a new external-nav writer boundary:
+  - `core/include/visual_homing/live_mavlink_external_nav_writer.hpp`
+  - `core/src/live_mavlink_external_nav_writer.cpp`
+  - `core/tests/live_mavlink_external_nav_writer_test.cpp`
+- The writer uses an injectable byte transport, encodes MAVLink2 message id `102` with full payload length `117` and CRC extra `158`, and rejects invalid/non-finite/non-ready estimates before byte write.
+- Desktop/WSL CMake/Ninja validation passed with CTest `25/25`.
+- Runtime behavior remains unchanged; no external-nav MAVLink provider messages are sent by default or by the current Pi wrappers.
+
+Risk:
+- ArduPilot/JT_Zero provider acceptance is still unproven. The next evidence must be attach-only props-off and then reviewed provider-send props-off work, not a flight test.
+- `VISION_POSITION_ESTIMATE` may not be the final provider message if JT_Zero requires `ODOMETRY` or different covariance/frame handling.
+
 ## 2026-06-23 - Keep Android Handoff Inputs Pi-Owned
 
 Decision:
