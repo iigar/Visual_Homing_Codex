@@ -31,6 +31,7 @@ Decision:
 - The wrapper forces external-nav output attach CMake `ON/ON/ON`, enables external-nav output audit, and keeps `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=0`.
 - It checks compile/runtime evidence after the run: external-nav output build requested, bench scope enabled, output available, writer attached, output audit started, allowed `0`, sent `0`, and final reason `runtime_disabled`.
 - It also runs `scripts/check-external-nav-output-audit-log.sh` against the produced audit log.
+- It requires strict external-nav readiness evidence from the underlying dry-run wrapper before accepting attach-only output evidence.
 
 Why:
 - Phase 3 needs a repeatable operator command for attach-only evidence before any provider-send bench work.

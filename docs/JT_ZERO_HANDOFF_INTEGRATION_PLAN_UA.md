@@ -301,6 +301,7 @@ Wrapper local status on 2026-07-03:
 - `test-core-pi.sh` refuses runtime external-nav output unless external-nav estimates, live telemetry, attach CMake, props-off confirmation, single-provider confirmation, and positive message/time limits are present;
 - `scripts/run-external-nav-output-bench-props-off-attach-pi.sh` exists and forces external-nav output attach CMake `ON/ON/ON`;
 - the attach-only wrapper enables external-nav output audit but keeps `VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=0`;
+- the wrapper requires strict external-nav readiness evidence (`external_nav_strict_session_ready=true`);
 - the wrapper checks `external_nav_writer_attached=true`, `external_nav_output_allowed=0`, `external_nav_output_sent=0`, and audit `reason=runtime_disabled`;
 - default and attach-scope WSL CTest both passed `27/27`;
 - no Pi wrapper command has been run yet.
