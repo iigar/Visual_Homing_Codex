@@ -5,6 +5,7 @@ core/build-*/
 core/build-pi/
 cmake-build-*/
 artifacts/
+keyframes/
 
 # CMake generated files
 CMakeCache.txt
