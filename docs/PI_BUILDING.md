@@ -204,6 +204,23 @@ VISUAL_HOMING_VALIDATE_MAVLINK_TELEMETRY=1 \
 
 By default this requires at least one `HEARTBEAT`, one `ATTITUDE`, one `GLOBAL_POSITION_INT`, and zero malformed frames. Override the thresholds with `VISUAL_HOMING_MAVLINK_MIN_HEARTBEAT_MESSAGES`, `VISUAL_HOMING_MAVLINK_MIN_ATTITUDE_MESSAGES`, `VISUAL_HOMING_MAVLINK_MIN_GLOBAL_POSITION_INT_MESSAGES`, and `VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES`.
 
+If `/dev/serial0` points to `/dev/ttyS0` or `/dev/ttyAMA0` but route recording fails with `Permission denied`, install a persistent udev rule so the `pi` user can read the port through the `dialout` group:
+
+```bash
+printf '%s\n' \
+'KERNEL=="ttyS0", GROUP="dialout", MODE="0660"' \
+'KERNEL=="ttyAMA0", GROUP="dialout", MODE="0660"' \
+| sudo tee /etc/udev/rules.d/99-visual-homing-serial.rules >/dev/null
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo chgrp dialout /dev/ttyS0
+sudo chmod 660 /dev/ttyS0
+ls -l /dev/serial0 /dev/ttyS0
+```
+
+The expected active permission shape is `root:dialout` with mode `660` on the real serial device.
+
 To attach the latest validated MAVLink telemetry snapshot to a live route recording, enable route telemetry use after capture:
 
 ```bash
