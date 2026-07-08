@@ -1,5 +1,13 @@
 # Session Log
 
+## 2026-07-08
+
+- Preserved the post-recovery state after the Pi SD-card failure before further field work. The restored Pi has the repository back at the latest pushed state, default Pi CTest passed `27/27`, and SSH key access works with the dedicated `id_ed25519_jtzero` key.
+- Switched the current camera investigation to the Arducam/OV9281 160-degree mono camera. Pi boot config was corrected to `camera_auto_detect=0` plus `dtoverlay=ov9281,arducam`; `rpicam-hello --list-cameras` now detects `ov9281 [1280x800 10-bit MONO]` with `R8` modes including `640x400`, `1280x720`, and `1280x800`.
+- Added the tracked `ov9281-160-wide` camera profile as the next field candidate: `640x400` capture, `160x100` target, Gray8 payload, and nominal FOV placeholders for the wide lens. The FOV values are calibration placeholders, not final authority.
+- Recorded the key state from the pre-failure field work so the next session does not rely on chat memory: the latest IMX219/160x120 route quality was good, but live matching could alias strongly; top-k diagnostics at the supposed start of `field-route-20260707T175439Z.vhrs` repeatedly preferred late-route progress around `0.899666`, confirming the need for wider FOV or stronger candidate refinement before trusting forward progress evidence.
+- After commit `f948dd1`, field-route keyframes are expected under repo-local timestamped folders such as `keyframes/field-route-<UTC>-keyframes`; old Pi-local artifact/keyframe folders from before the SD-card failure should not be treated as authoritative.
+
 ## 2026-07-03
 
 - Started JT_Zero handoff Phase 1 with an encode-only `VISION_POSITION_ESTIMATE` writer boundary. The new writer converts validated `ExternalNavEstimate` values into MAVLink2 provider bytes through an injectable byte transport and does not attach to the live route runtime, Pi wrappers, or any serial send path.

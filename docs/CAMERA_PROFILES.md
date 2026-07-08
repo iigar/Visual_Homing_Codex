@@ -54,11 +54,14 @@ minimum_average_nearest_mean_abs_diff = 5.0
 
 Supported `sensor_type` values are `Visible`, `Thermal`, and `Other`. Supported `pixel_format` values are `Gray8`, `Bgr8`, and `Thermal16`.
 
-The first tracked profile template is:
+The tracked visible camera profiles are:
 
 ```text
 config/camera_profiles/imx219-visible-wide.profile
+config/camera_profiles/ov9281-160-wide.profile
 ```
+
+`ov9281-160-wide` is the current wide-angle mono field candidate after the Pi SD-card rebuild. On the restored Pi, `rpicam-hello --list-cameras` detects `ov9281 [1280x800 10-bit MONO]` with `R8` modes including `640x400`, `1280x720`, and `1280x800`. The tracked profile starts with `640x400 -> 160x100` preprocessing and nominal FOV placeholders for the 160-degree lens. Measure the real FOV/crop before treating the direction scale as calibrated.
 
 Inspect a profile without touching camera hardware:
 

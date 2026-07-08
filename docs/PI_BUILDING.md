@@ -111,6 +111,13 @@ Set the active profile after validating it:
 VISUAL_HOMING_SET_CAMERA_PROFILE_ID=imx219-visible-wide ./scripts/test-core-pi.sh
 ```
 
+For the OV9281 wide-angle mono camera:
+
+```bash
+VISUAL_HOMING_SET_CAMERA_PROFILE_ID=ov9281-160-wide ./scripts/test-core-pi.sh
+VISUAL_HOMING_GET_ACTIVE_CAMERA_PROFILE=1 ./scripts/test-core-pi.sh
+```
+
 Read the active profile:
 
 ```bash
