@@ -73,7 +73,13 @@ if [[ "${failed}" != "0" ]]; then
     exit 2
 fi
 
+audit_stop_reason="match_live_route_complete"
+if [[ "${VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS:-0}" == "1" ]]; then
+    audit_stop_reason="endpoint_progress_reached"
+fi
+
 VISUAL_HOMING_EXPECTED_EXTERNAL_NAV_OUTPUT_AUDIT_REASON=runtime_disabled \
+VISUAL_HOMING_EXPECTED_EXTERNAL_NAV_OUTPUT_AUDIT_STOP_REASON="${audit_stop_reason}" \
 VISUAL_HOMING_EXPECTED_EXTERNAL_NAV_OUTPUT_AUDIT_VALID_FOR_FC=true \
 "${repo_root}/scripts/check-external-nav-output-audit-log.sh" "${audit_log}"
 
