@@ -849,6 +849,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.stop_at_endpoint_progress && config.expected_progress == "any") {
         throw std::invalid_argument("Live route matching stop_at_endpoint_progress requires forward or reverse expected_progress");
     }
+    if (!std::isfinite(config.endpoint_dwell_ms) || config.endpoint_dwell_ms < 0.0) {
+        throw std::invalid_argument("Live route matching endpoint_dwell_ms must be finite and non-negative");
+    }
     if (config.minimum_valid_dry_run_command_fraction < 0.0 || config.minimum_valid_dry_run_command_fraction > 1.0) {
         throw std::invalid_argument("Live route matching minimum_valid_dry_run_command_fraction must be in [0, 1]");
     }
@@ -985,6 +988,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_start_progress=" << config.endpoint_start_progress
             << " endpoint_end_progress=" << config.endpoint_end_progress
             << " stop_at_endpoint_progress=" << (config.stop_at_endpoint_progress ? "true" : "false")
+            << " endpoint_dwell_ms=" << config.endpoint_dwell_ms
             << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false")
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
@@ -1327,6 +1331,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     double edge_end_zone_gap_sum = 0.0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
+    std::optional<Timestamp> endpoint_dwell_started_at;
+    result.endpoint_dwell_required_ms = config.endpoint_dwell_ms;
+    result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -1665,13 +1672,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             }
             metrics << "\n";
 
-            if (config.stop_at_endpoint_progress
-                && match.valid
-                && current_tracked_progress
-                && live_route_match_endpoint_reached(config, *current_tracked_progress)) {
-                result.endpoint_stop_triggered = true;
-                result.stop_reason = "endpoint_progress_reached";
-                break;
+            if (config.stop_at_endpoint_progress && match.valid && current_tracked_progress) {
+                if (live_route_match_endpoint_reached(config, *current_tracked_progress)) {
+                    if (!endpoint_dwell_started_at) {
+                        endpoint_dwell_started_at = processing_finished;
+                    }
+                    result.endpoint_dwell_ms = milliseconds_between(*endpoint_dwell_started_at, processing_finished);
+                    result.endpoint_dwell_passed = result.endpoint_dwell_ms >= config.endpoint_dwell_ms;
+                    if (result.endpoint_dwell_passed) {
+                        result.endpoint_stop_triggered = true;
+                        result.stop_reason = "endpoint_progress_reached";
+                        break;
+                    }
+                } else {
+                    endpoint_dwell_started_at.reset();
+                    result.endpoint_dwell_ms = 0.0;
+                    result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
+                }
             }
         } else {
             ++result.empty_polls;
@@ -1964,6 +1981,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_progress_passed=" << (result.endpoint_progress_passed ? "true" : "false")
             << " progress_gate_passed=" << (result.progress_gate_passed ? "true" : "false")
             << " endpoint_stop_triggered=" << (result.endpoint_stop_triggered ? "true" : "false")
+            << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
+            << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
+            << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
             << " stop_reason=" << result.stop_reason
             << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
@@ -2072,6 +2092,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_passed=" << bool_word(result.endpoint_progress_passed)
             << " progress_gate_passed=" << bool_word(result.progress_gate_passed)
             << " endpoint_stop=" << bool_word(result.endpoint_stop_triggered)
+            << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
+            << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
+            << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
             << " stop_reason=" << result.stop_reason
             << " confidence_min_avg=" << result.minimum_confidence_seen << "/" << result.average_confidence
             << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)

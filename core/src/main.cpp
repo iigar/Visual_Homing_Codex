@@ -297,6 +297,11 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     if (const char* stop_at_endpoint = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS")) {
         config.stop_at_endpoint_progress = parse_bool_arg(stop_at_endpoint);
     }
+    if (const char* dwell_ms = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_DWELL_MS")) {
+        config.endpoint_dwell_ms = parse_double_arg(
+            dwell_ms,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_DWELL_MS");
+    }
     if (const char* enabled = std::getenv("VISUAL_HOMING_SCALE_REFINEMENT")) {
         config.scale_refinement_enabled = parse_bool_arg(enabled);
     }
