@@ -344,6 +344,19 @@ bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, do
     return false;
 }
 
+bool live_route_match_endpoint_progress_passed(const LiveRouteMatchingConfig& config,
+                                               const LiveRouteMatchingResult& result) {
+    if (config.expected_progress == "forward") {
+        return result.first_tracked_progress <= config.endpoint_start_progress
+            && result.max_tracked_progress_seen >= config.endpoint_end_progress;
+    }
+    if (config.expected_progress == "reverse") {
+        return result.first_tracked_progress >= config.endpoint_end_progress
+            && result.min_tracked_progress_seen <= config.endpoint_start_progress;
+    }
+    return true;
+}
+
 bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result) {
     if (result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)) {
@@ -1560,6 +1573,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             result.last_frame_age_ms = timing.frame_age_ms;
             result.last_processing_latency_ms = timing.processing_latency_ms;
 
+            std::optional<double> current_tracked_progress;
             if (match.valid) {
                 ++result.valid_matches;
                 if (last_valid_progress && match.progress < *last_valid_progress) {
@@ -1608,6 +1622,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
                 result.last_tracked_progress = tracked_progress;
                 last_tracked_progress = tracked_progress;
+                current_tracked_progress = tracked_progress;
             }
 
             metrics << "live_route_match_frame id=" << processed.id
@@ -1652,7 +1667,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
 
             if (config.stop_at_endpoint_progress
                 && match.valid
-                && live_route_match_endpoint_reached(config, match.progress)) {
+                && current_tracked_progress
+                && live_route_match_endpoint_reached(config, *current_tracked_progress)) {
                 result.endpoint_stop_triggered = true;
                 result.stop_reason = "endpoint_progress_reached";
                 break;
@@ -1731,17 +1747,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         result.tracked_directional_progress_passed = true;
     }
 
-    if (config.expected_progress == "forward") {
-        result.endpoint_progress_passed =
-            result.first_progress <= config.endpoint_start_progress
-            && result.max_progress_seen >= config.endpoint_end_progress;
-    } else if (config.expected_progress == "reverse") {
-        result.endpoint_progress_passed =
-            result.first_progress >= config.endpoint_end_progress
-            && result.min_progress_seen <= config.endpoint_start_progress;
-    } else {
-        result.endpoint_progress_passed = true;
-    }
+    result.endpoint_progress_passed = live_route_match_endpoint_progress_passed(config, result);
 
     result.progress_gate_passed = config.require_endpoint_progress
         ? result.endpoint_progress_passed

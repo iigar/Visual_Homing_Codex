@@ -275,6 +275,8 @@ struct LiveRouteMatchingResult {
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
 bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress);
+bool live_route_match_endpoint_progress_passed(const LiveRouteMatchingConfig& config,
+                                               const LiveRouteMatchingResult& result);
 bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result);
 double live_route_match_next_tracked_progress(const std::string& expected_progress,

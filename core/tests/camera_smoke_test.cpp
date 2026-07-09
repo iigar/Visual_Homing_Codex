@@ -172,6 +172,28 @@ int main() {
     endpoint_any.expected_progress = "any";
     assert(!vh::live_route_match_endpoint_reached(endpoint_any, 1.0));
 
+    vh::LiveRouteMatchingConfig strict_endpoint_forward = endpoint_forward;
+    strict_endpoint_forward.endpoint_end_progress = 0.94;
+    vh::LiveRouteMatchingConfig strict_endpoint_reverse = endpoint_reverse;
+    strict_endpoint_reverse.endpoint_start_progress = 0.15;
+    strict_endpoint_reverse.endpoint_end_progress = 0.90;
+
+    vh::LiveRouteMatchingResult endpoint_result;
+    endpoint_result.first_progress = 0.0;
+    endpoint_result.max_progress_seen = 0.97;
+    endpoint_result.first_tracked_progress = 0.0;
+    endpoint_result.max_tracked_progress_seen = 0.90;
+    assert(!vh::live_route_match_endpoint_progress_passed(strict_endpoint_forward, endpoint_result));
+    endpoint_result.max_tracked_progress_seen = 0.94;
+    assert(vh::live_route_match_endpoint_progress_passed(strict_endpoint_forward, endpoint_result));
+
+    endpoint_result.first_tracked_progress = 0.90;
+    endpoint_result.min_tracked_progress_seen = 0.16;
+    assert(!vh::live_route_match_endpoint_progress_passed(strict_endpoint_reverse, endpoint_result));
+    endpoint_result.min_tracked_progress_seen = 0.15;
+    assert(vh::live_route_match_endpoint_progress_passed(strict_endpoint_reverse, endpoint_result));
+    assert(vh::live_route_match_endpoint_progress_passed(endpoint_any, endpoint_result));
+
     vh::LiveRouteMatchingConfig frame_count_config;
     frame_count_config.frames_to_capture = 150;
     vh::LiveRouteMatchingResult frame_count_result;
