@@ -292,13 +292,123 @@ external_nav_output_audit_log_check path=/home/pi/Visual_Homing_Codex/artifacts/
 external_nav_output_attach_check passed=true
 ```
 
+## Додатковий 20s Control Route
+
+Пізніше у цій же польовій сесії був записаний чистіший 20-секундний OV9281 route:
+
+```text
+route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260709T161017Z.vhrs
+entries=600
+size=160x100
+elapsed_ms=20026.6
+effective_fps=29.9601
+keyframes=/home/pi/Visual_Homing_Codex/keyframes/field-route-20260709T161017Z-keyframes
+local_keyframes=keyframes/field-route-20260709T161017Z-keyframes-png
+```
+
+Route quality:
+
+```text
+route_quality_log_check path=/home/pi/Visual_Homing_Codex/artifacts/logs/field-route-record-20260709T161017Z.log passed=true entries=600 quality_pass=true warning=false low_texture_fraction=0 ambiguous_nearest_fraction=0 average_nearest_mean_abs_diff=11.7002
+```
+
+Цей route замінив 300-frame route як кращий контрольний артефакт для подальшого OV9281 field readiness tuning.
+
+## 20s Matcher Fix Та Прийнятий Preset
+
+Польові прогони на 20s route показали дві окремі проблеми:
+
+- `WINDOW_RADIUS=120` без жорсткого directional behavior міг відкотити primary match назад у середину маршруту, навіть коли end-zone probe бачив кінець як кращий candidate.
+- `DIRECTIONAL_SEARCH=1` прибрав rollback, але endpoint-stop по raw `match.progress` міг зупиняти маршрут рано через forward spike.
+
+У commit `f83c035` endpoint pass/stop було переведено на tracked route progress. Raw `match.progress` залишився у логах для діагностики, але endpoint gate більше не приймає одиночний raw spike як фізичний фініш. Після цього Pi external-nav attach build/tests passed `27/27`:
+
+```text
+test-core-pi-20260709T165524Z.log
+100% tests passed, 0 tests failed out of 27
+```
+
+Прийнятий field preset для route `field-route-20260709T161017Z.vhrs`:
+
+```text
+VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=30
+VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_SEARCH=1
+VISUAL_HOMING_LIVE_ROUTE_MATCH_DIRECTIONAL_BIAS=0
+VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN=0
+VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MAX=0.08
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_END_PROGRESS=0.978
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_START_PROGRESS=0.08
+VISUAL_HOMING_MATCH_LIVE_ROUTE_TELEMETRY_MAX_AGE_MS=3000
+VISUAL_HOMING_MAVLINK_MAX_MALFORMED_FRAMES=2
+VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M=3
+VISUAL_HOMING_EXTERNAL_NAV_MAX_RELATIVE_ALTITUDE_SPAN_M=5
+```
+
+Forward threshold calibration facts:
+
+```text
+endpoint_end=0.97  stopped early at tracked_progress=0.970308, about 1.5..2 m before the physical finish.
+endpoint_end=0.99  did not trigger after standing at the physical finish for about 10 s; max tracked_progress=0.979967.
+endpoint_end=0.978 triggered at the real physical finish.
+```
+
+Accepted forward run at the real physical finish:
+
+```text
+run_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-attach-20260709T173801Z.log
+audit_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260709T173801Z.log
+passed=true
+frames=536/900
+elapsed_ms=17868.4
+progress=0..0.979967
+tracked_progress=0..0.978652
+confidence_min_avg=0.881337/0.905639
+external_nav_valid=536/536
+external_nav_session_ready=true
+external_nav_strict_session_ready=true
+external_nav_operator_readiness=ready
+endpoint_stop=true
+stop_reason=endpoint_progress_reached
+```
+
+Forward audit:
+
+```text
+external_nav_output_audit_log_check path=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260709T173801Z.log passed=true estimates=536 allowed=0 sent=0 blocked=536 reason=runtime_disabled stop_reason=endpoint_progress_reached
+```
+
+Accepted reverse run:
+
+```text
+run_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-attach-20260709T170924Z.log
+audit_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260709T170924Z.log
+passed=true
+frames=482/900
+elapsed_ms=16128.1
+progress=0.854758..0.0784641
+tracked_progress=0.854758..0.0796299
+confidence_min_avg=0.872183/0.893003
+external_nav_valid=482/482
+external_nav_session_ready=true
+external_nav_strict_session_ready=true
+external_nav_operator_readiness=ready
+endpoint_stop=true
+stop_reason=endpoint_progress_reached
+```
+
+Reverse audit:
+
+```text
+external_nav_output_audit_log_check path=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260709T170924Z.log passed=true estimates=482 allowed=0 sent=0 blocked=482 reason=runtime_disabled stop_reason=endpoint_progress_reached
+```
+
 ## Що Доведено
 
 - OV9281 camera path на Pi працює для `640x400 -> 160x100` field route recording.
 - Новий daylight route має достатню якість для hand-carried forward/reverse dry-run readiness.
 - External-nav estimates можуть бути FC-ready протягом усього accepted endpoint-stop проходу (`valid == total`) у forward і reverse.
 - Attach-only external-nav output audit працює: writer attach-capable, runtime send disabled, `allowed=0`, `sent=0`, `blocked=<frames>`, reason `runtime_disabled`.
-- `VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=120` є потрібним польовим параметром для цього OV9281 route; дефолт `30` може утримувати tracker у локальному сегменті.
+- Для 300-frame route `VISUAL_HOMING_LIVE_ROUTE_MATCH_WINDOW_RADIUS=120` допоміг дійти до endpoint; для 20s route прийнятий preset став `WINDOW_RADIUS=30`, `DIRECTIONAL_SEARCH=1`, `DIRECTIONAL_BIAS=0`, forward initial window `0..0.08`, forward endpoint `0.978`, reverse endpoint `0.08`.
 - Фізичний endpoint був підтверджений standing diagnostic проти `end.png`.
 
 ## Що Не Доведено
