@@ -350,6 +350,15 @@ Wrapper status on 2026-07-10:
 - it checks `external_nav_writer_attached=true`, `external_nav_output_allowed>0`, `external_nav_output_sent>0`, `external_nav_output_blocked=0`, `final_external_nav_output_reason=allowed`, and validates the audit log with `reason=allowed`, `blocked=0`, `valid_for_fc=true`;
 - this wrapper is not flight authorization and must be run only props-off in the reviewed bench state.
 
+First accepted Phase 4 bench evidence on 2026-07-10:
+
+```text
+run_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.log
+audit_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260710T174235Z.log
+```
+
+The run passed with `external_nav_valid=585/585`, strict/session/operator readiness `ready`, `endpoint_stop=true`, `endpoint_dwell_ms=1231.4/1200`, and output audit `allowed=585`, `sent=585`, `blocked=0`, `reason=allowed`. Telemetry still reported `mode=AltHold`, `armed=false`, so Phase 4 proves bounded provider-message emission in a props-off bench state, not FC/JT_Zero provider acceptance or flight readiness.
+
 ### Phase 5 - JT_Zero Provider Readiness Evidence
 
 After provider send works, collect evidence that FC/JT_Zero accepts or rejects it:

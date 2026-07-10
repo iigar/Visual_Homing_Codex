@@ -2,7 +2,7 @@
 
 Цей документ фіксує факти польової сесії 2026-07-10 без екстраполяцій. Мета сесії: перевірити endpoint dwell confirmation, записати новий OV9281 route без захисного ковпачка, прийняти forward endpoint preset і зберегти доказовий stop-frame.
 
-Це hand-carried dry-run / attach-only evidence. Воно не є allowed-send, armed, tethered або flight evidence. External-nav output writer був attach-capable, але runtime send залишався disabled, а audit блокував кожну оцінку з `reason=runtime_disabled`.
+Це hand-carried bench evidence. Воно не є armed, tethered або flight evidence. Сесія містить два різні етапи: attach-only external-nav output evidence з runtime send disabled, і пізніший props-off send-enabled provider bench pass, де `VISION_POSITION_ESTIMATE` provider messages були bounded/audited і реально sent while vehicle remained `armed=false` in `AltHold`.
 
 ## Артефакти
 
@@ -37,6 +37,14 @@ Accepted audit log:
 ```text
 /home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260710T163641Z.log
 /home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-audit-20260710T171252Z.log
+```
+
+Send-enabled provider bench logs:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.log
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260710T174235Z.log
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.json
 ```
 
 Stop-frame:
@@ -285,26 +293,102 @@ external_nav_session_reason=external_nav_invalid_streak_high
 
 Висновок: reverse endpoint/dwell stop фізично спрацьовує у правильному endpoint-вікні біля `route_index=0`, але reverse strict external-nav readiness ще не прийнятий через короткі streak-и invalid estimates. Для першого руху до реального польотного тесту accepted direction лишається forward.
 
+## Send-Enabled Provider Bench Pass
+
+Run log:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.log
+```
+
+Audit log:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260710T174235Z.log
+```
+
+Readiness JSON:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.json
+```
+
+Final summary:
+
+```text
+passed=true
+frames=585/1200
+valid_matches=585
+progress=0.00166945..1
+tracked_progress=0.00166945..1
+tracked_directional_progress=true
+endpoint_passed=true
+progress_gate_passed=true
+endpoint_stop=true
+endpoint_dwell_ms=1231.4
+endpoint_dwell_required_ms=1200
+endpoint_dwell_passed=true
+endpoint_stop_frame_written=false
+endpoint_stop_frame_id=721
+endpoint_stop_frame_size=160x100
+endpoint_stop_route_index=599
+endpoint_stop_progress=1
+endpoint_stop_tracked_progress=1
+endpoint_stop_confidence=0.872753
+stop_reason=endpoint_progress_reached
+telemetry_health=true
+dry_run_quality=true
+dry_run_valid=585/585
+external_nav_valid=585/585
+external_nav_valid_fraction=1
+external_nav_max_invalid_streak=0
+external_nav_invalid_reasons=none
+external_nav_session_ready=true
+external_nav_strict_session_ready=true
+external_nav_quality_ready=true
+external_nav_operator_readiness=ready
+external_nav_operator_reason=valid
+external_nav_latest_telemetry_mode=AltHold
+external_nav_latest_telemetry_armed=false
+external_nav_output_allowed=585
+external_nav_output_sent=585
+external_nav_output_blocked=0
+external_nav_output_block_reasons=none
+final_external_nav_output_reason=allowed
+external_nav_output_session_audit=true
+confidence_min_avg=0.866966/0.892348
+```
+
+Audit checker:
+
+```text
+external_nav_output_audit_log_check path=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260710T174235Z.log passed=true estimates=585 allowed=585 sent=585 blocked=0 reason=allowed stop_reason=endpoint_progress_reached
+external_nav_output_send_check passed=true run_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260710T174235Z.log audit_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260710T174235Z.log allowed=585 sent=585 blocked=0
+```
+
+Висновок: external-nav provider writer path у props-off bench state був реально runtime-enabled і sent `585` provider messages, із чистим audit (`blocked=0`, `reason=allowed`) і strict external-nav readiness у тій самій сесії. Vehicle telemetry reported `armed=false`, `mode=AltHold`, тому це не flight evidence і не proof that FC/JT_Zero accepted the provider as a usable navigation source.
+
 ## What This Proves
 
 - OV9281 `160x100` forward route matching on this 20-second route can reach `progress=1` coherently.
 - Endpoint stop no longer triggers on the first threshold crossing; it waited for `endpoint_dwell_ms=1202.81` and `1200.36` in two accepted forward runs against a required `1200 ms`.
 - The exact processed frame that satisfied dwell was exported as Gray8 PGM.
 - External-nav attach-only output stayed fail-closed: allowed `0`, sent `0`, blocked `533` and `538`, reason `runtime_disabled`.
+- External-nav provider output can be enabled in a reviewed props-off bench state and send bounded/audited provider messages: `allowed=585`, `sent=585`, `blocked=0`, `reason=allowed`.
 - Operator readiness reached `ready`.
 
 ## What This Does Not Prove
 
-- No armed, tethered, allowed-send, or flight behavior was tested.
-- No external-nav MAVLink provider messages were sent.
+- No armed, tethered, or flight behavior was tested.
+- The send-enabled provider pass proves messages were sent, but not that the FC/JT_Zero accepted them as a usable position source.
 - Stop-frame export currently captures the processed matcher frame (`160x100`), not the pre-resize OV9281 capture (`640x400`).
 - Reverse endpoint/dwell stop works physically on the 2026-07-10 route, but reverse strict external-nav readiness is not accepted yet because invalid estimate streaks remain above the current quality gate.
 - High-resolution stop-frame export requires a separate pre-resize frame tap.
 
 ## Next Plan
 
-1. Use forward as the accepted direction for the next props-off/send-enabled bench step.
+1. Use forward as the accepted direction for FC/JT_Zero acceptance probing.
 2. Keep reverse as endpoint/dwell evidence only until its invalid streaks are reduced enough for strict external-nav readiness.
 3. Add high-resolution stop-frame capture before resize later if ground-station visual evidence needs real `640x400`.
-4. Keep external-nav provider send disabled until a separate props-off send plan is reviewed and accepted.
-5. If moving toward send-enabled bench evidence, require explicit runtime confirmations, positive message/time limits, audit enabled, props removed, single-provider ownership, and a fresh accepted readiness run.
+4. Run a separate FC acceptance probe during the same bounded props-off send-enabled bench state, capturing before/during/after MAVLink/EKF/provider status.
+5. Do not move to tethered/flight planning until provider acceptance evidence is explicit.
