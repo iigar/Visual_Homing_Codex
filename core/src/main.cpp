@@ -302,6 +302,15 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
             dwell_ms,
             "VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_DWELL_MS");
     }
+    if (const char* export_stop_frame = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPORT_STOP_FRAME")) {
+        config.export_endpoint_stop_frame = parse_bool_arg(export_stop_frame);
+        if (config.export_endpoint_stop_frame && config.endpoint_stop_frame_dir.empty()) {
+            config.endpoint_stop_frame_dir = "artifacts/stop_frames";
+        }
+    }
+    if (const char* stop_frame_dir = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_FRAME_DIR")) {
+        config.endpoint_stop_frame_dir = stop_frame_dir;
+    }
     if (const char* enabled = std::getenv("VISUAL_HOMING_SCALE_REFINEMENT")) {
         config.scale_refinement_enabled = parse_bool_arg(enabled);
     }

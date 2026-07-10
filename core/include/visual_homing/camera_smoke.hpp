@@ -94,6 +94,8 @@ struct LiveRouteMatchingConfig {
     double endpoint_end_progress = 0.85;
     bool stop_at_endpoint_progress = false;
     double endpoint_dwell_ms = 0.0;
+    bool export_endpoint_stop_frame = false;
+    std::filesystem::path endpoint_stop_frame_dir;
     bool operator_cue_enabled = false;
     std::size_t operator_cue_seconds = 0;
     bool operator_cue_bell = true;
@@ -192,6 +194,15 @@ struct LiveRouteMatchingResult {
     double endpoint_dwell_ms = 0.0;
     double endpoint_dwell_required_ms = 0.0;
     bool endpoint_dwell_passed = true;
+    bool endpoint_stop_frame_written = false;
+    std::string endpoint_stop_frame_path;
+    std::uint64_t endpoint_stop_frame_id = 0;
+    int endpoint_stop_frame_width = 0;
+    int endpoint_stop_frame_height = 0;
+    std::uint64_t endpoint_stop_route_index = 0;
+    double endpoint_stop_progress = 0.0;
+    double endpoint_stop_tracked_progress = 0.0;
+    double endpoint_stop_confidence = 0.0;
     std::string stop_reason = "not_started";
     bool used_live_telemetry_stream = false;
     bool telemetry_warmup_passed = false;

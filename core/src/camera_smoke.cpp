@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -78,6 +79,40 @@ std::string wall_time_utc_iso8601() {
     std::ostringstream output;
     output << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
     return output.str();
+}
+
+std::string wall_time_utc_compact() {
+    const auto current = std::chrono::system_clock::now();
+    const auto current_time = std::chrono::system_clock::to_time_t(current);
+    std::tm utc{};
+#if defined(_WIN32)
+    gmtime_s(&utc, &current_time);
+#else
+    gmtime_r(&current_time, &utc);
+#endif
+    std::ostringstream output;
+    output << std::put_time(&utc, "%Y%m%dT%H%M%SZ");
+    return output.str();
+}
+
+void write_gray8_frame_pgm(const std::filesystem::path& path, const Frame& frame) {
+    if (frame.format != PixelFormat::Gray8) {
+        throw std::runtime_error("Endpoint stop frame export requires Gray8 frame");
+    }
+    const auto expected_size = static_cast<std::size_t>(frame.width) * static_cast<std::size_t>(frame.height);
+    if (frame.width <= 0 || frame.height <= 0 || frame.data.size() != expected_size) {
+        throw std::runtime_error("Endpoint stop frame export received invalid frame dimensions");
+    }
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream output(path, std::ios::binary);
+    if (!output) {
+        throw std::runtime_error("Cannot open endpoint stop frame path for write: " + path.string());
+    }
+    output << "P5\n" << frame.width << " " << frame.height << "\n255\n";
+    output.write(reinterpret_cast<const char*>(frame.data.data()), static_cast<std::streamsize>(frame.data.size()));
+    if (!output) {
+        throw std::runtime_error("Failed to write endpoint stop frame: " + path.string());
+    }
 }
 
 std::string ratio_histogram_text(const std::map<double, std::uint64_t>& histogram) {
@@ -852,6 +887,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (!std::isfinite(config.endpoint_dwell_ms) || config.endpoint_dwell_ms < 0.0) {
         throw std::invalid_argument("Live route matching endpoint_dwell_ms must be finite and non-negative");
     }
+    if (config.export_endpoint_stop_frame && config.endpoint_stop_frame_dir.empty()) {
+        throw std::invalid_argument("Live route matching endpoint stop frame export requires a non-empty directory");
+    }
     if (config.minimum_valid_dry_run_command_fraction < 0.0 || config.minimum_valid_dry_run_command_fraction > 1.0) {
         throw std::invalid_argument("Live route matching minimum_valid_dry_run_command_fraction must be in [0, 1]");
     }
@@ -989,6 +1027,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_end_progress=" << config.endpoint_end_progress
             << " stop_at_endpoint_progress=" << (config.stop_at_endpoint_progress ? "true" : "false")
             << " endpoint_dwell_ms=" << config.endpoint_dwell_ms
+            << " export_endpoint_stop_frame=" << bool_word(config.export_endpoint_stop_frame)
+            << " endpoint_stop_frame_dir="
+            << (config.endpoint_stop_frame_dir.empty() ? "none" : config.endpoint_stop_frame_dir.string())
             << " dry_run_commands=" << (config.emit_dry_run_commands ? "true" : "false")
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
@@ -1682,6 +1723,34 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     if (result.endpoint_dwell_passed) {
                         result.endpoint_stop_triggered = true;
                         result.stop_reason = "endpoint_progress_reached";
+                        result.endpoint_stop_frame_id = processed.id;
+                        result.endpoint_stop_frame_width = processed.width;
+                        result.endpoint_stop_frame_height = processed.height;
+                        result.endpoint_stop_route_index = static_cast<std::uint64_t>(match.route_index);
+                        result.endpoint_stop_progress = match.progress;
+                        result.endpoint_stop_tracked_progress = *current_tracked_progress;
+                        result.endpoint_stop_confidence = match.confidence;
+                        if (config.export_endpoint_stop_frame) {
+                            const auto filename = std::string("endpoint-stop-frame-")
+                                + wall_time_utc_compact()
+                                + "-id-" + std::to_string(processed.id)
+                                + "-route-" + std::to_string(match.route_index)
+                                + ".pgm";
+                            const auto path = config.endpoint_stop_frame_dir / filename;
+                            write_gray8_frame_pgm(path, processed);
+                            result.endpoint_stop_frame_written = true;
+                            result.endpoint_stop_frame_path = path.string();
+                            metrics << "live_route_match_endpoint_stop_frame"
+                                    << " path=" << result.endpoint_stop_frame_path
+                                    << " frame_id=" << result.endpoint_stop_frame_id
+                                    << " width=" << result.endpoint_stop_frame_width
+                                    << " height=" << result.endpoint_stop_frame_height
+                                    << " route_index=" << result.endpoint_stop_route_index
+                                    << " progress=" << result.endpoint_stop_progress
+                                    << " tracked_progress=" << result.endpoint_stop_tracked_progress
+                                    << " confidence=" << result.endpoint_stop_confidence
+                                    << "\n";
+                        }
                         break;
                     }
                 } else {
@@ -1984,6 +2053,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
             << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
             << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
+            << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
+            << " endpoint_stop_frame_path="
+            << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)
+            << " endpoint_stop_frame_id=" << result.endpoint_stop_frame_id
+            << " endpoint_stop_frame_size=" << result.endpoint_stop_frame_width
+            << "x" << result.endpoint_stop_frame_height
+            << " endpoint_stop_route_index=" << result.endpoint_stop_route_index
+            << " endpoint_stop_progress=" << result.endpoint_stop_progress
+            << " endpoint_stop_tracked_progress=" << result.endpoint_stop_tracked_progress
+            << " endpoint_stop_confidence=" << result.endpoint_stop_confidence
             << " stop_reason=" << result.stop_reason
             << " live_telemetry_stream=" << (result.used_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_passed=" << (result.telemetry_warmup_passed ? "true" : "false")
@@ -2095,6 +2174,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
             << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
             << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
+            << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
+            << " endpoint_stop_frame_path="
+            << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)
+            << " endpoint_stop_frame_id=" << result.endpoint_stop_frame_id
+            << " endpoint_stop_frame_size=" << result.endpoint_stop_frame_width
+            << "x" << result.endpoint_stop_frame_height
+            << " endpoint_stop_route_index=" << result.endpoint_stop_route_index
+            << " endpoint_stop_progress=" << result.endpoint_stop_progress
+            << " endpoint_stop_tracked_progress=" << result.endpoint_stop_tracked_progress
+            << " endpoint_stop_confidence=" << result.endpoint_stop_confidence
             << " stop_reason=" << result.stop_reason
             << " confidence_min_avg=" << result.minimum_confidence_seen << "/" << result.average_confidence
             << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
