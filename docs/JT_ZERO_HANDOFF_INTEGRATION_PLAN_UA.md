@@ -339,6 +339,17 @@ jt_zero/provider status observed separately
 
 This still does not authorize free flight. It only proves provider messages can be emitted in a controlled bench state.
 
+Wrapper status on 2026-07-10:
+
+- `scripts/run-external-nav-output-bench-props-off-send-pi.sh` exists as the reviewed send-enabled external-nav provider bench wrapper;
+- it refuses to run unless the operator supplies:
+  - `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_SEND_CONFIRM=I_UNDERSTAND_THIS_WILL_SEND_EXTERNAL_NAV_PROVIDER_MESSAGES_WITH_PROPS_REMOVED`;
+  - `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_BENCH_FC_STATE_CONFIRM=I_HAVE_VERIFIED_REVIEWED_BENCH_FC_STATE`;
+- it forces external-nav output attach CMake `ON/ON/ON`, enables output audit, enables runtime external-nav MAVLink output, supplies the props-off and single-writer confirmations required by `test-core-pi.sh`, and requires positive `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES` and `VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS`;
+- it requires strict external-nav readiness in the same session;
+- it checks `external_nav_writer_attached=true`, `external_nav_output_allowed>0`, `external_nav_output_sent>0`, `external_nav_output_blocked=0`, `final_external_nav_output_reason=allowed`, and validates the audit log with `reason=allowed`, `blocked=0`, `valid_for_fc=true`;
+- this wrapper is not flight authorization and must be run only props-off in the reviewed bench state.
+
 ### Phase 5 - JT_Zero Provider Readiness Evidence
 
 After provider send works, collect evidence that FC/JT_Zero accepts or rejects it:
