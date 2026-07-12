@@ -1411,7 +1411,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto processing_started = now();
             const auto processed = preprocessor.process(*frame);
             const auto match = matcher.match(processed);
-            const auto& top_candidates = matcher.recent_top_candidates();
+            const auto top_candidates = matcher.recent_top_candidates();
             const auto zone_candidates = config.zone_probe_diagnostics
                 ? matcher.probe_progress_zones(processed)
                 : std::vector<RouteMatchZoneCandidate>{};
