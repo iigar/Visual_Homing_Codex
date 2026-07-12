@@ -379,6 +379,16 @@ bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, do
     return false;
 }
 
+bool live_route_match_endpoint_confirmation_passed(const LiveRouteMatchingConfig& config,
+                                                   double top_match_gap,
+                                                   double edge_top_match_gap) {
+    if (!config.endpoint_require_unambiguous_match) {
+        return true;
+    }
+    return top_match_gap >= config.endpoint_min_top_match_gap
+        && edge_top_match_gap >= config.endpoint_min_edge_top_match_gap;
+}
+
 bool live_route_match_endpoint_progress_passed(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result) {
     if (config.expected_progress == "forward") {
@@ -887,6 +897,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (!std::isfinite(config.endpoint_dwell_ms) || config.endpoint_dwell_ms < 0.0) {
         throw std::invalid_argument("Live route matching endpoint_dwell_ms must be finite and non-negative");
     }
+    if (!std::isfinite(config.endpoint_min_top_match_gap) || config.endpoint_min_top_match_gap < 0.0) {
+        throw std::invalid_argument("Live route matching endpoint_min_top_match_gap must be finite and non-negative");
+    }
+    if (!std::isfinite(config.endpoint_min_edge_top_match_gap) || config.endpoint_min_edge_top_match_gap < 0.0) {
+        throw std::invalid_argument(
+            "Live route matching endpoint_min_edge_top_match_gap must be finite and non-negative");
+    }
     if (config.export_endpoint_stop_frame && config.endpoint_stop_frame_dir.empty()) {
         throw std::invalid_argument("Live route matching endpoint stop frame export requires a non-empty directory");
     }
@@ -948,11 +965,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         }
 #endif
     }
-    if (config.top_match_diagnostics && config.top_match_count == 0) {
-        throw std::invalid_argument("Live route matching top_match_count must be positive when top diagnostics are enabled");
+    if ((config.top_match_diagnostics || config.endpoint_require_unambiguous_match)
+        && config.top_match_count == 0) {
+        throw std::invalid_argument(
+            "Live route matching top_match_count must be positive when top diagnostics or endpoint confirmation are enabled");
     }
-    if (config.edge_match_diagnostics && config.edge_match_top_count == 0) {
-        throw std::invalid_argument("Live route matching edge_match_top_count must be positive when edge diagnostics are enabled");
+    if ((config.edge_match_diagnostics || config.endpoint_require_unambiguous_match)
+        && config.edge_match_top_count == 0) {
+        throw std::invalid_argument(
+            "Live route matching edge_match_top_count must be positive when edge diagnostics or endpoint confirmation are enabled");
     }
 
     const auto route = read_route_signature_file(config.route_path);
@@ -964,7 +985,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     matcher_config.radians_per_pixel = config.radians_per_pixel;
     matcher_config.enable_scale_refinement = config.scale_refinement_enabled;
     matcher_config.scale_refinement_radius = config.scale_refinement_radius;
-    matcher_config.top_candidate_count = config.top_match_diagnostics ? config.top_match_count : 0;
+    matcher_config.top_candidate_count =
+        (config.top_match_diagnostics || config.endpoint_require_unambiguous_match)
+            ? std::max<std::size_t>(config.top_match_count, 2)
+            : 0;
     matcher_config.initial_progress_window_enabled = config.initial_progress_window_enabled;
     matcher_config.initial_progress_min = config.initial_progress_min;
     matcher_config.initial_progress_max = config.initial_progress_max;
@@ -1027,6 +1051,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_end_progress=" << config.endpoint_end_progress
             << " stop_at_endpoint_progress=" << (config.stop_at_endpoint_progress ? "true" : "false")
             << " endpoint_dwell_ms=" << config.endpoint_dwell_ms
+            << " endpoint_require_unambiguous_match=" << bool_word(config.endpoint_require_unambiguous_match)
+            << " endpoint_min_top_match_gap=" << config.endpoint_min_top_match_gap
+            << " endpoint_min_edge_top_match_gap=" << config.endpoint_min_edge_top_match_gap
             << " export_endpoint_stop_frame=" << bool_word(config.export_endpoint_stop_frame)
             << " endpoint_stop_frame_dir="
             << (config.endpoint_stop_frame_dir.empty() ? "none" : config.endpoint_stop_frame_dir.string())
@@ -1375,6 +1402,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<Timestamp> endpoint_dwell_started_at;
     result.endpoint_dwell_required_ms = config.endpoint_dwell_ms;
     result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
+    result.endpoint_confirmation_required = config.endpoint_require_unambiguous_match;
+    result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
+    result.endpoint_confirmation_reason =
+        config.endpoint_require_unambiguous_match ? "not_evaluated" : "disabled";
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -1384,17 +1415,21 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             const auto zone_candidates = config.zone_probe_diagnostics
                 ? matcher.probe_progress_zones(processed)
                 : std::vector<RouteMatchZoneCandidate>{};
-            const auto edge_diagnostics = config.edge_match_diagnostics
+            const auto edge_diagnostics = (config.edge_match_diagnostics
+                || config.endpoint_require_unambiguous_match)
                 ? matcher.probe_edge_diagnostics(processed, config.edge_match_top_count)
                 : RouteMatchEdgeDiagnostics{};
             std::optional<double> top_match_gap;
-            if (config.top_match_diagnostics && top_candidates.size() >= 2) {
+            if ((config.top_match_diagnostics || config.endpoint_require_unambiguous_match)
+                && top_candidates.size() >= 2) {
                 top_match_gap = top_candidates[0].confidence - top_candidates[1].confidence;
-                ++result.top_match_diagnostic_frames;
-                top_match_gap_sum += *top_match_gap;
-                result.top_match_gap_min = result.top_match_diagnostic_frames == 1
-                    ? *top_match_gap
-                    : std::min(result.top_match_gap_min, *top_match_gap);
+                if (config.top_match_diagnostics) {
+                    ++result.top_match_diagnostic_frames;
+                    top_match_gap_sum += *top_match_gap;
+                    result.top_match_gap_min = result.top_match_diagnostic_frames == 1
+                        ? *top_match_gap
+                        : std::min(result.top_match_gap_min, *top_match_gap);
+                }
             }
             std::optional<double> end_zone_gap;
             if (config.zone_probe_diagnostics) {
@@ -1408,14 +1443,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
             }
             std::optional<double> edge_top_match_gap;
-            if (config.edge_match_diagnostics && edge_diagnostics.top_candidates.size() >= 2) {
+            if ((config.edge_match_diagnostics || config.endpoint_require_unambiguous_match)
+                && edge_diagnostics.top_candidates.size() >= 2) {
                 edge_top_match_gap =
                     edge_diagnostics.top_candidates[0].confidence - edge_diagnostics.top_candidates[1].confidence;
-                ++result.edge_match_diagnostic_frames;
-                edge_top_match_gap_sum += *edge_top_match_gap;
-                result.edge_top_match_gap_min = result.edge_match_diagnostic_frames == 1
-                    ? *edge_top_match_gap
-                    : std::min(result.edge_top_match_gap_min, *edge_top_match_gap);
+                if (config.edge_match_diagnostics) {
+                    ++result.edge_match_diagnostic_frames;
+                    edge_top_match_gap_sum += *edge_top_match_gap;
+                    result.edge_top_match_gap_min = result.edge_match_diagnostic_frames == 1
+                        ? *edge_top_match_gap
+                        : std::min(result.edge_top_match_gap_min, *edge_top_match_gap);
+                }
             }
             std::optional<double> edge_end_zone_gap;
             if (config.edge_match_diagnostics && !edge_diagnostics.top_candidates.empty()) {
@@ -1715,12 +1753,44 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
 
             if (config.stop_at_endpoint_progress && match.valid && current_tracked_progress) {
                 if (live_route_match_endpoint_reached(config, *current_tracked_progress)) {
-                    if (!endpoint_dwell_started_at) {
-                        endpoint_dwell_started_at = processing_finished;
+                    bool endpoint_confirmed = true;
+                    if (config.endpoint_require_unambiguous_match) {
+                        endpoint_confirmed = false;
+                        result.endpoint_confirmation_required = true;
+                        result.endpoint_confirmation_passed = false;
+                        if (!top_match_gap) {
+                            result.endpoint_confirmation_reason = "top_match_gap_unavailable";
+                        } else if (!edge_top_match_gap) {
+                            result.endpoint_confirmation_reason = "edge_top_match_gap_unavailable";
+                        } else {
+                            result.endpoint_top_match_gap = *top_match_gap;
+                            result.endpoint_edge_top_match_gap = *edge_top_match_gap;
+                            endpoint_confirmed = live_route_match_endpoint_confirmation_passed(
+                                config,
+                                *top_match_gap,
+                                *edge_top_match_gap);
+                            result.endpoint_confirmation_passed = endpoint_confirmed;
+                            if (*top_match_gap < config.endpoint_min_top_match_gap) {
+                                result.endpoint_confirmation_reason = "top_match_gap_low";
+                            } else if (*edge_top_match_gap < config.endpoint_min_edge_top_match_gap) {
+                                result.endpoint_confirmation_reason = "edge_top_match_gap_low";
+                            } else {
+                                result.endpoint_confirmation_reason = "valid";
+                            }
+                        }
                     }
-                    result.endpoint_dwell_ms = milliseconds_between(*endpoint_dwell_started_at, processing_finished);
-                    result.endpoint_dwell_passed = result.endpoint_dwell_ms >= config.endpoint_dwell_ms;
-                    if (result.endpoint_dwell_passed) {
+                    if (endpoint_confirmed) {
+                        if (!endpoint_dwell_started_at) {
+                            endpoint_dwell_started_at = processing_finished;
+                        }
+                        result.endpoint_dwell_ms = milliseconds_between(*endpoint_dwell_started_at, processing_finished);
+                        result.endpoint_dwell_passed = result.endpoint_dwell_ms >= config.endpoint_dwell_ms;
+                    } else {
+                        endpoint_dwell_started_at.reset();
+                        result.endpoint_dwell_ms = 0.0;
+                        result.endpoint_dwell_passed = false;
+                    }
+                    if (endpoint_confirmed && result.endpoint_dwell_passed) {
                         result.endpoint_stop_triggered = true;
                         result.stop_reason = "endpoint_progress_reached";
                         result.endpoint_stop_frame_id = processed.id;
@@ -1757,6 +1827,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     endpoint_dwell_started_at.reset();
                     result.endpoint_dwell_ms = 0.0;
                     result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
+                    result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
+                    result.endpoint_confirmation_reason =
+                        config.endpoint_require_unambiguous_match ? "not_at_endpoint" : "disabled";
                 }
             }
         } else {
@@ -2053,6 +2126,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
             << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
             << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
+            << " endpoint_confirmation_required=" << bool_word(result.endpoint_confirmation_required)
+            << " endpoint_confirmation_passed=" << bool_word(result.endpoint_confirmation_passed)
+            << " endpoint_confirmation_reason=" << result.endpoint_confirmation_reason
+            << " endpoint_top_match_gap=" << result.endpoint_top_match_gap
+            << " endpoint_edge_top_match_gap=" << result.endpoint_edge_top_match_gap
             << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
             << " endpoint_stop_frame_path="
             << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)
@@ -2174,6 +2252,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
             << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms
             << " endpoint_dwell_passed=" << bool_word(result.endpoint_dwell_passed)
+            << " endpoint_confirmation_required=" << bool_word(result.endpoint_confirmation_required)
+            << " endpoint_confirmation_passed=" << bool_word(result.endpoint_confirmation_passed)
+            << " endpoint_confirmation_reason=" << result.endpoint_confirmation_reason
+            << " endpoint_top_match_gap=" << result.endpoint_top_match_gap
+            << " endpoint_edge_top_match_gap=" << result.endpoint_edge_top_match_gap
             << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
             << " endpoint_stop_frame_path="
             << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)

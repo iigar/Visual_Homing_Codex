@@ -1,6 +1,6 @@
 # Visual Homing RTL/HOVER Plan
 
-Цей документ є self-contained handoff для продовження роботи після 2026-07-10/2026-07-11 сесій. Його мета: щоб нова Codex/операторська сесія могла продовжити без додаткових уточнень, розуміючи поточний стан, прийняті артефакти, команди, межі безпеки і послідовність до повноцінної роботи Visual_Homing у режимах RTL та HOVER.
+Цей документ є self-contained handoff для продовження роботи після 2026-07-10/2026-07-12 сесій. Його мета: щоб нова Codex/операторська сесія могла продовжити без додаткових уточнень, розуміючи поточний стан, прийняті артефакти, команди, межі безпеки і послідовність до повноцінної роботи Visual_Homing у режимах RTL та HOVER.
 
 Цей документ не авторизує політ. Будь-який armed/tethered/free-flight крок потребує окремого reviewed test plan, фізичної safety-підготовки і явного operator approval.
 
@@ -18,7 +18,20 @@ Telemetry: MAVLink on /dev/serial0 at 115200
 Current route direction accepted for next steps: forward
 ```
 
-Current accepted route:
+Current route for the next endpoint-ambiguity tests:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
+entries=600
+duration=about 20.03 s
+target_size=160x100
+route_self_match passed=true
+route_perturb_check passed=true
+route_distinctiveness quality_pass=true warning=false
+ambiguous_nearest_entries=0/600
+```
+
+Previous accepted provider-send route:
 
 ```text
 /home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260710T155821Z.vhrs
@@ -35,6 +48,7 @@ Detailed evidence:
 
 ```text
 docs/FIELD_EVIDENCE_2026-07-10_OV9281_UA.md
+docs/FIELD_EVIDENCE_2026-07-12_OV9281_UA.md
 docs/JT_ZERO_HANDOFF_INTEGRATION_PLAN_UA.md
 docs/SESSION_LOG.md
 ```
@@ -102,6 +116,32 @@ Meaning:
 - This is not proof that ArduPilot/JT_Zero accepts the provider as a usable navigation source.
 - This is not armed, tethered, hover, RTL, or free-flight evidence.
 
+2026-07-12 endpoint ambiguity finding:
+
+```text
+route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
+attach_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-attach-20260712T170240Z.log
+send_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260712T170735Z.log
+diagnostic_log=/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-attach-20260712T171244Z.log
+```
+
+Meaning:
+
+- The route quality is good (`warning=false`) and forward attach-only matching reached strict readiness.
+- The send-enabled run stopped physically about 1 m early even though `endpoint_stop=true`, `route_index=599`, and `external_nav_output_sent=490`.
+- The diagnostic no-stop run at the real finish stabilized near `tracked_progress=0.994992` with tiny top/edge candidate gaps.
+- Endpoint completion must be ambiguity-aware. Do not use pure `progress=1 + dwell` as flight-adjacent endpoint evidence on this route.
+
+Current code response:
+
+```text
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_REQUIRE_UNAMBIGUOUS=1
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_MIN_TOP_MATCH_GAP=<double>
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_MIN_EDGE_TOP_MATCH_GAP=<double>
+```
+
+This gate is opt-in. First test it attach-only. If it blocks the current ambiguous endpoint with `endpoint_confirmation_reason=top_match_gap_low` or `edge_top_match_gap_low`, that is a correct fail-closed result and should replace early physical endpoint completion as the next safety baseline.
+
 Reverse status:
 
 ```text
@@ -127,6 +167,7 @@ At the start of a new Codex session, read:
 docs/PROJECT_MEMORY.md
 docs/SESSION_LOG.md
 docs/FIELD_EVIDENCE_2026-07-10_OV9281_UA.md
+docs/FIELD_EVIDENCE_2026-07-12_OV9281_UA.md
 docs/JT_ZERO_HANDOFF_INTEGRATION_PLAN_UA.md
 docs/VISUAL_HOMING_RTL_HOVER_PLAN_UA.md
 git log -5 --oneline

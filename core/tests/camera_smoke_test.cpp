@@ -150,7 +150,7 @@ int main() {
 
     const auto match_output = match_metrics.str();
     assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
-    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85 stop_at_endpoint_progress=false endpoint_dwell_ms=0 export_endpoint_stop_frame=false endpoint_stop_frame_dir=none") != std::string::npos);
+    assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85 stop_at_endpoint_progress=false endpoint_dwell_ms=0 endpoint_require_unambiguous_match=false endpoint_min_top_match_gap=0.002 endpoint_min_edge_top_match_gap=0.001 export_endpoint_stop_frame=false endpoint_stop_frame_dir=none") != std::string::npos);
     assert(match_output.find("dry_run_commands=true live_telemetry_stream=false telemetry_warmup_timeout_ms=1500 telemetry_max_age_ms=500 require_live_telemetry_health=false") != std::string::npos);
     assert(match_output.find("navigator_minimum_confidence=0.8 navigator_max_match_age_ms=150 navigator_yaw_gain=0.5 navigator_max_yaw_rate_radps=0.2 navigator_max_yaw_accel_radps2=0.7 navigator_forward_speed_mps=0.1") != std::string::npos);
     assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
@@ -171,6 +171,15 @@ int main() {
     vh::LiveRouteMatchingConfig endpoint_any = endpoint_forward;
     endpoint_any.expected_progress = "any";
     assert(!vh::live_route_match_endpoint_reached(endpoint_any, 1.0));
+
+    assert(vh::live_route_match_endpoint_confirmation_passed(endpoint_forward, 0.0, 0.0));
+    vh::LiveRouteMatchingConfig confirmed_endpoint = endpoint_forward;
+    confirmed_endpoint.endpoint_require_unambiguous_match = true;
+    confirmed_endpoint.endpoint_min_top_match_gap = 0.002;
+    confirmed_endpoint.endpoint_min_edge_top_match_gap = 0.001;
+    assert(!vh::live_route_match_endpoint_confirmation_passed(confirmed_endpoint, 0.001, 0.002));
+    assert(!vh::live_route_match_endpoint_confirmation_passed(confirmed_endpoint, 0.003, 0.0005));
+    assert(vh::live_route_match_endpoint_confirmation_passed(confirmed_endpoint, 0.003, 0.002));
 
     vh::LiveRouteMatchingConfig strict_endpoint_forward = endpoint_forward;
     strict_endpoint_forward.endpoint_end_progress = 0.94;
@@ -373,6 +382,56 @@ int main() {
         rejected_match_endpoint_dwell = true;
     }
     assert(rejected_match_endpoint_dwell);
+
+    bool rejected_match_endpoint_top_gap = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_min_top_match_gap = -0.1;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_top_gap = true;
+    }
+    assert(rejected_match_endpoint_top_gap);
+
+    bool rejected_match_endpoint_edge_gap = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_min_edge_top_match_gap = -0.1;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_edge_gap = true;
+    }
+    assert(rejected_match_endpoint_edge_gap);
+
+    bool rejected_match_endpoint_top_count = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_require_unambiguous_match = true;
+        invalid.top_match_count = 0;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_top_count = true;
+    }
+    assert(rejected_match_endpoint_top_count);
+
+    bool rejected_match_endpoint_edge_count = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.endpoint_require_unambiguous_match = true;
+        invalid.edge_match_top_count = 0;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_match_endpoint_edge_count = true;
+    }
+    assert(rejected_match_endpoint_edge_count);
 
     bool rejected_match_endpoint_stop_frame_dir = false;
     try {

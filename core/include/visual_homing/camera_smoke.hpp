@@ -94,6 +94,9 @@ struct LiveRouteMatchingConfig {
     double endpoint_end_progress = 0.85;
     bool stop_at_endpoint_progress = false;
     double endpoint_dwell_ms = 0.0;
+    bool endpoint_require_unambiguous_match = false;
+    double endpoint_min_top_match_gap = 0.002;
+    double endpoint_min_edge_top_match_gap = 0.001;
     bool export_endpoint_stop_frame = false;
     std::filesystem::path endpoint_stop_frame_dir;
     bool operator_cue_enabled = false;
@@ -194,6 +197,11 @@ struct LiveRouteMatchingResult {
     double endpoint_dwell_ms = 0.0;
     double endpoint_dwell_required_ms = 0.0;
     bool endpoint_dwell_passed = true;
+    bool endpoint_confirmation_required = false;
+    bool endpoint_confirmation_passed = true;
+    std::string endpoint_confirmation_reason = "disabled";
+    double endpoint_top_match_gap = 0.0;
+    double endpoint_edge_top_match_gap = 0.0;
     bool endpoint_stop_frame_written = false;
     std::string endpoint_stop_frame_path;
     std::uint64_t endpoint_stop_frame_id = 0;
@@ -290,6 +298,9 @@ struct LiveRouteMatchingResult {
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
 bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress);
+bool live_route_match_endpoint_confirmation_passed(const LiveRouteMatchingConfig& config,
+                                                   double top_match_gap,
+                                                   double edge_top_match_gap);
 bool live_route_match_endpoint_progress_passed(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result);
 bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& config,

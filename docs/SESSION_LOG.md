@@ -1,5 +1,13 @@
 # Session Log
 
+## 2026-07-12
+
+- Recorded a new OV9281 field route `/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs` with 600 entries at `160x100`, live MAVLink telemetry, and clean route quality: self-match passed, perturb passed, distinctiveness `quality_pass=true`, `warning=false`, `ambiguous_nearest_entries=0`, and `average_nearest_mean_abs_diff=9.06913`.
+- Accepted the 2026-07-12 forward attach-only route/readiness run `external-nav-output-attach-20260712T170240Z.log`: `1072/1072` valid matches, confidence min/avg `0.906222/0.940632`, endpoint dwell `1230.22/1200 ms`, `endpoint_stop=true`, `external_nav_valid=1072/1072`, invalid streak `0`, and strict/session/operator readiness `ready`.
+- Reclassified the 2026-07-12 send-enabled run `external-nav-output-send-20260712T170735Z.log`: it correctly sent `490/490` bounded/audited provider messages with no invalid streak, but the operator reported physical stop about `1 m` early. It is provider-send evidence only, not accepted physical endpoint evidence.
+- Captured endpoint alias diagnostics in `external-nav-output-attach-20260712T171244Z.log`: with endpoint stop disabled, the operator walked the whole route and stood at the real finish; the matcher stayed valid but ended around `tracked_progress=0.994992` with very small top/edge candidate gaps. This proves pure endpoint progress+dwell is too weak on this route.
+- Added an opt-in endpoint ambiguity gate to live route matching. `VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_REQUIRE_UNAMBIGUOUS=1` requires full-frame and edge top-candidate gaps to exceed configurable thresholds before endpoint dwell can accumulate. The gate is default-off and logs `endpoint_confirmation_*` fields so ambiguous endpoint completion fails closed instead of declaring a false finish.
+
 ## 2026-07-10
 
 - Added `docs/VISUAL_HOMING_RTL_HOVER_PLAN_UA.md` as a self-contained continuation plan from the current OV9281 forward provider-send bench evidence toward repeatability, FC/JT_Zero acceptance probing, HOVER, dry-run Visual RTL, restrained RTL, and eventual free-flight prerequisites. It records current accepted artifacts, known-good forward send and reverse attach-only commands, acceptance gates, stop conditions, and the exact evidence fields required for future runs.
