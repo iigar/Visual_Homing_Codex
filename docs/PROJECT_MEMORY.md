@@ -25,7 +25,7 @@
 - Technical decisions go to `docs/DECISIONS.md`.
 - Current progress goes to `docs/SESSION_LOG.md`.
 - Stable project context goes to this file.
-- Ideas and research notes go to `notes/`.
+- Ideas and research notes go to `docs/VISUAL_HOMING_IDEAS_UA.md` when they affect Visual Homing behavior, safety states, RTL/HOVER, endpoint handling, or operator UI. Short raw notes can still go to `notes/`.
 - Code changes are captured in detailed git commits.
 - Generated build artifacts should stay out of git; prefer reproducible scripts/docs for local validation.
 - Every completed task must be pushed to GitHub after the local commit and validation are complete.
