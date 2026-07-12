@@ -315,6 +315,14 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
             gap,
             "VISUAL_HOMING_LIVE_ROUTE_MATCH_ENDPOINT_MIN_EDGE_TOP_MATCH_GAP");
     }
+    if (const char* enabled = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_ALLOW_AMBIGUOUS_ENDPOINT_HOLD")) {
+        config.endpoint_allow_ambiguous_hold = parse_bool_arg(enabled);
+    }
+    if (const char* dwell_ms = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_AMBIGUOUS_ENDPOINT_DWELL_MS")) {
+        config.endpoint_ambiguous_hold_dwell_ms = parse_double_arg(
+            dwell_ms,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_AMBIGUOUS_ENDPOINT_DWELL_MS");
+    }
     if (const char* export_stop_frame = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_EXPORT_STOP_FRAME")) {
         config.export_endpoint_stop_frame = parse_bool_arg(export_stop_frame);
         if (config.export_endpoint_stop_frame && config.endpoint_stop_frame_dir.empty()) {

@@ -97,6 +97,8 @@ struct LiveRouteMatchingConfig {
     bool endpoint_require_unambiguous_match = false;
     double endpoint_min_top_match_gap = 0.002;
     double endpoint_min_edge_top_match_gap = 0.001;
+    bool endpoint_allow_ambiguous_hold = false;
+    double endpoint_ambiguous_hold_dwell_ms = 3000.0;
     bool export_endpoint_stop_frame = false;
     std::filesystem::path endpoint_stop_frame_dir;
     bool operator_cue_enabled = false;
@@ -202,6 +204,15 @@ struct LiveRouteMatchingResult {
     std::string endpoint_confirmation_reason = "disabled";
     double endpoint_top_match_gap = 0.0;
     double endpoint_edge_top_match_gap = 0.0;
+    bool ambiguous_endpoint_hold_triggered = false;
+    double ambiguous_endpoint_hold_dwell_ms = 0.0;
+    double ambiguous_endpoint_hold_required_ms = 0.0;
+    std::string ambiguous_endpoint_hold_reason = "disabled";
+    std::uint64_t ambiguous_endpoint_hold_frame_id = 0;
+    std::uint64_t ambiguous_endpoint_hold_route_index = 0;
+    double ambiguous_endpoint_hold_progress = 0.0;
+    double ambiguous_endpoint_hold_tracked_progress = 0.0;
+    double ambiguous_endpoint_hold_confidence = 0.0;
     bool endpoint_stop_frame_written = false;
     std::string endpoint_stop_frame_path;
     std::uint64_t endpoint_stop_frame_id = 0;

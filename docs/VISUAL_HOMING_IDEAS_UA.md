@@ -277,7 +277,25 @@ operator_readiness=marginal або ready_ambiguous_endpoint
 
 ### Поточний Статус
 
-Planned next implementation.
+Implemented as an opt-in attach-only/log-only state:
+
+```text
+VISUAL_HOMING_LIVE_ROUTE_MATCH_ALLOW_AMBIGUOUS_ENDPOINT_HOLD=1
+VISUAL_HOMING_LIVE_ROUTE_MATCH_AMBIGUOUS_ENDPOINT_DWELL_MS=3000
+```
+
+Current behavior:
+
+```text
+ambiguous_endpoint_hold=true
+stop_reason=ambiguous_endpoint_hold
+passed=false
+external_nav_operator_readiness=marginal
+external_nav_operator_reason=ambiguous_endpoint_hold
+handoff.decision=ambiguous_endpoint_hold
+```
+
+Runtime output-enabled runs are rejected while this state is in the first safety phase.
 
 ## Ідея 3: Endpoint Reacquire / Micro-Search
 

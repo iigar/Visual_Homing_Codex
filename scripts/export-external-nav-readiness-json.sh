@@ -117,9 +117,11 @@ visual_scale_confidence_min_avg="$(field visual_scale_confidence_min_avg)"
 visual_scale_ratio_histogram="$(field visual_scale_ratio_histogram)"
 tracked_visual_scale_ratio="$(field tracked_visual_scale_ratio)"
 tracked_visual_scale_ratio_min_avg_max="$(field tracked_visual_scale_ratio_min_avg_max)"
+ambiguous_endpoint_hold="$(field ambiguous_endpoint_hold)"
 
 route_complete=false
-if [[ "$(field endpoint_passed)" == "true" && "$(field progress_gate_passed)" == "true" ]]; then
+if [[ "$(field endpoint_passed)" == "true" && "$(field progress_gate_passed)" == "true" \
+    && "${ambiguous_endpoint_hold}" != "true" ]]; then
     route_complete=true
 fi
 
@@ -137,6 +139,10 @@ if [[ "${route_complete}" == "true" && "${visual_homing_ready}" == "true" ]]; th
     handoff_candidate=true
     handoff_decision=candidate_only
     handoff_reason=jt_zero_not_integrated
+elif [[ "${ambiguous_endpoint_hold}" == "true" ]]; then
+    handoff_candidate=true
+    handoff_decision=ambiguous_endpoint_hold
+    handoff_reason=endpoint_match_ambiguous
 elif [[ "${route_complete}" != "true" ]]; then
     handoff_reason=route_not_complete
 elif [[ "${operator_readiness}" == "marginal" ]]; then
@@ -228,6 +234,14 @@ cat <<EOF
     "endpoint_passed": $(json_bool "$(field endpoint_passed)"),
     "progress_gate_passed": $(json_bool "$(field progress_gate_passed)"),
     "endpoint_stop": $(json_bool "$(field endpoint_stop)"),
+    "ambiguous_endpoint_hold": $(json_bool "${ambiguous_endpoint_hold}"),
+    "ambiguous_endpoint_hold_dwell_ms": $(json_number "$(field ambiguous_endpoint_hold_dwell_ms)"),
+    "ambiguous_endpoint_hold_required_ms": $(json_number "$(field ambiguous_endpoint_hold_required_ms)"),
+    "ambiguous_endpoint_hold_reason": "$(json_string "$(field ambiguous_endpoint_hold_reason)")",
+    "ambiguous_endpoint_hold_route_index": $(json_number "$(field ambiguous_endpoint_hold_route_index)"),
+    "ambiguous_endpoint_hold_progress": $(json_number "$(field ambiguous_endpoint_hold_progress)"),
+    "ambiguous_endpoint_hold_tracked_progress": $(json_number "$(field ambiguous_endpoint_hold_tracked_progress)"),
+    "ambiguous_endpoint_hold_confidence": $(json_number "$(field ambiguous_endpoint_hold_confidence)"),
     "stop_reason": "$(json_string "$(field stop_reason)")",
     "confidence_min": $(json_number "$(pair_left "${confidence_min_avg}")"),
     "confidence_avg": $(json_number "$(pair_right "${confidence_min_avg}")")

@@ -904,6 +904,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         throw std::invalid_argument(
             "Live route matching endpoint_min_edge_top_match_gap must be finite and non-negative");
     }
+    if (!std::isfinite(config.endpoint_ambiguous_hold_dwell_ms)
+        || config.endpoint_ambiguous_hold_dwell_ms < 0.0) {
+        throw std::invalid_argument(
+            "Live route matching endpoint_ambiguous_hold_dwell_ms must be finite and non-negative");
+    }
+    if (config.endpoint_allow_ambiguous_hold) {
+        if (!config.endpoint_require_unambiguous_match) {
+            throw std::invalid_argument(
+                "Live route matching ambiguous endpoint hold requires endpoint unambiguous confirmation");
+        }
+        if ((config.live_output_runtime_controls_provided && config.live_output_runtime_enabled)
+            || (config.external_nav_output_runtime_controls_provided
+                && config.external_nav_output_runtime_enabled)) {
+            throw std::invalid_argument(
+                "Live route matching ambiguous endpoint hold is attach-only and requires runtime output disabled");
+        }
+    }
     if (config.export_endpoint_stop_frame && config.endpoint_stop_frame_dir.empty()) {
         throw std::invalid_argument("Live route matching endpoint stop frame export requires a non-empty directory");
     }
@@ -1054,6 +1071,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_require_unambiguous_match=" << bool_word(config.endpoint_require_unambiguous_match)
             << " endpoint_min_top_match_gap=" << config.endpoint_min_top_match_gap
             << " endpoint_min_edge_top_match_gap=" << config.endpoint_min_edge_top_match_gap
+            << " endpoint_allow_ambiguous_hold=" << bool_word(config.endpoint_allow_ambiguous_hold)
+            << " endpoint_ambiguous_hold_dwell_ms=" << config.endpoint_ambiguous_hold_dwell_ms
             << " export_endpoint_stop_frame=" << bool_word(config.export_endpoint_stop_frame)
             << " endpoint_stop_frame_dir="
             << (config.endpoint_stop_frame_dir.empty() ? "none" : config.endpoint_stop_frame_dir.string())
@@ -1400,12 +1419,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
     std::optional<Timestamp> endpoint_dwell_started_at;
+    std::optional<Timestamp> ambiguous_endpoint_hold_started_at;
     result.endpoint_dwell_required_ms = config.endpoint_dwell_ms;
     result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
     result.endpoint_confirmation_required = config.endpoint_require_unambiguous_match;
     result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
     result.endpoint_confirmation_reason =
         config.endpoint_require_unambiguous_match ? "not_evaluated" : "disabled";
+    result.ambiguous_endpoint_hold_required_ms = config.endpoint_ambiguous_hold_dwell_ms;
+    result.ambiguous_endpoint_hold_reason =
+        config.endpoint_allow_ambiguous_hold ? "not_evaluated" : "disabled";
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
@@ -1780,6 +1803,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         }
                     }
                     if (endpoint_confirmed) {
+                        ambiguous_endpoint_hold_started_at.reset();
+                        result.ambiguous_endpoint_hold_dwell_ms = 0.0;
+                        result.ambiguous_endpoint_hold_reason =
+                            config.endpoint_allow_ambiguous_hold ? "endpoint_confirmed" : "disabled";
                         if (!endpoint_dwell_started_at) {
                             endpoint_dwell_started_at = processing_finished;
                         }
@@ -1789,6 +1816,26 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         endpoint_dwell_started_at.reset();
                         result.endpoint_dwell_ms = 0.0;
                         result.endpoint_dwell_passed = false;
+                        if (config.endpoint_allow_ambiguous_hold) {
+                            if (!ambiguous_endpoint_hold_started_at) {
+                                ambiguous_endpoint_hold_started_at = processing_finished;
+                            }
+                            result.ambiguous_endpoint_hold_dwell_ms =
+                                milliseconds_between(*ambiguous_endpoint_hold_started_at, processing_finished);
+                            result.ambiguous_endpoint_hold_reason = result.endpoint_confirmation_reason;
+                            result.ambiguous_endpoint_hold_frame_id = processed.id;
+                            result.ambiguous_endpoint_hold_route_index =
+                                static_cast<std::uint64_t>(match.route_index);
+                            result.ambiguous_endpoint_hold_progress = match.progress;
+                            result.ambiguous_endpoint_hold_tracked_progress = *current_tracked_progress;
+                            result.ambiguous_endpoint_hold_confidence = match.confidence;
+                            if (result.ambiguous_endpoint_hold_dwell_ms
+                                >= config.endpoint_ambiguous_hold_dwell_ms) {
+                                result.ambiguous_endpoint_hold_triggered = true;
+                                result.stop_reason = "ambiguous_endpoint_hold";
+                                break;
+                            }
+                        }
                     }
                     if (endpoint_confirmed && result.endpoint_dwell_passed) {
                         result.endpoint_stop_triggered = true;
@@ -1825,11 +1872,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     }
                 } else {
                     endpoint_dwell_started_at.reset();
+                    ambiguous_endpoint_hold_started_at.reset();
                     result.endpoint_dwell_ms = 0.0;
                     result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
                     result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
                     result.endpoint_confirmation_reason =
                         config.endpoint_require_unambiguous_match ? "not_at_endpoint" : "disabled";
+                    result.ambiguous_endpoint_hold_dwell_ms = 0.0;
+                    result.ambiguous_endpoint_hold_reason =
+                        config.endpoint_allow_ambiguous_hold ? "not_at_endpoint" : "disabled";
                 }
             }
         } else {
@@ -1850,11 +1901,20 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 : "capture_timeout";
     }
     if (live_output_session) {
-        live_output_session->stop(result.endpoint_stop_triggered ? "endpoint_progress_reached" : "match_live_route_complete");
+        live_output_session->stop(
+            result.endpoint_stop_triggered
+                ? "endpoint_progress_reached"
+                : (result.ambiguous_endpoint_hold_triggered
+                    ? "ambiguous_endpoint_hold"
+                    : "match_live_route_complete"));
     }
     if (external_nav_output_session) {
         external_nav_output_session->stop(
-            result.endpoint_stop_triggered ? "endpoint_progress_reached" : "match_live_route_complete");
+            result.endpoint_stop_triggered
+                ? "endpoint_progress_reached"
+                : (result.ambiguous_endpoint_hold_triggered
+                    ? "ambiguous_endpoint_hold"
+                    : "match_live_route_complete"));
     }
     if (config.emit_dry_run_commands) {
         command_sink.stop();
@@ -2004,6 +2064,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
 
     if (result.external_nav_estimates == 0) {
         result.external_nav_strict_session_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_strict_session_reason = "ambiguous_endpoint_hold";
     } else if (!result.passed) {
         result.external_nav_strict_session_reason = "route_session_not_passed";
     } else if (result.external_nav_valid_for_fc != result.external_nav_estimates) {
@@ -2021,6 +2083,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     constexpr double kVisualScaleMaximumRatio = 1.25;
     if (result.external_nav_estimates == 0) {
         result.external_nav_quality_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_quality_reason = "ambiguous_endpoint_hold";
     } else if (!result.passed) {
         result.external_nav_quality_reason = "route_session_not_passed";
     } else if (config.require_live_telemetry_health && !result.live_telemetry_health_passed) {
@@ -2060,6 +2124,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (result.external_nav_estimates == 0) {
         result.external_nav_operator_readiness = "not_requested";
         result.external_nav_operator_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "ambiguous_endpoint_hold";
     } else if (!result.external_nav_quality_ready) {
         result.external_nav_operator_readiness = "blocked";
         result.external_nav_operator_reason = result.external_nav_quality_reason;
@@ -2131,6 +2198,15 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_confirmation_reason=" << result.endpoint_confirmation_reason
             << " endpoint_top_match_gap=" << result.endpoint_top_match_gap
             << " endpoint_edge_top_match_gap=" << result.endpoint_edge_top_match_gap
+            << " ambiguous_endpoint_hold_triggered=" << bool_word(result.ambiguous_endpoint_hold_triggered)
+            << " ambiguous_endpoint_hold_dwell_ms=" << result.ambiguous_endpoint_hold_dwell_ms
+            << " ambiguous_endpoint_hold_required_ms=" << result.ambiguous_endpoint_hold_required_ms
+            << " ambiguous_endpoint_hold_reason=" << result.ambiguous_endpoint_hold_reason
+            << " ambiguous_endpoint_hold_frame_id=" << result.ambiguous_endpoint_hold_frame_id
+            << " ambiguous_endpoint_hold_route_index=" << result.ambiguous_endpoint_hold_route_index
+            << " ambiguous_endpoint_hold_progress=" << result.ambiguous_endpoint_hold_progress
+            << " ambiguous_endpoint_hold_tracked_progress=" << result.ambiguous_endpoint_hold_tracked_progress
+            << " ambiguous_endpoint_hold_confidence=" << result.ambiguous_endpoint_hold_confidence
             << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
             << " endpoint_stop_frame_path="
             << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)
@@ -2257,6 +2333,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " endpoint_confirmation_reason=" << result.endpoint_confirmation_reason
             << " endpoint_top_match_gap=" << result.endpoint_top_match_gap
             << " endpoint_edge_top_match_gap=" << result.endpoint_edge_top_match_gap
+            << " ambiguous_endpoint_hold=" << bool_word(result.ambiguous_endpoint_hold_triggered)
+            << " ambiguous_endpoint_hold_dwell_ms=" << result.ambiguous_endpoint_hold_dwell_ms
+            << " ambiguous_endpoint_hold_required_ms=" << result.ambiguous_endpoint_hold_required_ms
+            << " ambiguous_endpoint_hold_reason=" << result.ambiguous_endpoint_hold_reason
+            << " ambiguous_endpoint_hold_route_index=" << result.ambiguous_endpoint_hold_route_index
+            << " ambiguous_endpoint_hold_progress=" << result.ambiguous_endpoint_hold_progress
+            << " ambiguous_endpoint_hold_tracked_progress=" << result.ambiguous_endpoint_hold_tracked_progress
+            << " ambiguous_endpoint_hold_confidence=" << result.ambiguous_endpoint_hold_confidence
             << " endpoint_stop_frame_written=" << bool_word(result.endpoint_stop_frame_written)
             << " endpoint_stop_frame_path="
             << (result.endpoint_stop_frame_path.empty() ? "none" : result.endpoint_stop_frame_path)
