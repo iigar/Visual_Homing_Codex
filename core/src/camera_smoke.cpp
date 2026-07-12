@@ -41,6 +41,13 @@ namespace {
 constexpr double kTrackedProgressRegressionDeadband = 0.01;
 constexpr double kTrackedVisualScaleMaxStep = 0.05;
 
+struct FocusRoiPixels {
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+};
+
 std::uint64_t monotonic_time_usec(const Timestamp timestamp) {
     return static_cast<std::uint64_t>(
         std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch()).count());
@@ -113,6 +120,83 @@ void write_gray8_frame_pgm(const std::filesystem::path& path, const Frame& frame
     if (!output) {
         throw std::runtime_error("Failed to write endpoint stop frame: " + path.string());
     }
+}
+
+FocusRoiPixels focus_roi_pixels(
+    int width,
+    int height,
+    double left_fraction,
+    double right_fraction,
+    double top_fraction,
+    double bottom_fraction) {
+    if (width <= 0 || height <= 0) {
+        throw std::invalid_argument("Focus ROI source dimensions must be positive");
+    }
+    const auto roi_x = static_cast<int>(std::lround(static_cast<double>(width) * left_fraction));
+    const auto roi_y = static_cast<int>(std::lround(static_cast<double>(height) * top_fraction));
+    const auto roi_right = static_cast<int>(std::lround(static_cast<double>(width) * (1.0 - right_fraction)));
+    const auto roi_bottom = static_cast<int>(std::lround(static_cast<double>(height) * (1.0 - bottom_fraction)));
+    return {
+        std::clamp(roi_x, 0, width),
+        std::clamp(roi_y, 0, height),
+        std::clamp(roi_right - roi_x, 0, width),
+        std::clamp(roi_bottom - roi_y, 0, height),
+    };
+}
+
+Frame crop_gray8_frame(const Frame& frame, const FocusRoiPixels& roi) {
+    if (frame.format != PixelFormat::Gray8) {
+        throw std::invalid_argument("Focus ROI diagnostics require Gray8 frames");
+    }
+    const auto expected_size = static_cast<std::size_t>(frame.width) * static_cast<std::size_t>(frame.height);
+    if (frame.width <= 0 || frame.height <= 0 || frame.data.size() != expected_size) {
+        throw std::invalid_argument("Focus ROI diagnostics received an invalid frame");
+    }
+    if (roi.x < 0 || roi.y < 0 || roi.width <= 0 || roi.height <= 0
+        || roi.x + roi.width > frame.width || roi.y + roi.height > frame.height) {
+        throw std::invalid_argument("Focus ROI crop is outside the source frame");
+    }
+
+    Frame cropped;
+    cropped.id = frame.id;
+    cropped.timestamp = frame.timestamp;
+    cropped.width = roi.width;
+    cropped.height = roi.height;
+    cropped.format = PixelFormat::Gray8;
+    cropped.data.resize(static_cast<std::size_t>(roi.width) * static_cast<std::size_t>(roi.height));
+    for (int row = 0; row < roi.height; ++row) {
+        const auto source_offset = static_cast<std::size_t>(roi.y + row) * static_cast<std::size_t>(frame.width)
+            + static_cast<std::size_t>(roi.x);
+        const auto destination_offset = static_cast<std::size_t>(row) * static_cast<std::size_t>(roi.width);
+        std::copy_n(
+            frame.data.begin() + static_cast<std::ptrdiff_t>(source_offset),
+            roi.width,
+            cropped.data.begin() + static_cast<std::ptrdiff_t>(destination_offset));
+    }
+    return cropped;
+}
+
+RouteSignatureFile crop_gray8_route(const RouteSignatureFile& route, const FocusRoiPixels& roi) {
+    RouteSignatureFile cropped;
+    cropped.version = route.version;
+    cropped.entries.reserve(route.entries.size());
+    for (const auto& entry : route.entries) {
+        Frame frame;
+        frame.id = entry.frame_id;
+        frame.timestamp = Timestamp{};
+        frame.width = entry.width;
+        frame.height = entry.height;
+        frame.format = entry.format;
+        frame.data = entry.payload;
+        const auto cropped_frame = crop_gray8_frame(frame, roi);
+
+        RouteSignatureEntry cropped_entry = entry;
+        cropped_entry.width = static_cast<std::uint16_t>(cropped_frame.width);
+        cropped_entry.height = static_cast<std::uint16_t>(cropped_frame.height);
+        cropped_entry.payload = cropped_frame.data;
+        cropped.entries.push_back(std::move(cropped_entry));
+    }
+    return cropped;
 }
 
 std::string ratio_histogram_text(const std::map<double, std::uint64_t>& histogram) {
@@ -992,6 +1076,24 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         throw std::invalid_argument(
             "Live route matching edge_match_top_count must be positive when edge diagnostics or endpoint confirmation are enabled");
     }
+    if (config.focus_roi_diagnostics) {
+        if (!std::isfinite(config.focus_roi_left_fraction)
+            || !std::isfinite(config.focus_roi_right_fraction)
+            || !std::isfinite(config.focus_roi_top_fraction)
+            || !std::isfinite(config.focus_roi_bottom_fraction)
+            || config.focus_roi_left_fraction < 0.0
+            || config.focus_roi_right_fraction < 0.0
+            || config.focus_roi_top_fraction < 0.0
+            || config.focus_roi_bottom_fraction < 0.0
+            || config.focus_roi_left_fraction + config.focus_roi_right_fraction >= 1.0
+            || config.focus_roi_top_fraction + config.focus_roi_bottom_fraction >= 1.0) {
+            throw std::invalid_argument(
+                "Live route matching focus ROI fractions must be finite, non-negative, and leave a non-empty window");
+        }
+        if (config.focus_roi_top_count == 0) {
+            throw std::invalid_argument("Live route matching focus ROI top count must be positive");
+        }
+    }
 
     const auto route = read_route_signature_file(config.route_path);
     const auto route_summary = summarize_route_signature(route);
@@ -1021,6 +1123,23 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
     Gray8RouteMatcher matcher(route, matcher_config);
+    std::optional<FocusRoiPixels> focus_roi;
+    std::optional<Gray8RouteMatcher> focus_matcher;
+    if (config.focus_roi_diagnostics) {
+        focus_roi = focus_roi_pixels(
+            config.target_width,
+            config.target_height,
+            config.focus_roi_left_fraction,
+            config.focus_roi_right_fraction,
+            config.focus_roi_top_fraction,
+            config.focus_roi_bottom_fraction);
+        if (focus_roi->width <= 0 || focus_roi->height <= 0) {
+            throw std::invalid_argument("Live route matching focus ROI resolves to an empty window");
+        }
+        auto focus_matcher_config = matcher_config;
+        focus_matcher_config.top_candidate_count = std::max<std::size_t>(config.focus_roi_top_count, 2);
+        focus_matcher.emplace(crop_gray8_route(route, *focus_roi), focus_matcher_config);
+    }
     std::optional<BoundedNavigator> navigator;
     if (config.emit_dry_run_commands) {
         navigator.emplace(config.navigator);
@@ -1099,6 +1218,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " zone_probe_diagnostics=" << bool_word(config.zone_probe_diagnostics)
             << " edge_match_diagnostics=" << bool_word(config.edge_match_diagnostics)
             << " edge_match_top_count=" << config.edge_match_top_count
+            << " focus_roi_diagnostics=" << bool_word(config.focus_roi_diagnostics)
+            << " focus_roi_left_right_top_bottom=" << config.focus_roi_left_fraction
+            << "/" << config.focus_roi_right_fraction
+            << "/" << config.focus_roi_top_fraction
+            << "/" << config.focus_roi_bottom_fraction
+            << " focus_roi_top_count=" << config.focus_roi_top_count
+            << " focus_roi_window="
+            << (focus_roi ? focus_roi->x : 0)
+            << "," << (focus_roi ? focus_roi->y : 0)
+            << "," << (focus_roi ? focus_roi->width : 0)
+            << "x" << (focus_roi ? focus_roi->height : 0)
             << " initial_progress_window=" << bool_word(config.initial_progress_window_enabled)
             << " initial_progress_min_max=" << config.initial_progress_min
             << "/" << config.initial_progress_max
@@ -1416,6 +1546,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     double end_zone_gap_sum = 0.0;
     double edge_top_match_gap_sum = 0.0;
     double edge_end_zone_gap_sum = 0.0;
+    double focus_roi_confidence_sum = 0.0;
+    double focus_roi_top_match_gap_sum = 0.0;
+    std::uint64_t focus_roi_top_match_gap_frames = 0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
     std::optional<Timestamp> endpoint_dwell_started_at;
@@ -1487,6 +1620,48 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     result.edge_end_zone_gap_min = result.edge_match_diagnostic_frames == 1
                         ? *edge_end_zone_gap
                         : std::min(result.edge_end_zone_gap_min, *edge_end_zone_gap);
+                }
+            }
+            std::optional<RouteMatch> focus_match;
+            std::optional<double> focus_top_match_gap;
+            if (focus_matcher && focus_roi) {
+                const auto focus_frame = crop_gray8_frame(processed, *focus_roi);
+                focus_match = focus_matcher->match(focus_frame);
+                const auto& focus_top_candidates = focus_matcher->recent_top_candidates();
+                if (focus_top_candidates.size() >= 2) {
+                    focus_top_match_gap =
+                        focus_top_candidates[0].confidence - focus_top_candidates[1].confidence;
+                    ++focus_roi_top_match_gap_frames;
+                    focus_roi_top_match_gap_sum += *focus_top_match_gap;
+                    result.focus_roi_top_match_gap_min = focus_roi_top_match_gap_frames == 1
+                        ? *focus_top_match_gap
+                        : std::min(result.focus_roi_top_match_gap_min, *focus_top_match_gap);
+                }
+                ++result.focus_roi_frames;
+                focus_roi_confidence_sum += focus_match->confidence;
+                if (result.focus_roi_frames == 1) {
+                    result.focus_roi_confidence_min = focus_match->confidence;
+                    result.focus_roi_first_progress = focus_match->progress;
+                    result.focus_roi_min_progress_seen = focus_match->progress;
+                    result.focus_roi_max_progress_seen = focus_match->progress;
+                } else {
+                    result.focus_roi_confidence_min =
+                        std::min(result.focus_roi_confidence_min, focus_match->confidence);
+                    result.focus_roi_min_progress_seen =
+                        std::min(result.focus_roi_min_progress_seen, focus_match->progress);
+                    result.focus_roi_max_progress_seen =
+                        std::max(result.focus_roi_max_progress_seen, focus_match->progress);
+                }
+                result.focus_roi_last_progress = focus_match->progress;
+                if (focus_match->valid) {
+                    ++result.focus_roi_valid_matches;
+                }
+                if (focus_match->route_index == match.route_index) {
+                    ++result.focus_roi_route_index_agreements;
+                }
+                if (live_route_match_endpoint_reached(config, focus_match->progress)
+                    == live_route_match_endpoint_reached(config, match.progress)) {
+                    ++result.focus_roi_endpoint_agreements;
                 }
             }
             const auto processing_finished = now();
@@ -1772,6 +1947,20 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         << " edge_zone_probes=" << format_zone_probe_candidates(edge_diagnostics.zone_candidates)
                         << " edge_end_zone_gap_vs_best=" << (edge_end_zone_gap ? *edge_end_zone_gap : 0.0);
             }
+            if (focus_match) {
+                metrics << " focus_roi_enabled=true"
+                        << " focus_roi_route_index=" << focus_match->route_index
+                        << " focus_roi_progress=" << focus_match->progress
+                        << " focus_roi_confidence=" << focus_match->confidence
+                        << " focus_roi_valid=" << bool_word(focus_match->valid)
+                        << " focus_roi_top_match_gap=" << (focus_top_match_gap ? *focus_top_match_gap : 0.0)
+                        << " focus_roi_agrees_route_index="
+                        << bool_word(focus_match->route_index == match.route_index)
+                        << " focus_roi_agrees_endpoint="
+                        << bool_word(
+                            live_route_match_endpoint_reached(config, focus_match->progress)
+                            == live_route_match_endpoint_reached(config, match.progress));
+            }
             metrics << "\n";
 
             if (config.stop_at_endpoint_progress && match.valid && current_tracked_progress) {
@@ -1946,6 +2135,19 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         : 0.0;
     result.edge_end_zone_gap_avg = result.edge_match_diagnostic_frames > 0
         ? edge_end_zone_gap_sum / static_cast<double>(result.edge_match_diagnostic_frames)
+        : 0.0;
+    if (result.focus_roi_frames > 0) {
+        result.focus_roi_valid_fraction =
+            static_cast<double>(result.focus_roi_valid_matches) / static_cast<double>(result.focus_roi_frames);
+        result.focus_roi_route_index_agreement_fraction =
+            static_cast<double>(result.focus_roi_route_index_agreements) / static_cast<double>(result.focus_roi_frames);
+        result.focus_roi_endpoint_agreement_fraction =
+            static_cast<double>(result.focus_roi_endpoint_agreements) / static_cast<double>(result.focus_roi_frames);
+        result.focus_roi_confidence_avg =
+            focus_roi_confidence_sum / static_cast<double>(result.focus_roi_frames);
+    }
+    result.focus_roi_top_match_gap_avg = focus_roi_top_match_gap_frames > 0
+        ? focus_roi_top_match_gap_sum / static_cast<double>(focus_roi_top_match_gap_frames)
         : 0.0;
     if (config.expected_progress == "forward") {
         result.directional_progress_passed =
@@ -2172,6 +2374,26 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << "/" << result.edge_top_match_gap_avg
             << " edge_end_zone_gap_min_avg=" << result.edge_end_zone_gap_min
             << "/" << result.edge_end_zone_gap_avg
+            << " focus_roi_diagnostics=" << bool_word(config.focus_roi_diagnostics)
+            << " focus_roi_frames=" << result.focus_roi_frames
+            << " focus_roi_valid=" << result.focus_roi_valid_matches
+            << "/" << result.focus_roi_frames
+            << " focus_roi_valid_fraction=" << result.focus_roi_valid_fraction
+            << " focus_roi_confidence_min_avg=" << result.focus_roi_confidence_min
+            << "/" << result.focus_roi_confidence_avg
+            << " focus_roi_progress=" << result.focus_roi_first_progress
+            << ".." << result.focus_roi_last_progress
+            << " focus_roi_minmax_progress=" << result.focus_roi_min_progress_seen
+            << ".." << result.focus_roi_max_progress_seen
+            << " focus_roi_route_index_agreement=" << result.focus_roi_route_index_agreements
+            << "/" << result.focus_roi_frames
+            << " focus_roi_route_index_agreement_fraction="
+            << result.focus_roi_route_index_agreement_fraction
+            << " focus_roi_endpoint_agreement=" << result.focus_roi_endpoint_agreements
+            << "/" << result.focus_roi_frames
+            << " focus_roi_endpoint_agreement_fraction=" << result.focus_roi_endpoint_agreement_fraction
+            << " focus_roi_top_match_gap_min_avg=" << result.focus_roi_top_match_gap_min
+            << "/" << result.focus_roi_top_match_gap_avg
             << " first_progress=" << result.first_progress
             << " last_progress=" << result.last_progress
             << " min_progress_seen=" << result.min_progress_seen
@@ -2367,6 +2589,25 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << "/" << result.edge_top_match_gap_avg
             << " edge_end_zone_gap_min_avg=" << result.edge_end_zone_gap_min
             << "/" << result.edge_end_zone_gap_avg
+            << " focus_roi_diagnostics=" << bool_word(config.focus_roi_diagnostics)
+            << " focus_roi_valid=" << result.focus_roi_valid_matches
+            << "/" << result.focus_roi_frames
+            << " focus_roi_valid_fraction=" << result.focus_roi_valid_fraction
+            << " focus_roi_confidence_min_avg=" << result.focus_roi_confidence_min
+            << "/" << result.focus_roi_confidence_avg
+            << " focus_roi_progress=" << result.focus_roi_first_progress
+            << ".." << result.focus_roi_last_progress
+            << " focus_roi_minmax_progress=" << result.focus_roi_min_progress_seen
+            << ".." << result.focus_roi_max_progress_seen
+            << " focus_roi_route_index_agreement=" << result.focus_roi_route_index_agreements
+            << "/" << result.focus_roi_frames
+            << " focus_roi_route_index_agreement_fraction="
+            << result.focus_roi_route_index_agreement_fraction
+            << " focus_roi_endpoint_agreement=" << result.focus_roi_endpoint_agreements
+            << "/" << result.focus_roi_frames
+            << " focus_roi_endpoint_agreement_fraction=" << result.focus_roi_endpoint_agreement_fraction
+            << " focus_roi_top_match_gap_min_avg=" << result.focus_roi_top_match_gap_min
+            << "/" << result.focus_roi_top_match_gap_avg
             << " telemetry_health=" << bool_word(result.live_telemetry_health_passed)
             << " telemetry_dropped=" << result.telemetry_bytes_dropped
             << " dry_run_quality=" << bool_word(result.dry_run_command_quality_passed)

@@ -353,6 +353,34 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K")) {
         config.edge_match_top_count = parse_size_arg(count, "VISUAL_HOMING_LIVE_ROUTE_MATCH_EDGE_TOP_K");
     }
+    if (const char* enabled = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_DIAGNOSTICS")) {
+        config.focus_roi_diagnostics = parse_bool_arg(enabled);
+    }
+    if (const char* fraction = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_LEFT")) {
+        config.focus_roi_left_fraction = parse_double_arg(
+            fraction,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_LEFT");
+    }
+    if (const char* fraction = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_RIGHT")) {
+        config.focus_roi_right_fraction = parse_double_arg(
+            fraction,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_RIGHT");
+    }
+    if (const char* fraction = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP")) {
+        config.focus_roi_top_fraction = parse_double_arg(
+            fraction,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP");
+    }
+    if (const char* fraction = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_BOTTOM")) {
+        config.focus_roi_bottom_fraction = parse_double_arg(
+            fraction,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_BOTTOM");
+    }
+    if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP_K")) {
+        config.focus_roi_top_count = parse_size_arg(
+            count,
+            "VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP_K");
+    }
     const char* initial_progress_min = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MIN");
     const char* initial_progress_max = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_INITIAL_PROGRESS_MAX");
     if (initial_progress_min != nullptr || initial_progress_max != nullptr) {

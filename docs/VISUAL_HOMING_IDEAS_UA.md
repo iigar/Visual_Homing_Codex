@@ -729,6 +729,232 @@ Planned later. GS postponed until flight-core behavior is clearer.
 
 Architectural principle.
 
+## Ідея 11: Visual Focus Window / Focus ROI Mode
+
+### Що Це
+
+Конфігурована "робоча зона" всередині кадру, схожа на focus mode у цифровій відеосистемі. Система може аналізувати не весь `160x100` processed frame однаково, а окреме внутрішнє вікно, де очікується стабільна текстура землі/маршруту.
+
+Поточна поведінка:
+
+```text
+camera capture: 640x400
+processed route frame: 160x100 Gray8
+matcher input: full 160x100 frame
+```
+
+Ідея focus mode:
+
+```text
+green frame = full processed frame
+yellow frame = focus ROI
+dark/masked outside = ignored or diagnostic-only area
+```
+
+### Для Чого
+
+Щоб зменшити вплив об'єктів на краях кадру:
+
+- посадочні ніжки;
+- частини дрона, які можуть з'явитись у полі зору;
+- ноги оператора під час bench/hand-carried тестів;
+- крайові wide-FOV distortion zones;
+- випадкові тіні/рух на периферії.
+
+Це має підвищити стійкість matching на реальному полі, де система не може вимагати ідеальної текстури або ідеального кадру.
+
+### Чому З'явилась Ідея
+
+Після overlay на keyframe стало видно, що core matcher зараз використовує весь кадр. User запропонував оцінювати центральнішу область, зміщену від країв до центру, щоб прибрати з аналізу ніжки/ноги/майбутні частини дрона.
+
+Важливий висновок: обрізати `30%` з усіх сторін одразу занадто агресивно, бо залишиться лише `40% x 40%` кадру і можна втратити корисні орієнтири: петлю дрота, плями, бокову перспективу, endpoint texture.
+
+### Рекомендований Перший ROI
+
+Почати не з симетричного 30% crop, а з асиметричного focus window:
+
+```text
+left=12%
+right=12%
+top=8%
+bottom=22%
+```
+
+Причина: нижня частина кадру найімовірніше містить посадочні ніжки, ноги оператора або частини дрона. Верх/боки теж трохи обрізаються, але не настільки, щоб знищити маршрутну текстуру.
+
+### Режими
+
+Потрібно мати мінімум три режими:
+
+```text
+full_frame
+focus_roi_diagnostic
+focus_roi_primary
+```
+
+`full_frame`:
+
+```text
+Поточна поведінка. Весь 160x100 кадр бере участь у route matching.
+```
+
+`focus_roi_diagnostic`:
+
+```text
+Паралельно рахуємо focus ROI match, але не впливаємо на stop, output або readiness.
+```
+
+`focus_roi_primary`:
+
+```text
+Route matching працює по focus ROI, а full-frame лишається sanity-check/fallback.
+```
+
+Починати тільки з `focus_roi_diagnostic`.
+
+### Як Реалізовувати
+
+Етап 1: Visualization only.
+
+```text
+Зробити keyframe overlays:
+- зелена рамка = весь processed frame;
+- жовта рамка = focus ROI;
+- затемнена периферія = ignored/masked zone.
+```
+
+Етап 2: Diagnostic metrics.
+
+На кожному live кадрі рахувати паралельно:
+
+```text
+full_progress
+full_confidence
+full_top_match_gap
+full_route_index
+focus_progress
+focus_confidence
+focus_top_match_gap
+focus_route_index
+focus_agrees_with_full
+focus_endpoint_agrees_with_full
+```
+
+Етап 3: No authority comparison.
+
+```text
+focus_roi_diagnostic не змінює:
+- endpoint_stop;
+- ambiguous_endpoint_hold;
+- external_nav output;
+- route_session_ready;
+- operator_readiness.
+```
+
+Етап 4: Acceptance evidence.
+
+Після 2-3 forward/reverse attach-only прогонів порівняти:
+
+```text
+чи focus ROI має менше false endpoint;
+чи focus ROI має кращий endpoint gap;
+чи focus ROI не втрачає progress monotonicity;
+чи confidence не падає нижче full-frame;
+чи route_index agreement стабільний;
+чи invalid streak не росте.
+```
+
+Тільки після цього розглядати `focus_roi_primary`.
+
+### Що Треба Логувати
+
+Бажані поля:
+
+```text
+focus_roi_enabled
+focus_roi_mode=diagnostic|primary
+focus_roi_left_fraction
+focus_roi_right_fraction
+focus_roi_top_fraction
+focus_roi_bottom_fraction
+focus_valid_matches
+focus_confidence_min_avg
+focus_progress_first_last
+focus_tracked_progress_first_last
+focus_top_match_gap_min_avg
+focus_route_index_agreement_fraction
+focus_endpoint_agreement
+focus_invalid_reasons
+```
+
+Для endpoint:
+
+```text
+endpoint_full_confirmation_passed
+endpoint_focus_confirmation_passed
+endpoint_full_top_match_gap
+endpoint_focus_top_match_gap
+endpoint_focus_reason
+```
+
+### Як Перевіряти
+
+Перший тестовий цикл:
+
+```text
+route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
+expected_progress=forward
+output_runtime_enabled=0
+focus_roi_mode=diagnostic
+```
+
+Accepted diagnostic behavior:
+
+```text
+full-frame behavior unchanged
+focus metrics present
+no send
+no stop-policy changes
+no readiness changes caused by focus ROI
+```
+
+Після цього:
+
+```text
+1-2 forward attach-only
+1-2 reverse attach-only
+one endpoint stand-still diagnostic
+compare full vs focus logs
+```
+
+### Чи Реально
+
+Так. Це реалістично і low-risk, якщо почати як diagnostic-only. CPU overhead має бути помірним, бо ROI менший за full frame, а matching уже працює на `160x100`.
+
+### Ризики
+
+- Занадто малий ROI може втратити унікальні орієнтири і погіршити ambiguity.
+- Якщо route записаний full-frame, а live match робиться ROI-only без однакового preprocessing, можна порівнювати різні представлення.
+- Якщо focus ROI стане primary занадто рано, система може стати сліпою до корисних бокових ознак.
+- ROI не вирішує endpoint ambiguity сам по собі; це додатковий evidence channel.
+
+### Поточний Статус
+
+Diagnostic-only implementation added locally:
+
+```text
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_DIAGNOSTICS=1
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_LEFT=0.12
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_RIGHT=0.12
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP=0.08
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_BOTTOM=0.22
+VISUAL_HOMING_LIVE_ROUTE_MATCH_FOCUS_ROI_TOP_K=5
+```
+
+It logs focus ROI metrics only. It does not change stop, passed, readiness, external-nav estimates, or external-nav output behavior.
+
+Next safe step: run forward/reverse attach-only with `FOCUS_ROI_DIAGNOSTICS=1` and compare full-frame vs focus metrics.
+
 ## Поточний Найближчий План
 
 1. Виправити/підтвердити endpoint confirmation reason після hotfix `5d4bdeb`.

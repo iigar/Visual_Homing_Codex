@@ -152,9 +152,20 @@ int main() {
     assert(match_output.find("live_route_match_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
     assert(match_output.find("route_entries=1 window_radius=4 minimum_confidence=0.75 max_direction_shift_px=2 radians_per_pixel=0.01 expected_progress=reverse max_progress_regressions=7 max_progress_rollback=0.125 require_endpoint_progress=false endpoint_start_progress=0.15 endpoint_end_progress=0.85 stop_at_endpoint_progress=false endpoint_dwell_ms=0 endpoint_require_unambiguous_match=false endpoint_min_top_match_gap=0.002 endpoint_min_edge_top_match_gap=0.001 endpoint_allow_ambiguous_hold=false endpoint_ambiguous_hold_dwell_ms=3000 export_endpoint_stop_frame=false endpoint_stop_frame_dir=none") != std::string::npos);
     assert(match_output.find("dry_run_commands=true live_telemetry_stream=false telemetry_warmup_timeout_ms=1500 telemetry_max_age_ms=500 require_live_telemetry_health=false") != std::string::npos);
+    assert(match_output.find("focus_roi_diagnostics=false focus_roi_left_right_top_bottom=0.12/0.12/0.08/0.22 focus_roi_top_count=5 focus_roi_window=0,0,0x0") != std::string::npos);
     assert(match_output.find("navigator_minimum_confidence=0.8 navigator_max_match_age_ms=150 navigator_yaw_gain=0.5 navigator_max_yaw_rate_radps=0.2 navigator_max_yaw_accel_radps2=0.7 navigator_forward_speed_mps=0.1") != std::string::npos);
     assert(match_output.find("live_route_match_unavailable error=") != std::string::npos);
     assert(match_output.find("live_route_match_done started=false warmup_frames_dropped=0 frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls=0 passed=false") != std::string::npos);
+
+    vh::LiveRouteMatchingConfig focus_match_config = match_config;
+    focus_match_config.emit_dry_run_commands = false;
+    focus_match_config.focus_roi_diagnostics = true;
+    std::ostringstream focus_match_metrics;
+    const auto focus_match_result = vh::match_live_camera_route(focus_match_config, focus_match_metrics);
+    assert(!focus_match_result.started);
+    assert(focus_match_result.focus_roi_frames == 0);
+    const auto focus_match_output = focus_match_metrics.str();
+    assert(focus_match_output.find("focus_roi_diagnostics=true focus_roi_left_right_top_bottom=0.12/0.12/0.08/0.22 focus_roi_top_count=5 focus_roi_window=2,1,12x8") != std::string::npos);
 
     vh::LiveRouteMatchingConfig endpoint_forward;
     endpoint_forward.expected_progress = "forward";
@@ -432,6 +443,33 @@ int main() {
         rejected_match_endpoint_edge_count = true;
     }
     assert(rejected_match_endpoint_edge_count);
+
+    bool rejected_focus_roi_fraction = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.focus_roi_diagnostics = true;
+        invalid.focus_roi_left_fraction = 0.6;
+        invalid.focus_roi_right_fraction = 0.4;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_focus_roi_fraction = true;
+    }
+    assert(rejected_focus_roi_fraction);
+
+    bool rejected_focus_roi_top_count = false;
+    try {
+        vh::LiveRouteMatchingConfig invalid;
+        invalid.route_path = match_route_path;
+        invalid.focus_roi_diagnostics = true;
+        invalid.focus_roi_top_count = 0;
+        std::ostringstream ignored;
+        (void)vh::match_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_focus_roi_top_count = true;
+    }
+    assert(rejected_focus_roi_top_count);
 
     bool rejected_match_ambiguous_hold_without_confirmation = false;
     try {
