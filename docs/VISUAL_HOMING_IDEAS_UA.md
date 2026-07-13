@@ -955,6 +955,50 @@ It logs focus ROI metrics only. It does not change stop, passed, readiness, exte
 
 Next safe step: run forward/reverse attach-only with `FOCUS_ROI_DIAGNOSTICS=1` and compare full-frame vs focus metrics.
 
+## Ідея 12: Night / Thermal Camera Route Mode
+
+### Проблема
+
+Daylight OV9281 routes не треба вважати валідними після сутінок або вночі. Вечірній probe 2026-07-13 показав типовий domain shift:
+
+```text
+confidence ~= 0.54
+focus_roi_confidence ~= 0.55
+valid=false
+route_match_not_valid
+progress stuck near route start window
+```
+
+Це схоже на low-light / exposure / contrast failure, а не на FC/JT_Zero acceptance result.
+
+### Пропозиція
+
+Для night tests і майбутньої нічної роботи використовувати окрему thermal USB camera через EasyCAP. Це має бути окремий sensor/input mode, а не продовження денного OV9281 route.
+
+### Як Плануємо Реалізовувати
+
+1. Додати окремий capture/input profile для EasyCAP thermal feed.
+2. Записувати thermal-specific route artifacts; не змішувати їх з daylight OV9281 route.
+3. Експортувати keyframes/overlays для thermal route, щоб оператор бачив, що реально обробляє matcher.
+4. Спочатку прогнати attach-only forward/reverse evidence.
+5. Лише після повторюваного thermal attach-only evidence переходити до props-off provider-send evidence.
+6. Focus ROI diagnostics залишити увімкненими, але ROI retune робити тільки після перегляду реальних thermal кадрів.
+
+### Чи Реально
+
+Так, це реально і, скоріш за все, необхідно для night-capable Visual Homing. Основні ризики:
+
+- thermal image може мати менше spatial detail;
+- route distinctiveness і endpoint ambiguity треба переміряти з нуля;
+- EasyCAP може додати іншу latency/format path;
+- денні confidence thresholds можуть не підходити thermal domain.
+
+### Не Робити
+
+- Не використовувати OV9281 daylight route як доказ thermal/night readiness.
+- Не змішувати daylight і thermal evidence в одному acceptance bucket.
+- Не йти до RTL/HOVER night tests без окремої thermal repeatability бази.
+
 ## Поточний Найближчий План
 
 1. Виправити/підтвердити endpoint confirmation reason після hotfix `5d4bdeb`.

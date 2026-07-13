@@ -50,6 +50,7 @@ bool LiveExternalNavOutputSession::start() {
     started_at_ = now();
     messages_sent_ = 0;
     running_ = true;
+    started_once_ = true;
     return true;
 }
 
@@ -65,7 +66,10 @@ void LiveExternalNavOutputSession::stop(const std::string& reason) {
 LiveExternalNavOutputResult LiveExternalNavOutputSession::process(
     const LiveExternalNavOutputSnapshot& snapshot) {
     if (!running_) {
-        throw std::runtime_error("LiveExternalNavOutputSession process called while stopped");
+        if (!started_once_) {
+            throw std::runtime_error("LiveExternalNavOutputSession process called before start");
+        }
+        return {false, false, "external_nav_output_session_stopped"};
     }
 
     if (config_.max_messages > 0 && messages_sent_ >= config_.max_messages) {

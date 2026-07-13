@@ -256,6 +256,12 @@ int main() {
         assert(writer.sends == 1);
         assert(audit.records[2] == "estimate:max_message_count_reached");
         assert(audit.records[3] == "stop:max_message_count_reached");
+
+        const auto after_stop = session.process(passing_snapshot());
+        assert(!after_stop.allowed);
+        assert(!after_stop.sent);
+        assert(after_stop.reason == "external_nav_output_session_stopped");
+        assert(writer.sends == 1);
     }
 
     {

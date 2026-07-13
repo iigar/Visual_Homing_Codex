@@ -67,6 +67,7 @@ private:
     std::uint64_t messages_sent_ = 0;
     bool writer_started_ = false;
     bool running_ = false;
+    bool started_once_ = false;
 };
 
 } // namespace vh
