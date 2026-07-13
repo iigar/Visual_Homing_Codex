@@ -341,11 +341,29 @@ reason if Guided/position readiness still rejects external nav
 
 Implementation direction:
 
-- Add or use a probe wrapper around the accepted forward send command.
+- Use `scripts/run-external-nav-output-acceptance-probe-pi.sh` as the reviewed probe wrapper around the accepted forward send command.
 - Capture a telemetry window before send, during send, and after send.
 - Decode `HEARTBEAT`, `STATUSTEXT`, EKF status, local/global position status, GPS/external-nav related status, and any ArduPilot messages indicating external nav acceptance/rejection.
 - Do not infer acceptance only from Pi-side `sent=true`.
 - Do not change FC params blindly. First read and log current params/status. Parameter names and required EKF source settings must be verified against the installed ArduPilot firmware before changing anything.
+
+The current probe wrapper produces:
+
+```text
+external-nav-acceptance-probe-<stamp>.log
+external-nav-acceptance-pre-<stamp>.log
+external-nav-acceptance-send-<stamp>.log
+external-nav-acceptance-send-audit-<stamp>.log
+external-nav-acceptance-post-<stamp>.log
+```
+
+Its automatic result is intentionally conservative:
+
+```text
+acceptance_probe_result=probe_complete_requires_fc_status_review
+```
+
+This means the wrapper completed the before/send/after evidence bundle, but FC/JT_Zero acceptance must still be reviewed from telemetry/status signals. `external_nav_output_sent>0` alone is not acceptance.
 
 Exit criteria:
 

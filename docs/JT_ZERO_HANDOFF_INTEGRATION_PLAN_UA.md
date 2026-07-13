@@ -368,6 +368,14 @@ After provider send works, collect evidence that FC/JT_Zero accepts or rejects i
 - reason if Guided still rejects position;
 - no automatic movement commands.
 
+Use the dedicated probe wrapper:
+
+```text
+scripts/run-external-nav-output-acceptance-probe-pi.sh
+```
+
+The wrapper runs a read-only pre-send telemetry capture, the reviewed props-off provider-send wrapper, and a read-only post-send telemetry capture. It writes a manifest-style probe log plus the three underlying evidence logs. Its result remains `probe_complete_requires_fc_status_review` until FC/JT_Zero exposes a reviewed acceptance or rejection signal; Pi-side `sent=true` is necessary but not sufficient.
+
 Exit criteria:
 
 - readiness JSON can report something more specific than `jt_zero_not_integrated`;
