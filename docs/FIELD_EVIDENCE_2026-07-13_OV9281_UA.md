@@ -243,6 +243,74 @@ focus_roi_endpoint_agreement_fraction=0.998494
 focus_roi_top_match_gap_min_avg=7.31636e-07/0.000877914
 ```
 
+## Forward Props-Off Send-Enabled Pass
+
+This run used the reviewed props-off send wrapper. It is still not armed flight evidence. It confirms the bounded external-nav provider writer path can send messages during a clean forward route-following pass while the vehicle remains not armed.
+
+Logs:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260713T173231Z.log
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260713T173231Z.log
+```
+
+Stop frame:
+
+```text
+artifacts/stop_frames/endpoint-stop-frame-20260713T173318Z-id-764-route-599.pgm
+```
+
+Summary:
+
+```text
+passed=true
+frames=628/1200
+valid_matches=628/628
+progress=0.0100167..1
+tracked_progress=0.0100167..1
+endpoint_stop=true
+endpoint_stop_route_index=599
+endpoint_stop_progress=1
+endpoint_stop_confidence=0.938656
+telemetry_health=true
+dry_run_quality=true
+external_nav_valid=628/628
+external_nav_session_ready=true
+external_nav_strict_session_ready=true
+external_nav_operator_readiness=ready
+external_nav_output_allowed=628
+external_nav_output_sent=628
+external_nav_output_blocked=0
+final_external_nav_output_reason=allowed
+external_nav_output_send_check passed=true
+audit_check passed=true
+```
+
+Safety observations:
+
+```text
+external-nav provider messages were sent in the bench props-off boundary
+vehicle remained not armed
+live_output_gate_block_reasons=vehicle_not_armed:628
+external_nav_output_audit stop_reason=endpoint_progress_reached
+```
+
+Focus ROI summary:
+
+```text
+focus_roi_valid=628/628
+focus_roi_valid_fraction=1
+focus_roi_confidence_min_avg=0.913671/0.937713
+focus_roi_progress=0.0100167..1
+focus_roi_route_index_agreement=334/628
+focus_roi_route_index_agreement_fraction=0.531847
+focus_roi_endpoint_agreement=594/628
+focus_roi_endpoint_agreement_fraction=0.94586
+focus_roi_top_match_gap_min_avg=0/0.000982946
+```
+
+Interpretation: this is the strongest forward Focus ROI diagnostic result from the session, but Focus ROI still remains diagnostic/fallback evidence only. Full-frame matching remains the authority path.
+
 ## Conclusions
 
 Accepted evidence:
@@ -251,9 +319,11 @@ Accepted evidence:
 new route quality_pass=true
 forward attach-only passed=true
 reverse attach-only passed=true
+forward props-off send-enabled passed=true
 telemetry_health=true in clean forward/reverse passes
 external_nav_valid=all/all in clean forward/reverse passes
 external_nav_output remained blocked by runtime_disabled in attach-only wrapper
+external_nav_output sent 628/628 messages in reviewed props-off send wrapper
 ```
 
 Focus ROI conclusion:
@@ -269,6 +339,7 @@ Why ROI primary is not accepted yet:
 ```text
 forward route_index_agreement_fraction=0.400589
 reverse route_index_agreement_fraction=0.420181
+send-forward route_index_agreement_fraction=0.531847
 ```
 
 Why ROI is still valuable:
@@ -281,5 +352,4 @@ reverse avg_abs_route_index_delta=4.2091 in first reverse pass
 
 ## Next Recommended Step
 
-Proceed to one props-off send-enabled forward run on the same updated route, with full-frame authority and Focus ROI diagnostics enabled. This should remain bounded/audited and props-off; it is not an armed flight test.
-
+Recommended next test: repeat one more props-off send-enabled forward run on the same updated route, with full-frame authority and Focus ROI diagnostics enabled. Goal: prove repeatability before any armed/tethered planning. This is still not an armed flight test.
