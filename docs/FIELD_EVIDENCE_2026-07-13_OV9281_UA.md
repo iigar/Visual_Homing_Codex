@@ -311,6 +311,79 @@ focus_roi_top_match_gap_min_avg=0/0.000982946
 
 Interpretation: this is the strongest forward Focus ROI diagnostic result from the session, but Focus ROI still remains diagnostic/fallback evidence only. Full-frame matching remains the authority path.
 
+## Forward Props-Off Send-Enabled Repeat
+
+This is the repeatability run requested after the first clean send-enabled forward pass. It used the same reviewed props-off send wrapper. The vehicle remained not armed, live command output remained blocked by `vehicle_not_armed`, and external-nav provider messages were allowed/sent only through the reviewed external-nav provider output path.
+
+Logs:
+
+```text
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-20260713T175911Z.log
+/home/pi/Visual_Homing_Codex/artifacts/logs/external-nav-output-send-audit-20260713T175911Z.log
+```
+
+Stop frame:
+
+```text
+artifacts/stop_frames/endpoint-stop-frame-20260713T175957Z-id-333-route-599.pgm
+```
+
+Summary:
+
+```text
+passed=true
+frames=277/1200
+valid_matches=277/277
+progress=0.00834725..1
+tracked_progress=0.00834725..0.999994
+endpoint_stop=true
+endpoint_stop_route_index=599
+endpoint_stop_progress=1
+endpoint_stop_tracked_progress=0.999994
+endpoint_stop_confidence=0.927464
+endpoint_dwell_ms=1217.09/1200
+telemetry_health=true
+dry_run_quality=true
+external_nav_valid=277/277
+external_nav_valid_fraction=1
+external_nav_max_invalid_streak=0
+external_nav_invalid_reasons=none
+external_nav_relative_altitude_min_avg_max_m=0.726/0.989917/1.186
+external_nav_session_ready=true
+external_nav_strict_session_ready=true
+external_nav_operator_readiness=ready
+external_nav_output_allowed=277
+external_nav_output_sent=277
+external_nav_output_blocked=0
+final_external_nav_output_reason=allowed
+external_nav_output_send_check passed=true
+audit_check passed=true
+```
+
+Safety observations:
+
+```text
+vehicle remained not armed
+live_output_gate_block_reasons=vehicle_not_armed:277
+external_nav_output_audit stop_reason=endpoint_progress_reached
+```
+
+Focus ROI summary:
+
+```text
+focus_roi_valid=277/277
+focus_roi_valid_fraction=1
+focus_roi_confidence_min_avg=0.905111/0.933716
+focus_roi_progress=0.00834725..1
+focus_roi_route_index_agreement=130/277
+focus_roi_route_index_agreement_fraction=0.469314
+focus_roi_endpoint_agreement=277/277
+focus_roi_endpoint_agreement_fraction=1
+focus_roi_top_match_gap_min_avg=3.29236e-06/0.00105884
+```
+
+Interpretation: this gives two accepted forward props-off send-enabled runs on the 2026-07-13 route update: the first at `628/628` sent estimates and the repeat at `277/277`. The shorter repeat still passed all route, telemetry, external-nav readiness, and audit gates.
+
 ## Conclusions
 
 Accepted evidence:
@@ -320,10 +393,12 @@ new route quality_pass=true
 forward attach-only passed=true
 reverse attach-only passed=true
 forward props-off send-enabled passed=true
+forward props-off send-enabled repeat passed=true
 telemetry_health=true in clean forward/reverse passes
 external_nav_valid=all/all in clean forward/reverse passes
 external_nav_output remained blocked by runtime_disabled in attach-only wrapper
 external_nav_output sent 628/628 messages in reviewed props-off send wrapper
+external_nav_output sent 277/277 messages in reviewed props-off send wrapper repeat
 ```
 
 Focus ROI conclusion:
@@ -340,6 +415,7 @@ Why ROI primary is not accepted yet:
 forward route_index_agreement_fraction=0.400589
 reverse route_index_agreement_fraction=0.420181
 send-forward route_index_agreement_fraction=0.531847
+send-forward-repeat route_index_agreement_fraction=0.469314
 ```
 
 Why ROI is still valuable:
@@ -352,4 +428,4 @@ reverse avg_abs_route_index_delta=4.2091 in first reverse pass
 
 ## Next Recommended Step
 
-Recommended next test: repeat one more props-off send-enabled forward run on the same updated route, with full-frame authority and Focus ROI diagnostics enabled. Goal: prove repeatability before any armed/tethered planning. This is still not an armed flight test.
+Recommended next step: stop repeating blind send-only runs and move to an FC/JT_Zero acceptance probe while staying props-off and not armed unless a separate reviewed command explicitly changes that state. The accepted evidence now proves repeatable Pi-side external-nav provider message output, but it still does not prove that FC/JT_Zero consumes the messages as a usable navigation source.
