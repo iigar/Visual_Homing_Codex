@@ -542,6 +542,18 @@ weather/lighting/scene conditions documented
 
 ## Immediate Next Actions
 
+Current carry-forward state before the next field day:
+
+```text
+latest_pi_checkout=head a1dc462 after clean reclone
+latest_field_readiness_log=/home/pi/Visual_Homing_Codex/artifacts/logs/pi-field-readiness-20260714T204714Z.log
+field_readiness=passed true
+route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
+telemetry=opened true, malformed_frames=0, heartbeat_seen=true, mode=AltHold, armed=false
+relative_altitude_min_avg_max_m=0.279/0.3054/0.322
+next_action=repeat readiness gate, then daylight props-off acceptance probe
+```
+
 Recommended next field/bench sequence:
 
 1. On the Pi, run `./scripts/check-pi-field-readiness.sh` from `~/Visual_Homing_Codex` with the intended `VISUAL_HOMING_ROUTE_OUTPUT`, camera profile, altitude preset, and serial device env already set.

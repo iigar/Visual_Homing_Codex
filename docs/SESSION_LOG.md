@@ -1,5 +1,10 @@
 # Session Log
 
+## 2026-07-15
+
+- Ran the new Pi field readiness gate successfully after repairing serial permissions and restoring the required altitude env. Final log: `/home/pi/Visual_Homing_Codex/artifacts/logs/pi-field-readiness-20260714T204714Z.log`, `visual_homing_pi_field_readiness_done passed=true reason=valid`, route `/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs`, device `/dev/serial0`, non-root user `pi`, git worktree/fsck passed, `/dev/serial0 -> /dev/ttyS0`, user in `dialout`, Visual Homing `/tmp` ownership clean, route file present, active camera profile present, telemetry sanity passed with `opened=true`, `malformed_frames=0`, `heartbeat_seen=true`, `mode=AltHold`, `armed=false`, and relative altitude `0.279/0.3054/0.322 m` inside the `0.2..1.6 m` configured window.
+- Recovered the Pi checkout after the empty-object/bad-HEAD failure by moving the corrupt tree aside, cloning a fresh `Visual_Homing_Codex`, and copying `artifacts/` plus `keyframes/` back with `rsync --ignore-existing`. The fresh checkout contains `scripts/check-pi-field-readiness.sh` with executable permissions and reports `head=a1dc462`.
+
 ## 2026-07-14
 
 - Added `scripts/check-pi-field-readiness.sh` as the single Pi bring-up/readiness gate before field, send, or FC/JT_Zero probe work. It checks non-root execution, git checkout connectivity, serial device/group/access, `dialout` membership, stale Visual Homing `/tmp` ownership, route/profile presence, and optional read-only telemetry sanity, then reports `visual_homing_pi_field_readiness_done passed=true` or a concrete blocker. The RTL/HOVER and JT_Zero handoff plans now require this gate before acceptance probes.
