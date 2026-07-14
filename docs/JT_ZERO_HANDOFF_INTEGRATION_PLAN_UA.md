@@ -368,7 +368,15 @@ After provider send works, collect evidence that FC/JT_Zero accepts or rejects i
 - reason if Guided still rejects position;
 - no automatic movement commands.
 
-Use the dedicated probe wrapper:
+Use the dedicated Pi readiness gate first:
+
+```text
+scripts/check-pi-field-readiness.sh
+```
+
+Proceed to the acceptance probe only if it reports `visual_homing_pi_field_readiness_done passed=true`. This gate checks the Pi checkout, serial permissions, `dialout` membership, stale Visual Homing `/tmp` ownership, route/profile presence, and read-only MAVLink telemetry sanity. It should report a specific blocker instead of relying on manual field fixes.
+
+Then use the dedicated probe wrapper:
 
 ```text
 scripts/run-external-nav-output-acceptance-probe-pi.sh

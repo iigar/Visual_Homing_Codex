@@ -341,6 +341,7 @@ reason if Guided/position readiness still rejects external nav
 
 Implementation direction:
 
+- Run `scripts/check-pi-field-readiness.sh` first and proceed only if it reports `visual_homing_pi_field_readiness_done passed=true`.
 - Use `scripts/run-external-nav-output-acceptance-probe-pi.sh` as the reviewed probe wrapper around the accepted forward send command.
 - Capture a telemetry window before send, during send, and after send.
 - Decode `HEARTBEAT`, `STATUSTEXT`, EKF status, local/global position status, GPS/external-nav related status, and any ArduPilot messages indicating external nav acceptance/rejection.
@@ -543,11 +544,11 @@ weather/lighting/scene conditions documented
 
 Recommended next field/bench sequence:
 
-1. Run forward send-enabled repeat x1 with the known good command.
-2. If clean, run reverse attach-only x1 with the known reverse command.
-3. Record both results in `docs/FIELD_EVIDENCE_2026-07-10_OV9281_UA.md` or a new dated evidence file if the session date has changed.
-4. If forward repeat is clean, implement or run an FC/JT_Zero acceptance probe.
-5. Do not proceed to tether/armed tests until the acceptance probe gives an explicit accepted/rejected signal.
+1. On the Pi, run `./scripts/check-pi-field-readiness.sh` from `~/Visual_Homing_Codex` with the intended `VISUAL_HOMING_ROUTE_OUTPUT`, camera profile, altitude preset, and serial device env already set.
+2. If readiness is blocked, fix the named blocker first; do not patch around it with `sudo` wrapper runs.
+3. If readiness is clean and lighting matches the route domain, run `./scripts/run-external-nav-output-acceptance-probe-pi.sh` props-off.
+4. Record the readiness log, acceptance probe manifest, pre/send/audit/post logs, and the exact FC/JT_Zero acceptance or rejection signal if one appears.
+5. Do not proceed to tether/armed tests until the acceptance probe gives an explicit accepted/rejected signal and a separate reviewed test plan exists.
 
 ## Documentation Rules
 

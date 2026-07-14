@@ -28,6 +28,7 @@
 - Stable project context goes to this file.
 - Ideas and research notes go to `docs/VISUAL_HOMING_IDEAS_UA.md` when they affect Visual Homing behavior, safety states, RTL/HOVER, endpoint handling, or operator UI. Short raw notes can still go to `notes/`.
 - Curated extracts from pasted previous-session transcripts go to `docs/SESSION_EXTRACTS_BANK_UA.md`; do not store raw chat there, preserve only reusable decisions, artifacts, commands, pitfalls, and open questions.
+- Before any Pi field/send/FC-JT_Zero probe run, run `./scripts/check-pi-field-readiness.sh` from the Pi checkout and proceed only on `visual_homing_pi_field_readiness_done passed=true`; fix named blockers instead of running Visual Homing wrappers with `sudo`.
 - Code changes are captured in detailed git commits.
 - Generated build artifacts should stay out of git; prefer reproducible scripts/docs for local validation.
 - Every completed task must be pushed to GitHub after the local commit and validation are complete.
