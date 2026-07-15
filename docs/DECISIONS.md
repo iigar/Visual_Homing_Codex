@@ -22,7 +22,7 @@ Impact:
 Risk:
 - Image-shift sign/calibration and physical bearing still require attach-only field evidence before provider send.
 - The FC reports no horizontal local position/origin and constant-position mode; no acceptance probe is authorized by this change.
-- Desktop MSVC build and CTest passed `28/28`; Pi validation is pending.
+- Desktop MSVC build and CTest passed `28/28`. Pi default build at `586a55f` kept all output flags `OFF` and passed `28/28`; log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260715T224654Z.log`.
 
 ## 2026-07-15 - Require Explicit LOCAL_NED Alignment Before External-Nav Output
 
