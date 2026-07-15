@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-16 - Derive Forward-Route Yaw From Bounded Image Shift
+
+Decision:
+- Keep FC `ATTITUDE.yaw` diagnostic-only while `EK3_SRC1_YAW=6` selects ExternalNav yaw.
+- For a physically straight forward route, compute ExternalNav yaw as the configured geographic route bearing plus the matched frame's horizontal image-shift residual.
+- Treat the direction observation as independent only when route match and pixel calibration are valid and the best shift lies strictly inside the configured search window.
+- Reject boundary-saturated, disabled, or non-finite observations; do not use stored route heading hints or provide an operator override for independence.
+- Keep reverse yaw semantics outside this decision until camera orientation and route-direction behavior are separately defined and tested.
+
+Why:
+- Feeding FC yaw back into its own ExternalNav source is a feedback loop, not an independent observation.
+- The matcher already measures a small per-frame visual direction residual from current pixels against the matched route frame.
+- A best result on the search boundary means the real angular error may be larger than the bounded search can observe, so accepting it would overstate yaw validity.
+
+Impact:
+- A valid forward image observation can now satisfy `yaw_source_independent`; FC telemetry yaw is logged separately for comparison.
+- Route alignment, geographic bearing, altitude-origin alignment, metric scale, match, telemetry, and altitude gates remain mandatory.
+- The operator-confirmed straightness of `field-route-20260712T164651Z.vhrs` closes only its straight-axis assumption; it does not supply geographic bearing or WGS84 origin.
+
+Risk:
+- Image-shift sign/calibration and physical bearing still require attach-only field evidence before provider send.
+- The FC reports no horizontal local position/origin and constant-position mode; no acceptance probe is authorized by this change.
+- Desktop MSVC build and CTest passed `28/28`; Pi validation is pending.
+
 ## 2026-07-15 - Require Explicit LOCAL_NED Alignment Before External-Nav Output
 
 Decision:

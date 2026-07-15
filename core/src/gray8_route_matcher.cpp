@@ -214,8 +214,8 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
     if (config_.max_direction_shift_px < 0) {
         throw std::invalid_argument("Gray8RouteMatcher max_direction_shift_px must be non-negative");
     }
-    if (config_.radians_per_pixel < 0.0) {
-        throw std::invalid_argument("Gray8RouteMatcher radians_per_pixel must be non-negative");
+    if (config_.radians_per_pixel < 0.0 || !std::isfinite(config_.radians_per_pixel)) {
+        throw std::invalid_argument("Gray8RouteMatcher radians_per_pixel must be finite and non-negative");
     }
     if (config_.initial_progress_window_enabled) {
         if (!std::isfinite(config_.initial_progress_min) || !std::isfinite(config_.initial_progress_max)
@@ -328,6 +328,13 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         route_.entries[best_index],
         config_.max_direction_shift_px,
         config_.radians_per_pixel);
+    const auto maximum_direction_error_rad =
+        static_cast<double>(config_.max_direction_shift_px) * config_.radians_per_pixel;
+    match.direction_observation_valid = valid
+        && config_.max_direction_shift_px > 0
+        && config_.radians_per_pixel > 0.0
+        && std::isfinite(match.direction_error_rad)
+        && std::fabs(match.direction_error_rad) < maximum_direction_error_rad;
     match.confidence = confidence;
     match.valid = valid;
     return match;

@@ -90,10 +90,15 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
     estimate.x_m = output_position_m.x;
     estimate.y_m = output_position_m.y;
     estimate.z_m = output_position_m.z;
-    estimate.yaw_rad = std::isfinite(telemetry.yaw_rad) ? telemetry.yaw_rad : 0.0;
-    // FC telemetry yaw is useful for diagnostics, but it is not an independent
-    // ExternalNav yaw observation and must never be fed back as yaw authority.
-    estimate.yaw_source_independent = false;
+    // FC telemetry yaw remains diagnostic-only. ExternalNav yaw is the known
+    // route bearing plus the independently observed horizontal image residual.
+    estimate.telemetry_yaw_rad = std::isfinite(telemetry.yaw_rad) ? telemetry.yaw_rad : 0.0;
+    estimate.yaw_direction_error_rad = match.direction_error_rad;
+    estimate.yaw_source_independent = match.direction_observation_valid
+        && std::isfinite(match.direction_error_rad);
+    estimate.yaw_rad = estimate.yaw_source_independent
+        ? wrap_angle_pi(config.route_alignment.heading_ned_rad + match.direction_error_rad)
+        : wrap_angle_pi(config.route_alignment.heading_ned_rad);
 
     if (route.entry_count == 0) {
         estimate.reason = "route_empty";
@@ -131,6 +136,8 @@ std::string external_nav_estimate_log_line(const ExternalNavEstimate& estimate) 
            << " y_m=" << estimate.y_m
            << " z_m=" << estimate.z_m
            << " yaw_rad=" << estimate.yaw_rad
+           << " telemetry_yaw_rad=" << estimate.telemetry_yaw_rad
+           << " yaw_direction_error_rad=" << estimate.yaw_direction_error_rad
            << " yaw_source_independent=" << bool_text(estimate.yaw_source_independent)
            << " pose_frame=" << coordinate_frame_name(estimate.pose_frame)
            << " frame_alignment_known=" << bool_text(estimate.frame_alignment_known)

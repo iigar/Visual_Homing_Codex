@@ -1,6 +1,8 @@
 #include <cassert>
 #include <algorithm>
 #include <cstdint>
+#include <limits>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,6 +56,7 @@ int main() {
     assert(near_second.progress > 0.32);
     assert(near_second.progress < 0.34);
     assert(near_second.confidence > 0.99);
+    assert(!near_second.direction_observation_valid);
 
     const auto near_third = matcher.match(frame(101, {116, 121, 123, 119}));
     assert(near_third.valid);
@@ -220,6 +223,7 @@ int main() {
     const auto left_error = shift_matcher.match(shifted_left);
     assert(left_error.direction_error_rad > 0.049);
     assert(left_error.direction_error_rad < 0.051);
+    assert(left_error.direction_observation_valid);
 
     vh::Gray8RouteMatcher right_shift_matcher(shift_route, {
         .window_radius = 0,
@@ -237,6 +241,7 @@ int main() {
     const auto right_error = right_shift_matcher.match(shifted_right);
     assert(right_error.direction_error_rad < -0.049);
     assert(right_error.direction_error_rad > -0.051);
+    assert(right_error.direction_observation_valid);
 
     vh::Gray8RouteMatcher no_shift_matcher(shift_route, {
         .window_radius = 0,
@@ -253,6 +258,37 @@ int main() {
     const auto aligned_error = no_shift_matcher.match(aligned);
     assert(aligned_error.direction_error_rad > -0.001);
     assert(aligned_error.direction_error_rad < 0.001);
+    assert(aligned_error.direction_observation_valid);
+
+    vh::Gray8RouteMatcher saturated_shift_matcher(shift_route, {
+        .window_radius = 0,
+        .minimum_confidence = 0.0,
+        .max_direction_shift_px = 2,
+        .radians_per_pixel = 0.05,
+    });
+    auto saturated_left = frame(503, {
+        90, 170, 170, 170,
+        90, 170, 170, 170,
+    });
+    saturated_left.width = 4;
+    saturated_left.height = 2;
+    const auto saturated_error = saturated_shift_matcher.match(saturated_left);
+    assert(saturated_error.direction_error_rad > 0.099);
+    assert(saturated_error.direction_error_rad < 0.101);
+    assert(!saturated_error.direction_observation_valid);
+
+    bool rejected_non_finite_radians_per_pixel = false;
+    try {
+        (void)vh::Gray8RouteMatcher(shift_route, {
+            .window_radius = 0,
+            .minimum_confidence = 0.0,
+            .max_direction_shift_px = 2,
+            .radians_per_pixel = std::numeric_limits<double>::quiet_NaN(),
+        });
+    } catch (const std::invalid_argument&) {
+        rejected_non_finite_radians_per_pixel = true;
+    }
+    assert(rejected_non_finite_radians_per_pixel);
 
     return 0;
 }

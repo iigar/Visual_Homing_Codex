@@ -12,6 +12,7 @@ struct RouteMatch {
     std::size_t route_index = 0;
     double progress = 0.0;
     double direction_error_rad = 0.0;
+    bool direction_observation_valid = false;
     double confidence = 0.0;
     bool valid = false;
 };

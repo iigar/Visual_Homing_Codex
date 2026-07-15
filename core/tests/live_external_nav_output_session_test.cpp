@@ -91,6 +91,8 @@ vh::ExternalNavEstimate ready_estimate() {
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
     estimate.yaw_rad = -1.6;
+    estimate.telemetry_yaw_rad = -1.55;
+    estimate.yaw_direction_error_rad = -0.05;
     estimate.yaw_source_independent = true;
     estimate.confidence = 0.88;
     estimate.route_progress = 0.05;
@@ -246,6 +248,20 @@ int main() {
 
         auto snapshot = passing_snapshot();
         snapshot.estimate.x_m = std::numeric_limits<double>::quiet_NaN();
+        const auto result = session.process(snapshot);
+        assert(!result.allowed);
+        assert(result.reason == "external_nav_estimate_not_ready");
+        assert(writer.starts == 0);
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeExternalNavWriter writer;
+        vh::LiveExternalNavOutputSession session(passing_config(), audit, writer);
+        assert(session.start());
+
+        auto snapshot = passing_snapshot();
+        snapshot.estimate.yaw_direction_error_rad = std::numeric_limits<double>::quiet_NaN();
         const auto result = session.process(snapshot);
         assert(!result.allowed);
         assert(result.reason == "external_nav_estimate_not_ready");

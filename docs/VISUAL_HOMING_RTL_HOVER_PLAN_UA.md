@@ -549,30 +549,30 @@ weather/lighting/scene conditions documented
 Current carry-forward state before the next field day:
 
 ```text
-latest_pi_checkout=head a40ace0 before the independent-yaw fail-closed change
+latest_pi_checkout=f5075ae before the image-derived-yaw implementation
 latest_field_readiness_log=/home/pi/Visual_Homing_Codex/artifacts/logs/pi-field-readiness-20260715T213722Z.log
 field_readiness=passed true
 route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
 telemetry=opened true, malformed_frames=0, heartbeat_seen=true, mode=AltHold, armed=false
 relative_altitude_min_avg_max_m=0.494/0.5256/0.542
 fc=ArduCopter 4.3.6 official hash 0c5e999c parameters 1288/1288
-provider_blocker=yaw_source_not_independent
+independent_yaw=implemented offline as route_heading_ned_rad + bounded image direction_error_rad; boundary saturation fails closed
 route_heading_audit=entry 0->1 startup jump 1.469628 rad (84.20 deg); span after entry 5 is 0.249147 rad
 physical_wiring=operator visually confirmed Pi TX->Matek RX3, Pi RX<-Matek TX3, common GND
 physical_route_geometry=operator confirmed this artifact was recorded on a straight route
 fc_local_frame_artifact=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-local-frame-20260715T221923Z.json
 fc_local_frame=origin/home/local_position_ned not reported; EKF flags 167; horizontal position invalid; constant-position mode
-next_action=review explicit WGS84 EKF-origin/home setup and independent yaw; do not run acceptance send
+next_action=Pi build/test, then obtain explicit WGS84 EKF-origin/home and measured geographic route bearing; do not run acceptance send
 ```
 
 Recommended next field/bench sequence:
 
-1. Keep `./scripts/run-external-nav-output-acceptance-probe-pi.sh` blocked. Current yaw is copied from FC telemetry while `EK3_SRC1_YAW=6`; origin/heading confirmations cannot make that observation independent.
-2. Define a per-frame independent yaw source and its reset/alignment contract. A route-derived implementation must use route evidence, handle wrap/reset/reverse semantics, and must not accept FC `ATTITUDE.yaw` as authority.
+1. Keep `./scripts/run-external-nav-output-acceptance-probe-pi.sh` blocked. FC telemetry yaw is now diagnostic-only, but the FC still has no reported local origin/XY and the straight route's geographic bearing is not yet measured.
+2. Validate the implemented forward-only image-derived yaw offline and attach-only. It uses bounded horizontal pixel shift, rejects boundary saturation, wraps `route_heading_ned_rad + direction_error_rad`, and never accepts FC `ATTITUDE.yaw` or stored route heading hints as authority. Define reverse heading/camera semantics separately before any reverse acceptance.
 3. Horizontal geometry is operator-confirmed straight for `field-route-20260712T164651Z.vhrs`, so the current `x=progress*length,y=0` model may be evaluated for this artifact only. Do not use its first heading hint: entries `0 -> 1` contain an `84.20 deg` startup discontinuity, and the remaining stable hints still describe recorded FC telemetry rather than an independent measured yaw.
 4. Physical Pi TX -> Matek RX3, Pi RX <- Matek TX3, and common GND were visually confirmed by the operator on 2026-07-16. Reconfirm only after any wiring change.
 5. The request-only local-frame snapshot found no reported origin, home, or `LOCAL_POSITION_NED`; EKF flags `167` have no valid horizontal position and do have constant-position mode. Separately plan any state-changing `SET_GPS_GLOBAL_ORIGIN`/home operation using explicit WGS84 latitude/longitude/MSL altitude. Do not guess `0/0/0`, and do not set or move EKF origin as part of a read-only check.
-6. Validate the new yaw/geometry path offline and attach-only, rebuild/test on Pi, then repeat `./scripts/check-pi-field-readiness.sh`.
+6. Rebuild/test on Pi, then repeat `./scripts/check-pi-field-readiness.sh`; after real origin/bearing inputs exist, validate the yaw/geometry path attach-only before any send-enabled probe.
 7. Only after all gates are independently evidenced may a new props-off acceptance-probe run be reviewed. Record its manifest, pre/send/audit/post logs, and exact FC acceptance/rejection signal.
 8. Do not proceed to tether/armed tests until that probe gives an explicit accepted/rejected signal and a separate reviewed test plan exists.
 

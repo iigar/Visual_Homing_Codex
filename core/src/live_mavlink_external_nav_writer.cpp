@@ -153,6 +153,8 @@ void LiveMavlinkExternalNavWriter::validate_estimate(const ExternalNavEstimate& 
         !finite_number(estimate.y_m) ||
         !finite_number(estimate.z_m) ||
         !finite_number(estimate.yaw_rad) ||
+        !finite_number(estimate.telemetry_yaw_rad) ||
+        !finite_number(estimate.yaw_direction_error_rad) ||
         !finite_number(estimate.confidence) ||
         !finite_number(estimate.route_progress) ||
         !finite_number(estimate.relative_altitude_m)) {

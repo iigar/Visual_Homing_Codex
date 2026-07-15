@@ -73,9 +73,17 @@ VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED
 
 Heading задається від North за годинниковою стрілкою в радіанах. `origin_down` є NED Down у метрах. Для runtime provider-send обидва boolean-підтвердження обов'язкові; defaults дорівнюють `0`, а всі чотири числові origin/heading env мають бути задані явно, навіть коли перевірене значення дорівнює нулю. Не ставити confirmations у `1` лише для проходження readiness: origin/heading і відповідність vertical origin мають походити з перевіреної процедури.
 
-Поточний estimator зберігає FC `ATTITUDE.yaw` лише як діагностику, позначає `yaw_source_independent=false` і не може сформувати FC-ready estimate. Це навмисний blocker: при baseline `EK3_SRC1_YAW=6` повторне надсилання FC його ж yaw створювало б feedback-loop замість незалежного heading observation. Операторського env override для цього поля немає.
+Поточний estimator зберігає FC `ATTITUDE.yaw` лише як `telemetry_yaw_rad` для діагностики та не використовує його як yaw authority. Для операторськи підтвердженого прямого forward route незалежний yaw утворюється як:
 
-Так само одна пара `origin + heading` коректно проєктує лише прямолінійну route axis. Поточний `VHRS v1` не зберігає метричні `x/y` координати траєкторії, а estimator зводить progress до `x=progress*nominal_route_length`, `y=0`. Маршрут із реальними поворотами не можна зробити метрично коректним одним alignment; до provider acceptance потрібен або окремо перевірений прямий маршрут, або route geometry з незалежною позою/yaw.
+```text
+yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
+```
+
+`direction_error_rad` походить із bounded horizontal pixel-shift поточного кадру відносно matched route frame. Observation вважається незалежним лише коли route match valid, `max_direction_shift_px > 0`, `radians_per_pixel > 0`, значення finite і найкращий shift не лежить на межі search window. Межа означає можливе saturation, тому `direction_observation_valid=false`, `yaw_source_independent=false`, estimate отримує `yaw_source_not_independent` і fail closed. Stored `VHRS` heading hints не використовуються: вони були записані з FC telemetry і містять підтверджений startup transient. Операторського env override для незалежності yaw немає.
+
+Цей yaw contract поки обмежений forward-проходом прямого маршруту. Reverse heading/camera orientation потребують окремо визначеної та перевіреної семантики; сама наявність image residual її не доводить.
+
+Так само одна пара `origin + heading` коректно проєктує лише прямолінійну route axis. Поточний `VHRS v1` не зберігає метричні `x/y` координати траєкторії, а estimator зводить progress до `x=progress*nominal_route_length`, `y=0`. Маршрут із реальними поворотами не можна зробити метрично коректним одним alignment; до provider acceptance потрібен або окремо перевірений прямий маршрут, або route geometry з незалежною позою/yaw. Для `field-route-20260712T164651Z.vhrs` прямолінійність підтверджена оператором, але його geographic bearing від North ще не виміряний.
 
 Поточний encoder надсилає `VISION_POSITION_ESTIMATE`, а не MAVLink `ODOMETRY`. Explicit-frame `ODOMETRY` із перевіреним вибором `MAV_FRAME_LOCAL_FRD` або `MAV_FRAME_BODY_FRD`, twist-frame semantics та SITL/FC acceptance evidence ще не реалізований. Тому наявність FRD/FLU conversion library не є доказом правильності майбутнього `ODOMETRY` path.
 

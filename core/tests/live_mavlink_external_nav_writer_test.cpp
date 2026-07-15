@@ -55,6 +55,8 @@ vh::ExternalNavEstimate ready_estimate() {
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
     estimate.yaw_rad = -1.5;
+    estimate.telemetry_yaw_rad = -1.45;
+    estimate.yaw_direction_error_rad = -0.05;
     estimate.yaw_source_independent = true;
     estimate.confidence = 0.91;
     estimate.route_progress = 0.125;
@@ -226,6 +228,17 @@ int main() {
             rejected_non_finite = true;
         }
         assert(rejected_non_finite);
+        assert(transport.writes.empty());
+
+        auto non_finite_direction = ready_estimate();
+        non_finite_direction.yaw_direction_error_rad = std::numeric_limits<double>::quiet_NaN();
+        bool rejected_non_finite_direction = false;
+        try {
+            writer.send_vision_position_estimate(non_finite_direction, 123456789ULL);
+        } catch (const std::runtime_error&) {
+            rejected_non_finite_direction = true;
+        }
+        assert(rejected_non_finite_direction);
         assert(transport.writes.empty());
 
         auto route_frame = ready_estimate();

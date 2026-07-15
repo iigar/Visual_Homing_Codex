@@ -26,6 +26,8 @@ vh::ExternalNavEstimate ready_estimate() {
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
     estimate.yaw_rad = -1.72;
+    estimate.telemetry_yaw_rad = -1.70;
+    estimate.yaw_direction_error_rad = -0.02;
     estimate.yaw_source_independent = true;
     estimate.confidence = 0.87;
     estimate.route_progress = 0.0306407;
@@ -94,6 +96,8 @@ int main() {
     assert(contents.find("x_m=0.306407") != std::string::npos);
     assert(contents.find("z_m=-0.82") != std::string::npos);
     assert(contents.find("yaw_rad=-1.72") != std::string::npos);
+    assert(contents.find("telemetry_yaw_rad=-1.7") != std::string::npos);
+    assert(contents.find("yaw_direction_error_rad=-0.02") != std::string::npos);
     assert(contents.find("yaw_source_independent=true") != std::string::npos);
     assert(contents.find("pose_frame=local_ned") != std::string::npos);
     assert(contents.find("frame_alignment_known=true") != std::string::npos);
