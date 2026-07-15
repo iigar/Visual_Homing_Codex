@@ -31,7 +31,7 @@
 | Камера | Arducam/OV9281 wide mono | `CONFIRMED` | Field evidence 2026-07-08..2026-07-13 |
 | FC physical UART pins in use | Matek `TX3/RX3` | `OPERATOR_REPORTED` | Повторно фізично перевірити перед зміною wiring |
 | Matek UART mapping | Physical UART3/`USART3` maps to ArduPilot `SERIAL4` on the MatekH743 target | `CONFIRMED` | ArduPilot `MatekH743/hwdef.dat` `SERIAL_ORDER` |
-| Wiring direction | Pi TX -> Matek RX3; Pi RX <- Matek TX3; common GND | `REQUIRES_VERIFICATION` | Не змінювати wiring за цим записом без фізичної перевірки |
+| Wiring direction | Pi TX -> Matek RX3; Pi RX <- Matek TX3; common GND | `CONFIRMED` | Оператор фізично перевірив очима 2026-07-16; це не авторизація змінювати wiring |
 | Pi serial device | `/dev/serial0 -> /dev/ttyS0` | `CONFIRMED` | Readiness evidence 2026-07-16 |
 | Pi serial ownership | `/dev/ttyS0` is `root:dialout 0660`; user `pi` is in `dialout`; udev rule covers `ttyS0` and `ttyAMA0` | `CONFIRMED` | Readiness evidence 2026-07-16 |
 | Pi serial console/getty | `console=serial0,115200` removed from boot cmdline; `serial-getty@ttyS0.service` masked/inactive | `CONFIRMED` | Reboot verification 2026-07-16; boot backup `/boot/firmware/cmdline.txt.visual-homing-backup-be133c5` |
@@ -93,7 +93,26 @@ parameters=1288/1288
 operation=request_only_no_parameter_writes
 ```
 
-The capture used `scripts/capture-fc-baseline-pi.py` with `pymavlink 2.4.49` and `pyserial 3.5` inside `/home/pi/.venvs/visual-homing-diagnostics`. Its only outbound operations are `MAV_CMD_REQUEST_MESSAGE(AUTOPILOT_VERSION)` and `PARAM_REQUEST_LIST`; it exposes no parameter-set, arm, mode, mission, or actuator command path.
+Request-only local-frame artifact:
+
+```text
+JSON=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-local-frame-20260715T221923Z.json
+sha256=ba86d30fe67482487125233db9499cceff1262dbf6cdcd910b7ac24392a46e1e
+operation=request_only_no_state_change
+GPS_GLOBAL_ORIGIN=ack accepted, response not reported
+HOME_POSITION=ack accepted, response not reported
+LOCAL_POSITION_NED=ack accepted, response not reported
+ESTIMATOR_STATUS=ack unsupported
+EKF_STATUS_REPORT=reported, flags 167
+horizontal_relative_valid=false
+horizontal_absolute_valid=false
+constant_position_mode=true
+GLOBAL_POSITION_INT_lat_lon=0/0
+```
+
+The absence of origin/home responses is recorded as `not reported`, not silently converted into coordinates. Together with `lat=0`, `lon=0`, no `LOCAL_POSITION_NED`, and EKF constant-position mode, there is no verified local-NED XY/origin mapping to reuse. Setting `SET_GPS_GLOBAL_ORIGIN` or Home would change FC state and requires a separate reviewed action, explicit operator authorization, and explicit WGS84 latitude/longitude/MSL altitude; never substitute guessed `0/0/0`.
+
+The parameter capture used `scripts/capture-fc-baseline-pi.py`; the local-frame capture used `scripts/capture-fc-local-frame-pi.py`. Both ran with `pymavlink 2.4.49` and `pyserial 3.5` inside `/home/pi/.venvs/visual-homing-diagnostics`. The local-frame tool's only outbound operation is `MAV_CMD_REQUEST_MESSAGE` for a fixed diagnostic allowlist; neither tool exposes parameter-set, origin/home-set, arm, mode, mission, or actuator command paths.
 
 No FC parameter may be changed merely to make an acceptance probe pass. First capture the current full parameter set, firmware version, relevant status messages and a reversible parameter diff. Parameter writes require a separate reviewed action and explicit operator authorization.
 
@@ -136,11 +155,11 @@ When Pi and FC are available again:
 4. Run only the read-only/field readiness gate first.
 5. Capture exact `AUTOPILOT_VERSION`, firmware target/hash and a full FC parameter export.
 6. Record current `SERIAL4_*`, `SR4_*`, `EK3_SRC*` and ExternalNav-related parameters here with evidence paths.
-7. Reconfirm physical `TX3/RX3` wiring and common GND without changing it.
+7. Reconfirm physical `TX3/RX3` wiring and common GND without changing it; completed by operator visual inspection on 2026-07-16.
 8. Update the last-verified date and keep historical values distinguishable from current values.
 9. Only then consider a bounded props-off provider acceptance probe under the controlling safety plan.
 
-The 2026-07-16 reconnect completed steps 2-6 and refreshed the readiness evidence. Physical `TX3/RX3` direction/common GND and the route/altitude alignment contract remain unverified. In addition, the captured `EK3_SRC1_YAW=6` exposed a feedback-loop blocker: the current estimator only has FC `ATTITUDE.yaw`, not an independent ExternalNav yaw. Provider-send must stay blocked until wiring, origin/geometry, altitude origin, and independent yaw are all closed explicitly.
+The 2026-07-16 reconnect completed steps 2-6 and refreshed the readiness evidence; the operator then completed step 7 by visual inspection. The active route was also operator-confirmed physically straight, which closes the straight-axis geometry assumption for this specific artifact only. The route/altitude origin and independent-yaw contracts remain unverified. The captured `EK3_SRC1_YAW=6` exposed a feedback-loop blocker: the current estimator only has FC `ATTITUDE.yaw`, not an independent ExternalNav yaw. Provider-send must stay blocked until origin, altitude origin, and independent yaw are all closed explicitly.
 
 ## Source Priority
 

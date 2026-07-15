@@ -558,16 +558,20 @@ relative_altitude_min_avg_max_m=0.494/0.5256/0.542
 fc=ArduCopter 4.3.6 official hash 0c5e999c parameters 1288/1288
 provider_blocker=yaw_source_not_independent
 route_heading_audit=entry 0->1 startup jump 1.469628 rad (84.20 deg); span after entry 5 is 0.249147 rad
-next_action=implement and dry-run an independent yaw/route-geometry source; do not run acceptance send
+physical_wiring=operator visually confirmed Pi TX->Matek RX3, Pi RX<-Matek TX3, common GND
+physical_route_geometry=operator confirmed this artifact was recorded on a straight route
+fc_local_frame_artifact=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-local-frame-20260715T221923Z.json
+fc_local_frame=origin/home/local_position_ned not reported; EKF flags 167; horizontal position invalid; constant-position mode
+next_action=review explicit WGS84 EKF-origin/home setup and independent yaw; do not run acceptance send
 ```
 
 Recommended next field/bench sequence:
 
 1. Keep `./scripts/run-external-nav-output-acceptance-probe-pi.sh` blocked. Current yaw is copied from FC telemetry while `EK3_SRC1_YAW=6`; origin/heading confirmations cannot make that observation independent.
 2. Define a per-frame independent yaw source and its reset/alignment contract. A route-derived implementation must use route evidence, handle wrap/reset/reverse semantics, and must not accept FC `ATTITUDE.yaw` as authority.
-3. Resolve horizontal geometry: prove the intended route is physically straight enough for the current `x=progress*length,y=0` model, or extend the route artifact/provider with metric `x/y` geometry before send. Do not use the current route's first heading hint: entries `0 -> 1` contain an `84.20 deg` startup discontinuity, and the remaining stable hints still describe FC telemetry rather than measured path geometry.
-4. Reconfirm physical Pi TX -> Matek RX3, Pi RX <- Matek TX3, and common GND without changing wiring; record operator evidence.
-5. Establish the vertical/local origin procedure and separately plan any state-changing `SET_GPS_GLOBAL_ORIGIN`/home operation. Do not set or move EKF origin as part of a read-only check.
+3. Horizontal geometry is operator-confirmed straight for `field-route-20260712T164651Z.vhrs`, so the current `x=progress*length,y=0` model may be evaluated for this artifact only. Do not use its first heading hint: entries `0 -> 1` contain an `84.20 deg` startup discontinuity, and the remaining stable hints still describe recorded FC telemetry rather than an independent measured yaw.
+4. Physical Pi TX -> Matek RX3, Pi RX <- Matek TX3, and common GND were visually confirmed by the operator on 2026-07-16. Reconfirm only after any wiring change.
+5. The request-only local-frame snapshot found no reported origin, home, or `LOCAL_POSITION_NED`; EKF flags `167` have no valid horizontal position and do have constant-position mode. Separately plan any state-changing `SET_GPS_GLOBAL_ORIGIN`/home operation using explicit WGS84 latitude/longitude/MSL altitude. Do not guess `0/0/0`, and do not set or move EKF origin as part of a read-only check.
 6. Validate the new yaw/geometry path offline and attach-only, rebuild/test on Pi, then repeat `./scripts/check-pi-field-readiness.sh`.
 7. Only after all gates are independently evidenced may a new props-off acceptance-probe run be reviewed. Record its manifest, pre/send/audit/post logs, and exact FC acceptance/rejection signal.
 8. Do not proceed to tether/armed tests until that probe gives an explicit accepted/rejected signal and a separate reviewed test plan exists.
