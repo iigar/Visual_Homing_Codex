@@ -557,6 +557,7 @@ telemetry=opened true, malformed_frames=0, heartbeat_seen=true, mode=AltHold, ar
 relative_altitude_min_avg_max_m=0.494/0.5256/0.542
 fc=ArduCopter 4.3.6 official hash 0c5e999c parameters 1288/1288
 provider_blocker=yaw_source_not_independent
+route_heading_audit=entry 0->1 startup jump 1.469628 rad (84.20 deg); span after entry 5 is 0.249147 rad
 next_action=implement and dry-run an independent yaw/route-geometry source; do not run acceptance send
 ```
 
@@ -564,7 +565,7 @@ Recommended next field/bench sequence:
 
 1. Keep `./scripts/run-external-nav-output-acceptance-probe-pi.sh` blocked. Current yaw is copied from FC telemetry while `EK3_SRC1_YAW=6`; origin/heading confirmations cannot make that observation independent.
 2. Define a per-frame independent yaw source and its reset/alignment contract. A route-derived implementation must use route evidence, handle wrap/reset/reverse semantics, and must not accept FC `ATTITUDE.yaw` as authority.
-3. Resolve horizontal geometry: prove the intended route is straight enough for the current `x=progress*length,y=0` model, or extend the route artifact/provider with metric `x/y` geometry before send.
+3. Resolve horizontal geometry: prove the intended route is physically straight enough for the current `x=progress*length,y=0` model, or extend the route artifact/provider with metric `x/y` geometry before send. Do not use the current route's first heading hint: entries `0 -> 1` contain an `84.20 deg` startup discontinuity, and the remaining stable hints still describe FC telemetry rather than measured path geometry.
 4. Reconfirm physical Pi TX -> Matek RX3, Pi RX <- Matek TX3, and common GND without changing wiring; record operator evidence.
 5. Establish the vertical/local origin procedure and separately plan any state-changing `SET_GPS_GLOBAL_ORIGIN`/home operation. Do not set or move EKF origin as part of a read-only check.
 6. Validate the new yaw/geometry path offline and attach-only, rebuild/test on Pi, then repeat `./scripts/check-pi-field-readiness.sh`.
