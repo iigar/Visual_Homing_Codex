@@ -55,6 +55,7 @@ vh::ExternalNavEstimate ready_estimate() {
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
     estimate.yaw_rad = -1.5;
+    estimate.yaw_source_independent = true;
     estimate.confidence = 0.91;
     estimate.route_progress = 0.125;
     estimate.route_index = 45;
@@ -248,6 +249,17 @@ int main() {
         }
         assert(rejected_unknown_alignment);
         assert(transport.writes.empty());
+
+        auto feedback_yaw = ready_estimate();
+        feedback_yaw.yaw_source_independent = false;
+        bool rejected_feedback_yaw = false;
+        try {
+            writer.send_vision_position_estimate(feedback_yaw, 123456789ULL);
+        } catch (const std::runtime_error&) {
+            rejected_feedback_yaw = true;
+        }
+        assert(rejected_feedback_yaw);
+        assert(transport.writes.empty());
     }
 
     {
@@ -256,6 +268,18 @@ int main() {
         bool rejected = false;
         try {
             (void)vh::encode_mavlink2_vision_position_estimate(route_frame, 123456789ULL, 0, 191, 1);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        assert(rejected);
+    }
+
+    {
+        auto feedback_yaw = ready_estimate();
+        feedback_yaw.yaw_source_independent = false;
+        bool rejected = false;
+        try {
+            (void)vh::encode_mavlink2_vision_position_estimate(feedback_yaw, 123456789ULL, 0, 191, 1);
         } catch (const std::runtime_error&) {
             rejected = true;
         }

@@ -91,6 +91,9 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
     estimate.y_m = output_position_m.y;
     estimate.z_m = output_position_m.z;
     estimate.yaw_rad = std::isfinite(telemetry.yaw_rad) ? telemetry.yaw_rad : 0.0;
+    // FC telemetry yaw is useful for diagnostics, but it is not an independent
+    // ExternalNav yaw observation and must never be fed back as yaw authority.
+    estimate.yaw_source_independent = false;
 
     if (route.entry_count == 0) {
         estimate.reason = "route_empty";
@@ -108,6 +111,8 @@ ExternalNavEstimate make_route_progress_external_nav_estimate(
         estimate.reason = "frame_alignment_not_known";
     } else if (!estimate.altitude_origin_aligned) {
         estimate.reason = "altitude_origin_not_aligned";
+    } else if (!estimate.yaw_source_independent) {
+        estimate.reason = "yaw_source_not_independent";
     } else {
         estimate.valid_for_fc = true;
         estimate.reason = "valid";
@@ -126,6 +131,7 @@ std::string external_nav_estimate_log_line(const ExternalNavEstimate& estimate) 
            << " y_m=" << estimate.y_m
            << " z_m=" << estimate.z_m
            << " yaw_rad=" << estimate.yaw_rad
+           << " yaw_source_independent=" << bool_text(estimate.yaw_source_independent)
            << " pose_frame=" << coordinate_frame_name(estimate.pose_frame)
            << " frame_alignment_known=" << bool_text(estimate.frame_alignment_known)
            << " route_origin_ned_m=" << estimate.route_origin_ned_m.x

@@ -549,22 +549,27 @@ weather/lighting/scene conditions documented
 Current carry-forward state before the next field day:
 
 ```text
-latest_pi_checkout=head a1dc462 after clean reclone
-latest_field_readiness_log=/home/pi/Visual_Homing_Codex/artifacts/logs/pi-field-readiness-20260714T204714Z.log
+latest_pi_checkout=head a40ace0 before the independent-yaw fail-closed change
+latest_field_readiness_log=/home/pi/Visual_Homing_Codex/artifacts/logs/pi-field-readiness-20260715T213722Z.log
 field_readiness=passed true
 route=/home/pi/Visual_Homing_Codex/artifacts/field_routes/field-route-20260712T164651Z.vhrs
 telemetry=opened true, malformed_frames=0, heartbeat_seen=true, mode=AltHold, armed=false
-relative_altitude_min_avg_max_m=0.279/0.3054/0.322
-next_action=repeat readiness gate, then daylight props-off acceptance probe
+relative_altitude_min_avg_max_m=0.494/0.5256/0.542
+fc=ArduCopter 4.3.6 official hash 0c5e999c parameters 1288/1288
+provider_blocker=yaw_source_not_independent
+next_action=implement and dry-run an independent yaw/route-geometry source; do not run acceptance send
 ```
 
 Recommended next field/bench sequence:
 
-1. On the Pi, run `./scripts/check-pi-field-readiness.sh` from `~/Visual_Homing_Codex` with the intended `VISUAL_HOMING_ROUTE_OUTPUT`, camera profile, altitude preset, and serial device env already set.
-2. If readiness is blocked, fix the named blocker first; do not patch around it with `sudo` wrapper runs.
-3. If readiness is clean and lighting matches the route domain, run `./scripts/run-external-nav-output-acceptance-probe-pi.sh` props-off.
-4. Record the readiness log, acceptance probe manifest, pre/send/audit/post logs, and the exact FC/JT_Zero acceptance or rejection signal if one appears.
-5. Do not proceed to tether/armed tests until the acceptance probe gives an explicit accepted/rejected signal and a separate reviewed test plan exists.
+1. Keep `./scripts/run-external-nav-output-acceptance-probe-pi.sh` blocked. Current yaw is copied from FC telemetry while `EK3_SRC1_YAW=6`; origin/heading confirmations cannot make that observation independent.
+2. Define a per-frame independent yaw source and its reset/alignment contract. A route-derived implementation must use route evidence, handle wrap/reset/reverse semantics, and must not accept FC `ATTITUDE.yaw` as authority.
+3. Resolve horizontal geometry: prove the intended route is straight enough for the current `x=progress*length,y=0` model, or extend the route artifact/provider with metric `x/y` geometry before send.
+4. Reconfirm physical Pi TX -> Matek RX3, Pi RX <- Matek TX3, and common GND without changing wiring; record operator evidence.
+5. Establish the vertical/local origin procedure and separately plan any state-changing `SET_GPS_GLOBAL_ORIGIN`/home operation. Do not set or move EKF origin as part of a read-only check.
+6. Validate the new yaw/geometry path offline and attach-only, rebuild/test on Pi, then repeat `./scripts/check-pi-field-readiness.sh`.
+7. Only after all gates are independently evidenced may a new props-off acceptance-probe run be reviewed. Record its manifest, pre/send/audit/post logs, and exact FC acceptance/rejection signal.
+8. Do not proceed to tether/armed tests until that probe gives an explicit accepted/rejected signal and a separate reviewed test plan exists.
 
 ## Documentation Rules
 

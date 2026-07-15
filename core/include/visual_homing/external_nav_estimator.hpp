@@ -27,6 +27,7 @@ struct ExternalNavEstimate {
     double y_m = 0.0;
     double z_m = 0.0;
     double yaw_rad = 0.0;
+    bool yaw_source_independent = false;
     LocalCoordinateFrame pose_frame = LocalCoordinateFrame::route_frd;
     bool frame_alignment_known = false;
     Vector3d route_origin_ned_m{};

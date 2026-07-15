@@ -66,9 +66,10 @@ bool finite_number(double value) {
 void validate_vision_position_frame(const ExternalNavEstimate& estimate) {
     if (estimate.pose_frame != LocalCoordinateFrame::local_ned
         || !estimate.frame_alignment_known
-        || !estimate.altitude_origin_aligned) {
+        || !estimate.altitude_origin_aligned
+        || !estimate.yaw_source_independent) {
         throw std::runtime_error(
-            "VISION_POSITION_ESTIMATE requires explicit LOCAL_NED frame and aligned altitude origin");
+            "VISION_POSITION_ESTIMATE requires explicit LOCAL_NED frame, aligned altitude origin, and independent yaw");
     }
 }
 
@@ -144,7 +145,8 @@ void LiveMavlinkExternalNavWriter::validate_estimate(const ExternalNavEstimate& 
     if (!estimate.valid_for_fc || estimate.reason != "valid") {
         throw std::runtime_error("External-nav writer rejected estimate that is not FC-ready");
     }
-    if (!estimate.route_match_valid || !estimate.telemetry_fresh || !estimate.altitude_valid || !estimate.scale_known) {
+    if (!estimate.route_match_valid || !estimate.telemetry_fresh || !estimate.altitude_valid
+        || !estimate.scale_known || !estimate.yaw_source_independent) {
         throw std::runtime_error("External-nav writer rejected estimate with failed readiness fields");
     }
     if (!finite_number(estimate.x_m) ||

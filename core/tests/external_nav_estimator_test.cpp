@@ -55,8 +55,8 @@ int main() {
         fresh_telemetry(),
         at_ms(150),
         config);
-    assert(estimate.valid_for_fc);
-    assert(estimate.reason == "valid");
+    assert(!estimate.valid_for_fc);
+    assert(estimate.reason == "yaw_source_not_independent");
     assert(estimate.route_match_valid);
     assert(estimate.telemetry_fresh);
     assert(estimate.altitude_valid);
@@ -69,13 +69,15 @@ int main() {
     assert(estimate.y_m == 0.0);
     assert(estimate.z_m == -12.0);
     assert(estimate.yaw_rad == 0.25);
+    assert(!estimate.yaw_source_independent);
     assert(estimate.route_entries == 101);
     assert(estimate.route_index == 50);
 
     const auto log_line = vh::external_nav_estimate_log_line(estimate);
     assert(log_line.find("external_nav_estimate ") == 0);
-    assert(log_line.find("valid_for_fc=true") != std::string::npos);
-    assert(log_line.find("reason=valid") != std::string::npos);
+    assert(log_line.find("valid_for_fc=false") != std::string::npos);
+    assert(log_line.find("reason=yaw_source_not_independent") != std::string::npos);
+    assert(log_line.find("yaw_source_independent=false") != std::string::npos);
     assert(log_line.find("relative_altitude_seen=true") != std::string::npos);
     assert(log_line.find("relative_altitude_m=12") != std::string::npos);
     assert(log_line.find("bench_diagnostic_altitude_used=false") != std::string::npos);
@@ -123,7 +125,8 @@ int main() {
         fresh_telemetry(),
         at_ms(150),
         rotated_config);
-    assert(rotated.valid_for_fc);
+    assert(!rotated.valid_for_fc);
+    assert(rotated.reason == "yaw_source_not_independent");
     assert(std::abs(rotated.x_m - 100.0) < 1e-12);
     assert(std::abs(rotated.y_m - 210.0) < 1e-12);
     assert(std::abs(rotated.z_m - -7.0) < 1e-12);

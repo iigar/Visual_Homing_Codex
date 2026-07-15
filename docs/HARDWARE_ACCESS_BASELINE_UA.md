@@ -140,7 +140,7 @@ When Pi and FC are available again:
 8. Update the last-verified date and keep historical values distinguishable from current values.
 9. Only then consider a bounded props-off provider acceptance probe under the controlling safety plan.
 
-The 2026-07-16 reconnect completed steps 2-6 and refreshed the readiness evidence. Physical `TX3/RX3` direction/common GND and the new route/altitude alignment contract remain unverified; provider-send must stay blocked until both are closed explicitly.
+The 2026-07-16 reconnect completed steps 2-6 and refreshed the readiness evidence. Physical `TX3/RX3` direction/common GND and the route/altitude alignment contract remain unverified. In addition, the captured `EK3_SRC1_YAW=6` exposed a feedback-loop blocker: the current estimator only has FC `ATTITUDE.yaw`, not an independent ExternalNav yaw. Provider-send must stay blocked until wiring, origin/geometry, altitude origin, and independent yaw are all closed explicitly.
 
 ## Source Priority
 

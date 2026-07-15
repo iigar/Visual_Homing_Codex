@@ -91,6 +91,7 @@ vh::ExternalNavEstimate ready_estimate() {
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
     estimate.yaw_rad = -1.6;
+    estimate.yaw_source_independent = true;
     estimate.confidence = 0.88;
     estimate.route_progress = 0.05;
     estimate.route_index = 18;
@@ -215,6 +216,21 @@ int main() {
 
         auto snapshot = passing_snapshot();
         snapshot.estimate.frame_alignment_known = false;
+        const auto result = session.process(snapshot);
+        assert(!result.allowed);
+        assert(result.reason == "external_nav_estimate_not_ready");
+        assert(writer.starts == 0);
+        assert(writer.sends == 0);
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeExternalNavWriter writer;
+        vh::LiveExternalNavOutputSession session(passing_config(), audit, writer);
+        assert(session.start());
+
+        auto snapshot = passing_snapshot();
+        snapshot.estimate.yaw_source_independent = false;
         const auto result = session.process(snapshot);
         assert(!result.allowed);
         assert(result.reason == "external_nav_estimate_not_ready");

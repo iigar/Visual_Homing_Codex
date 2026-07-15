@@ -21,6 +21,7 @@ bool estimate_ready(const ExternalNavEstimate& estimate) {
            estimate.pose_frame == LocalCoordinateFrame::local_ned &&
            estimate.frame_alignment_known &&
            estimate.altitude_origin_aligned &&
+           estimate.yaw_source_independent &&
            finite_number(estimate.x_m) &&
            finite_number(estimate.y_m) &&
            finite_number(estimate.z_m) &&
