@@ -1,5 +1,7 @@
 #include <cassert>
 #include <chrono>
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -44,6 +46,8 @@ int main() {
     config.nominal_route_length_m = 20.0;
     config.minimum_match_confidence = 0.9;
     config.maximum_altitude_age_ms = 250.0;
+    config.route_frame_alignment_known = true;
+    config.altitude_origin_aligned = true;
 
     const auto estimate = vh::make_route_progress_external_nav_estimate(
         good_match(),
@@ -58,6 +62,9 @@ int main() {
     assert(estimate.altitude_valid);
     assert(!estimate.bench_diagnostic_altitude_used);
     assert(estimate.scale_known);
+    assert(estimate.pose_frame == vh::LocalCoordinateFrame::local_ned);
+    assert(estimate.frame_alignment_known);
+    assert(estimate.altitude_origin_aligned);
     assert(estimate.x_m == 10.0);
     assert(estimate.y_m == 0.0);
     assert(estimate.z_m == -12.0);
@@ -75,6 +82,51 @@ int main() {
     assert(log_line.find("scale_known=true") != std::string::npos);
     assert(log_line.find("visual_scale_valid=false") != std::string::npos);
     assert(log_line.find("visual_scale_ratio=0") != std::string::npos);
+    assert(log_line.find("pose_frame=local_ned") != std::string::npos);
+    assert(log_line.find("frame_alignment_known=true") != std::string::npos);
+    assert(log_line.find("route_origin_ned_m=0/0/0") != std::string::npos);
+    assert(log_line.find("altitude_origin_aligned=true") != std::string::npos);
+
+    auto no_alignment_config = config;
+    no_alignment_config.route_frame_alignment_known = false;
+    const auto no_alignment = vh::make_route_progress_external_nav_estimate(
+        good_match(),
+        route_summary(),
+        fresh_telemetry(),
+        at_ms(150),
+        no_alignment_config);
+    assert(!no_alignment.valid_for_fc);
+    assert(no_alignment.reason == "frame_alignment_not_known");
+    assert(no_alignment.pose_frame == vh::LocalCoordinateFrame::route_frd);
+    assert(no_alignment.x_m == 10.0);
+    assert(no_alignment.y_m == 0.0);
+    assert(no_alignment.z_m == -12.0);
+
+    auto no_altitude_origin_config = config;
+    no_altitude_origin_config.altitude_origin_aligned = false;
+    const auto no_altitude_origin = vh::make_route_progress_external_nav_estimate(
+        good_match(),
+        route_summary(),
+        fresh_telemetry(),
+        at_ms(150),
+        no_altitude_origin_config);
+    assert(!no_altitude_origin.valid_for_fc);
+    assert(no_altitude_origin.reason == "altitude_origin_not_aligned");
+    assert(no_altitude_origin.pose_frame == vh::LocalCoordinateFrame::local_ned);
+
+    auto rotated_config = config;
+    rotated_config.route_alignment.origin_ned_m = {100.0, 200.0, 5.0};
+    rotated_config.route_alignment.heading_ned_rad = std::acos(-1.0) / 2.0;
+    const auto rotated = vh::make_route_progress_external_nav_estimate(
+        good_match(),
+        route_summary(),
+        fresh_telemetry(),
+        at_ms(150),
+        rotated_config);
+    assert(rotated.valid_for_fc);
+    assert(std::abs(rotated.x_m - 100.0) < 1e-12);
+    assert(std::abs(rotated.y_m - 210.0) < 1e-12);
+    assert(std::abs(rotated.z_m - -7.0) < 1e-12);
 
     auto low_confidence_match = good_match();
     low_confidence_match.confidence = 0.5;
@@ -170,6 +222,21 @@ int main() {
     try {
         auto bad_config = config;
         bad_config.bench_diagnostic_altitude_m = -1.0;
+        (void)vh::make_route_progress_external_nav_estimate(
+            good_match(),
+            route_summary(),
+            fresh_telemetry(),
+            at_ms(150),
+            bad_config);
+    } catch (const std::invalid_argument&) {
+        rejected_bad_config = true;
+    }
+    assert(rejected_bad_config);
+
+    rejected_bad_config = false;
+    try {
+        auto bad_config = config;
+        bad_config.route_alignment.heading_ned_rad = std::numeric_limits<double>::quiet_NaN();
         (void)vh::make_route_progress_external_nav_estimate(
             good_match(),
             route_summary(),

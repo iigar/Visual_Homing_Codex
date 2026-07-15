@@ -63,6 +63,15 @@ bool finite_number(double value) {
     return std::isfinite(value);
 }
 
+void validate_vision_position_frame(const ExternalNavEstimate& estimate) {
+    if (estimate.pose_frame != LocalCoordinateFrame::local_ned
+        || !estimate.frame_alignment_known
+        || !estimate.altitude_origin_aligned) {
+        throw std::runtime_error(
+            "VISION_POSITION_ESTIMATE requires explicit LOCAL_NED frame and aligned altitude origin");
+    }
+}
+
 } // namespace
 
 LiveMavlinkExternalNavWriter::LiveMavlinkExternalNavWriter(
@@ -131,6 +140,7 @@ std::string LiveMavlinkExternalNavWriter::unavailable_reason() const {
 }
 
 void LiveMavlinkExternalNavWriter::validate_estimate(const ExternalNavEstimate& estimate) const {
+    validate_vision_position_frame(estimate);
     if (!estimate.valid_for_fc || estimate.reason != "valid") {
         throw std::runtime_error("External-nav writer rejected estimate that is not FC-ready");
     }
@@ -154,6 +164,7 @@ std::vector<std::uint8_t> encode_mavlink2_vision_position_estimate(
     std::uint8_t sequence,
     std::uint8_t source_system,
     std::uint8_t source_component) {
+    validate_vision_position_frame(estimate);
     std::vector<std::uint8_t> payload;
     payload.reserve(vision_position_estimate_payload_len);
     append_u64_le(payload, time_usec);

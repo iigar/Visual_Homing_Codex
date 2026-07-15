@@ -18,6 +18,9 @@ bool estimate_ready(const ExternalNavEstimate& estimate) {
            estimate.telemetry_fresh &&
            estimate.altitude_valid &&
            estimate.scale_known &&
+           estimate.pose_frame == LocalCoordinateFrame::local_ned &&
+           estimate.frame_alignment_known &&
+           estimate.altitude_origin_aligned &&
            finite_number(estimate.x_m) &&
            finite_number(estimate.y_m) &&
            finite_number(estimate.z_m) &&

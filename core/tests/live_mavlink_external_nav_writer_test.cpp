@@ -48,6 +48,9 @@ public:
 
 vh::ExternalNavEstimate ready_estimate() {
     vh::ExternalNavEstimate estimate;
+    estimate.pose_frame = vh::LocalCoordinateFrame::local_ned;
+    estimate.frame_alignment_known = true;
+    estimate.altitude_origin_aligned = true;
     estimate.x_m = 1.25;
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
@@ -223,6 +226,40 @@ int main() {
         }
         assert(rejected_non_finite);
         assert(transport.writes.empty());
+
+        auto route_frame = ready_estimate();
+        route_frame.pose_frame = vh::LocalCoordinateFrame::route_frd;
+        bool rejected_route_frame = false;
+        try {
+            writer.send_vision_position_estimate(route_frame, 123456789ULL);
+        } catch (const std::runtime_error&) {
+            rejected_route_frame = true;
+        }
+        assert(rejected_route_frame);
+        assert(transport.writes.empty());
+
+        auto unknown_alignment = ready_estimate();
+        unknown_alignment.frame_alignment_known = false;
+        bool rejected_unknown_alignment = false;
+        try {
+            writer.send_vision_position_estimate(unknown_alignment, 123456789ULL);
+        } catch (const std::runtime_error&) {
+            rejected_unknown_alignment = true;
+        }
+        assert(rejected_unknown_alignment);
+        assert(transport.writes.empty());
+    }
+
+    {
+        auto route_frame = ready_estimate();
+        route_frame.pose_frame = vh::LocalCoordinateFrame::route_frd;
+        bool rejected = false;
+        try {
+            (void)vh::encode_mavlink2_vision_position_estimate(route_frame, 123456789ULL, 0, 191, 1);
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        assert(rejected);
     }
 
     return 0;

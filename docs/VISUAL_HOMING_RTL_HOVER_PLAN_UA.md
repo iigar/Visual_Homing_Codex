@@ -47,11 +47,15 @@ ambiguous_nearest_entries=4/600 near start
 Detailed evidence:
 
 ```text
+docs/HARDWARE_ACCESS_BASELINE_UA.md
+docs/COORDINATE_FRAME_CONTRACT_UA.md
 docs/FIELD_EVIDENCE_2026-07-10_OV9281_UA.md
 docs/FIELD_EVIDENCE_2026-07-12_OV9281_UA.md
 docs/JT_ZERO_HANDOFF_INTEGRATION_PLAN_UA.md
 docs/SESSION_LOG.md
 ```
+
+`docs/HARDWARE_ACCESS_BASELINE_UA.md` is the source-of-truth for SSH, Pi/FC hardware, physical-vs-logical UART mapping, current verification status, installed firmware questions, and the parameter snapshot required before the next FC/JT_Zero acceptance probe.
 
 Key accepted forward attach-only evidence:
 

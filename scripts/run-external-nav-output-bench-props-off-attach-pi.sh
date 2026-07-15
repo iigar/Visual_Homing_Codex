@@ -7,6 +7,22 @@ log_dir="${VISUAL_HOMING_LOG_DIR:-${repo_root}/artifacts/logs}"
 run_log="${VISUAL_HOMING_RUN_LOG:-${log_dir}/external-nav-output-attach-${stamp}.log}"
 audit_log="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT_PATH:-${log_dir}/external-nav-output-audit-${stamp}.log}"
 
+if [[ "${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN:-0}" != "1"
+    || "${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED:-0}" != "1" ]]; then
+    echo "refusing attach-only external-nav readiness run: verified route-frame and altitude-origin alignment confirmations are required" >&2
+    exit 2
+fi
+for required_alignment_env in \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_NORTH_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_EAST_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_DOWN_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_HEADING_NED_RAD; do
+    if [[ ! -v ${required_alignment_env} || -z "${!required_alignment_env}" ]]; then
+        echo "refusing attach-only external-nav readiness run: explicit ${required_alignment_env} is required" >&2
+        exit 2
+    fi
+done
+
 mkdir -p "${log_dir}"
 
 extract_field() {

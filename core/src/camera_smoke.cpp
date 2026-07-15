@@ -1244,7 +1244,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 << " external_nav_expected_relative_altitude_m="
                 << config.external_nav_expected_relative_altitude_m
                 << " external_nav_expected_relative_altitude_tolerance_m="
-                << config.external_nav_expected_relative_altitude_tolerance_m;
+                << config.external_nav_expected_relative_altitude_tolerance_m
+                << " external_nav_route_frame_alignment_known="
+                << bool_word(config.external_nav.route_frame_alignment_known)
+                << " external_nav_route_origin_ned_m="
+                << config.external_nav.route_alignment.origin_ned_m.x << "/"
+                << config.external_nav.route_alignment.origin_ned_m.y << "/"
+                << config.external_nav.route_alignment.origin_ned_m.z
+                << " external_nav_route_heading_ned_rad="
+                << config.external_nav.route_alignment.heading_ned_rad
+                << " external_nav_altitude_origin_aligned="
+                << bool_word(config.external_nav.altitude_origin_aligned);
     }
     if (config.emit_dry_run_commands) {
         metrics << " navigator_minimum_confidence=" << config.navigator.minimum_confidence
@@ -2616,6 +2626,20 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_valid_fraction=" << result.external_nav_valid_fraction
             << " external_nav_max_invalid_streak=" << result.external_nav_max_invalid_streak
             << " external_nav_invalid_reasons=" << result.external_nav_invalid_reasons
+            << " external_nav_pose_frame="
+            << coordinate_frame_name(config.external_nav.route_frame_alignment_known
+                ? LocalCoordinateFrame::local_ned
+                : LocalCoordinateFrame::route_frd)
+            << " external_nav_route_frame_alignment_known="
+            << bool_word(config.external_nav.route_frame_alignment_known)
+            << " external_nav_route_origin_ned_m="
+            << config.external_nav.route_alignment.origin_ned_m.x << "/"
+            << config.external_nav.route_alignment.origin_ned_m.y << "/"
+            << config.external_nav.route_alignment.origin_ned_m.z
+            << " external_nav_route_heading_ned_rad="
+            << config.external_nav.route_alignment.heading_ned_rad
+            << " external_nav_altitude_origin_aligned="
+            << bool_word(config.external_nav.altitude_origin_aligned)
             << " external_nav_altitude_valid=" << result.external_nav_altitude_valid_frames
             << "/" << result.external_nav_estimates
             << " external_nav_bench_altitude=" << result.external_nav_bench_altitude_frames

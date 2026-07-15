@@ -74,6 +74,12 @@ visual_scale_diagnostics="${VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS:-0}"
 visual_scale_reference_altitude_m="${VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M:-0}"
 external_nav_expected_relative_altitude_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_M:-0}"
 external_nav_expected_relative_altitude_tolerance_m="${VISUAL_HOMING_EXTERNAL_NAV_EXPECTED_RELATIVE_ALTITUDE_TOLERANCE_M:-0}"
+external_nav_route_frame_alignment_known="${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN:-0}"
+external_nav_route_origin_north_m="${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_NORTH_M:-0}"
+external_nav_route_origin_east_m="${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_EAST_M:-0}"
+external_nav_route_origin_down_m="${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_DOWN_M:-0}"
+external_nav_route_heading_ned_rad="${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_HEADING_NED_RAD:-0}"
+external_nav_altitude_origin_aligned="${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED:-0}"
 live_route_session_audit="${VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT:-0}"
 live_output_runtime_enabled="${VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT:-0}"
 live_output_bench_props_off_confirm="${VISUAL_HOMING_LIVE_OUTPUT_BENCH_PROPS_OFF_CONFIRM:-}"
@@ -158,6 +164,8 @@ for bool_env in \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_USE_LIVE_MAVLINK_TELEMETRY \
     VISUAL_HOMING_MATCH_LIVE_ROUTE_REQUIRE_LIVE_TELEMETRY_HEALTH \
     VISUAL_HOMING_EXTERNAL_NAV_ESTIMATES \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN \
+    VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED \
     VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS \
     VISUAL_HOMING_LIVE_ROUTE_SESSION_AUDIT \
     VISUAL_HOMING_ENABLE_LIVE_MAVLINK_OUTPUT \
@@ -228,6 +236,28 @@ if [[ "${external_nav_output_runtime_enabled}" == "1" ]]; then
         echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires positive VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES and VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS" >&2
         exit 2
     fi
+    if [[ "${external_nav_route_frame_alignment_known}" != "1" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN=1" >&2
+        exit 2
+    fi
+    if [[ "${external_nav_altitude_origin_aligned}" != "1" ]]; then
+        echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED=1" >&2
+        exit 2
+    fi
+    for required_alignment_env in \
+        VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_NORTH_M \
+        VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_EAST_M \
+        VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_DOWN_M \
+        VISUAL_HOMING_EXTERNAL_NAV_ROUTE_HEADING_NED_RAD; do
+        if [[ ! -v ${required_alignment_env} ]]; then
+            echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires explicit ${required_alignment_env}" >&2
+            exit 2
+        fi
+        if [[ -z "${!required_alignment_env}" ]]; then
+            echo "VISUAL_HOMING_ENABLE_EXTERNAL_NAV_MAVLINK_OUTPUT=1 requires non-empty ${required_alignment_env}" >&2
+            exit 2
+        fi
+    done
 fi
 
 if [[ "${VISUAL_HOMING_DISABLE_RUN_LOG:-0}" != "1" ]]; then
@@ -330,6 +360,12 @@ if [[ "${external_nav_estimates}" == "1" ]]; then
         "${external_nav_expected_relative_altitude_tolerance_m}"
         "${visual_scale_diagnostics}"
         "${visual_scale_reference_altitude_m}"
+        "${external_nav_route_frame_alignment_known}"
+        "${external_nav_route_origin_north_m}"
+        "${external_nav_route_origin_east_m}"
+        "${external_nav_route_origin_down_m}"
+        "${external_nav_route_heading_ned_rad}"
+        "${external_nav_altitude_origin_aligned}"
     )
 fi
 

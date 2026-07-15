@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-15 - Require Explicit LOCAL_NED Alignment Before External-Nav Output
+
+Decision:
+- Treat visual route progress as `ROUTE_FRD`, never as implicit North/East/Down.
+- Require explicit route origin, NED heading, and altitude-origin alignment before an `ExternalNavEstimate` may become FC-ready.
+- Make the output session, MAVLink writer, and direct `VISION_POSITION_ESTIMATE` encoder independently reject any estimate that is not explicit `LOCAL_NED` with known alignment.
+- Default all new Pi controls to unaligned/blocked and require explicit alignment confirmations for runtime provider send.
+- Keep MAVLink `ODOMETRY` and its `MAV_FRAME_LOCAL_FRD`/`MAV_FRAME_BODY_FRD` semantics outside this change.
+
+Why:
+- Route-forward/right/down axes are not geographic North/East/Down until a measured transform is applied.
+- ROS ENU/FLU and ArduPilot NED/FRD differ in both axis order and sign; implicit conversion can create a plausible but physically wrong provider pose.
+- The previously accepted send logs prove bounded byte output only. They do not prove that the route pose had the correct local-frame alignment.
+
+Impact:
+- Old CLI blocks still parse, but without the new alignment fields their estimates fail closed with `frame_alignment_not_known`.
+- Pi runtime send additionally requires `VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN=1` and `VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED=1`.
+- Per-frame/audit/compact logs and readiness JSON expose pose frame, route origin/heading, and altitude-origin state.
+- Default and external-nav attach-capable WSL CMake/Ninja configurations each passed CTest `28/28`; shell syntax checks passed for the five modified Pi/readiness scripts, and both dedicated wrappers refused early when alignment inputs were absent.
+
+Risk:
+- No Pi, SITL, or FC acceptance test was run. Correct numeric origin/heading and vertical-origin equivalence still require a reviewed physical procedure before provider send.
+- The current protocol remains `VISION_POSITION_ESTIMATE`; future `ODOMETRY` support needs its own frame and twist contract.
+
 ## 2026-07-03 - Wire External-Nav Output Runtime Audit Before Pi Wrapper
 
 Decision:

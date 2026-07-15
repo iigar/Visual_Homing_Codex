@@ -68,6 +68,13 @@ void LiveExternalNavOutputAuditLog::record_estimate(
             << " y_m=" << estimate.y_m
             << " z_m=" << estimate.z_m
             << " yaw_rad=" << estimate.yaw_rad
+            << " pose_frame=" << coordinate_frame_name(estimate.pose_frame)
+            << " frame_alignment_known=" << (estimate.frame_alignment_known ? "true" : "false")
+            << " route_origin_ned_m=" << estimate.route_origin_ned_m.x
+            << "/" << estimate.route_origin_ned_m.y
+            << "/" << estimate.route_origin_ned_m.z
+            << " route_heading_ned_rad=" << estimate.route_heading_ned_rad
+            << " altitude_origin_aligned=" << (estimate.altitude_origin_aligned ? "true" : "false")
             << " confidence=" << estimate.confidence
             << " progress=" << estimate.route_progress
             << " route_index=" << estimate.route_index

@@ -194,6 +194,11 @@ cat <<EOF
     "altitude_expected_m": $(json_number "$(field external_nav_expected_relative_altitude_m)"),
     "altitude_tolerance_m": $(json_number "$(field external_nav_expected_relative_altitude_tolerance_m)"),
     "nominal_route_length_m": $(json_number "${nominal_route_length_m}"),
+    "pose_frame": "$(json_string "$(field external_nav_pose_frame)")",
+    "route_frame_alignment_known": $(json_bool "$(field external_nav_route_frame_alignment_known)"),
+    "route_origin_ned_m": "$(json_string "$(field external_nav_route_origin_ned_m)")",
+    "route_heading_ned_rad": $(json_number "$(field external_nav_route_heading_ned_rad)"),
+    "altitude_origin_aligned": $(json_bool "$(field external_nav_altitude_origin_aligned)"),
     "handoff_distance_supported": false,
     "handoff_distance_reason": "route_metric_scale_not_authoritative"
   },

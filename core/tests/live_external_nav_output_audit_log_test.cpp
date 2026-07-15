@@ -19,6 +19,9 @@ std::string read_all(const std::filesystem::path& path) {
 
 vh::ExternalNavEstimate ready_estimate() {
     vh::ExternalNavEstimate estimate;
+    estimate.pose_frame = vh::LocalCoordinateFrame::local_ned;
+    estimate.frame_alignment_known = true;
+    estimate.altitude_origin_aligned = true;
     estimate.x_m = 0.306407;
     estimate.y_m = 0.0;
     estimate.z_m = -0.82;
@@ -90,6 +93,11 @@ int main() {
     assert(contents.find("x_m=0.306407") != std::string::npos);
     assert(contents.find("z_m=-0.82") != std::string::npos);
     assert(contents.find("yaw_rad=-1.72") != std::string::npos);
+    assert(contents.find("pose_frame=local_ned") != std::string::npos);
+    assert(contents.find("frame_alignment_known=true") != std::string::npos);
+    assert(contents.find("route_origin_ned_m=0/0/0") != std::string::npos);
+    assert(contents.find("route_heading_ned_rad=0") != std::string::npos);
+    assert(contents.find("altitude_origin_aligned=true") != std::string::npos);
     assert(contents.find("progress=0.0306407") != std::string::npos);
     assert(contents.find("route_index=11") != std::string::npos);
     assert(contents.find("relative_altitude_seen=true") != std::string::npos);

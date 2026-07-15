@@ -46,6 +46,7 @@ add_library(visual_homing_core_lib
     src/bounded_navigator.cpp
     src/camera_profile.cpp
     src/camera_smoke.cpp
+    src/coordinate_frames.cpp
     src/dry_run_command_sink.cpp
     src/dry_run_mavlink_bridge.cpp
     src/external_nav_estimator.cpp
@@ -155,6 +156,19 @@ if(BUILD_TESTING)
         $<$<CXX_COMPILER_ID:GNU,Clang>:-UNDEBUG>
         $<$<CXX_COMPILER_ID:MSVC>:/UNDEBUG>
     )
+
+    add_executable(coordinate_frames_test
+        tests/coordinate_frames_test.cpp
+    )
+
+    target_link_libraries(coordinate_frames_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(coordinate_frames_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME coordinate_frames COMMAND coordinate_frames_test)
 
     add_executable(camera_smoke_test
         tests/camera_smoke_test.cpp

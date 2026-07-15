@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "visual_homing/coordinate_frames.hpp"
 #include "visual_homing/interfaces.hpp"
 #include "visual_homing/mavlink.hpp"
 #include "visual_homing/route_signature.hpp"
@@ -14,6 +15,9 @@ struct ExternalNavEstimatorConfig {
     double minimum_match_confidence = 0.9;
     double maximum_altitude_age_ms = 500.0;
     double bench_diagnostic_altitude_m = 0.0;
+    bool route_frame_alignment_known = false;
+    RouteFrameAlignment route_alignment{};
+    bool altitude_origin_aligned = false;
     std::string source_tag = "visual_route_progress";
 };
 
@@ -23,6 +27,11 @@ struct ExternalNavEstimate {
     double y_m = 0.0;
     double z_m = 0.0;
     double yaw_rad = 0.0;
+    LocalCoordinateFrame pose_frame = LocalCoordinateFrame::route_frd;
+    bool frame_alignment_known = false;
+    Vector3d route_origin_ned_m{};
+    double route_heading_ned_rad = 0.0;
+    bool altitude_origin_aligned = false;
     double confidence = 0.0;
     double route_progress = 0.0;
     std::uint64_t route_index = 0;

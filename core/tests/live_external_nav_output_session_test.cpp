@@ -83,6 +83,9 @@ public:
 
 vh::ExternalNavEstimate ready_estimate() {
     vh::ExternalNavEstimate estimate;
+    estimate.pose_frame = vh::LocalCoordinateFrame::local_ned;
+    estimate.frame_alignment_known = true;
+    estimate.altitude_origin_aligned = true;
     estimate.timestamp = vh::now();
     estimate.x_m = 0.5;
     estimate.y_m = 0.0;
@@ -197,6 +200,21 @@ int main() {
         auto snapshot = passing_snapshot();
         snapshot.estimate.valid_for_fc = false;
         snapshot.estimate.reason = "scale_not_known";
+        const auto result = session.process(snapshot);
+        assert(!result.allowed);
+        assert(result.reason == "external_nav_estimate_not_ready");
+        assert(writer.starts == 0);
+        assert(writer.sends == 0);
+    }
+
+    {
+        FakeAuditSink audit;
+        FakeExternalNavWriter writer;
+        vh::LiveExternalNavOutputSession session(passing_config(), audit, writer);
+        assert(session.start());
+
+        auto snapshot = passing_snapshot();
+        snapshot.estimate.frame_alignment_known = false;
         const auto result = session.process(snapshot);
         assert(!result.allowed);
         assert(result.reason == "external_nav_estimate_not_ready");

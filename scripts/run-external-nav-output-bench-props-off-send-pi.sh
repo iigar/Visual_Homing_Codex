@@ -16,6 +16,22 @@ audit_log="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_SESSION_AUDIT_PATH:-${log_dir}/ex
 max_messages="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_MESSAGES:-${frames}}"
 max_seconds="${VISUAL_HOMING_EXTERNAL_NAV_OUTPUT_MAX_SECONDS:-10}"
 
+if [[ "${VISUAL_HOMING_EXTERNAL_NAV_ROUTE_FRAME_ALIGNMENT_KNOWN:-0}" != "1"
+    || "${VISUAL_HOMING_EXTERNAL_NAV_ALTITUDE_ORIGIN_ALIGNED:-0}" != "1" ]]; then
+    echo "refusing external-nav provider send bench run: verified route-frame and altitude-origin alignment confirmations are required" >&2
+    exit 2
+fi
+for required_alignment_env in \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_NORTH_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_EAST_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_ORIGIN_DOWN_M \
+    VISUAL_HOMING_EXTERNAL_NAV_ROUTE_HEADING_NED_RAD; do
+    if [[ ! -v ${required_alignment_env} || -z "${!required_alignment_env}" ]]; then
+        echo "refusing external-nav provider send bench run: explicit ${required_alignment_env} is required" >&2
+        exit 2
+    fi
+done
+
 mkdir -p "${log_dir}"
 
 extract_field() {
