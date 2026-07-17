@@ -68,6 +68,7 @@ add_library(visual_homing_core_lib
     src/pi_camera_source.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
+    src/route_local_odometry.cpp
     src/route_artifact_check.cpp
     src/route_signature_recorder.cpp
     src/route_signature.cpp
@@ -364,6 +365,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME live_mavlink_external_nav_writer COMMAND live_mavlink_external_nav_writer_test)
+
+    add_executable(route_local_odometry_test
+        tests/route_local_odometry_test.cpp
+    )
+
+    target_link_libraries(route_local_odometry_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(route_local_odometry_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME route_local_odometry COMMAND route_local_odometry_test)
 
     add_executable(live_external_nav_output_audit_log_test
         tests/live_external_nav_output_audit_log_test.cpp

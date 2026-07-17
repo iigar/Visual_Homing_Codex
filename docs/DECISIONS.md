@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-17 - Use Route-Local ODOMETRY Without Geographic Bearing
+
+Decision:
+- Represent the confirmed-straight route in a fixed `ROUTE_FRD`/MAVLink `MAV_FRAME_LOCAL_FRD` pose frame: X forward along the recorded route, Y right, Z down from the route-start origin.
+- Use the operator-confirmed nominal route length of approximately `10 m` for the later estimator mapping `x=progress*10 m`, `y=0`; do not hard-code route length into the wire encoder.
+- Treat the previous approximately `0.5 m` altitude as AGL/readiness context, not route-local Z. When route start and return have the same height, `z` is approximately zero; later vertical estimation must use displacement from the route-start height.
+- Encode ODOMETRY for exact ArduCopter `4.3.6` with pose frame `LOCAL_FRD(20)`, child/twist frame `BODY_FRD(12)`, yaw-only quaternion, reset counter, and estimator type `VISION(2)`.
+- Send velocity and angular-rate fields as `NaN`, not zero, and leave both covariance arrays unknown. Keep this first change library-only and unattached to runtime/UART/FC.
+
+Why:
+- A GPS-denied route-following system needs a consistent local route frame, not a bearing relative to geographic North.
+- The exact installed firmware accepts this ODOMETRY frame pair. Its EKF rejects non-finite ExternalNav velocity, which prevents the position/yaw-only boundary from falsely asserting zero velocity while `EK3_SRC1_VELXY=6` is configured.
+- The installed MAVLink schema predates the ODOMETRY `quality` extension; implementing the exact `232`-byte contract avoids silently targeting a newer dialect than the FC.
+
+Impact:
+- Geographic route bearing and WGS84 route coordinates are no longer prerequisites for the new route-local encoder or its future route estimator.
+- The old `VISION_POSITION_ESTIMATE` runtime path remains unchanged and still fails closed unless its existing `LOCAL_NED` requirements are satisfied.
+- The first ODOMETRY module has no writer/session/runtime callers. MSVC build and CTest passed `29/29`; exact pinned MAVLink generation matched the `244`-byte frame and checksum.
+
+Risk:
+- This does not yet prove EKF provider acceptance, mode readiness, origin/home behavior, reverse-route yaw semantics, or vertical-origin tracking.
+- Before any UART attachment, add a route-local estimator with explicit start-height state, independent forward/reverse yaw semantics, reset handling, rate/health gates, and SITL/props-off acceptance evidence.
+- No FC state or hardware output was changed by this decision.
+
 ## 2026-07-16 - Derive Forward-Route Yaw From Bounded Image Shift
 
 Decision:

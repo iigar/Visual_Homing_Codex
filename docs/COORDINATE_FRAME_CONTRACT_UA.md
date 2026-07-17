@@ -85,9 +85,29 @@ yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
 
 Так само одна пара `origin + heading` коректно проєктує лише прямолінійну route axis. Поточний `VHRS v1` не зберігає метричні `x/y` координати траєкторії, а estimator зводить progress до `x=progress*nominal_route_length`, `y=0`. Маршрут із реальними поворотами не можна зробити метрично коректним одним alignment; до provider acceptance потрібен або окремо перевірений прямий маршрут, або route geometry з незалежною позою/yaw. Для `field-route-20260712T164651Z.vhrs` прямолінійність підтверджена оператором, але його geographic bearing від North ще не виміряний.
 
-Поточний encoder надсилає `VISION_POSITION_ESTIMATE`, а не MAVLink `ODOMETRY`. Explicit-frame `ODOMETRY` із перевіреним вибором `MAV_FRAME_LOCAL_FRD` або `MAV_FRAME_BODY_FRD`, twist-frame semantics та SITL/FC acceptance evidence ще не реалізований. Тому наявність FRD/FLU conversion library не є доказом правильності майбутнього `ODOMETRY` path.
+## Route-Local ODOMETRY Library Boundary
 
-До фізичної перевірки alignment не повторювати blind provider-send лише для збільшення лічильника sent messages.
+Окремий library-only encoder `encode_mavlink2_route_local_odometry` тепер реалізує точний wire contract встановленого ArduCopter `4.3.6` (`0c5e999c`):
+
+- MAVLink message `ODOMETRY` (`id=331`, `crc_extra=91`);
+- pose `frame_id=MAV_FRAME_LOCAL_FRD(20)` — нерухомий origin у точці початку записаного route, осі Forward/Right/Down;
+- twist `child_frame_id=MAV_FRAME_BODY_FRD(12)`;
+- yaw-only quaternion `[cos(yaw/2), 0, 0, sin(yaw/2)]`;
+- `vx/vy/vz` і angular rates є `NaN`, а не нулями;
+- обидві covariance arrays unknown (`NaN`);
+- explicit `reset_counter` і `MAV_ESTIMATOR_TYPE_VISION(2)`.
+
+Точний `GCS_MAVLink::handle_odometry` у 4.3.6 відкидає інші frame pairs. Він завжди передає twist у velocity path, але точний `AP_NavEKF3::writeExtNavVelData` відкидає вектор із `NaN`. Це навмисно захищає position/yaw-only provider від помилкового твердження `velocity=0`, особливо за підтвердженого `EK3_SRC1_VELXY=6`.
+
+У pinned MAVLink schema цього firmware payload має `232` bytes і закінчується `estimator_type`; сучаснішого поля `quality` там немає. Independent generation точним pinned `pymavlink` підтвердив test vector: MAVLink2 frame `244` bytes, payload `232`, message id bytes `4b 01 00`, checksum `c6 19`.
+
+Цей encoder ще не підключений до `LiveExternalNavOutputSession`, writer, CLI, Pi wrappers, UART або FC. Чинний runtime як і раніше використовує `VISION_POSITION_ESTIMATE` та його старий explicit `LOCAL_NED` fail-closed contract.
+
+Для операторськи підтвердженого прямого маршруту номінальна довжина для наступного estimator pass становить приблизно `10 m`, тому `route_x=progress*10 m`, `route_y=0`. Висота приблизно `0.5 m` є AGL/telemetry context. `route_z` означає Down displacement від висоти route-start: якщо запис і повернення виконуються на тій самій висоті, `route_z≈0`, а не `-0.5 m`.
+
+Географічний bearing від North та WGS84 route coordinates для цього route-local ODOMETRY contract не потрібні. Окремі вимоги самого ArduPilot до EKF origin/home або mode readiness не можна підміняти route coordinates; їх перевіряють окремо під час SITL/FC acceptance. Reverse yaw/camera orientation, start-height tracking, reset semantics, runtime rate/health gates та provider acceptance залишаються незавершеними.
+
+До окремого SITL/props-off review не підключати новий ODOMETRY encoder до UART і не повторювати blind provider-send лише для збільшення лічильника sent messages.
 
 ## Офіційні Джерела
 
