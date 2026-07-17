@@ -105,7 +105,19 @@ yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
 
 Для операторськи підтвердженого прямого маршруту номінальна довжина для наступного estimator pass становить приблизно `10 m`, тому `route_x=progress*10 m`, `route_y=0`. Висота приблизно `0.5 m` є AGL/telemetry context. `route_z` означає Down displacement від висоти route-start: якщо запис і повернення виконуються на тій самій висоті, `route_z≈0`, а не `-0.5 m`.
 
-Географічний bearing від North та WGS84 route coordinates для цього route-local ODOMETRY contract не потрібні. Окремі вимоги самого ArduPilot до EKF origin/home або mode readiness не можна підміняти route coordinates; їх перевіряють окремо під час SITL/FC acceptance. Reverse yaw/camera orientation, start-height tracking, reset semantics, runtime rate/health gates та provider acceptance залишаються незавершеними.
+Географічний bearing від North та WGS84 route coordinates для цього route-local ODOMETRY contract не потрібні. Окремі вимоги самого ArduPilot до EKF origin/home або mode readiness не можна підміняти route coordinates; їх перевіряють окремо під час SITL/FC acceptance.
+
+Окремий library-only `RouteLocalOdometryEstimator` тепер формалізує pose до encoder:
+
+- route-start altitude задається явно свіжим observation і не вибирається неявно з першого match;
+- `x=progress*nominal_route_length`, `y=0`, `z=start_altitude-current_altitude`;
+- forward yaw дорівнює незалежному bounded image-direction residual;
+- reverse yaw за замовчуванням unavailable; policy `nose_toward_route_start` треба ввімкнути явно, після чого yaw є `pi + signed_residual`;
+- зміна forward/reverse вимагає explicit tracking reset;
+- match confidence/freshness, altitude freshness, health, direction residual, update interval, directional progress, horizontal/vertical/yaw rates та invalid streak fail closed;
+- `reset_tracking()` збільшує `reset_counter`, але зберігає vertical origin; `clear_start_altitude()` також збільшує counter і блокує output до нової ініціалізації.
+
+Estimator та encoder інтегровані лише в deterministic unit tests; MSVC 19.44 + Ninja пройшов `30/30` CTest. Вони не підключені до `LiveExternalNavOutputSession`, writer, CLI, Pi wrappers, UART або FC. Reverse camera orientation, точний residual sign для реального монтажу, а також ArduPilot origin/home/mode/reset/timestamp acceptance залишаються предметом наступної SITL перевірки.
 
 До окремого SITL/props-off review не підключати новий ODOMETRY encoder до UART і не повторювати blind provider-send лише для збільшення лічильника sent messages.
 

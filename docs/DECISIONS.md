@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-07-18 - Keep The Route-Local Estimator Explicit, Stateful, And Unattached
+
+Decision:
+- Add `RouteLocalOdometryEstimator` as a library-only state machine between route matching and the exact ArduCopter 4.3.6 ODOMETRY encoder; do not attach it to writer/session/runtime/UART yet.
+- Require explicit, fresh route-start altitude initialization. Map pose as `x=progress*nominal_route_length`, `y=0`, and `z=start_altitude-current_altitude` in fixed route-local FRD.
+- Use the independent bounded image direction residual as forward yaw. Keep reverse yaw unavailable by default; allow nose-toward-route-start yaw only through an explicit policy with a configurable residual sign.
+- Require explicit reset when traversal direction changes. Preserve the route-start altitude across tracking reset, but require reinitialization after the vertical origin is cleared.
+- Fail closed on invalid configuration, stale/future observations, low match confidence, unhealthy input, invalid direction residual, excessive update/rate changes, wrong-way progress, or a configured consecutive-invalid streak.
+
+Why:
+- Implicitly choosing the first observed altitude as Z origin can silently move the EKF frame after restart or reacquisition.
+- Forward and reverse camera headings are not interchangeable. A default-disabled reverse policy makes the unproven case visible instead of fabricating yaw.
+- A stateful reset counter and bounded temporal gates are required before route progress can be treated as a pose observation rather than a stateless match result.
+
+Impact:
+- Deterministic tests now cover initialization, forward/reverse semantics, direction-change reset, freshness, progress, horizontal/vertical/yaw-rate limits, invalid streaks, reset-counter behavior, recovery, and integration with the existing encoder.
+- MSVC 19.44 + Ninja passed `30/30` desktop CTest tests. The prior Pi evidence remains encoder-only at `29/29`; no Pi or FC validation was claimed for the estimator.
+- Existing `VISION_POSITION_ESTIMATE`, live external-nav writer/session, Pi wrappers, and all runtime output paths remain unchanged.
+
+Risk:
+- The estimator has not yet been exercised against ArduPilot SITL origin/home/mode behavior or an FC EKF, and reverse residual sign still needs physical/SITL acceptance for the actual camera orientation.
+- No runtime integration is authorized until SITL verifies reset, timestamp, frame, mode, origin, and fail-closed behavior, followed by a separate reviewed props-off attachment step.
+
 ## 2026-07-18 - Keep The GitNexus Reference Audit Separate And Extract Selectively
 
 Decision:
