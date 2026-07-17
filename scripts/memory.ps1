@@ -59,7 +59,7 @@ function Get-SafeFileName {
 }
 
 if ($Type -eq "startup") {
-    Write-Output "Продовжуємо Visual_Homing_Codex. Перед роботою прочитай docs/PROJECT_MEMORY.md, docs/SESSION_LOG.md, docs/DECISIONS.md, docs/ROADMAP.md і git log -3."
+    Write-Output "Продовжуємо Visual_Homing_Codex. Перед роботою прочитай docs/PROJECT_MEMORY.md, docs/HARDWARE_ACCESS_BASELINE_UA.md, docs/COORDINATE_FRAME_CONTRACT_UA.md, docs/SESSION_LOG.md, docs/DECISIONS.md, docs/ROADMAP.md і git log -3."
     exit 0
 }
 

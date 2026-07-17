@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-07-18 - Keep The GitNexus Reference Audit Separate And Extract Selectively
+
+Decision:
+- Keep the tracked legacy baseline under `reference/` unchanged and keep the sibling `_gitnexus_indexed_copy` local-only as a code-intelligence aid.
+- Treat the external conflict snapshot as the same baseline, not as an additional upstream: SHA-256 comparison found `242/242` identical files and no differences.
+- Reuse only bounded concepts or parser/UI patterns after reimplementation behind current `core/` interfaces and current safety contracts; do not merge reference flight/navigation code wholesale.
+- Prioritize future extraction review in this order: sensor protocol test vectors/parsers, small-candidate visual refinement/reacquisition ideas, Android Pi-owned API/readiness UI patterns, then non-flight tooling. Keep command authority, estimator frames, health/readiness, and output gating owned by the current core.
+
+Why:
+- GitNexus shows the reference Python sensor, visual-odometry, and route-following classes are mostly isolated from the main execution graph; the C++ route/MAVLink path contains scaffolding and TODOs, while backend/frontend tests primarily exercise simulation/web behavior.
+- Several prototypes violate current requirements: missing MSP V2 CRC validation, hard-coded camera geometry, implicit/unclear frames, direct homography-to-command conversion, and an unsafe assumption that IMU plus barometer can supply horizontal GPS-denied home navigation.
+- The Android source still contains useful Retrofit/DTO/discovery/telemetry/UI structure, provided the Pi remains the owner of resolved configuration and safety/readiness decisions.
+
+Impact:
+- No existing `core/` code, route artifact, Pi checkout, FC state, or accepted evidence changes.
+- The local indexed copy provides symbol/context/impact/cypher navigation with a clean baseline at `405e7ac`; its graph has `3436` symbols and `84` flows.
+- Detailed component classification and known hazards are preserved in `docs/REFERENCE_REPOSITORY_AUDIT_UA.md`.
+
+Risk:
+- BM25/FTS is unavailable on the current Windows LadybugDB setup, so GitNexus natural-language query is degraded; known-symbol graph navigation remains usable.
+- Copying a prototype because it appears complete in documentation can silently reintroduce frame, checksum, freshness, scale, or command-authority defects. Every future symbol edit still requires current-repo impact analysis, tests, and staged safety evidence.
+
 ## 2026-07-17 - Use Route-Local ODOMETRY Without Geographic Bearing
 
 Decision:
@@ -40,8 +62,8 @@ Why:
 
 Impact:
 - A valid forward image observation can now satisfy `yaw_source_independent`; FC telemetry yaw is logged separately for comparison.
-- Route alignment, geographic bearing, altitude-origin alignment, metric scale, match, telemetry, and altitude gates remain mandatory.
-- The operator-confirmed straightness of `field-route-20260712T164651Z.vhrs` closes only its straight-axis assumption; it does not supply geographic bearing or WGS84 origin.
+- Route alignment, geographic bearing, altitude-origin alignment, metric scale, match, telemetry, and altitude gates remain mandatory for this older `LOCAL_NED`/`VISION_POSITION_ESTIMATE` path. The later `2026-07-17` `LOCAL_FRD` ODOMETRY decision removes geographic bearing from the route-local contract without changing this historical boundary.
+- The operator-confirmed straightness of `field-route-20260712T164651Z.vhrs` closes only its straight-axis assumption; it does not supply geographic bearing or WGS84 origin, and those geographic values are not prerequisites for the later route-local ODOMETRY path.
 
 Risk:
 - Image-shift sign/calibration and physical bearing still require attach-only field evidence before provider send.

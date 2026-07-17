@@ -2,7 +2,7 @@
 
 Цей документ є коротким source-of-truth для апаратної конфігурації, SSH-доступу та ArduPilot/MAVLink інтеграції Visual Homing. Його треба читати перед будь-якою роботою з Raspberry Pi, Matek, serial telemetry, FC/JT_Zero acceptance або зовнішньою навігацією.
 
-Останнє оновлення: `2026-07-16`.
+Останнє оновлення документа: `2026-07-18` (memory review only). Остання live hardware/FC verification залишається `2026-07-16`.
 
 ## Статуси
 
@@ -143,7 +143,9 @@ ctest=28/28
 readiness_passed=true
 ```
 
-This state is timestamped evidence, not a guarantee about later powered hardware state. At the time of this document update, Pi is connected; re-run readiness after any power, wiring, boot-config, FC, or serial change.
+This state is timestamped evidence, not a guarantee about later powered hardware state. At the time of the `2026-07-16` live verification the Pi was connected; current connectivity was not reverified during the `2026-07-18` memory review. Re-run readiness after any power, wiring, boot-config, FC, or serial change.
+
+The `2026-07-18` reference-repository/GitNexus audit did not connect to the Pi or FC and did not revalidate this physical/runtime state. It changed no wiring, parameters, modes, arm state, serial traffic, or hardware-output permissions.
 
 ## Reconnect Checklist
 

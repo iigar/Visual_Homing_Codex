@@ -83,7 +83,7 @@ yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
 
 Цей yaw contract поки обмежений forward-проходом прямого маршруту. Reverse heading/camera orientation потребують окремо визначеної та перевіреної семантики; сама наявність image residual її не доводить.
 
-Так само одна пара `origin + heading` коректно проєктує лише прямолінійну route axis. Поточний `VHRS v1` не зберігає метричні `x/y` координати траєкторії, а estimator зводить progress до `x=progress*nominal_route_length`, `y=0`. Маршрут із реальними поворотами не можна зробити метрично коректним одним alignment; до provider acceptance потрібен або окремо перевірений прямий маршрут, або route geometry з незалежною позою/yaw. Для `field-route-20260712T164651Z.vhrs` прямолінійність підтверджена оператором, але його geographic bearing від North ще не виміряний.
+Так само одна пара `origin + heading` коректно проєктує лише прямолінійну route axis. Поточний `VHRS v1` не зберігає метричні `x/y` координати траєкторії, а estimator зводить progress до `x=progress*nominal_route_length`, `y=0`. Маршрут із реальними поворотами не можна зробити метрично коректним одним alignment; до provider acceptance потрібен або окремо перевірений прямий маршрут, або route geometry з незалежною позою/yaw. Для `field-route-20260712T164651Z.vhrs` прямолінійність підтверджена оператором. Його geographic bearing від North не виміряний і не потрібний для route-local `LOCAL_FRD` ODOMETRY; він знадобиться лише якщо цей route pose навмисно переводитиметься в старий `LOCAL_NED` contract.
 
 ## Route-Local ODOMETRY Library Boundary
 
