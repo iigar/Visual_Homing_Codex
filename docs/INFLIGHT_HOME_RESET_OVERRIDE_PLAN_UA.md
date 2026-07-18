@@ -96,12 +96,41 @@ Evidence: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-202
 
 WSL/Ninja, MSVC/Ninja і ordinary Pi build проходять `35/35`; Pi log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260718T164528Z.log`, усі live/external-nav output CMake flags `OFF`. Два перші live dry-run captures коректно fail closed із `0` events на steady `999 us`. Синхронізований третій capture `/home/pi/Visual_Homing_Codex/artifacts/logs/rc12-local-reset-dry-run-20260718T165944Z.log` пройшов: `52` samples, `0` rejected, observed `999 -> 2000 -> 999 us`, рівно один `would_request_local_estimator_reset`, held HIGH без повтору, обидва executors `false`. Post-capture request-only baseline залишив FC disarmed в AltHold і зібрав `1288/1288` без записів.
 
+## Реалізована Dry-Run Композиція
+
+`LocalResetDryRunSession` композиційно з'єднує `RcSwitchTriggerDecoder` з `InflightHomeResetSafetyGate` лише для `LocalEstimatorReset`. На кожне спостереження він приймає explicit `now`, telemetry snapshot, RC PWM/timestamp і `reset_reference_valid`.
+
+Можливі тільки три рішення:
+
+- `observe_only` — валідний RC sample без нового edge;
+- `blocked` — невалідний RC sample або safety gate відхилив edge;
+- `would_reset_local_estimator` — усі dry-run умови виконані, але executor відсутній.
+
+Safety gate не викликається без прийнятого one-shot edge. Session не має FC Home action, reset executor, writer, runtime або UART caller. `audit_log_ready` поки передається як configuration fact; він не означає, що конкретний live audit file уже відкрито та синхронно записано.
+
+WSL/Ninja і MSVC 19.44/Ninja проходять `36/36`. Тести покривають fresh/stale telemetry і RC, heartbeat, audit/reference gates, armed default denial, explicit local-reset override, незалежність FC-Home permission, held HIGH, PWM range і timestamp rollback. Pi ще не запускав цей новий session і залишається на прийнятому ordinary `35/35` evidence.
+
+## Що Reset Робить І Чого Не Робить
+
+Reset не є командою польоту й не повертає апарат на маршрут після зносу вітром. Його задача — прибрати застарілий локальний tracking lock, щоб майбутній алгоритм не продовжував видавати впевнену, але неправильну позу.
+
+Очікувана послідовність recovery:
+
+1. При втраті впевненого route match припинити ODOMETRY, бо стара або вгадана поза небезпечніша за явно відсутню оцінку.
+2. Очистити локальний temporal/estimator lock, але не переносити route start, EKF origin або FC Home у поточне місце.
+3. Запустити глобальний visual search по всьому записаному маршруту, а не лише біля попереднього index.
+4. Прийняти reacquisition тільки після кількох часово узгоджених match-ів із достатньою confidence, узгодженим progress/direction/yaw та допустимими стрибками.
+5. Поновити ODOMETRY з новим `reset_counter`, щоб ArduPilot бачив discontinuity.
+
+Це може допомогти після короткого перекриття камери, різкого yaw, помилкового локального lock або помірного бокового зносу, якщо камера ще бачить упізнаваний коридор маршруту. Якщо вітер виніс апарат у сцену, якої немає в route artifact, reset не створює інформацію: ODOMETRY має залишитися заблокованою. Автономний search maneuver, manual takeover і FC failsafe є окремими safety-рішеннями; жоден із них цим session не реалізований і не дозволений.
+
 ## Невирішені Межі
 
 - Live RC12 mapping підтверджений лише для поточного transmitter/receiver/FC setup; його треба повторити після remap, firmware/parameter restore або зміни пульта/приймача.
-- Live LOW->HIGH->LOW decoder event прийнятий лише як dry-run input evidence; reset executor, safety-gate runtime composition і ODOMETRY recovery acceptance ще відсутні.
+- Live LOW->HIGH->LOW decoder event прийнятий лише як dry-run input evidence; library-only safety-gate композиція тепер є, але live telemetry/audit/runtime attachment, reset executor і ODOMETRY recovery acceptance ще відсутні.
 - Decoder і gate не виконують reset або Home change; executor/runtime attachment ще відсутні.
-- Dry-run trace не містить сам по собі свіжий armed/heartbeat snapshot і не є дозволом дії; майбутня runtime integration повинна передавати edge у `InflightHomeResetSafetyGate` разом із live telemetry, RC freshness, audit readiness і valid reset reference.
+- Dry-run trace не містить сам по собі свіжий armed/heartbeat snapshot і не є дозволом дії; новий unit-level session приймає ці факти явно, а майбутня runtime integration повинна отримувати їх з перевірених live джерел і concrete audit sink.
+- Concrete reset reference і global route-reacquisition state machine ще не реалізовані; `reset_reference_valid` не можна ставити `true` без окремого доказового producer contract.
 - In-flight local reset потребує окремої SITL discontinuity/recovery acceptance.
 - In-flight FC Home change потребує окремої SITL mode/RTL-semantics acceptance і props-off real-FC review.
 - Старий JT_Zero in-flight VO reset не є acceptance evidence для нового ODOMETRY reset-counter/Home contract.

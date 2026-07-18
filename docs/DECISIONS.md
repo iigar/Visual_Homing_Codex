@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-18 - Compose RC12 And Reset Safety As An Unattached Dry-Run Session
+
+Decision:
+- Add `LocalResetDryRunSession` as a library-only composition of `RcSwitchTriggerDecoder` and `InflightHomeResetSafetyGate` for `LocalEstimatorReset` only.
+- Accept explicit current time, telemetry, RC sample time and reset-reference validity. Evaluate the safety gate only for an accepted one-shot edge; invalid RC samples fail closed before it.
+- Limit outcomes to `observe_only`, `blocked` and `would_reset_local_estimator`. Do not add an estimator executor, FC Home action, writer, runtime or UART caller.
+
+Why:
+- The accepted Pi trace proved the physical RC12 edge but did not include the fresh heartbeat/armed state, audit readiness or reset reference required to authorize even a hypothetical local reset.
+- A small composition boundary makes action separation and fail-closed ordering testable before any state-changing implementation exists.
+
+Impact:
+- Tests cover fresh and stale inputs, missing heartbeat/audit/reference, armed default denial, explicit armed local-reset permission, FC-Home/local-reset permission separation, held-HIGH suppression and invalid RC samples.
+- WSL/Ninja and MSVC 19.44/Ninja pass `36/36`; existing decoder and gate symbols remain unchanged and GitNexus reports LOW upstream risk with no affected production execution flows.
+
+Risk:
+- `audit_log_ready` is injected configuration, not proof that a concrete audit file was opened and flushed; live integration must attach and verify that resource separately.
+- `would_reset_local_estimator` is not reset authority. Reset does not correct wind drift or navigate toward the route: it only clears stale local tracking so a future global route relocalizer can seek a trustworthy lock. Without reacquisition, ODOMETRY must stay suppressed and recovery remains manual/failsafe or a separately reviewed search behavior.
+
 ## 2026-07-18 - Decode RC12 In A Standalone Dry-Run Boundary Before Any Reset Attachment
 
 Decision:

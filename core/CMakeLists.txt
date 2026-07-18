@@ -62,6 +62,7 @@ add_library(visual_homing_core_lib
     src/live_mavlink_output_session.cpp
     src/live_mavlink_output_safety_gate.cpp
     src/live_mavlink_serial_writer.cpp
+    src/local_reset_dry_run_session.cpp
     src/mavlink_telemetry_adapter.cpp
     src/mavlink_telemetry_capture.cpp
     src/mavlink_telemetry_inspector.cpp
@@ -314,6 +315,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME inflight_home_reset_safety_gate COMMAND inflight_home_reset_safety_gate_test)
+
+    add_executable(local_reset_dry_run_session_test
+        tests/local_reset_dry_run_session_test.cpp
+    )
+
+    target_link_libraries(local_reset_dry_run_session_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(local_reset_dry_run_session_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME local_reset_dry_run_session COMMAND local_reset_dry_run_session_test)
 
     add_executable(rc_switch_trigger_decoder_test
         tests/rc_switch_trigger_decoder_test.cpp
