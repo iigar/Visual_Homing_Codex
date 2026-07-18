@@ -117,7 +117,11 @@ yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
 - match confidence/freshness, altitude freshness, health, direction residual, update interval, directional progress, horizontal/vertical/yaw rates та invalid streak fail closed;
 - `reset_tracking()` збільшує `reset_counter`, але зберігає vertical origin; `clear_start_altitude()` також збільшує counter і блокує output до нової ініціалізації.
 
-Estimator та encoder інтегровані лише в deterministic unit tests; MSVC 19.44 + Ninja пройшов `30/30` CTest. Вони не підключені до `LiveExternalNavOutputSession`, writer, CLI, Pi wrappers, UART або FC. Reverse camera orientation, точний residual sign для реального монтажу, а також ArduPilot origin/home/mode/reset/timestamp acceptance залишаються предметом наступної SITL перевірки.
+Estimator та encoder не підключені до `LiveExternalNavOutputSession`, writer, CLI, Pi wrappers, UART або real FC. MSVC/Ninja та WSL/Ninja пройшли `31/31` CTest, включно з isolated producer self-test.
+
+Exact `Copter-4.3.6`/`0c5e999c` SITL acceptance тепер підтвердив software contract через raw frames від реального C++ estimator+encoder: `LOCAL_FRD/BODY_FRD` прийнято, explicit SITL global origin reported, EKF flags досягли `831`, обидва EKF3 IMU повідомили `is using external nav data`, disarmed `GUIDED` прийнято, provider timeout прибрав horizontal position validity (`flags=39`), а explicit reset/recovery повернув `831`. З `GPS_TYPE=0` `HOME_POSITION` не був reported; це не замінюється origin coordinates. Деталі: `docs/ROUTE_LOCAL_ODOMETRY_SITL_UA.md`.
+
+Reverse camera orientation, точний residual sign для реального монтажу, Home/RTL semantics, Pi timing, real-FC origin/mode acceptance та props-off UART attachment залишаються незавершеними.
 
 До окремого SITL/props-off review не підключати новий ODOMETRY encoder до UART і не повторювати blind provider-send лише для збільшення лічильника sent messages.
 

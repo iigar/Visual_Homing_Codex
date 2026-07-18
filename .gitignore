@@ -31,6 +31,8 @@ cmake_install.cmake
 
 # Local editor and OS noise
 .vscode/
+__pycache__/
+*.py[cod]
 *.swp
 Thumbs.db
 desktop.ini

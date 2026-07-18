@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-07-18 - Require Exact-Version SITL Before Real FC Attachment
+
+Decision:
+- Validate the route-local estimator and raw ODOMETRY encoder against a detached exact `Copter-4.3.6`/`0c5e999c` SITL worktree before any real-FC writer attachment.
+- Use the actual C++ estimator+encoder as the frame producer; use pinned 4.3.6 `pymavlink` only to orchestrate localhost TCP, inspect telemetry, set a known SITL-only global origin, and request disarmed mode changes.
+- Require exact firmware hash and parameter readback, correct `LOCAL_FRD/BODY_FRD` decode, EKF ExternalNav acquisition, disarmed GUIDED acceptance, invalid-estimate suppression, reset-counter propagation, provider timeout, and explicit recovery.
+- Treat unreported `HOME_POSITION` as an explicit limitation. Do not infer Home coordinates from the global origin or from the custom SITL start location.
+
+Why:
+- Unit tests can prove byte layout and estimator gates but cannot prove that the installed ArduPilot handler/EKF accepts the message and changes navigation readiness.
+- Exact-version SITL closes that software-contract gap without exposing a real FC, UART, motors, or vehicle state.
+- Home and EKF origin are related but distinct ArduPilot states; fabricating Home would hide an RTL blocker.
+
+Impact:
+- Repeated SITL runs at exact hash passed: flags `831` with both EKF3 IMUs using external nav, disarmed GUIDED accepted, timeout flags `39`, and recovery to `831` after reset counter `2`.
+- MSVC/Ninja and WSL/Ninja pass `31/31` core tests. The new producer and runner remain test-only and have no runtime writer/session/UART callers.
+- The procedure, build compatibility, commands, evidence and scope are recorded in `docs/ROUTE_LOCAL_ODOMETRY_SITL_UA.md`.
+
+Risk:
+- SITL does not prove real Matek timing, serial transport, Pi load, armed GUIDED, physical reverse yaw, Home/RTL, motor behavior, or flight safety.
+- The next boundary is a separately reviewed props-off real-FC acceptance with output paths still isolated; runtime attachment is not authorized by this decision.
+
 ## 2026-07-18 - Keep The Route-Local Estimator Explicit, Stateful, And Unattached
 
 Decision:
