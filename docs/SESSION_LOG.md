@@ -2,6 +2,9 @@
 
 ## 2026-07-18
 
+- Completed synchronized positive RC12 decoder acceptance on Pi. `/home/pi/Visual_Homing_Codex/artifacts/logs/rc12-local-reset-dry-run-20260718T165944Z.log` passed with `52` samples, `0` rejected, observed `999 -> 2000 -> 999 us`, exactly `1/1` `would_request_local_estimator_reset`, no repeat while HIGH was held, and both reset/Home executors explicitly unattached. Trace: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/rc12-pwm-trace-20260718T165944Z.txt`.
+- Captured the full request-only FC baseline immediately afterward: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-baseline-20260718T170031Z.json` plus `.param` completed `1288/1288`, ArduCopter remained `4.3.6 official`/`0c5e999c`, heartbeat stayed `base_mode=81`, `custom_mode=2` (`AltHold`), `armed=false`. No reset, Home/origin, parameter write, mode/arm, mission/actuator, provider output or runtime attachment occurred.
+
 - Fast-forwarded clean `jtzero` to committed RC12 decoder `2c4aaec` and ran the ordinary Pi wrapper. All live/external-nav output CMake flags were `OFF`; ARM build succeeded and CTest passed `35/35`. Log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260718T164528Z.log`.
 - Ran two exact-confirmation request-only RC12 dry-run windows. Both correctly failed the required minimum-event acceptance because every live sample remained steady LOW at `999 us`: first trace `rc12-pwm-trace-20260718T164815Z.txt` had `61` samples, second `rc12-pwm-trace-20260718T164908Z.txt` had `92`; both produced `trigger_events=0`, `executor_attached=false`, `fc_home_change_attached=false`. This is useful no-false-edge evidence but not positive switch acceptance; no synthetic event was substituted.
 

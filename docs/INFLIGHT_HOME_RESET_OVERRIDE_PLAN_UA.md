@@ -94,12 +94,12 @@ Evidence: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-202
 - пише RC12 trace та dry-run log;
 - не має reset/Home/origin/mode/arm/mission/actuator/provider path.
 
-WSL/Ninja, MSVC/Ninja і ordinary Pi build проходять `35/35`; Pi log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260718T164528Z.log`, усі live/external-nav output CMake flags `OFF`. Два наступні live dry-run captures коректно fail closed із `0` events: `61` і `92` samples були тільки `999 us`. Це підтверджує відсутність false edge на steady LOW, але не є positive operator-switch acceptance; потрібен повтор із реально observed HIGH.
+WSL/Ninja, MSVC/Ninja і ordinary Pi build проходять `35/35`; Pi log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260718T164528Z.log`, усі live/external-nav output CMake flags `OFF`. Два перші live dry-run captures коректно fail closed із `0` events на steady `999 us`. Синхронізований третій capture `/home/pi/Visual_Homing_Codex/artifacts/logs/rc12-local-reset-dry-run-20260718T165944Z.log` пройшов: `52` samples, `0` rejected, observed `999 -> 2000 -> 999 us`, рівно один `would_request_local_estimator_reset`, held HIGH без повтору, обидва executors `false`. Post-capture request-only baseline залишив FC disarmed в AltHold і зібрав `1288/1288` без записів.
 
 ## Невирішені Межі
 
 - Live RC12 mapping підтверджений лише для поточного transmitter/receiver/FC setup; його треба повторити після remap, firmware/parameter restore або зміни пульта/приймача.
-- Committed decoder пройшов Pi, але positive live LOW->HIGH decoder event ще не зафіксований: два перші capture windows містили тільки steady LOW.
+- Live LOW->HIGH->LOW decoder event прийнятий лише як dry-run input evidence; reset executor, safety-gate runtime composition і ODOMETRY recovery acceptance ще відсутні.
 - Decoder і gate не виконують reset або Home change; executor/runtime attachment ще відсутні.
 - Dry-run trace не містить сам по собі свіжий armed/heartbeat snapshot і не є дозволом дії; майбутня runtime integration повинна передавати edge у `InflightHomeResetSafetyGate` разом із live telemetry, RC freshness, audit readiness і valid reset reference.
 - In-flight local reset потребує окремої SITL discontinuity/recovery acceptance.

@@ -129,6 +129,28 @@ fc_home_change_attached=false
 
 The two dry-run traces are valid fail-closed negative evidence, not a positive RC12 edge acceptance. No HIGH sample arrived during either coordinated capture window. Repeat only when the operator is synchronized with the active capture and leave RC12 LOW afterward; do not substitute the earlier mapping artifact or the synthetic desktop trace for this acceptance.
 
+Positive synchronized RC12 decoder acceptance (`2026-07-18`):
+
+```text
+trace=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/rc12-pwm-trace-20260718T165944Z.txt
+log=/home/pi/Visual_Homing_Codex/artifacts/logs/rc12-local-reset-dry-run-20260718T165944Z.log
+samples=52
+rejected_samples=0
+observed_pwm=999 -> 2000 -> 999 us
+trigger_events=1/1
+decision=would_request_local_estimator_reset
+held_high_repeat=false
+executor_attached=false
+fc_home_change_attached=false
+post_json=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-baseline-20260718T170031Z.json
+post_parameters=1288/1288
+post_firmware=ArduCopter 4.3.6 official / 0c5e999c
+post_heartbeat=base_mode 81, custom_mode 2 (AltHold), armed=false
+operation=request_only_no_parameter_writes_no_state_change
+```
+
+This closes only live RC12 edge decoding and no-false-repeat behavior. It does not authorize or prove estimator reset, FC Home change, ODOMETRY discontinuity recovery, runtime attachment, or flight use.
+
 Request-only local-frame artifact:
 
 ```text
