@@ -69,12 +69,38 @@ Evidence: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-202
 - `MAV_CMD_REQUEST_MESSAGE(RC_CHANNELS)`;
 - запис локального JSON evidence з PWM min/max/last та ознакою зміни.
 
-Він не має parameter-set, Home/origin-set, mode, arm, mission або actuator path. Runtime integration має використовувати edge-trigger із hysteresis для RC12, а не level-trigger; конкретні пороги, debounce, cooldown і action selection ще мають бути реалізовані та протестовані. RC12 mapping не означає, що одна фізична дія може одночасно скидати estimator і змінювати FC Home.
+Він не має parameter-set, Home/origin-set, mode, arm, mission або actuator path. RC12 mapping не означає, що одна фізична дія може одночасно скидати estimator і змінювати FC Home.
+
+## Реалізований RC12 Decoder І Dry-Run
+
+`RcSwitchTriggerDecoder` є окремою library boundary без runtime/reset/Home caller. Default policy відповідає live PWM evidence:
+
+- valid PWM `800..2200 us`;
+- LOW `<=1200 us`, HIGH `>=1800 us`, середина є hysteresis band без зміни stable state;
+- debounce `150 ms`;
+- cooldown `3000 ms`;
+- HIGH після startup не створює edge, доки не підтверджено LOW;
+- одна дія на debounced LOW->HIGH; held HIGH не повторюється;
+- bounce/hysteresis скасовують candidate transition;
+- cooldown-blocked HIGH споживає цикл і вимагає нового LOW->HIGH;
+- out-of-range PWM і timestamp rollback fail closed.
+
+`rc12_local_reset_dry_run` читає line trace `time_boot_ms rc12_pwm` і може вивести тільки `would_request_local_estimator_reset`. Він завжди звітує `executor_attached=false` та `fc_home_change_attached=false`.
+
+`scripts/run-rc12-local-reset-dry-run-pi.sh`:
+
+- вимагає точний confirmation token `I_CONFIRM_RC12_DRY_RUN_NO_RESET_OR_HOME`;
+- request-only перечитує fixed RC allowlist і fail closed, якщо `RC12_OPTION` відсутній або не дорівнює `0`;
+- пише RC12 trace та dry-run log;
+- не має reset/Home/origin/mode/arm/mission/actuator/provider path.
+
+WSL/Ninja і MSVC/Ninja проходять `35/35`, включно з decoder unit test, trace-driven CLI test і strict negative-count rejection. Pi live dry-run ще не є прийнятим evidence, доки committed code не пройде ordinary Pi build/test і окремий operator-switch capture.
 
 ## Невирішені Межі
 
 - Live RC12 mapping підтверджений лише для поточного transmitter/receiver/FC setup; його треба повторити після remap, firmware/parameter restore або зміни пульта/приймача.
-- Gate не виконує reset або Home change; executor/runtime attachment ще відсутні.
+- Decoder і gate не виконують reset або Home change; executor/runtime attachment ще відсутні.
+- Dry-run trace не містить сам по собі свіжий armed/heartbeat snapshot і не є дозволом дії; майбутня runtime integration повинна передавати edge у `InflightHomeResetSafetyGate` разом із live telemetry, RC freshness, audit readiness і valid reset reference.
 - In-flight local reset потребує окремої SITL discontinuity/recovery acceptance.
 - In-flight FC Home change потребує окремої SITL mode/RTL-semantics acceptance і props-off real-FC review.
 - Старий JT_Zero in-flight VO reset не є acceptance evidence для нового ODOMETRY reset-counter/Home contract.

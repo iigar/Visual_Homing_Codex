@@ -1,0 +1,12 @@
+# schema=visual_homing.rc12_pwm_trace.v1
+# columns=time_boot_ms rc12_pwm
+0 999
+200 999
+400 1500
+600 2000
+800 2000
+1000 2000
+1200 999
+1400 999
+1600 2000
+1800 2000

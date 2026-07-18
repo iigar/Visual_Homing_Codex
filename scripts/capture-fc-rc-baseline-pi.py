@@ -55,6 +55,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--parameter-timeout-s", type=float, default=2.0)
     parser.add_argument("--capture-s", type=float, default=8.0)
     parser.add_argument("--request-period-s", type=float, default=0.5)
+    parser.add_argument(
+        "--trace-output",
+        type=Path,
+        help="Optional line trace containing time_boot_ms and RC12 PWM for offline dry-run decoding.",
+    )
+    parser.add_argument(
+        "--require-rc12-option-zero",
+        action="store_true",
+        help="Fail before RC capture unless the request-only RC12_OPTION read is exactly zero.",
+    )
     args = parser.parse_args()
     if args.baud <= 0:
         parser.error("--baud must be positive")
@@ -168,6 +178,7 @@ def capture_rc_channels(
         "request_ack_results": acknowledgements,
         "last": samples[-1] if samples else None,
         "channels": {},
+        "samples": samples,
     }
     for channel in CHANNELS:
         values = [sample[f"channel_{channel}_pwm"] for sample in samples]
@@ -209,6 +220,10 @@ def main() -> int:
             )
             for name in PARAMETER_NAMES
         }
+        if args.require_rc12_option_zero:
+            rc12_option = parameters.get("RC12_OPTION")
+            if rc12_option is None or rc12_option["value"] != 0.0:
+                raise RuntimeError("RC12_OPTION is missing or nonzero")
         rc_channels = capture_rc_channels(
             connection,
             target_system,
@@ -228,12 +243,30 @@ def main() -> int:
         "target_system": target_system,
         "target_component": target_component,
         "requested_parameters": list(PARAMETER_NAMES),
+        "requirements": {
+            "rc12_option_zero_required": args.require_rc12_option_zero,
+            "rc12_option_zero_passed": parameters.get("RC12_OPTION") is not None
+            and parameters["RC12_OPTION"]["value"] == 0.0,
+        },
         "parameters": parameters,
         "rc_channels": rc_channels,
     }
     atomic_write(output_path, json.dumps(snapshot, indent=2, sort_keys=True) + "\n")
+    if args.trace_output is not None:
+        trace_lines = [
+            "# schema=visual_homing.rc12_pwm_trace.v1",
+            f"# captured_at_utc={utc_text(captured_at)}",
+            "# columns=time_boot_ms rc12_pwm",
+        ]
+        trace_lines.extend(
+            f"{sample['time_boot_ms']} {sample['channel_12_pwm']}"
+            for sample in rc_channels["samples"]
+        )
+        atomic_write(args.trace_output, "\n".join(trace_lines) + "\n")
     print("fc_rc_baseline_capture passed=true")
     print(f"output={output_path}")
+    if args.trace_output is not None:
+        print(f"trace_output={args.trace_output}")
     print(f"rc_channels_reported={str(rc_channels['reported']).lower()}")
     print(f"rc_channel_samples={rc_channels['sample_count']}")
     return 0

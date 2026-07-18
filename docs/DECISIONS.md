@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-07-18 - Decode RC12 In A Standalone Dry-Run Boundary Before Any Reset Attachment
+
+Decision:
+- Add `RcSwitchTriggerDecoder` with fixed default hysteresis, debounce, low-before-high arming, one-shot edge behavior, cooldown and fail-closed input validation.
+- Add a trace-driven `rc12_local_reset_dry_run` executable whose strongest result is `would_request_local_estimator_reset`; keep both local-reset and FC-Home executors absent.
+- Extend the request-only RC capture with optional sample trace output and an explicit `RC12_OPTION=0` requirement. Provide a confirmation-gated Pi wrapper for the later live dry-run.
+
+Why:
+- A raw `PWM >= threshold` level check would retrigger while held, could fire at process startup with the switch already HIGH, and would not reject bounce, the middle band or rapid repeat cycles.
+- Reusing the core decoder on desktop and Pi trace evidence avoids treating a Python-only diagnostic heuristic as the future safety policy.
+
+Impact:
+- Default thresholds are valid `800..2200 us`, LOW `<=1200`, HIGH `>=1800`, debounce `150 ms`, cooldown `3000 ms`, based on the confirmed `999..2000 us` RC12 range.
+- WSL/Ninja and MSVC/Ninja pass `35/35`; the synthetic CLI trace produces exactly one request event, blocks a rapid second cycle through cooldown, and rejects a negative expected-count argument.
+- No existing camera, route, telemetry, writer, estimator, Home or flight execution flow calls the decoder.
+
+Risk:
+- This is still input decoding and dry-run evidence only. It does not prove live Pi timing and does not authorize reset, Home change or flight use.
+- The trace-driven tool does not replace the `InflightHomeResetSafetyGate`; future attachment must combine the edge with fresh live telemetry/RC, audit readiness and a valid reset reference.
+
 ## 2026-07-18 - Reserve Live-Confirmed RC12 For The Future Visual Homing Trigger
 
 Decision:

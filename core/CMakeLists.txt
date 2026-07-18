@@ -69,6 +69,7 @@ add_library(visual_homing_core_lib
     src/pi_camera_source.cpp
     src/pipeline_harness.cpp
     src/replay_frame_source.cpp
+    src/rc_switch_trigger_decoder.cpp
     src/route_local_odometry.cpp
     src/route_local_odometry_estimator.cpp
     src/route_artifact_check.cpp
@@ -146,6 +147,17 @@ target_compile_options(visual_homing_core_lib PRIVATE
 )
 
 target_link_libraries(visual_homing_core PRIVATE visual_homing_core_lib)
+
+add_executable(rc12_local_reset_dry_run
+    tools/rc12_local_reset_dry_run.cpp
+)
+
+target_link_libraries(rc12_local_reset_dry_run PRIVATE visual_homing_core_lib)
+
+target_compile_options(rc12_local_reset_dry_run PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
 
 target_compile_options(visual_homing_core PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
@@ -302,6 +314,39 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME inflight_home_reset_safety_gate COMMAND inflight_home_reset_safety_gate_test)
+
+    add_executable(rc_switch_trigger_decoder_test
+        tests/rc_switch_trigger_decoder_test.cpp
+    )
+
+    target_link_libraries(rc_switch_trigger_decoder_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(rc_switch_trigger_decoder_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME rc_switch_trigger_decoder COMMAND rc_switch_trigger_decoder_test)
+
+    add_test(
+        NAME rc12_local_reset_dry_run_trace
+        COMMAND rc12_local_reset_dry_run
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/rc12_trigger_trace.txt
+            1
+            1
+    )
+
+    add_test(
+        NAME rc12_local_reset_dry_run_rejects_negative_count
+        COMMAND rc12_local_reset_dry_run
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/rc12_trigger_trace.txt
+            -1
+            1
+    )
+    set_tests_properties(
+        rc12_local_reset_dry_run_rejects_negative_count
+        PROPERTIES WILL_FAIL TRUE
+    )
 
     add_executable(mavlink_telemetry_adapter_test
         tests/mavlink_telemetry_adapter_test.cpp
