@@ -112,6 +112,23 @@ RC8=1503 us unchanged, RC8_OPTION=65 (GPS Disable)
 operation=request_only_no_parameter_writes_no_state_change
 ```
 
+RC12 decoder Pi evidence (`2026-07-18`):
+
+```text
+commit=2c4aaec
+ordinary_test_log=/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260718T164528Z.log
+ctest=35/35
+all_live_and_external_nav_output_cmake_flags=OFF
+negative_trace_1=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/rc12-pwm-trace-20260718T164815Z.txt
+negative_trace_1_samples=61, pwm=999 only, trigger_events=0
+negative_trace_2=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/rc12-pwm-trace-20260718T164908Z.txt
+negative_trace_2_samples=92, pwm=999 only, trigger_events=0
+executor_attached=false
+fc_home_change_attached=false
+```
+
+The two dry-run traces are valid fail-closed negative evidence, not a positive RC12 edge acceptance. No HIGH sample arrived during either coordinated capture window. Repeat only when the operator is synchronized with the active capture and leave RC12 LOW afterward; do not substitute the earlier mapping artifact or the synthetic desktop trace for this acceptance.
+
 Request-only local-frame artifact:
 
 ```text
