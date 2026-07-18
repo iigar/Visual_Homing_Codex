@@ -150,6 +150,8 @@ This state is timestamped evidence, not a guarantee about later powered hardware
 
 The `2026-07-18` reference-repository/GitNexus audit did not connect to the Pi or FC and did not revalidate this physical/runtime state. It changed no wiring, parameters, modes, arm state, serial traffic, or hardware-output permissions.
 
+The later `2026-07-18` read-only RC reconnect attempt also made no hardware connection: SSH stopped at `Could not resolve hostname jtzero`. No fallback IP scan, host-key replacement, serial access, MAVLink request, parameter read/write, Home/origin command, mode change, or arm action was attempted. `scripts/capture-fc-rc-baseline-pi.py` is prepared for the next normal reconnect and is limited to fixed `PARAM_REQUEST_READ` plus `MAV_CMD_REQUEST_MESSAGE(RC_CHANNELS)` operations.
+
 ## Reconnect Checklist
 
 When Pi and FC are available again:

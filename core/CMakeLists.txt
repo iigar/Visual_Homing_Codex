@@ -53,6 +53,7 @@ add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
+    src/inflight_home_reset_safety_gate.cpp
     src/live_external_nav_output_audit_log.cpp
     src/live_external_nav_output_session.cpp
     src/live_mavlink_bridge.cpp
@@ -288,6 +289,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME health_monitor COMMAND health_monitor_test)
+
+    add_executable(inflight_home_reset_safety_gate_test
+        tests/inflight_home_reset_safety_gate_test.cpp
+    )
+
+    target_link_libraries(inflight_home_reset_safety_gate_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(inflight_home_reset_safety_gate_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME inflight_home_reset_safety_gate COMMAND inflight_home_reset_safety_gate_test)
 
     add_executable(mavlink_telemetry_adapter_test
         tests/mavlink_telemetry_adapter_test.cpp

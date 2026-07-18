@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-07-18 - Gate In-Flight Local Reset And FC Home Change Independently
+
+Decision:
+- Preserve an emergency in-flight override for adverse/non-standard conditions, but keep local estimator reset and FC Home change as different actions with independent default-OFF allow flags and operator confirmations.
+- Add a library-only `InflightHomeResetSafetyGate`. Armed actions require master availability, fresh telemetry and RC input, an edge trigger, ready audit, action-specific permission/confirmation, and a valid action reference/target.
+- Keep normal disarmed preflight reset/Home setup available through the same common freshness/audit/reference checks without enabling the in-flight flags.
+- Do not attach the gate to RC input, estimator reset, writer, runtime, UART, or FC yet. Prepare a separate request-only RC7/8/12 capture tool for live mapping evidence.
+
+Why:
+- Resetting route-local tracking can be a recovery action, while changing FC Home moves the RTL target. A shared flag could turn a limited estimator recovery into an unintended navigation-target change.
+- An adverse-condition override can be useful, but a held switch, stale RC sample, stale armed state, missing audit, or implicit target must not repeatedly or silently execute it.
+
+Impact:
+- The new gate defaults every armed capability to unavailable/disabled and proves in tests that enabling one action cannot enable the other.
+- WSL/Ninja and MSVC/Ninja pass `32/32`; no runtime caller exists.
+- `scripts/capture-fc-rc-baseline-pi.py` can later read fixed RC parameters and request `RC_CHANNELS` without parameter writes or state changes.
+
+Risk:
+- This is policy scaffolding, not an implemented emergency control. No in-flight use is authorized.
+- Current RC mappings remain unknown because `jtzero` did not resolve during the read-only reconnect attempt. Any executor needs separate SITL and props-off real-FC acceptance.
+
 ## 2026-07-18 - Require Exact-Version SITL Before Real FC Attachment
 
 Decision:
