@@ -57,17 +57,23 @@ Master compile capability не замінює два runtime allow flags. Кож
 
 ## RC Channel Audit
 
-Поточний RC7/8/12 mapping невідомий. `scripts/capture-fc-rc-baseline-pi.py` підготовлений для reconnect і робить лише:
+Live request-only audit `2026-07-18` закрив mapping для поточного FC/transmitter setup:
+
+- RC7: `999 us`, `RC7_OPTION=4` (`RTL`) — зайнятий, не використовувати для Visual Homing trigger;
+- RC8: `1503 us`, `RC8_OPTION=65` (`GPS Disable`) — зайнятий, не використовувати для Visual Homing trigger;
+- RC12: операторський перемикач підтверджено як `999..2000 us`, `RC12_OPTION=0`, після тесту повернуто до `999 us` — єдиний схвалений кандидат із перевірених каналів.
+
+Evidence: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-20260718T160510Z.json`, `41` RC samples, RC7/RC8 незмінні. `scripts/capture-fc-rc-baseline-pi.py` робить лише:
 
 - `PARAM_REQUEST_READ` для fixed RC7/8/12 option/calibration allowlist;
 - `MAV_CMD_REQUEST_MESSAGE(RC_CHANNELS)`;
 - запис локального JSON evidence з PWM min/max/last та ознакою зміни.
 
-Він не має parameter-set, Home/origin-set, mode, arm, mission або actuator path. Під час контрольованого capture оператор має перемістити лише підозрюваний перемикач; канал можна вибрати лише після observed PWM change і перевірки `RC*_OPTION`.
+Він не має parameter-set, Home/origin-set, mode, arm, mission або actuator path. Runtime integration має використовувати edge-trigger із hysteresis для RC12, а не level-trigger; конкретні пороги, debounce, cooldown і action selection ще мають бути реалізовані та протестовані. RC12 mapping не означає, що одна фізична дія може одночасно скидати estimator і змінювати FC Home.
 
 ## Невирішені Межі
 
-- Pi `jtzero` був недоступний через hostname resolution під час підготовки цього контракту, тому live RC mapping не заявляється.
+- Live RC12 mapping підтверджений лише для поточного transmitter/receiver/FC setup; його треба повторити після remap, firmware/parameter restore або зміни пульта/приймача.
 - Gate не виконує reset або Home change; executor/runtime attachment ще відсутні.
 - In-flight local reset потребує окремої SITL discontinuity/recovery acceptance.
 - In-flight FC Home change потребує окремої SITL mode/RTL-semantics acceptance і props-off real-FC review.

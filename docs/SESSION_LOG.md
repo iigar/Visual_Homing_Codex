@@ -2,6 +2,10 @@
 
 ## 2026-07-18
 
+- Reconnected to `pi@jtzero` with the dedicated key and strict repo-local host fingerprint, verified the Pi checkout clean, and fast-forwarded it from `771b070` to `944ff51`. `/dev/serial0` still resolves to `/dev/ttyS0`, serial getty is inactive, and no competing serial owner was observed.
+- Refreshed the request-only real-FC baseline without writes: `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-baseline-20260718T155543Z.json` plus `.param` captured `1288/1288`, ArduCopter `4.3.6 official`/`0c5e999c`, heartbeat `base_mode=81`, `custom_mode=2` (`AltHold`), `armed=false`.
+- Ran the fixed-allowlist RC audit and coordinated only the intended CH12 transmitter switch. `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-20260718T160510Z.json` contains 41 samples: RC12 changed `999..2000 us`, ended at `999 us`, and has `RC12_OPTION=0`; RC7 stayed `999 us` with option `4` (`RTL`), RC8 stayed `1503 us` with option `65` (`GPS Disable`). All request-message ACKs were accepted. No parameter/Home/origin/mode/arm/mission/actuator/provider command was sent.
+
 - Audited the external snapshot `D:\LLM\ChatGPT\Codex\Visual-Homing\Visual_Homing_System_Claude-conflict_250226_1330` as a read-only reference. It contains `242` files and no `.git` directory. SHA-256 comparison against the tracked `reference/Visual_Homing_System_Claude-conflict_250226_1330` tree found `242/242` matching files and `0` path/content differences, so it is not a newer hidden implementation.
 - Created the separate sibling `Visual_Homing_System_Claude-conflict_250226_1330_gitnexus_indexed_copy` without modifying the original snapshot. Initialized local Git only in the copy, recorded baseline commit `c5c9cca` plus GitNexus metadata commit `405e7ac`, and left its worktree clean.
 - Built and registered a GitNexus graph for the copy: `215` indexed files, `3436` symbols, `5172` relationships, `79` clusters, and `84` execution flows. Graph context/impact/cypher work; BM25/FTS remains unavailable on the current Windows LadybugDB setup, so natural-language `query` is degraded. This does not affect graph navigation by known file/symbol.

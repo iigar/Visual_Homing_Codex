@@ -2,7 +2,7 @@
 
 Цей документ є коротким source-of-truth для апаратної конфігурації, SSH-доступу та ArduPilot/MAVLink інтеграції Visual Homing. Його треба читати перед будь-якою роботою з Raspberry Pi, Matek, serial telemetry, FC/JT_Zero acceptance або зовнішньою навігацією.
 
-Останнє оновлення документа: `2026-07-18` (memory review only). Остання live hardware/FC verification залишається `2026-07-16`.
+Останнє оновлення документа: `2026-07-18` (live SSH/FC/RC reconnect). Остання live hardware/FC verification: `2026-07-18`.
 
 ## Статуси
 
@@ -55,7 +55,7 @@ The relevant `SERIAL_ORDER` places `USART3` at the ArduPilot `SERIAL4` position.
 | Pi SSH user | `pi` | `CONFIRMED` | Live connection and readiness evidence 2026-07-16 |
 | Dedicated key name | `id_ed25519_jtzero` | `CONFIRMED` | Batch-mode key access verified 2026-07-16 |
 | Repo-local host-key file | `codex_jtzero_known_hosts` | `CONFIRMED`, `NOT_TRACKED` | Exists in the current repo root and contains a public host fingerprint only; preserve/recreate explicitly after a fresh clone |
-| Last recorded SSH key confirmation | `2026-07-16` | `CONFIRMED` | Current session |
+| Last recorded SSH key confirmation | `2026-07-18` | `CONFIRMED` | Strict host-key and dedicated-key reconnect |
 | Current live SSH availability | Connected and reachable as `pi@jtzero` | `CONFIRMED` | Current session; reverify after power/network changes |
 
 PowerShell command template from the repository root:
@@ -83,7 +83,7 @@ Never commit or paste private-key contents, passwords, recovery codes, or unrest
 | `SR4_*` stream-rate parameters | `ADSB=0`, `EXTRA1=5`, `EXTRA2=0`, `EXTRA3=0`, `EXT_STAT=2`, `PARAMS=0`, `POSITION=1`, `RAW_CTRL=0`, `RAW_SENS=2`, `RC_CHAN=0` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
 | `EK3_SRC*` external-nav source parameters | source 1: `POSXY=6`, `POSZ=2`, `VELXY=6`, `VELZ=0`, `YAW=6`; source 2: `0/1/0/0/0`; source 3: all `0`; `EK3_SRC_OPTIONS=2` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
 | ExternalNav-related parameters | `EK3_ENABLE=1`, `AHRS_EKF_TYPE=3`, `VISO_TYPE=1`, `VISO_DELAY_MS=10`, `VISO_ORIENT=0`, offsets `0/0/0`, `VISO_SCALE=1`, position/velocity/yaw noise `0.2/0.1/0.2`; `FLOW_TYPE=7`, `RNGFND1_TYPE=32`, `GPS_TYPE=9` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
-| Current RC7/RC8/RC12 transmitter mapping and `RC*_OPTION` | unknown in the retained local evidence | `REQUIRES_VERIFICATION` | Do not infer from another repository or old transmitter setup; read live before assigning a preflight Home trigger |
+| Current RC7/RC8/RC12 transmitter mapping and `RC*_OPTION` | RC7=`999 us`, option `4` (`RTL`); RC8=`1503 us`, option `65` (`GPS Disable`); operator-driven RC12=`999..2000 us`, option `0` (`Do Nothing`), returned to `999 us` | `CONFIRMED` | Request-only capture `fc-rc-baseline-20260718T160510Z.json`, 41 samples; RC7/RC8 did not change |
 
 Historical cross-project evidence explains the operator's recollection but is not current FC configuration. JT_Zero implemented an edge-triggered `SET HOMEPOINT` that reset its own VO pose: initially RC channel 8 (`index 7`, PWM `>=1700`), later channel 12 (`index 11`) because channel 8 was occupied. It did not set ArduPilot EKF origin or `HOME_POSITION`. The legacy Visual Homing reference separately lists `RC7_OPTION=90` for EKF source-set selection, not for resetting Home. A future Visual Homing switch must therefore use a live-confirmed free channel, operate only while disarmed, increment the ODOMETRY reset counter, and separately require FC-reported origin/Home acceptance.
 
@@ -94,6 +94,22 @@ JSON=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-baseline-20260715T214
 PARAM=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-parameters-20260715T214550Z.param
 parameters=1288/1288
 operation=request_only_no_parameter_writes
+```
+
+Current reconnect artifacts (`2026-07-18`):
+
+```text
+FULL_JSON=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-baseline-20260718T155543Z.json
+FULL_PARAM=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-parameters-20260718T155543Z.param
+parameters=1288/1288
+firmware=ArduCopter 4.3.6 official / 0c5e999c
+heartbeat=base_mode 81, custom_mode 2 (AltHold), armed=false
+RC_STATIC=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-20260718T155407Z.json
+RC_SWITCH=/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-20260718T160510Z.json
+RC12=999..2000 us, changed=true, last=999 us, RC12_OPTION=0
+RC7=999 us unchanged, RC7_OPTION=4 (RTL)
+RC8=1503 us unchanged, RC8_OPTION=65 (GPS Disable)
+operation=request_only_no_parameter_writes_no_state_change
 ```
 
 Request-only local-frame artifact:
@@ -150,7 +166,7 @@ This state is timestamped evidence, not a guarantee about later powered hardware
 
 The `2026-07-18` reference-repository/GitNexus audit did not connect to the Pi or FC and did not revalidate this physical/runtime state. It changed no wiring, parameters, modes, arm state, serial traffic, or hardware-output permissions.
 
-The later `2026-07-18` read-only RC reconnect attempt also made no hardware connection: SSH stopped at `Could not resolve hostname jtzero`. No fallback IP scan, host-key replacement, serial access, MAVLink request, parameter read/write, Home/origin command, mode change, or arm action was attempted. `scripts/capture-fc-rc-baseline-pi.py` is prepared for the next normal reconnect and is limited to fixed `PARAM_REQUEST_READ` plus `MAV_CMD_REQUEST_MESSAGE(RC_CHANNELS)` operations.
+An early `2026-07-18` read-only RC reconnect attempt made no hardware connection because `jtzero` did not resolve. Later the same day normal hostname resolution returned: strict SSH succeeded, the clean Pi checkout fast-forwarded to `944ff51`, and the request-only full-FC and RC audit completed. No parameter write, Home/origin command, mode command, arm command, mission command, actuator command, provider output, or fallback network scan was used. The operator moved only the transmitter control that drives RC12; RC12 changed `999..2000 us` and returned to `999 us`, while RC7/RC8 stayed unchanged.
 
 ## Reconnect Checklist
 

@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-18 - Reserve Live-Confirmed RC12 For The Future Visual Homing Trigger
+
+Decision:
+- Use RC12 as the only candidate among RC7/RC8/RC12 for a future Visual Homing edge trigger in the current transmitter/FC setup.
+- Keep RC7 reserved for its installed `RTL` aux function (`RC7_OPTION=4`) and RC8 reserved for `GPS Disable` (`RC8_OPTION=65`). Do not overwrite either mapping as part of this work.
+- Treat RC12 only as input evidence. A future runtime must add hysteresis, debounce, one-shot edge detection, cooldown, fresh-RC checks, audit-before-action, and an explicit choice between local reset and FC Home change.
+
+Why:
+- A request-only live capture observed RC12 moving cleanly from `999` to `2000 us` under the operator's intended switch while RC7 stayed `999 us` and RC8 stayed `1503 us`.
+- `RC12_OPTION=0` means the FC currently assigns no aux action to that channel, while RC7/RC8 are safety-relevant and already occupied.
+
+Impact:
+- The historical JT_Zero move from channel 8 to channel 12 now matches current live evidence, but the new system remains independently designed and gated.
+- Evidence is `/home/pi/Visual_Homing_Codex/artifacts/fc_baseline/fc-rc-baseline-20260718T160510Z.json`: 41 samples, RC12 `changed=true`, last `999 us`, all request ACK results accepted.
+
+Risk:
+- This decision does not attach RC12 to runtime and does not authorize reset, Home change, parameter writes, or flight use.
+- Transmitter/receiver/FC remapping invalidates the observation and requires a new request-only capture.
+
 ## 2026-07-18 - Gate In-Flight Local Reset And FC Home Change Independently
 
 Decision:
@@ -19,7 +38,7 @@ Impact:
 
 Risk:
 - This is policy scaffolding, not an implemented emergency control. No in-flight use is authorized.
-- Current RC mappings remain unknown because `jtzero` did not resolve during the read-only reconnect attempt. Any executor needs separate SITL and props-off real-FC acceptance.
+- RC12 is now live-confirmed as the free candidate; any executor still needs edge/debounce/cooldown implementation plus separate SITL and props-off real-FC acceptance.
 
 ## 2026-07-18 - Require Exact-Version SITL Before Real FC Attachment
 
