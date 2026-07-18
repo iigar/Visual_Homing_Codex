@@ -118,6 +118,18 @@ camera frame
 
 `640x480` may be useful for debug, route keyframes, and offline analysis, but should not be assumed as the realtime baseline on Pi Zero 2W.
 
+For kilometer-scale routes, extend this into separate stored layers rather than keeping every processed frame in RAM:
+
+```text
+streamed low-resolution tracking layer
+compact global-search descriptor/index layer
+sparse native 1280x800 Gray8 verification keyframes
+```
+
+Sparse high-resolution selection should be spatial/scale-aware: JT_Zero local displacement, altitude-band transition, attitude/yaw change and scene novelty. At a fixed ground speed, translational image motion falls approximately with `1/altitude`, so the high-resolution cadence may decrease as ground footprint grows. The larger footprint is new visual content, however; a low-altitude frame cannot be resized into a valid high-altitude reference for terrain it never observed. Recovery must remain inside the recorded scale envelope unless a separately validated mosaic/map layer provides that coverage.
+
+Search should remain coarse-to-fine: query the compact layer over the whole route, refine only top-N candidates against high-resolution keyframes, require multi-frame agreement, and never brute-force every `1280x800` payload on Pi Zero 2W.
+
 ## Scale-Aware Matching
 
 Scale-aware matching should be added in layers:
@@ -305,12 +317,13 @@ feature remains a local experiment rather than a second full matcher.
 
 Near-term field work:
 
-1. Keep `96x72` as the accepted outdoor baseline.
-2. Optionally test `128x96` and `160x120` for FPS/latency/quality evidence.
-3. Do not jump to `320x240` full-route realtime matching until coarse+refinement is designed.
-4. Add progress tracker/smoother before live authority.
-5. Reactivate field-useful `visual_scale_*` diagnostics.
-6. Add route altitude/attitude metadata policy before depending on handoff distance/altitude.
+1. Add bounded streaming route storage before recording kilometer-scale artifacts.
+2. Keep `96x72`/`160x100` as the accepted coarse outdoor baseline.
+3. Define a multiscale manifest and sparse native `1280x800` keyframe metadata/index contract.
+4. Benchmark sparse high-resolution capture for 10-15 minutes on Pi before selecting its spatial/time cadence.
+5. Optionally test `128x96` and `160x120` coarse targets for FPS/latency/quality evidence.
+6. Do not jump to `320x240` full-route realtime matching until coarse+top-N refinement is designed.
+7. Reactivate field-useful `visual_scale_*` diagnostics and add route altitude/attitude metadata before depending on handoff distance/altitude.
 
 Flight-readiness implication:
 

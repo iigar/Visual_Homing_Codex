@@ -999,7 +999,77 @@ progress stuck near route start window
 - Не змішувати daylight і thermal evidence в одному acceptance bucket.
 - Не йти до RTL/HOVER night tests без окремої thermal repeatability бази.
 
+## Ідея 13: Потоковий Багатомасштабний Маршрут І Розріджені 1280x800 Keyframes
+
+### Що Це
+
+Довгий маршрут не повинен накопичувати всі кадри в RAM. Основний tracking-шар треба записувати потоково на SD-карту, а окремий розріджений high-resolution шар використовувати для глобального reacquisition:
+
+```text
+Layer 0: 160x100 tracking signatures, відносно часто
+Layer 1: компактні coarse descriptors для глобального індексу
+Layer 2: 1280x800 Gray8 keyframes, рідко, для top-N verification
+```
+
+JT_Zero за ідеєю працює постійним локальним odometry/hold шаром. Якщо Visual Homing втрачає route match, JT_Zero утримує апарат і компенсує короткочасний знос, а Visual Homing виконує глобальний пошук та пізніше коригує локальний frame через перевірений handoff/reset-counter contract.
+
+### Для Чого
+
+- маршрути у кілька кілометрів не вміщуються у поточну RAM-модель recorder-а;
+- висока роздільна здатність потрібна не для brute-force realtime matching, а для розрізнення кількох coarse кандидатів;
+- зі зростанням висоти translational image motion приблизно зменшується як `ground_speed / altitude`, тому high-resolution keyframes можуть бути рідшими;
+- `1280x800` має удвічі більшу лінійну роздільну здатність за `640x400`, тому приблизно компенсує двократне збільшення висоти для тих самих наземних деталей.
+
+### Як Реалізувати
+
+1. Додати library-only streaming writer для сумісного `VHRS v1`: `.partial`, bounded buffering, periodic entry-count checkpoint, finalize/rename.
+2. Не робити `fsync` на кожний кадр; писати блоками й мати recovery scanner для останнього повного entry/chunk після втрати живлення.
+3. Для повної crash recovery та кількох шарів спроєктувати chunked `VHRS v2` або route-directory manifest з окремими layer/chunk files, checksums і spatial/temporal index.
+4. Обирати keyframe за пройденою JT_Zero local distance, зміною altitude/scale band, yaw/attitude або scene novelty, а не лише за фіксованим часом.
+5. Під час пошуку спочатку порівнювати compact descriptors по всьому маршруту, потім перевіряти тільки top-N через high-resolution keyframes.
+6. Не змішувати entries різних dimensions в одному matcher layer без explicit layer selection; поточний matcher очікує сумісний processed frame.
+
+### Обов'язкові Metadata
+
+```text
+route/layer/chunk id
+frame id and monotonic timestamp
+JT_Zero local pose/displacement reference
+relative altitude and altitude source
+roll/pitch/yaw or reviewed camera attitude
+camera profile, crop/FOV, exposure/gain
+scale band and parent route segment
+payload dimensions/format/compression
+checksum/digest and finalized/checkpoint state
+```
+
+### Важливе Обмеження
+
+Високий кадр бачить більший ground footprint, а не тільки менші копії низьких об'єктів. Якщо певну ділянку записано лише низько, один low-altitude кадр не можна простим resize перетворити на reference для значно більшої висоти. Recovery має залишатися всередині записаного scale envelope, або маршрут повинен мати spatial coverage потрібного altitude layer; майбутній mosaic з кількох низьких кадрів є окремою складною ідеєю.
+
+### Як Перевіряти
+
+- desktop round-trip та interrupted-write recovery tests;
+- доказ bounded RAM на synthetic long route;
+- Pi 10-15 minute recording matrix для target sizes і sparse `1280x800` rate;
+- логувати effective FPS, latency percentiles, empty/dropped frames, RSS, SD write latency, temperature, CPU frequency і `vcgencmd get_throttled` до/під час/після;
+- offline coarse-to-top-N reacquisition з altitude/scale mismatch negatives;
+- лише після цього attach-only JT_Zero hold + Visual Homing search state-machine evidence.
+
+### Поточний Статус
+
+Accepted architecture direction on `2026-07-19`. Перший implementation slice завершено: unattached `RouteSignatureStreamWriter` дає byte-compatible `VHRS v1`, `.partial`, configurable checkpoints, explicit finalize і interrupted-tail suppression; WSL/MSVC проходять `37/37`. Camera runtime, recovery scanner/chunked v2, sparse native-resolution capture, multiscale matcher і JT_Zero handoff ще не підключені.
+
 ## Поточний Найближчий План
+
+1. Library-only streaming `VHRS v1` writer без camera/runtime caller — виконано (`37/37`).
+2. Додати bounded streaming recorder integration для довгих маршрутів, зберігши старий in-memory recorder для deterministic replay tests.
+3. Спроєктувати route manifest/chunks/layers та sparse `1280x800` metadata/index contract.
+4. Провести Pi thermal/load/storage benchmark перед вибором максимальної sparse-keyframe частоти.
+5. Реалізувати offline global coarse search -> top-N high-resolution verification -> multi-frame reacquisition gate.
+6. Лише потім композиційно додавати JT_Zero local hold, bounded yaw search і ODOMETRY reset-counter recovery.
+
+Історична endpoint-черга залишається збереженою нижче, але не повинна випереджати bounded long-route storage/reacquisition groundwork:
 
 1. Виправити/підтвердити endpoint confirmation reason після hotfix `5d4bdeb`.
 2. Додати `ambiguous_endpoint_hold` як log-only / attach-only behavior.
