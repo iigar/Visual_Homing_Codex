@@ -119,9 +119,9 @@ yaw_ned = wrap(route_heading_ned_rad + direction_error_rad)
 
 Estimator та encoder не підключені до `LiveExternalNavOutputSession`, writer, CLI, Pi wrappers, UART або real FC. MSVC/Ninja та WSL/Ninja пройшли `31/31` CTest, включно з isolated producer self-test.
 
-Exact `Copter-4.3.6`/`0c5e999c` SITL acceptance тепер підтвердив software contract через raw frames від реального C++ estimator+encoder: `LOCAL_FRD/BODY_FRD` прийнято, explicit SITL global origin reported, EKF flags досягли `831`, обидва EKF3 IMU повідомили `is using external nav data`, disarmed `GUIDED` прийнято, provider timeout прибрав horizontal position validity (`flags=39`), а explicit reset/recovery повернув `831`. З `GPS_TYPE=0` `HOME_POSITION` не був reported; це не замінюється origin coordinates. Деталі: `docs/ROUTE_LOCAL_ODOMETRY_SITL_UA.md`.
+Exact `Copter-4.3.6`/`0c5e999c` SITL acceptance тепер підтвердив software contract через raw frames від реального C++ estimator+encoder: `LOCAL_FRD/BODY_FRD` прийнято, explicit SITL global origin reported, EKF flags досягли `831`, обидва EKF3 IMU повідомили `is using external nav data`, disarmed `GUIDED` прийнято, provider timeout прибрав horizontal position validity (`flags=39`), а explicit reset/recovery повернув `831`. З `GPS_TYPE=0` ранній pre-provider запит не мав Home, але після ExternalNav acquisition ArduCopter автоматично повідомив `HOME_POSITION` у configured origin; explicit integer-coordinate `MAV_CMD_DO_SET_HOME` був ACK accepted, а Home не змінився під час timeout/recovery. Origin і Home все одно залишаються різними FC states і на real FC мають перевірятися окремо. Деталі: `docs/ROUTE_LOCAL_ODOMETRY_SITL_UA.md`.
 
-Reverse camera orientation, точний residual sign для реального монтажу, Home/RTL semantics, Pi timing, real-FC origin/mode acceptance та props-off UART attachment залишаються незавершеними.
+Reverse camera orientation, точний residual sign для реального монтажу, real-FC origin/Home/RTL semantics, Pi timing, real-FC mode acceptance та props-off UART attachment залишаються незавершеними.
 
 До окремого SITL/props-off review не підключати новий ODOMETRY encoder до UART і не повторювати blind provider-send лише для збільшення лічильника sent messages.
 

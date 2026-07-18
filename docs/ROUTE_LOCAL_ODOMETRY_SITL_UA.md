@@ -11,7 +11,7 @@ Harness використовує:
 - `GPS_TYPE=0` і EKF3 ExternalNav sources з `config/sitl/arducopter-4.3.6-route-local-odometry.parm`;
 - локальний TCP `127.0.0.1:5760`, без MAVProxy і без serial device;
 - C++ `route_local_odometry_sitl_producer`, який викликає реальні `RouteLocalOdometryEstimator` та `encode_mavlink2_route_local_odometry` і видає raw MAVLink2 frames;
-- pinned 4.3.6 `pymavlink` тільки для SITL orchestration, telemetry decode, origin request і mode request.
+- pinned 4.3.6 `pymavlink` тільки для SITL orchestration, telemetry decode, origin/Home requests, explicit `MAV_CMD_DO_SET_HOME` і mode request.
 
 Harness fail closed, якщо firmware hash, параметри, frame IDs, estimator gates або expected reset counters не збігаються.
 
@@ -57,18 +57,20 @@ python3 /mnt/d/LLM/ChatGPT/Codex/Visual-Homing/Visual_Homing_Codex/scripts/run-r
 
 ## Прийнятий Результат 2026-07-18
 
-Два початкові повні проходи та фінальний origin-aware прохід завершились `passed=true`. Фінальний evidence: `artifacts/sitl/route-local-odometry-20260718T051130Z/acceptance.json`.
+Два початкові повні проходи, origin-aware прохід і два post-acquisition Home проходи завершились `passed=true`. Поточний фінальний evidence: `artifacts/sitl/route-local-odometry-20260718T103804Z/acceptance.json`.
 
 - firmware: `flight_custom_version=0c5e999c`;
 - exact ExternalNav parameters прочитані назад із SITL;
 - global origin підтверджений як `-35.363261,149.165230,584000 mm`;
-- з `GPS_TYPE=0` `HOME_POSITION` не був повідомлений; це записано як `home_status=not_reported_with_gps_disabled`, без вигаданих координат;
+- до запуску ODOMETRY з `GPS_TYPE=0` `HOME_POSITION` не повідомлявся, що підтвердило різницю між установленим EKF origin і ще не встановленим Home;
 - EKF acquisition: `EKF_STATUS_REPORT.flags=831`, ArduPilot STATUSTEXT для обох IMU: `is using external nav data` та initial NED `0,0,0`;
+- після ExternalNav acquisition ArduPilot автоматично повідомив `HOME_POSITION`, рівний origin; окремий `MAV_CMD_DO_SET_HOME` через integer-coordinate `COMMAND_INT` був прийнятий з `MAV_RESULT_ACCEPTED(0)` і підтверджений повторним `HOME_POSITION`;
 - disarmed `GUIDED` прийнято (`custom_mode=4`);
 - reset frame з `reset_counter=1` зберіг валідну позицію;
 - три fail-closed health rejects дали invalid streak `1/2/3`, після третього `reset_required=1`, і жоден invalid estimate не був відправлений;
 - після припинення provider frames EKF flags впали `831 -> 39`, тобто horizontal position validity зникла;
-- після explicit reset `reset_counter=2` provider відновив position validity до flags `831` за `3` frames.
+- явно встановлений Home залишився незмінним під час provider timeout;
+- після explicit reset `reset_counter=2` provider відновив position validity до flags `831` за `2` frames, а Home знову був прочитаний без зміни.
 
 MSVC/Ninja і WSL/Ninja core suites пройшли `31/31`, включно з producer self-test. Повторні acceptance runs відрізнялись лише кількістю initial frames до acquisition залежно від EKF startup timing.
 
@@ -78,14 +80,15 @@ MSVC/Ninja і WSL/Ninja core suites пройшли `31/31`, включно з pr
 
 - exact `LOCAL_FRD/BODY_FRD` ODOMETRY wire contract приймається ArduCopter 4.3.6;
 - route-local position/yaw без заявленої velocity може активувати EKF3 ExternalNav position;
-- при explicit global origin disarmed GUIDED стає доступним;
+- після acquisition ArduCopter створює Home з поточного ExternalNav location; explicit `MAV_CMD_DO_SET_HOME` може зафіксувати той самий configured origin без GPS, а Home переживає втрату й відновлення provider position;
+- при explicit global origin і валідному ExternalNav disarmed GUIDED стає доступним;
 - estimator invalid streak не пропускає frames, provider timeout забирає position validity, explicit reset дозволяє recovery.
 
 Не доведено:
 
 - приймання на реальному Matek/FC або через Pi UART;
 - armed GUIDED, motor output, takeoff, flight, RTL або HOVER;
-- `HOME_POSITION`: у GPS-disabled SITL він не повідомився, тому RTL/home semantics залишаються blocker;
+- реальний FC origin/Home acceptance і RTL semantics; SITL підтвердив Home state, але RTL mode/trajectory не запускався;
 - фізично правильний reverse yaw residual sign для встановленої камери;
 - runtime writer/session attachment, rate under real Pi load або simultaneous command-output authority.
 

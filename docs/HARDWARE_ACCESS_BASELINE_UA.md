@@ -83,6 +83,9 @@ Never commit or paste private-key contents, passwords, recovery codes, or unrest
 | `SR4_*` stream-rate parameters | `ADSB=0`, `EXTRA1=5`, `EXTRA2=0`, `EXTRA3=0`, `EXT_STAT=2`, `PARAMS=0`, `POSITION=1`, `RAW_CTRL=0`, `RAW_SENS=2`, `RC_CHAN=0` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
 | `EK3_SRC*` external-nav source parameters | source 1: `POSXY=6`, `POSZ=2`, `VELXY=6`, `VELZ=0`, `YAW=6`; source 2: `0/1/0/0/0`; source 3: all `0`; `EK3_SRC_OPTIONS=2` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
 | ExternalNav-related parameters | `EK3_ENABLE=1`, `AHRS_EKF_TYPE=3`, `VISO_TYPE=1`, `VISO_DELAY_MS=10`, `VISO_ORIENT=0`, offsets `0/0/0`, `VISO_SCALE=1`, position/velocity/yaw noise `0.2/0.1/0.2`; `FLOW_TYPE=7`, `RNGFND1_TYPE=32`, `GPS_TYPE=9` | `CONFIRMED` | Full parameter snapshot 2026-07-16 |
+| Current RC7/RC8/RC12 transmitter mapping and `RC*_OPTION` | unknown in the retained local evidence | `REQUIRES_VERIFICATION` | Do not infer from another repository or old transmitter setup; read live before assigning a preflight Home trigger |
+
+Historical cross-project evidence explains the operator's recollection but is not current FC configuration. JT_Zero implemented an edge-triggered `SET HOMEPOINT` that reset its own VO pose: initially RC channel 8 (`index 7`, PWM `>=1700`), later channel 12 (`index 11`) because channel 8 was occupied. It did not set ArduPilot EKF origin or `HOME_POSITION`. The legacy Visual Homing reference separately lists `RC7_OPTION=90` for EKF source-set selection, not for resetting Home. A future Visual Homing switch must therefore use a live-confirmed free channel, operate only while disarmed, increment the ODOMETRY reset counter, and separately require FC-reported origin/Home acceptance.
 
 Full request-only artifacts:
 

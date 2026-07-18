@@ -297,6 +297,93 @@ def confirm_origin_and_home(master: Any, mavlink: Any, timeout_s: float = 12.0) 
     raise AcceptanceError(f"SITL origin was not confirmed: {evidence}")
 
 
+def request_home_position(
+    master: Any, mavlink: Any, timeout_s: float
+) -> dict[str, int] | None:
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        request_message(master, mavlink, mavlink.MAVLINK_MSG_ID_HOME_POSITION)
+        inner_deadline = min(deadline, time.monotonic() + 0.8)
+        while time.monotonic() < inner_deadline:
+            message = master.recv_match(type="HOME_POSITION", blocking=True, timeout=0.2)
+            if message is not None:
+                return {
+                    "latitude": int(message.latitude),
+                    "longitude": int(message.longitude),
+                    "altitude": int(message.altitude),
+                }
+    return None
+
+
+def home_matches_sitl_origin(home: dict[str, int]) -> bool:
+    expected_lat = int(SITL_LAT * 10_000_000)
+    expected_lon = int(SITL_LON * 10_000_000)
+    expected_alt = int(SITL_ALT_MSL_M * 1000)
+    return (
+        abs(home["latitude"] - expected_lat) <= 1
+        and abs(home["longitude"] - expected_lon) <= 1
+        and abs(home["altitude"] - expected_alt) <= 10
+    )
+
+
+def set_and_confirm_home(master: Any, mavlink: Any, timeout_s: float = 8.0) -> dict[str, Any]:
+    before_command = request_home_position(master, mavlink, 2.0)
+    expected_lat = int(SITL_LAT * 10_000_000)
+    expected_lon = int(SITL_LON * 10_000_000)
+    master.mav.command_int_send(
+        master.target_system,
+        master.target_component,
+        mavlink.MAV_FRAME_GLOBAL,
+        mavlink.MAV_CMD_DO_SET_HOME,
+        0,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        expected_lat,
+        expected_lon,
+        SITL_ALT_MSL_M,
+    )
+
+    deadline = time.monotonic() + timeout_s
+    ack_result: int | None = None
+    while time.monotonic() < deadline:
+        message = master.recv_match(type="COMMAND_ACK", blocking=True, timeout=0.2)
+        if message is None or int(message.command) != mavlink.MAV_CMD_DO_SET_HOME:
+            continue
+        ack_result = int(message.result)
+        break
+    if ack_result != mavlink.MAV_RESULT_ACCEPTED:
+        raise AcceptanceError(f"MAV_CMD_DO_SET_HOME was not accepted: result={ack_result}")
+
+    after_command = request_home_position(master, mavlink, timeout_s)
+    if after_command is None:
+        raise AcceptanceError("HOME_POSITION was not reported after accepted MAV_CMD_DO_SET_HOME")
+    if not home_matches_sitl_origin(after_command):
+        raise AcceptanceError(
+            f"HOME_POSITION does not match the configured SITL origin: {after_command}"
+        )
+    return {
+        "passed": True,
+        "reported_before_command": before_command is not None,
+        "before_command": before_command,
+        "command": "MAV_CMD_DO_SET_HOME",
+        "transport": "COMMAND_INT",
+        "command_result": ack_result,
+        "home": after_command,
+    }
+
+
+def confirm_home_persists(master: Any, mavlink: Any, timeout_s: float = 5.0) -> dict[str, int]:
+    home = request_home_position(master, mavlink, timeout_s)
+    if home is None:
+        raise AcceptanceError("HOME_POSITION disappeared after it had been explicitly set")
+    if not home_matches_sitl_origin(home):
+        raise AcceptanceError(f"HOME_POSITION changed unexpectedly: {home}")
+    return home
+
+
 def request_ekf_status_stream(master: Any, mavlink: Any) -> None:
     master.mav.request_data_stream_send(
         master.target_system,
@@ -549,7 +636,9 @@ def main() -> int:
                 raise AcceptanceError(f"SITL parameter {name}={actual}, expected {expected}")
 
         request_ekf_status_stream(master, mavutil.mavlink)
-        evidence["origin_home"] = confirm_origin_and_home(master, mavutil.mavlink)
+        evidence["origin_home_before_external_nav"] = confirm_origin_and_home(
+            master, mavutil.mavlink
+        )
         producer = Producer(producer_path)
         kind, fields = producer.command(f"INIT {int(time.time() * 1000)} 0.5")
         if kind != "READY" or fields.get("reset") != "0":
@@ -572,6 +661,8 @@ def main() -> int:
         }
         if not acquired:
             raise AcceptanceError(f"ExternalNav position did not become valid: {latest}")
+
+        evidence["home_after_external_nav"] = set_and_confirm_home(master, mavutil.mavlink)
 
         guided = enter_guided(master, mavutil.mavlink, latest)
         evidence["guided_mode_accepted_disarmed"] = guided
@@ -619,6 +710,9 @@ def main() -> int:
         }
         if not timed_out:
             raise AcceptanceError("EKF position validity did not time out after provider frames stopped")
+        evidence["home_after_provider_timeout"] = confirm_home_persists(
+            master, mavutil.mavlink
+        )
 
         kind, recovery_reset = producer.command("RESET")
         if kind != "RESET" or recovery_reset.get("reset") != "2":
@@ -639,6 +733,7 @@ def main() -> int:
         }
         if not evidence["recovery"]["passed"]:
             raise AcceptanceError(f"provider recovery failed: {evidence['recovery']}")
+        evidence["home_after_recovery"] = confirm_home_persists(master, mavutil.mavlink)
 
         evidence["latest"] = latest
         evidence["passed"] = True
