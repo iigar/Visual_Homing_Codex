@@ -51,6 +51,9 @@ int main() {
 
     const auto live_route_path = std::filesystem::temp_directory_path() / "visual_homing_live_route_recording_unavailable_test.vhrs";
     std::filesystem::remove(live_route_path);
+    auto live_route_partial_path = live_route_path;
+    live_route_partial_path += ".partial";
+    std::filesystem::remove(live_route_partial_path);
 
     std::ostringstream route_metrics;
     vh::LiveRouteRecordingConfig route_config;
@@ -71,11 +74,14 @@ int main() {
     assert(route_result.warmup_frames_dropped == 0);
     assert(route_result.frames_captured == 0);
     assert(route_result.route_entries == 0);
+    assert(route_result.used_streaming_storage);
     assert(!std::filesystem::exists(live_route_path));
+    assert(!std::filesystem::exists(live_route_partial_path));
 
     const auto route_output = route_metrics.str();
     assert(route_output.find("live_route_record_start width=160 height=120 fps=10 target=16x12 requested_frames=3 warmup_frames=3") != std::string::npos);
     assert(route_output.find("telemetry_warmup_timeout_ms=1500") != std::string::npos);
+    assert(route_output.find("storage=streaming streaming_queue_capacity_entries=64 streaming_checkpoint_interval_entries=64") != std::string::npos);
     assert(route_output.find("live_route_unavailable error=") != std::string::npos);
     assert(route_output.find("live_route_record_done started=false warmup_frames_dropped=0 frames_captured=0 entries=0 empty_polls=0 route_written=false") != std::string::npos);
 
@@ -100,6 +106,30 @@ int main() {
         rejected_route_output = true;
     }
     assert(rejected_route_output);
+
+    bool rejected_streaming_queue_capacity = false;
+    try {
+        vh::LiveRouteRecordingConfig invalid;
+        invalid.route_output_path = live_route_path;
+        invalid.streaming_queue_capacity_entries = 0;
+        std::ostringstream ignored;
+        (void)vh::record_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_streaming_queue_capacity = true;
+    }
+    assert(rejected_streaming_queue_capacity);
+
+    bool rejected_streaming_checkpoint_interval = false;
+    try {
+        vh::LiveRouteRecordingConfig invalid;
+        invalid.route_output_path = live_route_path;
+        invalid.streaming_checkpoint_interval_entries = 0;
+        std::ostringstream ignored;
+        (void)vh::record_live_camera_route(invalid, ignored);
+    } catch (const std::invalid_argument&) {
+        rejected_streaming_checkpoint_interval = true;
+    }
+    assert(rejected_streaming_checkpoint_interval);
 
     const auto match_route_path = std::filesystem::temp_directory_path() / "visual_homing_live_route_match_unavailable_test.vhrs";
     std::filesystem::remove(match_route_path);

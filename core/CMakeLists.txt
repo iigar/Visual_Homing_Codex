@@ -75,8 +75,10 @@ add_library(visual_homing_core_lib
     src/route_local_odometry_estimator.cpp
     src/route_artifact_check.cpp
     src/route_signature_recorder.cpp
+    src/route_signature_entry.cpp
     src/route_signature.cpp
     src/route_signature_stream_writer.cpp
+    src/route_signature_streaming_recorder.cpp
     src/system_clock.cpp
 )
 
@@ -612,6 +614,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_signature_stream_writer COMMAND route_signature_stream_writer_test)
+
+    add_executable(route_signature_streaming_recorder_test
+        tests/route_signature_streaming_recorder_test.cpp
+    )
+
+    target_link_libraries(route_signature_streaming_recorder_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(route_signature_streaming_recorder_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME route_signature_streaming_recorder COMMAND route_signature_streaming_recorder_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

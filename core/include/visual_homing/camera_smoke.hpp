@@ -48,6 +48,9 @@ struct LiveRouteRecordingConfig {
     bool operator_cue_enabled = false;
     std::size_t operator_cue_seconds = 0;
     bool operator_cue_bell = true;
+    bool use_streaming_storage = true;
+    std::size_t streaming_queue_capacity_entries = 64;
+    std::uint32_t streaming_checkpoint_interval_entries = 64;
 };
 
 struct LiveRouteRecordingResult {
@@ -73,6 +76,15 @@ struct LiveRouteRecordingResult {
     std::uint64_t telemetry_attitude_messages = 0;
     std::uint64_t telemetry_global_position_int_messages = 0;
     std::uint64_t telemetry_altitude_messages = 0;
+    bool used_streaming_storage = false;
+    std::uint64_t streaming_entries_written = 0;
+    std::size_t streaming_current_queue_depth = 0;
+    std::size_t streaming_max_queue_depth = 0;
+    std::uint64_t streaming_queue_full_events = 0;
+    std::uint64_t streaming_write_failures = 0;
+    double streaming_total_write_latency_ms = 0.0;
+    double streaming_max_write_latency_ms = 0.0;
+    bool streaming_finalized = false;
 };
 
 struct LiveRouteMatchingConfig {

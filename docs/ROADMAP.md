@@ -143,7 +143,16 @@
 - Phase 6: compose the accepted reacquisition gate with JT_Zero local hold and a separately bounded search controller. Enforce single external-nav ownership and explicit frame realignment/reset-counter handoff.
 - Record scale-envelope limits: higher altitude reduces translational pixel motion and permits sparser keyframes, but also sees a wider ground footprint. Do not claim a high-altitude layer for route segments never observed at that scale.
 - Require a 10-15 minute Pi benchmark for effective FPS, latency, frame loss, RSS, SD write behavior, temperature, frequency and `get_throttled` before choosing sparse `1280x800` cadence.
-- Status: started and now precedes the global reacquisition/runtime attachment step. Phase 1 library-only `RouteSignatureStreamWriter` is complete: its finalized bytes match the existing `VHRS v1` writer exactly, configurable checkpoints expose only confirmed entries after an interrupted `.partial`, collisions/invalid inputs fail closed, and WSL/MSVC pass `37/37`. It has no recorder/camera/runtime caller. Next is a separately reviewed bounded live-recorder integration with queue/write metrics; crash scanner/chunked v2, multiscale layers, Pi benchmark, reacquisition and JT_Zero handoff remain pending.
+- Status: started and now precedes the global reacquisition/runtime attachment step. Phases 1-2 are complete on desktop: the byte-compatible writer is attached to live route recording through a bounded background queue, explicit finalize, fail-closed queue/write behavior and queue/write-latency metrics, while replay/unit fixtures retain the in-memory recorder. WSL/MSVC pass `38/38`. Pi storage/thermal evidence, crash scanner/chunked v2, multiscale layers, reacquisition and JT_Zero handoff remain pending.
+
+## Milestone 6.11 - Portable Route Exchange And Off-Corridor Entry
+
+- Treat a route package as transferable visual corridor evidence, not vehicle-specific actuator commands.
+- Permit another compatible system to start away from the original route start only after global visual reacquisition confirms route ID, segment, progress, direction and scale over multiple frames.
+- Keep the approach-to-corridor prior separate: operator-provided bearing/range, a shared local frame, optional geographic logistics anchor, or a separately reviewed bounded search controller. Without visual contact or such a prior, fail closed rather than inventing the bearing to the route.
+- Require camera/sensor/extrinsic/profile compatibility, manifest integrity, route-frame conventions, altitude/scale envelope and independent obstacle/geofence/FC safety behavior.
+- First acceptance is replay-only: start vehicle-B observations at multiple mid-route segments and off-route negatives, prove forward/reverse lock and no false `reset_reference`; no automatic approach or flight authority.
+- Status: accepted architecture idea; deferred until Milestone 6.10 manifest/index and global reacquisition contracts exist.
 
 ## Milestone 7 - Flight Test Ladder
 

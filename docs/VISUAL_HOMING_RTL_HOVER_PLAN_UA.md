@@ -548,12 +548,13 @@ weather/lighting/scene conditions documented
 
 Engineering priority added on `2026-07-19` before global reacquisition/runtime attachment:
 
-1. Replace the short-test-only in-memory route-recording assumption with a library-only streaming `VHRS v1` writer using `.partial`, bounded buffering, periodic checkpoints and explicit finalize. Keep it unattached to camera runtime for the first pass.
-2. Integrate a bounded streaming recorder for kilometer-scale routes; batch SD writes, preserve incomplete evidence after power loss, and add a recovery scanner/chunked-v2 design before flight use.
+1. Replace the short-test-only in-memory route-recording assumption with a library-only streaming `VHRS v1` writer using `.partial`, bounded buffering, periodic checkpoints and explicit finalize. Completed on desktop.
+2. Integrate a bounded streaming recorder for kilometer-scale routes; batch SD writes, preserve incomplete evidence after power loss, and add queue/write latency evidence. Desktop integration is complete; Pi benchmark and recovery scanner/chunked-v2 remain pending.
 3. Define a multiscale route manifest with a frequent `160x100` tracking layer, compact global-search descriptors, and sparse native `1280x800` Gray8 keyframes selected by JT_Zero local displacement, altitude/scale-band change, attitude/yaw and scene novelty.
 4. During recovery, treat JT_Zero as the local motion/hold anchor, not the global route finder. Visual Homing performs coarse full-route search, top-N high-resolution verification and multi-frame consistency; only then may route-local ODOMETRY resume with an incremented `reset_counter`.
 5. Keep recovery within the recorded altitude/scale envelope. A high-altitude image contains wider ground coverage that cannot be synthesized from one low-altitude frame by resize alone.
 6. Benchmark sparse native-resolution capture on Pi for 10-15 minutes with FPS/latency/RSS/SD-write/temperature/frequency/`get_throttled` evidence before selecting its rate. No flight authority follows from a successful recording benchmark.
+7. Preserve a future portable-route/off-corridor-entry mode: a second compatible vehicle may join a transferred route after segment/progress/direction reacquisition. Approximate bearing/distance to an unseen corridor is a separate operator/shared-frame/optional-geographic/search prior, not information recoverable from visual signatures alone.
 
 Current carry-forward state before the next field day:
 

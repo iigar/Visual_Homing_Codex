@@ -1058,16 +1058,64 @@ checksum/digest and finalized/checkpoint state
 
 ### Поточний Статус
 
-Accepted architecture direction on `2026-07-19`. Перший implementation slice завершено: unattached `RouteSignatureStreamWriter` дає byte-compatible `VHRS v1`, `.partial`, configurable checkpoints, explicit finalize і interrupted-tail suppression; WSL/MSVC проходять `37/37`. Camera runtime, recovery scanner/chunked v2, sparse native-resolution capture, multiscale matcher і JT_Zero handoff ще не підключені.
+Accepted architecture direction on `2026-07-19`. Перші два implementation slices завершено. `RouteSignatureStreamWriter` дає byte-compatible `VHRS v1`, `.partial`, configurable checkpoints, explicit finalize і interrupted-tail suppression. Новий `RouteSignatureStreamingRecorder` додає bounded producer/consumer queue, background writer, fail-closed queue/write handling і queue/write-latency metrics; live camera route recording використовує його за замовчуванням, тоді як in-memory recorder збережено для replay/unit fixtures. WSL/MSVC проходять `38/38`. Реальний Pi/camera benchmark, recovery scanner/chunked v2, sparse native-resolution capture, multiscale matcher і JT_Zero handoff ще не виконані.
+
+## Ідея 14: Переносимий Маршрут І Вхід У Corridor Не З Початкової Точки
+
+### Що Це
+
+Route artifact у майбутньому можна передати іншій сумісній Visual Homing системі. Другий апарат не обов'язково має стартувати у точці запису. Якщо він фізично потрапить у межі спостережуваного route corridor, global reacquisition може знайти segment, progress, scale band і напрямок, після чого маршрут можна проходити forward або reverse.
+
+```text
+route package copied to vehicle B
+        ↓
+bounded approach/search prior
+        ↓
+camera sees familiar route corridor
+        ↓
+coarse full-route candidates
+        ↓
+top-N high-resolution + multi-frame confirmation
+        ↓
+segment/progress/direction/scale lock
+        ↓
+new local reset_reference and route-relative traversal
+```
+
+### Критичне Обмеження
+
+Маршрут може сказати «цей кадр належить segment N і forward лежить у цей бік» тільки після візуального контакту зі знайомою місцевістю. Сам route artifact без global/geographic anchor не може з довільної невідомої точки визначити bearing і distance до ще невидимого corridor.
+
+Початковий approach prior повинен бути окремим і явно позначеним:
+
+- оператор ставить/підводить апарат приблизно біля corridor і задає напрямок;
+- системи поділяють локальну карту/origin або інший перевірений relative-position source;
+- optional geographic anchor використовується тільки для доставки у район пошуку, тоді як сам route traversal залишається GPS-denied;
+- майбутній bounded search controller виконує окремо перевірений pattern у дозволеній зоні.
+
+Якщо такого prior немає і камера не бачить знайомої сцени, система не має права вигадувати напрямок до маршруту.
+
+### Вимоги До Сумісності Іншого Апарата
+
+- сумісний sensor spectrum, camera intrinsics/FOV/crop і відома camera-to-body extrinsic calibration;
+- altitude/scale envelope, orientation і допустимий appearance/season/light domain;
+- route manifest version, layer/chunk checksums, route ID і цілісність transfer package;
+- однаковий route-frame convention та явний forward/reverse yaw policy;
+- власні obstacle, geofence, terrain, altitude і FC safety gates: route signatures є visual corridor evidence, а не готовими actuator commands або гарантією вільного простору.
+
+### Місце У Черзі
+
+Це не окремий ранній flight mode. Спочатку потрібні multiscale manifest/index, offline global reacquisition і точний `reset_reference`. Після цього додати replay-only test, де vehicle B починає з кадру в середині/біля різних segments, визначає segment/progress/direction без знання початкової точки vehicle A і не видає lock для off-route negatives. Фізичний approach/search та автоматичний traversal залишаються окремими пізнішими safety milestones.
 
 ## Поточний Найближчий План
 
 1. Library-only streaming `VHRS v1` writer без camera/runtime caller — виконано (`37/37`).
-2. Додати bounded streaming recorder integration для довгих маршрутів, зберігши старий in-memory recorder для deterministic replay tests.
+2. Bounded streaming recorder integration для live route, зі збереженим in-memory replay recorder — виконано на desktop (`38/38`), очікує Pi benchmark.
 3. Спроєктувати route manifest/chunks/layers та sparse `1280x800` metadata/index contract.
 4. Провести Pi thermal/load/storage benchmark перед вибором максимальної sparse-keyframe частоти.
 5. Реалізувати offline global coarse search -> top-N high-resolution verification -> multi-frame reacquisition gate.
-6. Лише потім композиційно додавати JT_Zero local hold, bounded yaw search і ODOMETRY reset-counter recovery.
+6. Додати replay-only transferable-route/off-corridor-entry acceptance для другої системи.
+7. Лише потім композиційно додавати JT_Zero local hold, bounded yaw search і ODOMETRY reset-counter recovery.
 
 Історична endpoint-черга залишається збереженою нижче, але не повинна випереджати bounded long-route storage/reacquisition groundwork:
 

@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-19 - Stream Live Routes Through A Bounded Queue And Keep Route Transfer Separate From Approach
+
+Decision:
+- Make live camera route recording use `RouteSignatureStreamingRecorder` by default: fixed queue capacity, background `VHRS v1` partial writer, checkpoint batching, explicit finalize and queue/write metrics. Preserve `RouteSignatureRecorder` for replay/unit fixtures.
+- Fail the recording on queue overflow or writer failure; keep the partial artifact and never report a finalized route in that state.
+- Accept portable route transfer/off-corridor entry as a later replay-first use case, but keep the prior that approaches an unseen route separate from visual route reacquisition.
+
+Why:
+- Kilometer-scale routes cannot retain every frame in Pi Zero 2W RAM or wait for a single all-at-once final write.
+- Another compatible vehicle can identify segment/progress/direction after visual contact, but route imagery alone cannot produce bearing/range to a corridor that is not yet visible from an arbitrary unknown start.
+
+Impact:
+- The live recorder is now bounded and instrumented while existing replay behavior remains deterministic. WSL/Ninja and MSVC 19.44/Ninja pass `38/38`; Pi load/storage evidence remains pending.
+- Portable-route acceptance is deferred until manifest/index, global reacquisition and concrete `reset_reference` exist. No approach controller, FC/UART writer or flight authority is added.
+
+Risk:
+- Background SD stalls can fill the queue and intentionally abort recording; Pi benchmarks must tune capacity/checkpoint cadence and show acceptable latency/RSS/thermal behavior.
+- Shared route use can fail across incompatible cameras, altitude/scale envelopes, appearance domains or frame conventions; these become explicit manifest compatibility gates.
+
 ## 2026-07-18 - Compose RC12 And Reset Safety As An Unattached Dry-Run Session
 
 Decision:

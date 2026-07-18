@@ -32,6 +32,7 @@
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
+#include "visual_homing/route_signature_streaming_recorder.hpp"
 #include "visual_homing/time.hpp"
 
 namespace vh {
@@ -40,6 +41,19 @@ namespace {
 
 constexpr double kTrackedProgressRegressionDeadband = 0.01;
 constexpr double kTrackedVisualScaleMaxStep = 0.05;
+
+void copy_streaming_recording_metrics(
+    LiveRouteRecordingResult& result,
+    const RouteSignatureStreamingRecorderMetrics& metrics) {
+    result.streaming_entries_written = metrics.entries_written;
+    result.streaming_current_queue_depth = metrics.current_queue_depth;
+    result.streaming_max_queue_depth = metrics.max_queue_depth;
+    result.streaming_queue_full_events = metrics.queue_full_events;
+    result.streaming_write_failures = metrics.write_failures;
+    result.streaming_total_write_latency_ms = metrics.total_write_latency_ms;
+    result.streaming_max_write_latency_ms = metrics.max_write_latency_ms;
+    result.streaming_finalized = metrics.finalized;
+}
 
 struct FocusRoiPixels {
     int x = 0;
@@ -708,15 +722,23 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
     if (config.route_output_path.empty()) {
         throw std::invalid_argument("Live route recording output path must not be empty");
     }
+    if (config.use_streaming_storage && config.streaming_queue_capacity_entries == 0) {
+        throw std::invalid_argument("Live route recording streaming queue capacity must be positive");
+    }
+    if (config.use_streaming_storage && config.streaming_checkpoint_interval_entries == 0) {
+        throw std::invalid_argument("Live route recording streaming checkpoint interval must be positive");
+    }
 
     PiCameraSource source(config.camera);
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
-    RouteSignatureRecorder recorder;
+    std::unique_ptr<RouteSignatureRecorder> in_memory_recorder;
+    std::unique_ptr<RouteSignatureStreamingRecorder> streaming_recorder;
     HealthMonitor health(now());
     health.set_links(true, false, true);
     LiveRouteRecordingResult result;
     std::optional<MavlinkTelemetryStream> telemetry_stream;
     std::optional<MavlinkTelemetry> last_valid_live_telemetry;
+    result.used_streaming_storage = config.use_streaming_storage;
 
     metrics << "live_route_record_start width=" << config.camera.width
             << " height=" << config.camera.height
@@ -727,6 +749,9 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " telemetry_snapshot=" << (config.use_telemetry_snapshot ? "true" : "false")
             << " live_telemetry_stream=" << (config.use_live_telemetry_stream ? "true" : "false")
             << " telemetry_warmup_timeout_ms=" << config.telemetry_warmup_timeout_ms
+            << " storage=" << (config.use_streaming_storage ? "streaming" : "memory")
+            << " streaming_queue_capacity_entries=" << config.streaming_queue_capacity_entries
+            << " streaming_checkpoint_interval_entries=" << config.streaming_checkpoint_interval_entries
             << " output=" << config.route_output_path.string() << "\n";
 
     if (config.use_telemetry_snapshot) {
@@ -869,10 +894,26 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                 }
             }
             nav.confidence = 1.0;
-            recorder.observe(processed, nav);
+            if (config.use_streaming_storage) {
+                if (!streaming_recorder) {
+                    streaming_recorder = std::make_unique<RouteSignatureStreamingRecorder>(
+                        RouteSignatureStreamingRecorderConfig{
+                            .output_path = config.route_output_path,
+                            .queue_capacity_entries = config.streaming_queue_capacity_entries,
+                            .checkpoint_interval_entries = config.streaming_checkpoint_interval_entries,
+                        });
+                }
+                streaming_recorder->observe(processed, nav);
+                copy_streaming_recording_metrics(result, streaming_recorder->metrics());
+            } else {
+                if (!in_memory_recorder) {
+                    in_memory_recorder = std::make_unique<RouteSignatureRecorder>();
+                }
+                in_memory_recorder->observe(processed, nav);
+            }
 
             ++result.frames_captured;
-            result.route_entries = static_cast<std::uint64_t>(recorder.route().entries.size());
+            ++result.route_entries;
             result.last_frame_age_ms = timing.frame_age_ms;
             result.last_processing_latency_ms = timing.processing_latency_ms;
 
@@ -881,7 +922,9 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
                     << " bytes=" << processed.data.size()
                     << " age_ms=" << timing.frame_age_ms
                     << " latency_ms=" << timing.processing_latency_ms
-                    << " entries=" << result.route_entries << "\n";
+                    << " entries=" << result.route_entries
+                    << " storage_queue_depth=" << result.streaming_current_queue_depth
+                    << " storage_entries_written=" << result.streaming_entries_written << "\n";
         } else {
             ++result.empty_polls;
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -924,10 +967,14 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
         ? (static_cast<double>(result.frames_captured) * 1000.0 / result.elapsed_ms)
         : 0.0;
 
-    if (!recorder.route().entries.empty()) {
-        recorder.write_to(config.route_output_path);
+    if (result.route_entries > 0) {
+        if (streaming_recorder) {
+            streaming_recorder->finalize();
+            copy_streaming_recording_metrics(result, streaming_recorder->metrics());
+        } else if (in_memory_recorder) {
+            in_memory_recorder->write_to(config.route_output_path);
+        }
         result.route_written = true;
-        result.route_entries = static_cast<std::uint64_t>(recorder.route().entries.size());
     }
 
     metrics << "live_route_record_done started=true"
@@ -943,6 +990,15 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             << " telemetry_bytes_retained=" << result.telemetry_bytes_retained
             << " telemetry_bytes_dropped=" << result.telemetry_bytes_dropped
             << " telemetry_frames_seen=" << result.telemetry_frames_seen
+            << " storage=" << (result.used_streaming_storage ? "streaming" : "memory")
+            << " storage_entries_written=" << result.streaming_entries_written
+            << " storage_queue_depth=" << result.streaming_current_queue_depth
+            << " storage_max_queue_depth=" << result.streaming_max_queue_depth
+            << " storage_queue_full_events=" << result.streaming_queue_full_events
+            << " storage_write_failures=" << result.streaming_write_failures
+            << " storage_total_write_latency_ms=" << result.streaming_total_write_latency_ms
+            << " storage_max_write_latency_ms=" << result.streaming_max_write_latency_ms
+            << " storage_finalized=" << (result.streaming_finalized ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
             << " elapsed_ms=" << result.elapsed_ms
