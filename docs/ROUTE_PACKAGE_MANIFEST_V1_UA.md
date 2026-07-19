@@ -110,7 +110,7 @@ Gate record містить:
 - Підведення до gate потребує runtime freshness/covariance/geofence/obstacle/altitude gates, яких у цьому етапі немає.
 - Один великий кадр не є достатнім `reset_reference`: майбутній reacquisition gate має вимагати top-N verification та кілька узгоджених observation frames.
 - Gate діє тільки у записаному altitude/scale/view envelope.
-- Manifest зараз описує chunks/index, але ще не створює їх автоматично й не реалізує descriptor algorithm.
+- Offline `VHIX v1` builder тепер створює deterministic coarse descriptor index і окремий derived manifest; він ще не реалізує search, high-resolution verification або gate selection.
 
 ## Поточна Перевірка
 
@@ -130,8 +130,10 @@ Desktop test покриває:
 
 ## Наступні Кроки
 
-1. Зафіксувати compact descriptor/index binary format і offline builder.
-2. Додати sparse `1280x800` keyframe/gate selection policy.
+1. Додати sparse `1280x800` keyframe/gate selection policy.
+2. Реалізувати bounded offline VHIX coarse search і top-N provenance output без route lock.
 3. Підключити package builder до окремого bounded background recorder лише після review черги/backpressure та recovery metrics.
 4. Провести Pi load/storage/thermal benchmark.
-5. Лише після цього реалізувати offline global reacquisition і producer конкретного `reset_reference`.
+5. Лише після high-resolution/multi-frame verification реалізувати producer конкретного `reset_reference`.
+
+Descriptor/index contract: `docs/ROUTE_DESCRIPTOR_INDEX_V1_UA.md`.

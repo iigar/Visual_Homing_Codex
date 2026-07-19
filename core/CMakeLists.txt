@@ -75,6 +75,7 @@ add_library(visual_homing_core_lib
     src/route_local_odometry.cpp
     src/route_local_odometry_estimator.cpp
     src/route_artifact_check.cpp
+    src/route_descriptor_index.cpp
     src/route_package_builder.cpp
     src/route_package_manifest.cpp
     src/route_signature_recorder.cpp
@@ -162,6 +163,17 @@ add_executable(rc12_local_reset_dry_run
 target_link_libraries(rc12_local_reset_dry_run PRIVATE visual_homing_core_lib)
 
 target_compile_options(rc12_local_reset_dry_run PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
+add_executable(route_descriptor_index_builder
+    tools/route_descriptor_index_builder.cpp
+)
+
+target_link_libraries(route_descriptor_index_builder PRIVATE visual_homing_core_lib)
+
+target_compile_options(route_descriptor_index_builder PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
@@ -656,6 +668,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_package_builder COMMAND route_package_builder_test)
+
+    add_executable(route_descriptor_index_test
+        tests/route_descriptor_index_test.cpp
+    )
+
+    target_link_libraries(route_descriptor_index_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(route_descriptor_index_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME route_descriptor_index COMMAND route_descriptor_index_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

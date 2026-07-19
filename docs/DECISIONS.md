@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-19 - Use A Versioned Coarse Descriptor Artifact And Preserve The Source Manifest
+
+Decision:
+- Add `VHIX v1` as a separate bounded binary descriptor artifact with frame/chunk/entry provenance and deterministic `gray8-centered-block-mean-i8-v1` encoding.
+- Build the index offline from verified tracking chunks, add a global-descriptor layer and search-index record, and write a separate derived manifest such as `route-indexed.vhrm`; never replace the source `route.vhrm` in this stage.
+- Treat VHIX as candidate generation only. Route lock, gate confirmation and `reset_reference` continue to require stronger high-resolution and multi-frame evidence.
+
+Why:
+- A compact fixed-width representation permits a future full-route coarse scan without comparing every `160x100` frame or every native `1280x800` keyframe.
+- Versioned encoding and exact provenance let a future verifier return to the original chunk/frame while keeping algorithm changes explicit.
+
+Impact:
+- New library APIs and `route_descriptor_index_builder` CLI are offline-only. Existing CRITICAL `read_route_signature_file`, HIGH package verifier, matcher and runtime symbols remain unchanged.
+- WSL/Ninja and MSVC 19.44/Ninja pass `41/41`.
+
+Risk:
+- Centered block means reject only uniform brightness shifts; they are not robust proof against aliasing, rotation, perspective, seasonal appearance or large scale changes.
+- The current offline builder loads one bounded VHRS chunk at a time. Pi RAM, timing, storage and thermal behavior remain unmeasured.
+
 ## 2026-07-19 - Recover Only Checkpointed Route Data And Publish Chunks Before The Manifest
 
 Decision:
