@@ -555,6 +555,7 @@ Engineering priority added on `2026-07-19` before global reacquisition/runtime a
 5. Keep recovery within the recorded altitude/scale envelope. A high-altitude image contains wider ground coverage that cannot be synthesized from one low-altitude frame by resize alone.
 6. Benchmark sparse native-resolution capture on Pi for 10-15 minutes with FPS/latency/RSS/SD-write/temperature/frequency/`get_throttled` evidence before selecting its rate. No flight authority follows from a successful recording benchmark.
 7. Preserve a future portable-route/off-corridor-entry mode: a second compatible vehicle may join a transferred route after segment/progress/direction reacquisition. Approximate bearing/distance to an unseen corridor is a separate operator/shared-frame/optional-geographic/search prior, not information recoverable from visual signatures alone.
+8. Use sparse native-resolution gate-keyframes as optional bridge anchors: a versioned `LOCAL_ENU|LOCAL_NED` pose may guide approach to a gate search envelope, but route ownership/handoff remains blocked until high-resolution and multi-frame visual confirmation creates a valid future `reset_reference`.
 
 Current carry-forward state before the next field day:
 

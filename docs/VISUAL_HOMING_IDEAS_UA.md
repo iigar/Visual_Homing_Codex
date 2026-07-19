@@ -1107,11 +1107,19 @@ new local reset_reference and route-relative traversal
 
 Це не окремий ранній flight mode. Спочатку потрібні multiscale manifest/index, offline global reacquisition і точний `reset_reference`. Після цього додати replay-only test, де vehicle B починає з кадру в середині/біля різних segments, визначає segment/progress/direction без знання початкової точки vehicle A і не видає lock для off-route negatives. Фізичний approach/search та автоматичний traversal залишаються окремими пізнішими safety milestones.
 
+### Gate-Keyframes У Власній Локальній Системі
+
+Sparse `1280x800` verification кадри можуть бути не тільки top-N references, а й explicit входами у маршрут. Для кожного gate package зберігає pose у конкретній identity/revision локальної системи, axes `LOCAL_ENU|LOCAL_NED`, uncertainty, approach radius, route segment/progress, forward/reverse mask, altitude/scale envelope та coarse-index reference.
+
+Локальна навігація може підвести іншу систему в район gate, але сам перехід на route frame дозволяється лише після візуального high-resolution і multi-frame підтвердження. Знання координат gate не замінює camera extrinsics, runtime covariance/freshness, obstacle/geofence policy або `reset_reference` validation.
+
+Перший library-only `VHRM v1` manifest/parser/writer вже моделює ці поля, SHA-256 package integrity та safe relative paths; WSL/MSVC проходять `39/39`. Він ще не створює descriptors/chunks автоматично і не підключений до matcher/runtime. Детальний контракт: `docs/ROUTE_PACKAGE_MANIFEST_V1_UA.md`.
+
 ## Поточний Найближчий План
 
 1. Library-only streaming `VHRS v1` writer без camera/runtime caller — виконано (`37/37`).
 2. Bounded streaming recorder integration для live route, зі збереженим in-memory replay recorder — виконано на desktop (`38/38`), очікує Pi benchmark.
-3. Спроєктувати route manifest/chunks/layers та sparse `1280x800` metadata/index contract.
+3. Спроєктувати route manifest/chunks/layers та sparse `1280x800` metadata/index contract — library-only `VHRM v1` виконано на desktop, package builder/index algorithm ще попереду.
 4. Провести Pi thermal/load/storage benchmark перед вибором максимальної sparse-keyframe частоти.
 5. Реалізувати offline global coarse search -> top-N high-resolution verification -> multi-frame reacquisition gate.
 6. Додати replay-only transferable-route/off-corridor-entry acceptance для другої системи.

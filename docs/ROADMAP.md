@@ -137,13 +137,13 @@
 - Replace the current short-test in-memory live-route recording assumption with bounded streaming storage before kilometer-scale route collection.
 - Phase 1: add an unattached `VHRS v1` streaming writer with `.partial` output, periodic entry-count checkpoints, explicit finalize, compatibility with the existing reader and deterministic interrupted-write tests.
 - Phase 2: attach it to live route recording behind a reviewed config while retaining the in-memory recorder for replay/unit fixtures; batch SD writes and measure queue depth/write latency instead of flushing each frame.
-- Phase 3: define crash-recoverable route chunks/manifest/layers, checksums and index semantics suitable for power loss and routes longer than one `VHRS v1` artifact.
+- Phase 3: define crash-recoverable route chunks/manifest/layers, checksums and index semantics suitable for power loss and routes longer than one `VHRS v1` artifact. The library-only `VHRM v1` manifest/parser/writer and verifier are complete; automatic chunk rotation/recovery and index builder remain pending.
 - Phase 4: add a frequent low-resolution tracking layer, compact full-route search descriptors and sparse native `1280x800` Gray8 keyframes. Select sparse keyframes by local displacement, altitude/scale band, attitude/yaw and scene novelty, not a fixed frame count alone.
 - Phase 5: implement offline global coarse search, top-N high-resolution verification and multi-frame temporal consistency before any ODOMETRY recovery output.
 - Phase 6: compose the accepted reacquisition gate with JT_Zero local hold and a separately bounded search controller. Enforce single external-nav ownership and explicit frame realignment/reset-counter handoff.
 - Record scale-envelope limits: higher altitude reduces translational pixel motion and permits sparser keyframes, but also sees a wider ground footprint. Do not claim a high-altitude layer for route segments never observed at that scale.
 - Require a 10-15 minute Pi benchmark for effective FPS, latency, frame loss, RSS, SD write behavior, temperature, frequency and `get_throttled` before choosing sparse `1280x800` cadence.
-- Status: started and now precedes the global reacquisition/runtime attachment step. Phases 1-2 are complete on desktop: the byte-compatible writer is attached to live route recording through a bounded background queue, explicit finalize, fail-closed queue/write behavior and queue/write-latency metrics, while replay/unit fixtures retain the in-memory recorder. WSL/MSVC pass `38/38`. Pi storage/thermal evidence, crash scanner/chunked v2, multiscale layers, reacquisition and JT_Zero handoff remain pending.
+- Status: started and now precedes the global reacquisition/runtime attachment step. Phases 1-2 are complete on desktop. Phase 3 now has an isolated binary `VHRM v1` contract with bounded parsing, atomic manifest finalize, layer/chunk/index/gate references, camera extrinsics, explicit `ROUTE_FRD` plus `LOCAL_ENU|LOCAL_NED`, artifact byte-size/SHA-256 verification and safe relative-path containment; WSL/MSVC pass `39/39`. Automatic chunk rotation/recovery, descriptor/index builder, Pi evidence, sparse capture, reacquisition and JT_Zero handoff remain pending.
 
 ## Milestone 6.11 - Portable Route Exchange And Off-Corridor Entry
 
@@ -151,6 +151,7 @@
 - Permit another compatible system to start away from the original route start only after global visual reacquisition confirms route ID, segment, progress, direction and scale over multiple frames.
 - Keep the approach-to-corridor prior separate: operator-provided bearing/range, a shared local frame, optional geographic logistics anchor, or a separately reviewed bounded search controller. Without visual contact or such a prior, fail closed rather than inventing the bearing to the route.
 - Require camera/sensor/extrinsic/profile compatibility, manifest integrity, route-frame conventions, altitude/scale envelope and independent obstacle/geofence/FC safety behavior.
+- Allow sparse native-resolution verification frames to act as explicit gate-keyframes when they carry a versioned local-frame pose, uncertainty and approach radius. Local coordinates may narrow the search area; only visual multi-frame confirmation may create the future route `reset_reference`.
 - First acceptance is replay-only: start vehicle-B observations at multiple mid-route segments and off-route negatives, prove forward/reverse lock and no false `reset_reference`; no automatic approach or flight authority.
 - Status: accepted architecture idea; deferred until Milestone 6.10 manifest/index and global reacquisition contracts exist.
 

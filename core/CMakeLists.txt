@@ -43,6 +43,7 @@ add_executable(visual_homing_core
 )
 
 add_library(visual_homing_core_lib
+    src/artifact_digest.cpp
     src/bounded_navigator.cpp
     src/camera_profile.cpp
     src/camera_smoke.cpp
@@ -74,6 +75,7 @@ add_library(visual_homing_core_lib
     src/route_local_odometry.cpp
     src/route_local_odometry_estimator.cpp
     src/route_artifact_check.cpp
+    src/route_package_manifest.cpp
     src/route_signature_recorder.cpp
     src/route_signature_entry.cpp
     src/route_signature.cpp
@@ -627,6 +629,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_signature_streaming_recorder COMMAND route_signature_streaming_recorder_test)
+
+    add_executable(route_package_manifest_test
+        tests/route_package_manifest_test.cpp
+    )
+
+    target_link_libraries(route_package_manifest_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(route_package_manifest_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME route_package_manifest COMMAND route_package_manifest_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

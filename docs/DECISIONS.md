@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-07-19 - Use A Separate VHRM Package Contract And Model High-Resolution Route Gates
+
+Decision:
+- Keep the existing `VHRS v1` reader/writer unchanged and add a separate binary `VHRM v1` manifest for layers, chunks, search indexes, camera compatibility and gate-keyframes.
+- Use lowercase SHA-256 plus byte size for artifact integrity, portable relative paths constrained to the package directory, bounded record counts and atomic manifest partial/final rename.
+- Permit a verification keyframe to carry a route segment/progress/direction and optional pose in a versioned `LOCAL_ENU|LOCAL_NED` frame, including uncertainty and approach radius.
+
+Why:
+- GitNexus marks the existing route reader CRITICAL because seven direct consumers span matcher, quality diagnostics and export flows. A new package layer avoids destabilizing that accepted format.
+- A known local coordinate can guide another system near a transferred route gate, while a native-resolution visual landmark can reject coordinate drift or the wrong physical location.
+
+Impact:
+- `VHRM v1` is library-only and does not attach to recorder, matcher, reset, FC or UART. It makes route/package compatibility and integrity machine-checkable before later builders/search algorithms exist.
+
+Risk:
+- SHA-256 proves copied bytes, not trusted authorship; signed packages remain future work.
+- Local-frame identity/revision and stored uncertainty do not prove current runtime alignment or obstacle clearance. Visual multi-frame confirmation and separate approach safety gates remain mandatory.
+
 ## 2026-07-19 - Stream Live Routes Through A Bounded Queue And Keep Route Transfer Separate From Approach
 
 Decision:
