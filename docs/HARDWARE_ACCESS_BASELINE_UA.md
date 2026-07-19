@@ -2,7 +2,7 @@
 
 Цей документ є коротким source-of-truth для апаратної конфігурації, SSH-доступу та ArduPilot/MAVLink інтеграції Visual Homing. Його треба читати перед будь-якою роботою з Raspberry Pi, Matek, serial telemetry, FC/JT_Zero acceptance або зовнішньою навігацією.
 
-Останнє оновлення документа: `2026-07-18` (live SSH/FC/RC reconnect). Остання live hardware/FC verification: `2026-07-18`.
+Останнє оновлення документа: `2026-07-19`. Остання live Pi/SSH/camera verification: `2026-07-19`; остання live FC/RC/serial verification: `2026-07-18`.
 
 ## Статуси
 
@@ -28,7 +28,7 @@
 |---|---|---|---|
 | Companion computer | Raspberry Pi Zero 2W | `CONFIRMED` | `PROJECT_MEMORY.md`, Pi field evidence |
 | Flight controller | Matek H743 Slim V3, ArduPilot/ArduCopter | `CONFIRMED` | `PROJECT_MEMORY.md`, `SESSION_LOG.md` |
-| Камера | Arducam/OV9281 wide mono | `CONFIRMED` | Field evidence 2026-07-08..2026-07-13 |
+| Камера | Arducam/OV9281 wide mono | `CONFIRMED` | Field evidence 2026-07-08..2026-07-13; live `1280x800` benchmark 2026-07-19 |
 | FC physical UART pins in use | Matek `TX3/RX3` | `OPERATOR_REPORTED` | Повторно фізично перевірити перед зміною wiring |
 | Matek UART mapping | Physical UART3/`USART3` maps to ArduPilot `SERIAL4` on the MatekH743 target | `CONFIRMED` | ArduPilot `MatekH743/hwdef.dat` `SERIAL_ORDER` |
 | Wiring direction | Pi TX -> Matek RX3; Pi RX <- Matek TX3; common GND | `CONFIRMED` | Оператор фізично перевірив очима 2026-07-16; це не авторизація змінювати wiring |
@@ -55,8 +55,8 @@ The relevant `SERIAL_ORDER` places `USART3` at the ArduPilot `SERIAL4` position.
 | Pi SSH user | `pi` | `CONFIRMED` | Live connection and readiness evidence 2026-07-16 |
 | Dedicated key name | `id_ed25519_jtzero` | `CONFIRMED` | Batch-mode key access verified 2026-07-16 |
 | Repo-local host-key file | `codex_jtzero_known_hosts` | `CONFIRMED`, `NOT_TRACKED` | Exists in the current repo root and contains a public host fingerprint only; preserve/recreate explicitly after a fresh clone |
-| Last recorded SSH key confirmation | `2026-07-18` | `CONFIRMED` | Strict host-key and dedicated-key reconnect |
-| Current live SSH availability | Connected and reachable as `pi@jtzero` | `CONFIRMED` | Current session; reverify after power/network changes |
+| Last recorded SSH key confirmation | `2026-07-19` | `CONFIRMED` | Strict host-key and dedicated-key reconnect for the camera benchmark |
+| Current live SSH availability | Connected and reachable as `pi@jtzero` on `2026-07-19` | `CONFIRMED` | Timestamped evidence; reverify after power/network changes |
 
 PowerShell command template from the repository root:
 
@@ -201,11 +201,13 @@ ctest=28/28
 readiness_passed=true
 ```
 
-This state is timestamped evidence, not a guarantee about later powered hardware state. At the time of the `2026-07-16` live verification the Pi was connected; current connectivity was not reverified during the `2026-07-18` memory review. Re-run readiness after any power, wiring, boot-config, FC, or serial change.
+This state is timestamped evidence, not a guarantee about later powered hardware state. Full Pi/FC readiness was last verified through the FC/serial path on `2026-07-18`; re-run readiness after any power, wiring, boot-config, FC, or serial change.
 
 The `2026-07-18` reference-repository/GitNexus audit did not connect to the Pi or FC and did not revalidate this physical/runtime state. It changed no wiring, parameters, modes, arm state, serial traffic, or hardware-output permissions.
 
 An early `2026-07-18` read-only RC reconnect attempt made no hardware connection because `jtzero` did not resolve. Later the same day normal hostname resolution returned: strict SSH succeeded, the clean Pi checkout fast-forwarded to `944ff51`, and the request-only full-FC and RC audit completed. No parameter write, Home/origin command, mode command, arm command, mission command, actuator command, provider output, or fallback network scan was used. The operator moved only the transmitter control that drives RC12; RC12 changed `999..2000 us` and returned to `999 us`, while RC7/RC8 stayed unchanged.
+
+On `2026-07-19`, strict SSH succeeded again and the clean Pi checkout was synchronized through `2215ea5`. `rpicam-hello` detected the OV9281, Pi CTest passed `44/44`, and the camera-only 600-second native `1280x800` benchmark completed with `6679` observed frames at `11.1314 fps`, `60/60` verified publications, RSS max `25668 KiB`, temperature max `66.066 °C`, and `get_throttled=0x0` for all samples. Evidence: `/home/pi/Visual_Homing_Codex/artifacts/logs/verification-capture-build-20260719T200745Z.log`, `verification-capture-benchmark-20260719T200745Z.log`, `verification-capture-system-20260719T200745Z.csv`, and `docs/PI_VERIFICATION_CAPTURE_BENCHMARK_2026-07-19_UA.md`. Every MAVLink/live/external-nav output flag was OFF; the run did not open FC UART and therefore did not revalidate or supersede the `2026-07-18` FC/RC state.
 
 ## Reconnect Checklist
 
