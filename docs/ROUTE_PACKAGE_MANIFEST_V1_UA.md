@@ -47,6 +47,24 @@ Parser обмежує кількість records до `16` layers, `4096` chunks
 
 Writer створює `route.vhrm.partial`, flush/close і лише потім перейменовує його у `route.vhrm`. Наявний final або partial не перезаписується.
 
+## Tracking Package Builder І Recovery
+
+Library-only `RoutePackageBuilder` реалізує перший tracking-only producer для цього контракту:
+
+- використовує окремий package directory та рівно один tracking layer;
+- ліниво відкриває `tracking/chunk-NNNN.vhrs.partial` після першого entry;
+- ротує chunk за bounded `maximum_entries_per_chunk`;
+- додає chunk record тільки після finalize, повторного streaming-inspection, byte-size та SHA-256;
+- записує `route.vhrm` лише після того, як усі chunks фіналізовані й manifest проходить verification.
+
+Recovery scanner приймає тільки contiguous chunk indices від нуля, strictly increasing frame IDs, monotonic timestamps і точну layer compatibility. Для одного наступного `.vhrs.partial` він читає header checkpoint count, зберігає повний вихідний файл як `.recovery-source-NNNN`, а у final chunk переносить лише checkpointed prefix. Фізично записаний, але не checkpointed хвіст не вважається підтвердженою частиною маршруту. Через це після recovery допустимий пропуск frame IDs, але не зміна їх порядку.
+
+Повністю записаний `route.vhrm.partial` можна підняти до final лише коли він парситься, точно збігається з очікуваними route/local-frame/camera/extrinsics/layer metadata та всі artifacts проходять size/SHA-256 verification. Collision final+partial, symlink, non-contiguous chunks, truncated payload, trailing bytes у final chunk або несумісний template відхиляються без перезапису final artifact.
+
+Builder поки синхронний і не підключений до background camera recorder. Recovery-source archives навмисно не видаляються автоматично.
+
+Поточний checkpoint використовує наявний `fstream` flush. Це достатньо для deterministic process-interruption tests, але ще не гарантує фізичну durability SD-карти при раптовому зникненні живлення. Перед power-loss acceptance потрібні окремі file-data/directory synchronization semantics та Pi fault-injection перевірка.
+
 SHA-256 доводить цілісність transfer/copy, але не доводить авторство. Для недовіреного обміну між людьми/системами пізніше потрібен окремий signed-package contract.
 
 ## Camera Compatibility
@@ -105,11 +123,15 @@ Desktop test покриває:
 - corruption detection;
 - trailing bytes, unsafe path, invalid local frame, wrong gate layer, invalid digest/chunk version;
 - preservation camera extrinsics, local axes, layer/chunk/index/gate references.
+- bounded tracking chunk rotation and final manifest publication after digest;
+- interrupted checkpoint-prefix recovery with preserved full source;
+- direct resume, valid manifest-partial promotion and incompatible-template rejection;
+- finalized trailing-byte, truncated payload, ordering, collision and config negatives.
 
 ## Наступні Кроки
 
-1. Реалізувати package builder і crash-recovery scanner, який ротує finalized tracking chunks та оновлює manifest лише після digest.
-2. Зафіксувати compact descriptor/index binary format і offline builder.
-3. Додати sparse `1280x800` keyframe/gate selection policy.
+1. Зафіксувати compact descriptor/index binary format і offline builder.
+2. Додати sparse `1280x800` keyframe/gate selection policy.
+3. Підключити package builder до окремого bounded background recorder лише після review черги/backpressure та recovery metrics.
 4. Провести Pi load/storage/thermal benchmark.
 5. Лише після цього реалізувати offline global reacquisition і producer конкретного `reset_reference`.

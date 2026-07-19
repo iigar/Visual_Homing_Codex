@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-07-19 - Recover Only Checkpointed Route Data And Publish Chunks Before The Manifest
+
+Decision:
+- Add an isolated tracking-only `RoutePackageBuilder` that rotates deterministic `tracking/chunk-NNNN.vhrs` files at a configured entry bound, computes byte size and SHA-256 only after each chunk is finalized, and writes `route.vhrm` only after every published chunk is verified.
+- On resume, accept only contiguous chunks from zero with strictly increasing frame IDs and monotonic timestamps. Recover a `.vhrs.partial` only to its header-checkpointed entry count; preserve the complete original partial as a numbered `.recovery-source-*` artifact before truncating and promoting the committed prefix.
+- Promote `route.vhrm.partial` only when it parses, exactly matches route/local-frame/camera/layer template metadata, and all referenced artifacts pass size/digest verification.
+
+Why:
+- A power loss may leave complete finalized chunks that were never referenced by a final manifest, or a partial chunk containing writes after the last durable entry-count checkpoint. Treating the physical tail as committed would invent route data whose durability was never acknowledged.
+- Keeping the original partial evidence makes recovery auditable while allowing bounded recording to resume at the next chunk without overwriting an existing artifact.
+
+Impact:
+- Desktop WSL/Ninja and MSVC 19.44/Ninja pass `40/40`; the builder/recovery test passes 100 repeated runs on each platform.
+- The builder is synchronous and library-only. It is not attached to the camera recorder, matcher, Pi, FC, UART, ODOMETRY, reset or flight runtime.
+
+Risk:
+- Entries written after the last checkpoint are intentionally absent from the recovered route, so a frame-ID gap may remain. Later consumers must tolerate gaps while preserving ordering.
+- Recovery archives can consume storage after repeated interruptions. A future operator tool may report and explicitly clean reviewed archives, but automatic deletion is not part of this boundary.
+- Current `fstream` flush/checkpoint behavior supports deterministic process-interruption recovery but is not yet proof of sudden-power-loss durability on an SD card. File-data and directory-entry synchronization plus Pi fault-injection remain required before making that claim.
+
 ## 2026-07-19 - Use A Separate VHRM Package Contract And Model High-Resolution Route Gates
 
 Decision:
