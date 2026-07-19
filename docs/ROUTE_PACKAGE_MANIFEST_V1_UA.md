@@ -110,7 +110,7 @@ Gate record містить:
 - Підведення до gate потребує runtime freshness/covariance/geofence/obstacle/altitude gates, яких у цьому етапі немає.
 - Один великий кадр не є достатнім `reset_reference`: майбутній reacquisition gate має вимагати top-N verification та кілька узгоджених observation frames.
 - Gate діє тільки у записаному altitude/scale/view envelope.
-- Offline `VHIX v1` builder створює deterministic coarse descriptor index і окремий derived manifest. Ізольований selector уже визначає sparse verification requests та якісні gate candidates, але ще немає native capture/write, manifest publication, search або high-resolution confirmation.
+- Offline `VHIX v1` builder створює deterministic coarse descriptor index і окремий derived manifest. Ізольований selector визначає sparse requests/gate candidates, а `VerificationPackageWriter` публікує supplied native entries як одно-кадрові verification chunks та immutable cumulative VHRM revisions до selector commit. Live camera capture, revision recovery, search і high-resolution content confirmation ще відсутні.
 
 ## Поточна Перевірка
 
@@ -130,7 +130,7 @@ Desktop test покриває:
 
 ## Наступні Кроки
 
-1. Підключити готову sparse keyframe/gate selection policy до bounded `1280x800` capture/write producer з commit тільки після durable publication.
+1. Підключити live `1280x800` capture/synchronization до готових selector/package-writer boundaries без flight authority.
 2. Реалізувати bounded offline VHIX coarse search і top-N provenance output без route lock.
 3. Підключити package builder до окремого bounded background recorder лише після review черги/backpressure та recovery metrics.
 4. Провести Pi load/storage/thermal benchmark.
@@ -138,3 +138,4 @@ Desktop test покриває:
 
 Descriptor/index contract: `docs/ROUTE_DESCRIPTOR_INDEX_V1_UA.md`.
 Selector contract: `docs/VERIFICATION_GATE_SELECTOR_UA.md`.
+Verification writer contract: `docs/VERIFICATION_PACKAGE_WRITER_UA.md`.

@@ -59,10 +59,11 @@ route_descriptor_index_builder \
 - Source chunk завантажується у RAM цілком, хоча chunks обробляються по одному. Pi memory/timing benchmark ще потрібен.
 - Якщо index уже фіналізовано, але derived manifest не вдалося записати через I/O failure, може лишитися orphan index; автоматичне видалення не виконується.
 - Формат не містить ANN tree, inverted file або search scores. Перший search може бути bounded linear scan, а сильніший index буде новою version/encoding.
-- Transactional verification/gate selection policy уже реалізована окремим module, але не читає VHIX напряму і не захоплює/записує high-resolution payload. Native capture/storage та multi-frame temporal acceptance залишаються наступними етапами.
+- Transactional selector і supplied-native-entry package writer уже реалізовані окремими modules, але не читають VHIX напряму і не відкривають live camera. Live capture/synchronization, high-resolution content matching та multi-frame temporal acceptance залишаються наступними етапами.
 
 ## Перевірка
 
 Desktop tests покривають brightness-offset invariance, exact expected descriptor, deterministic binary round-trip, derived package build across rotated chunks, stride/provenance, package verification, non-overwrite, unsafe path, trailing bytes, empty index та invalid ordering. WSL/Ninja і MSVC 19.44/Ninja проходять `41/41`.
 
 Sparse selector contract: `docs/VERIFICATION_GATE_SELECTOR_UA.md`.
+Verification writer contract: `docs/VERIFICATION_PACKAGE_WRITER_UA.md`.

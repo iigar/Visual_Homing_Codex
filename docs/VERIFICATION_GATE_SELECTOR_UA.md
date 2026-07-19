@@ -10,7 +10,7 @@
 low-resolution observation + local/route metadata
         -> evaluate()
         -> request_native_capture / gate_candidate / reasons
-        -> external native capture + durable package write
+        -> external native capture + verified final package publication
         -> commit() only after success
 ```
 
@@ -43,18 +43,20 @@ Verification capture може стати gate-кандидатом лише ко
 
 Gate novelty навмисно не порівнюється з останнім звичайним verification keyframe: проміжні кадри не повинні змінювати distinctiveness між входами маршруту. Перший якісний local-pose keyframe може започаткувати gate sequence без попередньої separation/novelty reference.
 
-Gate candidate усе ще не є підтвердженим route lock. Майбутній consumer мусить виконати durable native-frame write, package provenance/integrity, camera compatibility, bounded coarse top-N search, high-resolution verification і multi-frame temporal consistency. Лише після цього окремий reviewed reacquisition state machine може створити конкретний `reset_reference`.
+Gate candidate усе ще не є підтвердженим route lock. `VerificationPackageWriter` тепер виконує process-level native-frame/VHRM publication та package provenance/integrity до commit, але майбутній consumer усе ще мусить забезпечити camera compatibility, bounded coarse top-N search, high-resolution content verification і multi-frame temporal consistency. Лише після цього окремий reviewed reacquisition state machine може створити конкретний `reset_reference`.
 
 ## Перевірка
 
 Desktop coverage включає config/input negatives, initial capture, minimum/maximum interval, local і route-relative displacement включно з reverse progress, altitude/scale/wrapped-yaw/novelty triggers, local uncertainty/approach gates, gate separation, gate-to-gate novelty, forged/stale commit, reset invalidation і deterministic trigger reasons.
 
-WSL/GCC та MSVC 19.44/Ninja проходять `42/42`; dedicated selector test додатково проходить `100` повторів на кожній платформі.
+WSL/GCC та MSVC 19.44/Ninja проходять `43/43`; dedicated selector і package-writer tests додатково проходять `100` повторів на кожній платформі.
 
 ## Наступний Slice
 
-1. Додати bounded native-resolution capture/write producer, який викликає `commit()` лише після успішного durable artifact publication.
-2. Заповнювати verification chunks і gate records у derived `VHRM`, не перезаписуючи source package.
-3. Провести Pi Zero 2W matrix для `1280x800` cadence, RSS, SD latency, temperature, frequency і throttling.
+1. Підключити live native-frame capture/synchronization до готового package writer без FC/runtime authority.
+2. Провести Pi Zero 2W matrix для `1280x800` cadence, revision/full-package verification cost, RSS, SD latency, temperature, frequency і throttling.
+3. Додати reviewed resume/recovery contract для immutable verification revisions і окремо перевірити physical SD durability.
 4. Реалізувати bounded offline VHIX scan та top-N provenance output без route lock.
 5. Після high-resolution і multi-frame replay acceptance перейти до окремого global reacquisition state machine та точного `reset_reference`.
+
+Package writer contract: `docs/VERIFICATION_PACKAGE_WRITER_UA.md`.

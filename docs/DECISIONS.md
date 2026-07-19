@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-19 - Publish Immutable Verification Revisions Before Advancing Selection State
+
+Decision:
+- Add an isolated `VerificationPackageWriter` that owns the selector, accepts one already captured native Gray8 entry, publishes it as a one-entry immutable VHRS chunk, appends an optional VHRM gate record, writes a new immutable derived-manifest revision, verifies the referenced package, and only then calls selector `commit()`.
+- Keep the source manifest unchanged. Require an already verified indexed package without a verification layer/gates, add the configured native verification layer together with the first chunk, and keep source/output revisions in the same package directory so relative artifact paths remain stable.
+- Fail closed on stale decisions, native identity/dimension mismatch, invalid gate envelopes, corrupt source packages, count limits, unsafe paths and any final/partial collision. Do not auto-delete orphan evidence or infer a latest revision after restart.
+
+Why:
+- A failed high-resolution write or manifest publication must not suppress retry by advancing the selector reference.
+- Immutable revisions avoid changing the HIGH manifest writer and CRITICAL package verifier semantics or replacing an existing source artifact.
+
+Impact:
+- Existing HIGH `write_route_package_manifest`, CRITICAL `verify_route_package_files`, MEDIUM `RouteSignatureStreamWriter` and LOW selector `commit()` implementations remain unchanged and are only composed by the new module. GitNexus reports LOW upstream risk and no callers for the new constructor/publish symbols.
+- MSVC 19.44/Ninja and WSL/GCC pass `43/43`; the dedicated writer test passes 100 repeats on each platform.
+
+Risk:
+- The writer consumes a captured entry but is not attached to the live camera. Each keyframe creates a one-frame chunk and a cumulative manifest revision, and full package verification is repeated, so Pi I/O/thermal cadence is unmeasured.
+- Existing flush/close/rename behavior is process-level publication, not proof of sudden-SD-power-loss durability. Resume/recovery, explicit sync and Pi fault injection remain pending.
+
 ## 2026-07-19 - Select Sparse Verification Frames Transactionally And Compare Gates To Gates
 
 Decision:
