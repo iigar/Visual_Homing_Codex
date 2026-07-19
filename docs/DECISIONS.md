@@ -1,5 +1,22 @@
 # Decisions
 
+## 2026-07-19 - Accept Native 1280x800 Capacity But Reject Synchronous Runtime Publication
+
+Decision:
+- Accept the 10-minute Pi evidence that OV9281 native `1280x800` capture, resize, descriptor generation and a `10 s` sparse publication cadence fit the Pi Zero 2W thermal/RSS envelope without throttling.
+- Do not attach the current synchronous `LiveVerificationCaptureSession::observe()` publication path to production tracking. The next composition must use a bounded background publication worker with explicit busy/backpressure/failure state while retaining commit only after full verified publication.
+
+Why:
+- The run completed 60 verified revisions with zero failures, but cumulative full-package verification grew from `110.024 ms` to `3072.75 ms`. Blocking the tracking loop for seconds causes bounded camera-queue frame loss even though the CPU and thermals remain healthy.
+
+Impact:
+- No code or hardware configuration changed as a result of the acceptance run. It used commit `4c4458e`, all output flags OFF, no FC/UART/MAVLink, and Pi CTest `44/44`.
+- Evidence: `docs/PI_VERIFICATION_CAPTURE_BENCHMARK_2026-07-19_UA.md` and the timestamped Pi logs recorded there.
+
+Risk:
+- A background worker adds concurrency, cancellation and restart semantics that require deterministic tests before another Pi run.
+- This evidence covers 60 sparse keyframes, not kilometer-scale package growth or sudden SD power loss.
+
 ## 2026-07-19 - Bind Native Frame Identity And Descriptor Before Transactional Publication
 
 Decision:
