@@ -84,6 +84,7 @@ add_library(visual_homing_core_lib
     src/route_signature_stream_writer.cpp
     src/route_signature_streaming_recorder.cpp
     src/system_clock.cpp
+    src/verification_keyframe_selector.cpp
 )
 
 target_include_directories(visual_homing_core_lib PUBLIC
@@ -681,6 +682,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME route_descriptor_index COMMAND route_descriptor_index_test)
+
+    add_executable(verification_keyframe_selector_test
+        tests/verification_keyframe_selector_test.cpp
+    )
+
+    target_link_libraries(verification_keyframe_selector_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(verification_keyframe_selector_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME verification_keyframe_selector COMMAND verification_keyframe_selector_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

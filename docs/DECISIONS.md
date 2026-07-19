@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-19 - Select Sparse Verification Frames Transactionally And Compare Gates To Gates
+
+Decision:
+- Add an isolated `VerificationKeyframeSelector` with explicit displacement, altitude, logarithmic scale, wrapped-yaw, scene-novelty and maximum-interval triggers behind a minimum capture interval.
+- Keep selection two-phase: `evaluate()` is side-effect free and `commit()` advances references only after the external native-resolution capture and durable write succeed. Reject stale or forged decisions by frame/time/state generation and deterministic re-evaluation.
+- Require local-pose quality, approach margin, gate separation and novelty relative to the last accepted gate before marking later captures as gate candidates.
+
+Why:
+- A dropped or failed `1280x800` write must not create a missing keyframe reference or suppress its retry.
+- Gate distinctiveness describes reusable route entrances; comparing to an intervening ordinary verification frame would make the result depend on unrelated capture cadence.
+
+Impact:
+- The new module is library/test-only and has no camera, package writer, matcher, reset, ODOMETRY, FC, UART or runtime caller. GitNexus reports LOW upstream risk: `evaluate()` has one direct internal caller (`commit()`), four local flows, and the public decision struct has no consumers.
+- WSL/GCC and MSVC 19.44/Ninja pass `42/42`; the dedicated selector test passes 100 repeats on each platform.
+
+Risk:
+- Scene novelty uses the supplied compact int8 descriptor and is only a cheap selection heuristic, not visual identity proof.
+- Default thresholds are uncalibrated desktop policy. Native capture/storage, VHRM publication and Pi Zero 2W load/thermal evidence remain pending.
+
 ## 2026-07-19 - Use A Versioned Coarse Descriptor Artifact And Preserve The Source Manifest
 
 Decision:
