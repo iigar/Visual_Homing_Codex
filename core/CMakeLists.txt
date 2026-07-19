@@ -55,6 +55,7 @@ add_library(visual_homing_core_lib
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
     src/inflight_home_reset_safety_gate.cpp
+    src/live_verification_capture.cpp
     src/live_external_nav_output_audit_log.cpp
     src/live_external_nav_output_session.cpp
     src/live_mavlink_bridge.cpp
@@ -176,6 +177,17 @@ add_executable(route_descriptor_index_builder
 target_link_libraries(route_descriptor_index_builder PRIVATE visual_homing_core_lib)
 
 target_compile_options(route_descriptor_index_builder PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
+add_executable(live_verification_capture_benchmark
+    tools/live_verification_capture_benchmark.cpp
+)
+
+target_link_libraries(live_verification_capture_benchmark PRIVATE visual_homing_core_lib)
+
+target_compile_options(live_verification_capture_benchmark PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
@@ -709,6 +721,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME verification_package_writer COMMAND verification_package_writer_test)
+
+    add_executable(live_verification_capture_test
+        tests/live_verification_capture_test.cpp
+    )
+
+    target_link_libraries(live_verification_capture_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_verification_capture_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_verification_capture COMMAND live_verification_capture_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

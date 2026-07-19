@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-07-19 - Bind Native Frame Identity And Descriptor Before Transactional Publication
+
+Decision:
+- Add an isolated `LiveVerificationCaptureSession` that accepts one native Gray8 `Frame` plus explicit route/health context, derives both the low-resolution VHIX-compatible descriptor and stored native entry from that same frame, and then composes the existing transactional writer.
+- Add a camera/storage-only benchmark executable and Pi wrapper. The benchmark creates a synthetic one-entry source package, uses fixed progress with no local pose/gates, publishes only through initial/maximum-interval triggers, samples RSS/temperature/frequency/throttle/disk state, and keeps all MAVLink/live-output boundaries off.
+
+Why:
+- A high-resolution frame and its selection descriptor must have identical camera sequence/time identity; accepting them as independent inputs would permit a silent cross-frame mismatch.
+- Pi cadence cannot be chosen from desktop correctness tests because cumulative manifest verification and native-frame resize/copy costs grow on the real CPU/SD path.
+
+Impact:
+- Existing `PiCameraSource`, resize, route-entry, VHIX descriptor and package-writer symbols remain unchanged. GitNexus pre-change impact was LOW for each composed dependency; no HIGH/CRITICAL symbol was edited.
+- Desktop WSL/GCC and MSVC 19.44/Ninja pass `44/44`; the new transactional capture test passes 100 repeats on both platforms.
+
+Risk:
+- Session trusts caller-supplied route geometry only after finite/range checks; it does not prove physical route progress or local pose.
+- The benchmark package is synthetic load evidence, not a reusable flight route. `PiCameraConfig::frame_rate_hz` is not yet a libcamera frame-duration control, so measured effective FPS is authoritative.
+- Pi evidence, sudden-power-loss durability, revision resume, real route-producer attachment and visual reacquisition remain pending.
+
 ## 2026-07-19 - Publish Immutable Verification Revisions Before Advancing Selection State
 
 Decision:
