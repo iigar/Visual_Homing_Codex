@@ -79,5 +79,7 @@ Publication latency у першому run зросла від `110.024 ms` до 
 
 - Physical SD durability при раптовій втраті живлення і directory/file sync.
 - Restart/resume з immutable revisions.
-- Підключення session до справжнього route-progress/local-pose producer під час route collection.
+- Library-level production composition boundary тепер реалізована як `LiveRouteVerificationProducer`: same-frame match, tracked progress, health і fresh altitude/scale/yaw перевіряються до bounded publisher; optional local pose потребує повністю названого frame contract. Деталі: `docs/LIVE_ROUTE_VERIFICATION_COMPOSITION_UA.md`.
+- Operational caller у live matcher/route-enrichment runtime ще не підключений. First-pass recorder не може чесно дати route progress до finalize/index; для нового route потрібен окремий двопрохідний workflow.
+- Trusted metric local-pose producer з uncertainty/approach evidence і Pi acceptance нового composition module.
 - High-resolution content verification, multi-frame route lock, global reacquisition і `reset_reference`.

@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-07-27 - Add A Fail-Closed Production Verification Composition Boundary
+
+Decision:
+- Add `LiveRouteVerificationProducer` between real tracking evidence and the accepted `BoundedVerificationPublisher`.
+- Require exact native-frame/match timestamp binding, valid confidence, explicit tracked progress, fresh health and explicit valid/fresh altitude, scale and yaw observations before a job can reach the worker.
+- Permit progress-only verification keyframes without local pose, but prohibit gate metadata by retaining `has_local_pose=false`.
+- Accept local pose only with the same camera frame ID, a complete configured local-frame ID/revision/convention match, freshness and finite uncertainty/approach quality.
+- Preserve publisher outcomes exactly as accepted/backpressure/not-running/failed and expose pre-worker validation as a separate rejected state.
+
+Why:
+- First-pass recording cannot know honest route progress until the route is finalized; substituting time or frame index would create false geometry.
+- Existing live matching can eventually supply same-frame tracked progress, while metric local pose remains an independent provider contract.
+- Rejecting bad provenance before descriptor generation and SD work prevents stale or mismatched inputs from consuming the bounded queue.
+
+Impact:
+- The implementation adds isolated symbols and does not modify the existing matcher, publisher, session, writer, FC/UART/MAVLink, ODOMETRY, reset or command-output symbols.
+- GitNexus reported LOW upstream risk for the unchanged `BoundedVerificationPublisher::submit`: zero direct dependents and zero affected indexed flows.
+- WSL/GCC full CTest passes `46/46`, the new deterministic test passes 100 repeats, and MSVC 19.44/Ninja passes the three affected tests.
+
+Risk:
+- The composition API is implemented, but no operational `match_live_camera_route`/CLI caller exists yet.
+- No trusted metric local-pose source with uncertainty and approach-radius evidence is attached, so current production wiring must remain progress-only and cannot produce gates.
+- Pi acceptance, immutable revision resume, physical SD fault injection, high-resolution verification and reacquisition remain separate work.
+
 ## 2026-07-27 - Accept Bounded Background Publication On Pi
 
 Decision:

@@ -57,6 +57,7 @@ add_library(visual_homing_core_lib
     src/health_monitor.cpp
     src/inflight_home_reset_safety_gate.cpp
     src/live_verification_capture.cpp
+    src/live_route_verification.cpp
     src/live_external_nav_output_audit_log.cpp
     src/live_external_nav_output_session.cpp
     src/live_mavlink_bridge.cpp
@@ -748,6 +749,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME bounded_verification_publisher COMMAND bounded_verification_publisher_test)
+
+    add_executable(live_route_verification_test
+        tests/live_route_verification_test.cpp
+    )
+
+    target_link_libraries(live_route_verification_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_route_verification_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_route_verification COMMAND live_route_verification_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp
