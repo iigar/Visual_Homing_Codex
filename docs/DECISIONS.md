@@ -18,11 +18,12 @@ Impact:
 - The implementation adds isolated symbols and does not modify the existing matcher, publisher, session, writer, FC/UART/MAVLink, ODOMETRY, reset or command-output symbols.
 - GitNexus reported LOW upstream risk for the unchanged `BoundedVerificationPublisher::submit`: zero direct dependents and zero affected indexed flows.
 - WSL/GCC full CTest passes `46/46`, the new deterministic test passes 100 repeats, and MSVC 19.44/Ninja passes the three affected tests.
+- A clean all-output-off Pi Zero 2W/OV9281 build at exact commit `135942f` passed `46/46` in `1400 s`; repository status stayed clean and `get_throttled=0x0`.
 
 Risk:
 - The composition API is implemented, but no operational `match_live_camera_route`/CLI caller exists yet.
 - No trusted metric local-pose source with uncertainty and approach-radius evidence is attached, so current production wiring must remain progress-only and cannot produce gates.
-- Pi acceptance, immutable revision resume, physical SD fault injection, high-resolution verification and reacquisition remain separate work.
+- Immutable revision resume, physical SD fault injection, high-resolution verification and reacquisition remain separate work.
 
 ## 2026-07-27 - Accept Bounded Background Publication On Pi
 

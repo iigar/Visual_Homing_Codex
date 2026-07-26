@@ -66,14 +66,13 @@ Metrics рахують observations, rejected, progress-only/local-pose contexts
 
 ## Поточний Статус
 
-Library implementation і deterministic tests завершені. WSL/GCC full suite проходить `46/46`, новий test проходить `100/100` повторів, MSVC 19.44/Ninja проходить три пов’язані tests.
+Library implementation і deterministic tests завершені. WSL/GCC і clean Pi Zero 2W all-output-off suites проходять `46/46`, новий desktop test проходить `100/100` повторів, MSVC 19.44/Ninja проходить три пов’язані tests. Pi run на exact commit `135942f` зайняв `1400 s`, завершився без test failure і залишив `get_throttled=0x0`; log `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260726T225735Z.log`, SHA-256 `88d6cacaa5e3c24f4a5333b2b93e191d26056affcefad3893adaa75e6dbacd99`.
 
 Ще не виконано:
 
 - operational caller у `match_live_camera_route` або окремому route-enrichment runtime;
 - CLI/environment config для source VHRM/VHIX, output revision base і scalar/local-pose sources;
 - trusted metric local-pose source з uncertainty/approach contract;
-- Pi all-output-off build/test цього нового composition module;
 - revision resume, physical SD fault injection, high-resolution content verification, multi-frame route lock і global reacquisition.
 
 Жодний FC/UART/MAVLink output, ODOMETRY, reset, Home або command path не підключений.
