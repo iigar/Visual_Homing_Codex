@@ -10,7 +10,7 @@ Pi Zero 2W з OV9281 стабільно обробляє native `1280x800` Gray8
 
 Виявлений blocker виправлено на desktop-рівні: `BoundedVerificationPublisher` виконує незмінний transactional `LiveVerificationCaptureSession::observe()` в одному background worker, обмежує active+queued jobs, повертає explicit backpressure і terminal failure та підтримує drain/discard shutdown. Benchmark і Pi wrapper переведено на цей path із default capacity `2` та окремими camera-loop, queue, processing і drain metrics.
 
-WSL/GCC і MSVC 19.44/Ninja цільові тести проходять, повний WSL suite має `45/45`; publisher test пройшов 100 повторів, real capture/package integration — 50. Це ще не нове Pi evidence і не змінює історичні числа нижче. Наступний acceptance run має повторити ті самі `1280x800`/`10 s`/`600 s` умови на Pi та показати bounded outstanding count, nonzero/zero measured backpressure як факт, відсутність terminal failure, `accepted == completed`, camera-loop FPS без publication stalls, bounded RSS/temperature і прийнятний final drain.
+WSL/GCC і MSVC 19.44/Ninja цільові тести проходять, повний WSL suite має `45/45`; publisher test пройшов 100 повторів, real capture/package integration — 50. Наступний Pi acceptance run був виконаний `2026-07-27` на commit `e1d9ac2` і пройшов: `60/60` publications, `8439/8439` accepted/completed, max outstanding `2`, explicit backpressure `1514`, zero terminal/abandoned/discarded failure, camera-loop `16.5967 fps`, RSS max `25580 KiB`, temperature max `61.224 °C`, throttle `0x0`, final drain `0.163331 ms`. Повний новий звіт: `docs/PI_VERIFICATION_CAPTURE_ASYNC_BENCHMARK_2026-07-27_UA.md`. Історичні synchronous числа нижче залишаються незмінними для прямого порівняння.
 
 ## Конфігурація
 

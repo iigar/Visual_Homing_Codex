@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-07-27
+
+- Reconnected through strict SSH to the established Visual Homing Pi using its original confirmed host fingerprint, verified the clean `2215ea5` checkout and OV9281 native `1280x800` camera, then fast-forwarded to `e1d9ac2`. No FC/UART/MAVLink path was opened. Pi build and all-output-off CTest passed `45/45`.
+- Accepted the 600-second bounded-background verification benchmark. It produced `60/60` immutable verified revisions, accepted/completed `8439/8439` jobs, returned `1514` explicit backpressure results at fixed maximum outstanding `2`, and recorded zero processing/publication failure, terminal worker failure, abandoned or discarded jobs. Camera polling held `16.5967 fps`, accepted observations `14.0646 fps`, final drain was `0.163331 ms`, and cumulative publication max remained `3080.83 ms` without blocking camera polling.
+- Across `574` samples, RSS was `4404..25580 KiB`, temperature `51.540..61.224 °C`, ARM clock `700000000..1000002000 Hz`, and `get_throttled=0x0` throughout. Final package had 124 files, `61759959` bytes and manifest SHA-256 `4176c724e84c58d99faace6af7f975135cd82770e190fd60890583f978510fa3`. Evidence and log digests: `docs/PI_VERIFICATION_CAPTURE_ASYNC_BENCHMARK_2026-07-27_UA.md`.
+- This closes only isolated Pi background-publisher CPU/SD/RSS/thermal acceptance. Production route-progress/local-pose composition, restart/revision recovery, physical SD fault injection, kilometer-scale cost, VHIX search, high-resolution/multi-frame route lock, global reacquisition, reset/JT_Zero handoff and every FC/flight path remain pending.
+
 ## 2026-07-25
 
 - Implemented the bounded background remediation required by the accepted Pi verification benchmark. `BoundedVerificationPublisher` owns one worker around the unchanged synchronous `LiveVerificationCaptureSession`, counts active+queued jobs against a fixed capacity, returns explicit accepted/backpressure/not-running/failed status without waiting for SD publication, preserves commit-after-full-package-verification, makes worker failure terminal, records abandoned/discarded work and supports drain/discard stop semantics. Existing synchronous callers remain unchanged; no route matcher/progress producer, reset, ODOMETRY, FC, UART, MAVLink or command-output path was attached.

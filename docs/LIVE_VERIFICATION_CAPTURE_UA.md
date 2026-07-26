@@ -71,11 +71,12 @@ Wrapper перед запуском збирає core і виконує весь
 
 Канонічний 10-хвилинний Pi Zero 2W + OV9281 run на commit `4c4458e` пройшов із `1280x800`, `60/60` publications, `0` failures, effective `11.1314 fps`, RSS max `25668 KiB`, temperature max `66.066 °C` і `get_throttled=0x0` у всіх `573` system samples. Деталі та artifact paths: `docs/PI_VERIFICATION_CAPTURE_BENCHMARK_2026-07-19_UA.md`.
 
-Publication latency зросла від `110.024 ms` до `3072.75 ms`, бо кожна revision синхронно перевіряє весь cumulative package. Це прийнятне storage/cadence evidence, але не production-loop architecture. Desktop remediation тепер реалізована через bounded background publisher; потрібен повторний Pi benchmark, який доведе camera-loop isolation, bounded backpressure/RSS і drain behavior на реальному CPU/SD.
+Publication latency у першому run зросла від `110.024 ms` до `3072.75 ms`, бо кожна revision синхронно перевіряє весь cumulative package. Це було прийнятне storage/cadence evidence, але не production-loop architecture; воно стало baseline для bounded-background remediation нижче.
+
+Повторний bounded-background run на commit `e1d9ac2` пройшов `2026-07-27`: Pi CTest `45/45`, native OV9281 `1280x800`, `60/60` publications, `8439/8439` accepted/completed, max outstanding `2`, explicit backpressure `1514`, zero failed/abandoned/discarded jobs, camera-loop `16.5967 fps`, RSS max `25580 KiB`, temperature max `61.224 °C`, `get_throttled=0x0`, final drain `0.163331 ms`. Cumulative publication max залишився `3080.83 ms`, але більше не блокував camera polling. Деталі: `docs/PI_VERIFICATION_CAPTURE_ASYNC_BENCHMARK_2026-07-27_UA.md`.
 
 ## Що Ще Не Закрито
 
-- Повторний 10-хвилинний Pi benchmark оновленого bounded background path; synchronous run залишається лише історичним capacity evidence.
 - Physical SD durability при раптовій втраті живлення і directory/file sync.
 - Restart/resume з immutable revisions.
 - Підключення session до справжнього route-progress/local-pose producer під час route collection.

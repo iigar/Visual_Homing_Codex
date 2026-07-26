@@ -2,7 +2,7 @@
 
 Цей документ є коротким source-of-truth для апаратної конфігурації, SSH-доступу та ArduPilot/MAVLink інтеграції Visual Homing. Його треба читати перед будь-якою роботою з Raspberry Pi, Matek, serial telemetry, FC/JT_Zero acceptance або зовнішньою навігацією.
 
-Останнє оновлення документа: `2026-07-19`. Остання live Pi/SSH/camera verification: `2026-07-19`; остання live FC/RC/serial verification: `2026-07-18`.
+Останнє оновлення документа: `2026-07-27`. Остання live Pi/SSH/camera verification: `2026-07-27`; остання live FC/RC/serial verification: `2026-07-18`.
 
 ## Статуси
 
@@ -208,6 +208,8 @@ The `2026-07-18` reference-repository/GitNexus audit did not connect to the Pi o
 An early `2026-07-18` read-only RC reconnect attempt made no hardware connection because `jtzero` did not resolve. Later the same day normal hostname resolution returned: strict SSH succeeded, the clean Pi checkout fast-forwarded to `944ff51`, and the request-only full-FC and RC audit completed. No parameter write, Home/origin command, mode command, arm command, mission command, actuator command, provider output, or fallback network scan was used. The operator moved only the transmitter control that drives RC12; RC12 changed `999..2000 us` and returned to `999 us`, while RC7/RC8 stayed unchanged.
 
 On `2026-07-19`, strict SSH succeeded again and the clean Pi checkout was synchronized through `2215ea5`. `rpicam-hello` detected the OV9281, Pi CTest passed `44/44`, and the camera-only 600-second native `1280x800` benchmark completed with `6679` observed frames at `11.1314 fps`, `60/60` verified publications, RSS max `25668 KiB`, temperature max `66.066 °C`, and `get_throttled=0x0` for all samples. Evidence: `/home/pi/Visual_Homing_Codex/artifacts/logs/verification-capture-build-20260719T200745Z.log`, `verification-capture-benchmark-20260719T200745Z.log`, `verification-capture-system-20260719T200745Z.csv`, and `docs/PI_VERIFICATION_CAPTURE_BENCHMARK_2026-07-19_UA.md`. Every MAVLink/live/external-nav output flag was OFF; the run did not open FC UART and therefore did not revalidate or supersede the `2026-07-18` FC/RC state.
+
+On `2026-07-27`, strict SSH against the original confirmed host fingerprint reconnected to the established Visual Homing Pi, whose clean checkout fast-forwarded to `e1d9ac2`. `rpicam-hello` confirmed OV9281 native `1280x800`; Pi CTest passed `45/45`. The 600-second bounded-background benchmark passed with `60/60` publications, `8439/8439` accepted/completed jobs, max outstanding `2`, explicit `1514` backpressure events, zero failures/abandoned/discarded jobs, camera-loop `16.5967 fps`, RSS max `25580 KiB`, temperature max `61.224 °C`, and `get_throttled=0x0` throughout. Evidence: `/home/pi/Visual_Homing_Codex/artifacts/logs/verification-capture-{build,benchmark,system}-20260726T214746Z.*` and `docs/PI_VERIFICATION_CAPTURE_ASYNC_BENCHMARK_2026-07-27_UA.md`. Every live/external-nav output flag was OFF and the benchmark explicitly reported `fc_uart=false mavlink_output=false`; it did not revalidate or supersede the `2026-07-18` FC/RC state.
 
 ## Reconnect Checklist
 

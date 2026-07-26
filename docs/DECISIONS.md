@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-07-27 - Accept Bounded Background Publication On Pi
+
+Decision:
+- Accept the isolated `BoundedVerificationPublisher` Pi Zero 2W/OV9281 CPU, SD, RSS and thermal envelope for native `1280x800` sparse verification at `10 s` cadence over 600 seconds.
+- Retain fixed capacity `2` as the accepted benchmark default: it bounds active+queued native frames and reports overload as explicit backpressure rather than blocking or silently accumulating RAM.
+- Permit the roadmap to advance to a separately reviewed production route-progress/local-pose composition design. Do not treat this as permission to attach reset, ODOMETRY, FC/UART/MAVLink, command output or flight authority.
+
+Why:
+- All `8439` accepted jobs completed, all `60` capture requests produced verified immutable revisions, and there were zero worker/processing/publication failures, abandoned jobs or discarded jobs.
+- The cumulative verification cost was not hidden: maximum worker processing remained `3095.98 ms` and publication max `3080.83 ms`. Camera polling nevertheless held `16.5967 fps`, compared with `11.1314 fps` in the synchronous run, because `1514` overloaded submissions returned explicit backpressure at maximum outstanding `2`.
+- RSS max `25580 KiB`, temperature max `61.224 °C`, and `get_throttled=0x0` across all `574` samples establish bounded behavior for this exact 60-revision load.
+
+Impact:
+- Pi all-output-off CTest now passes `45/45`; benchmark summary explicitly records `flight_authority=false fc_uart=false mavlink_output=false`.
+- No source code changed during hardware acceptance. Evidence is documented in `docs/PI_VERIFICATION_CAPTURE_ASYNC_BENCHMARK_2026-07-27_UA.md`.
+
+Risk:
+- This synthetic fixed-progress benchmark does not exercise real route geometry, local pose/gates, global search or reacquisition.
+- Sixty revisions and about `60M` do not establish kilometer-scale cumulative verification cost, restart recovery or physical SD sudden-power-loss durability.
+- Production composition must preserve explicit backpressure telemetry and must not convert rejected frames into silent route evidence.
+
 ## 2026-07-25 - Bound Verification Publication Outside The Camera Loop
 
 Decision:
