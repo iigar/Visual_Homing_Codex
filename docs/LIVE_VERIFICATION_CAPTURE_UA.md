@@ -16,6 +16,20 @@ Session:
 
 Таким чином caller не може окремо підставити high-resolution frame identity або descriptor від іншого кадру. Геометричні поля context усе ще є зовнішніми untrusted inputs і проходять fail-closed перевірку; ця межа не доводить їх фізичну істинність.
 
+## Bounded Background Publisher
+
+`BoundedVerificationPublisher` виносить увесь синхронний `LiveVerificationCaptureSession::observe()` у один background worker. Черга має фіксовану додатну capacity, яка рахує і поточну активну роботу, і queued frames. Producer ніколи не чекає завершення SD publication: `submit()` повертає один із явних станів `accepted`, `backpressure`, `not_running` або `failed`.
+
+Контракт навмисно не робить silent drop:
+
+- `accepted` означає, що native `Frame` разом із route/health context отримав монотонний submission sequence;
+- `backpressure` означає, що bounded capacity вичерпано; caller бачить цю подію в результаті та metrics і може продовжити tracking без блокування;
+- exception із writer/session переводить publisher у terminal failed state, відкидає ще не початі jobs із точним `abandoned_after_failure` count і забороняє подальші submissions;
+- `stop(true)` дренує прийняті jobs, а `stop(false)` зберігає активну операцію, але явно рахує та відкидає queued jobs;
+- restart одного instance заборонений, щоб після failure/stop не успадкувати неоднозначний selector/package state.
+
+Worker не змінює transactional правило: selector `commit()` як і раніше відбувається всередині synchronous session лише після повного запису та перевірки immutable package revision. Publisher також надає queue-wait/processing/max-outstanding metrics і останню успішну publication. Читання underlying capture metrics або manifest дозволене лише коли worker idle.
+
 ## Pi Benchmark Tool
 
 `live_verification_capture_benchmark` використовує реальний `PiCameraSource`, але лише як camera/storage/load harness. Для ізоляції від польотних маршрутів він створює у новому каталозі synthetic one-entry tracking package, будує реальний VHIX, а потім публікує native verification frames через maximum-interval trigger.
@@ -34,9 +48,12 @@ Default profile:
 - requested camera rate: `10 fps`;
 - duration: `600 s`;
 - sparse publication interval: `10 s`;
+- background outstanding-job capacity: `2`;
 - all live-command and external-nav output CMake flags: `OFF`.
 
 Wrapper перед запуском збирає core і виконує весь CTest. Під час benchmark він щосекунди записує CSV із process RSS, SoC temperature, ARM clock, `get_throttled` і доступним місцем на файловій системі. Tool окремо логгує actual observed FPS, descriptor/selector/publication latency, publication count, записані bytes і cumulative package-file verification count.
+
+Оновлений tool додатково логгує camera-loop FPS окремо від final drain, submissions/accepted/completed/backpressure, maximum outstanding jobs, queue-wait і worker-processing latency, terminal failure/abandoned/discarded counts та drain time. Значення capacity можна змінити через `VISUAL_HOMING_VERIFICATION_BACKGROUND_QUEUE_CAPACITY`; це benchmark tuning knob, а не дозвіл робити чергу необмеженою.
 
 `PiCameraConfig::frame_rate_hz` у поточному backend ще не програмує libcamera frame-duration control; це requested/timeout parameter. Тому acceptance використовує виміряний `effective_observed_fps`, а не саме requested значення.
 
@@ -46,17 +63,19 @@ Wrapper перед запуском збирає core і виконує весь
 - VHIX descriptor type/dimensions мають точно збігатися з selector contract.
 - Native identity походить тільки з одного `Frame`; descriptor і stored native entry створюються всередині одного `observe()`.
 - Writer failure не commit-ить selector; той самий frame/context можна повторити після явного усунення collision/fault.
+- Queue saturation повертає explicit backpressure; вона не блокує camera loop і не маскується як accepted frame.
+- Worker failure є terminal для instance; pending jobs не публікуються і не commit-ять selector.
 - Existing output directory, artifact/partial collision, malformed frame або invalid context завершують benchmark/session помилкою; artifacts автоматично не видаляються.
 
 ## Pi Evidence
 
 Канонічний 10-хвилинний Pi Zero 2W + OV9281 run на commit `4c4458e` пройшов із `1280x800`, `60/60` publications, `0` failures, effective `11.1314 fps`, RSS max `25668 KiB`, temperature max `66.066 °C` і `get_throttled=0x0` у всіх `573` system samples. Деталі та artifact paths: `docs/PI_VERIFICATION_CAPTURE_BENCHMARK_2026-07-19_UA.md`.
 
-Publication latency зросла від `110.024 ms` до `3072.75 ms`, бо кожна revision синхронно перевіряє весь cumulative package. Це прийнятне storage/cadence evidence, але не production-loop architecture: перед підключенням до tracking потрібен bounded background publication worker.
+Publication latency зросла від `110.024 ms` до `3072.75 ms`, бо кожна revision синхронно перевіряє весь cumulative package. Це прийнятне storage/cadence evidence, але не production-loop architecture. Desktop remediation тепер реалізована через bounded background publisher; потрібен повторний Pi benchmark, який доведе camera-loop isolation, bounded backpressure/RSS і drain behavior на реальному CPU/SD.
 
 ## Що Ще Не Закрито
 
-- Bounded background publication/backpressure без блокування tracking loop; synchronous 10-second cadence перевірена лише як benchmark.
+- Повторний 10-хвилинний Pi benchmark оновленого bounded background path; synchronous run залишається лише історичним capacity evidence.
 - Physical SD durability при раптовій втраті живлення і directory/file sync.
 - Restart/resume з immutable revisions.
 - Підключення session до справжнього route-progress/local-pose producer під час route collection.

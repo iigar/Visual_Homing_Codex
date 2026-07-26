@@ -44,6 +44,7 @@ add_executable(visual_homing_core
 
 add_library(visual_homing_core_lib
     src/artifact_digest.cpp
+    src/bounded_verification_publisher.cpp
     src/bounded_navigator.cpp
     src/camera_profile.cpp
     src/camera_smoke.cpp
@@ -734,6 +735,19 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME live_verification_capture COMMAND live_verification_capture_test)
+
+    add_executable(bounded_verification_publisher_test
+        tests/bounded_verification_publisher_test.cpp
+    )
+
+    target_link_libraries(bounded_verification_publisher_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(bounded_verification_publisher_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME bounded_verification_publisher COMMAND bounded_verification_publisher_test)
 
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp

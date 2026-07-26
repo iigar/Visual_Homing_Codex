@@ -6,6 +6,12 @@ Pi Zero 2W з OV9281 стабільно обробляє native `1280x800` Gray8
 
 Поточний synchronous writer path водночас не можна підключати до production tracking loop: cumulative full-package verification збільшила publication latency від `110.024 ms` для першої revision до `3072.75 ms` для 60-ї. Під час цього виклик `observe()` блокується, camera queue відкидає проміжні кадри, а effective observed rate знижується. Наступний runtime slice має винести publication у bounded background worker із явною backpressure/failure state, не послаблюючи правило commit-after-verified-publication.
 
+## Подальша Remediation — 2026-07-25
+
+Виявлений blocker виправлено на desktop-рівні: `BoundedVerificationPublisher` виконує незмінний transactional `LiveVerificationCaptureSession::observe()` в одному background worker, обмежує active+queued jobs, повертає explicit backpressure і terminal failure та підтримує drain/discard shutdown. Benchmark і Pi wrapper переведено на цей path із default capacity `2` та окремими camera-loop, queue, processing і drain metrics.
+
+WSL/GCC і MSVC 19.44/Ninja цільові тести проходять, повний WSL suite має `45/45`; publisher test пройшов 100 повторів, real capture/package integration — 50. Це ще не нове Pi evidence і не змінює історичні числа нижче. Наступний acceptance run має повторити ті самі `1280x800`/`10 s`/`600 s` умови на Pi та показати bounded outstanding count, nonzero/zero measured backpressure як факт, відсутність terminal failure, `accepted == completed`, camera-loop FPS без publication stalls, bounded RSS/temperature і прийнятний final drain.
+
 ## Конфігурація
 
 ```text

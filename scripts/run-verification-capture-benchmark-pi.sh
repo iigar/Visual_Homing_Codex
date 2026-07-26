@@ -21,6 +21,7 @@ duration_seconds="${VISUAL_HOMING_BENCHMARK_DURATION_SECONDS:-600}"
 warmup_frames="${VISUAL_HOMING_ROUTE_WARMUP_FRAMES:-5}"
 capture_interval_seconds="${VISUAL_HOMING_VERIFICATION_CAPTURE_INTERVAL_SECONDS:-10}"
 altitude_m="${VISUAL_HOMING_BENCHMARK_ALTITUDE_M:-1.0}"
+background_queue_capacity="${VISUAL_HOMING_VERIFICATION_BACKGROUND_QUEUE_CAPACITY:-2}"
 build_jobs="${VISUAL_HOMING_BUILD_JOBS:-1}"
 
 mkdir -p "${benchmark_parent}" "${log_dir}"
@@ -36,6 +37,7 @@ cat <<EOF
 ### requested_capture=${width}x${height}@${fps}
 ### duration_seconds=${duration_seconds}
 ### sparse_capture_interval_seconds=${capture_interval_seconds}
+### background_queue_capacity=${background_queue_capacity}
 ###############################################################################
 EOF
 
@@ -67,6 +69,7 @@ throttled_before="$(vcgencmd get_throttled 2>/dev/null || printf 'unavailable')"
     "${warmup_frames}" \
     "${capture_interval_seconds}" \
     "${altitude_m}" \
+    "${background_queue_capacity}" \
     >"${run_log}" 2>&1 &
 benchmark_pid=$!
 

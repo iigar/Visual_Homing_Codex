@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-07-25 - Bound Verification Publication Outside The Camera Loop
+
+Decision:
+- Add `BoundedVerificationPublisher` as a single-owner worker around the unchanged synchronous `LiveVerificationCaptureSession`.
+- Count both the active job and queued frames against a fixed positive capacity. `submit()` returns explicit accepted/backpressure/not-running/failed state; it never waits for package publication.
+- Make processing failure terminal for one publisher instance, abandon not-yet-started jobs visibly, support explicit drain or queued-job discard on stop, and forbid restart after stop/failure.
+- Keep selector/package transactional semantics unchanged: selection state advances only inside the existing session after the immutable revision is written and fully verified.
+- Switch only the camera/storage benchmark to this publisher. Keep it all-output-off and report camera-loop timing separately from final drain plus queue/backpressure/failure metrics.
+
+Why:
+- The accepted Pi run measured cumulative synchronous publication up to `3072.75 ms`. Moving only the outer call to a bounded worker isolates that cost from camera polling without duplicating or weakening publication integrity.
+- An unbounded queue would convert an SD stall into growing RAM use; a silent drop would hide missing verification opportunities. Explicit backpressure makes overload observable and tuneable.
+
+Impact:
+- GitNexus pre-change impact was LOW: `LiveVerificationCaptureSession` had three direct references and no indexed process, while `observe()` and `VerificationPackageWriter::publish()` had no indexed upstream consumers. No HIGH/CRITICAL symbol was edited.
+- Existing synchronous callers remain source-compatible. No matcher, route-progress producer, reset, ODOMETRY, FC, UART, MAVLink or command-output path was attached.
+- Full WSL/GCC CTest passes `45/45`; MSVC 19.44/Ninja target build/tests pass. Publisher concurrency coverage passed 100 repeats and real capture/package integration passed 50.
+
+Risk:
+- Native frames are copied into a bounded job, so capacity directly bounds additional frame RAM but must remain small on Pi Zero 2W.
+- The active synchronous filesystem operation is not cancellable mid-publication; `stop(false)` discards queued work but waits for the active job to end.
+- Desktop correctness does not establish Pi CPU/SD/RSS/thermal behavior. The updated 600-second Pi benchmark is the next acceptance step before any production route attachment.
+
 ## 2026-07-19 - Accept Native 1280x800 Capacity But Reject Synchronous Runtime Publication
 
 Decision:

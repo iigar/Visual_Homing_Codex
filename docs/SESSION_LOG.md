@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-07-25
+
+- Implemented the bounded background remediation required by the accepted Pi verification benchmark. `BoundedVerificationPublisher` owns one worker around the unchanged synchronous `LiveVerificationCaptureSession`, counts active+queued jobs against a fixed capacity, returns explicit accepted/backpressure/not-running/failed status without waiting for SD publication, preserves commit-after-full-package-verification, makes worker failure terminal, records abandoned/discarded work and supports drain/discard stop semantics. Existing synchronous callers remain unchanged; no route matcher/progress producer, reset, ODOMETRY, FC, UART, MAVLink or command-output path was attached.
+- Updated `live_verification_capture_benchmark` and its Pi wrapper to use default background capacity `2`, retain all output paths OFF, and report camera-loop FPS independently from final drain plus submissions, accepted/completed, backpressure, outstanding depth, queue wait, processing latency, terminal failure and abandoned/discarded counts. The historical synchronous Pi evidence remains valid capacity evidence; the updated async 600-second Pi run is still pending.
+- GitNexus pre-change impact was LOW for `LiveVerificationCaptureSession`, `observe()` and `VerificationPackageWriter::publish()`; no HIGH/CRITICAL symbol was edited. Full WSL/GCC CTest passes `45/45`; MSVC 19.44/Ninja builds and passes both affected tests. Deterministic publisher coverage passed 100 repeats and real capture/package integration passed 50.
+- Refreshed both local code-intelligence views after implementation. GitNexus incremental analysis completed successfully; mandatory `detect_changes` reports LOW risk, no affected indexed process and only the expected test/benchmark symbols. Graphify AST update completed with `5396` nodes, `8103` edges and `445` communities; its HTML visualization was intentionally skipped by the tool because the graph exceeds the default 5000-node display limit.
+
 ## 2026-07-19
 
 - Refreshed the canonical project memory after the accepted Pi native-capture benchmark. `PROJECT_MEMORY.md`, the hardware/access baseline, roadmap and ideas queue now consistently use the current all-output-off desktop/Pi `44/44` baseline, distinguish the `2026-07-19` Pi/SSH/OV9281 verification from the last `2026-07-18` FC/RC/serial verification, mark live frame synchronization and the first `1280x800` capacity benchmark complete, and retain bounded asynchronous publication as the next blocker. Historical timestamped evidence entries remain unchanged.

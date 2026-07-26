@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 
+#include "visual_homing/bounded_verification_publisher.hpp"
 #include "visual_homing/live_verification_capture.hpp"
 #include "visual_homing/route_descriptor_index.hpp"
 #include "visual_homing/route_package_builder.hpp"
@@ -256,6 +257,52 @@ int main() {
             rejected = true;
         }
         assert(rejected);
+        cleanup(directory);
+    }
+    {
+        const auto directory = unique_directory("background_success");
+        const auto source = make_source_package(directory);
+        {
+            vh::BoundedVerificationPublisherConfig background_config;
+            background_config.capture = session_config(source);
+            background_config.queue_capacity = 2;
+            vh::BoundedVerificationPublisher publisher(std::move(background_config));
+            assert(publisher.start());
+            const auto native = frame(20, 20'000);
+            const auto submitted = publisher.submit(native, healthy_context());
+            assert(submitted.status == vh::VerificationSubmissionStatus::Accepted);
+            assert(publisher.wait_until_idle(std::chrono::seconds(5)));
+            publisher.stop(true);
+
+            const auto result = publisher.last_result();
+            assert(result && result->publication);
+            assert(result->publication->publication_index == 1);
+            const auto latest_publication = publisher.last_publication();
+            assert(latest_publication);
+            assert(latest_publication->manifest_path
+                == result->publication->manifest_path);
+            const auto published_native =
+                vh::read_route_signature_file(result->publication->chunk_path);
+            assert(published_native.entries.size() == 1);
+            assert(published_native.entries[0].frame_id == native.id);
+            assert(published_native.entries[0].payload == native.data);
+            const auto manifest =
+                vh::read_route_package_manifest(result->publication->manifest_path);
+            assert(vh::verify_route_package_files(
+                result->publication->manifest_path, manifest).passed);
+
+            const auto metrics = publisher.metrics();
+            assert(metrics.accepted == 1);
+            assert(metrics.completed == 1);
+            assert(metrics.publication_results == 1);
+            assert(metrics.processing_failures == 0);
+            assert(metrics.maximum_outstanding_jobs == 1);
+            const auto capture_metrics = publisher.capture_metrics();
+            assert(capture_metrics.frames_observed == 1);
+            assert(capture_metrics.publications == 1);
+            assert(publisher.current_manifest_path()
+                == result->publication->manifest_path);
+        }
         cleanup(directory);
     }
     return 0;

@@ -12,8 +12,8 @@
 #include <thread>
 #include <utility>
 
+#include "visual_homing/bounded_verification_publisher.hpp"
 #include "visual_homing/gray8_resize_preprocessor.hpp"
-#include "visual_homing/live_verification_capture.hpp"
 #include "visual_homing/pi_camera_source.hpp"
 #include "visual_homing/route_descriptor_index.hpp"
 #include "visual_homing/route_package_builder.hpp"
@@ -168,11 +168,11 @@ vh::LiveVerificationCaptureConfig capture_config(
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 9 && argc != 10) {
+    if (argc < 9 || argc > 11) {
         std::cerr
             << "usage: live_verification_capture_benchmark OUTPUT_DIRECTORY PROFILE_ID"
             << " WIDTH HEIGHT FPS DURATION_SECONDS WARMUP_FRAMES CAPTURE_INTERVAL_SECONDS"
-            << " [ALTITUDE_M]\n";
+            << " [ALTITUDE_M] [BACKGROUND_QUEUE_CAPACITY]\n";
         return 2;
     }
     try {
@@ -184,7 +184,10 @@ int main(int argc, char** argv) {
         const auto duration_seconds = positive_double(argv[6], "duration_seconds");
         const auto warmup_frames = positive_u32(argv[7], "warmup_frames");
         const auto capture_interval_seconds = positive_double(argv[8], "capture_interval_seconds");
-        const auto altitude_m = argc == 10 ? positive_double(argv[9], "altitude_m") : 1.0;
+        const auto altitude_m = argc >= 10 ? positive_double(argv[9], "altitude_m") : 1.0;
+        const auto background_queue_capacity = argc == 11
+            ? positive_u32(argv[10], "background_queue_capacity")
+            : 2U;
         if (profile_id.empty()) {
             throw std::invalid_argument("profile_id must not be empty");
         }
@@ -211,6 +214,7 @@ int main(int argc, char** argv) {
             << " requested_fps=" << fps
             << " duration_seconds=" << duration_seconds
             << " capture_interval_seconds=" << capture_interval_seconds
+            << " background_queue_capacity=" << background_queue_capacity
             << " output=" << output_directory.string() << '\n';
         if (!camera.start()) {
             throw std::runtime_error("camera start failed: " + camera.last_error());
@@ -232,27 +236,32 @@ int main(int argc, char** argv) {
         ++frames_seen;
         const auto source_manifest = create_source_package(
             output_directory, profile_id, *first, altitude_m);
-        vh::LiveVerificationCaptureSession session(capture_config(
+        vh::BoundedVerificationPublisherConfig publisher_config;
+        publisher_config.capture = capture_config(
             source_manifest,
             profile_id,
             width,
             height,
             capture_interval_seconds,
-            duration_seconds));
+            duration_seconds);
+        publisher_config.queue_capacity = background_queue_capacity;
+        vh::BoundedVerificationPublisher publisher(std::move(publisher_config));
+        if (!publisher.start()) {
+            camera.stop();
+            throw std::runtime_error("background verification publisher failed to start");
+        }
         vh::LiveVerificationFrameContext context;
         context.health_ready = true;
         context.altitude_m = altitude_m;
 
         const auto started = vh::now();
-        auto result = session.observe(*first, context);
-        if (result.publication) {
-            std::cout
-                << "live_verification_publication"
-                << " index=" << result.publication->publication_index
-                << " frame_id=" << first->id
-                << " trigger=" << vh::verification_trigger_mask_to_string(result.decision.trigger_mask)
-                << " latency_ms=" << result.publication_latency_ms
-                << " manifest=" << result.publication->manifest_path.string() << '\n';
+        const auto first_submission = publisher.submit(*first, context);
+        if (first_submission.status != vh::VerificationSubmissionStatus::Accepted) {
+            camera.stop();
+            publisher.stop(false);
+            throw std::runtime_error(
+                "first background verification submission was not accepted: "
+                + first_submission.reason);
         }
 
         std::uint64_t empty_polls = 0;
@@ -264,38 +273,63 @@ int main(int argc, char** argv) {
                 continue;
             }
             ++frames_seen;
-            result = session.observe(*frame, context);
-            if (result.publication) {
-                std::cout
-                    << "live_verification_publication"
-                    << " index=" << result.publication->publication_index
-                    << " frame_id=" << frame->id
-                    << " trigger=" << vh::verification_trigger_mask_to_string(result.decision.trigger_mask)
-                    << " descriptor_latency_ms=" << result.descriptor_latency_ms
-                    << " selector_latency_ms=" << result.selector_latency_ms
-                    << " publication_latency_ms=" << result.publication_latency_ms
-                    << " files_checked=" << result.publication->package_files_checked
-                    << " manifest=" << result.publication->manifest_path.string() << '\n';
+            const auto submission = publisher.submit(*frame, context);
+            if (submission.status == vh::VerificationSubmissionStatus::Failed
+                || submission.status == vh::VerificationSubmissionStatus::NotRunning) {
+                camera.stop();
+                publisher.stop(false);
+                throw std::runtime_error(
+                    "background verification submission stopped: " + submission.reason);
             }
         }
+        const auto capture_finished = vh::now();
         camera.stop();
+        const auto drain_started = vh::now();
+        publisher.stop(true);
+        const auto publisher_finished = vh::now();
 
-        const auto metrics = session.metrics();
+        const auto background_metrics = publisher.metrics();
+        const auto metrics = publisher.capture_metrics();
         const auto descriptor_average = metrics.frames_observed == 0 ? 0.0
             : metrics.total_descriptor_latency_ms / static_cast<double>(metrics.frames_observed);
         const auto selector_average = metrics.frames_observed == 0 ? 0.0
             : metrics.total_selector_latency_ms / static_cast<double>(metrics.frames_observed);
         const auto publication_average = metrics.publications == 0 ? 0.0
             : metrics.total_publication_latency_ms / static_cast<double>(metrics.publications);
-        const auto elapsed_total_ms = vh::milliseconds_between(started, vh::now());
-        const auto effective_observed_fps = elapsed_total_ms <= 0.0 ? 0.0
-            : static_cast<double>(metrics.frames_observed) * 1000.0 / elapsed_total_ms;
+        const auto capture_elapsed_ms = vh::milliseconds_between(started, capture_finished);
+        const auto background_drain_ms = vh::milliseconds_between(
+            drain_started, publisher_finished);
+        const auto publisher_elapsed_ms = vh::milliseconds_between(
+            started, publisher_finished);
+        const auto effective_observed_fps = publisher_elapsed_ms <= 0.0 ? 0.0
+            : static_cast<double>(metrics.frames_observed) * 1000.0
+                / publisher_elapsed_ms;
+        const auto effective_camera_fps = capture_elapsed_ms <= 0.0 ? 0.0
+            : static_cast<double>(frames_seen) * 1000.0 / capture_elapsed_ms;
+        const auto queue_wait_average = background_metrics.completed == 0 ? 0.0
+            : background_metrics.total_queue_wait_ms
+                / static_cast<double>(background_metrics.completed);
+        const auto processing_average = background_metrics.completed == 0 ? 0.0
+            : background_metrics.total_processing_ms
+                / static_cast<double>(background_metrics.completed);
+        const auto passed = metrics.publications > 0
+            && !background_metrics.failed
+            && background_metrics.processing_failures == 0
+            && background_metrics.accepted == background_metrics.completed;
+        if (const auto latest = publisher.last_publication()) {
+            std::cout
+                << "live_verification_publication_latest"
+                << " index=" << latest->publication_index
+                << " files_checked=" << latest->package_files_checked
+                << " manifest=" << latest->manifest_path.string() << '\n';
+        }
         std::cout
             << "live_verification_benchmark_done"
-            << " passed=" << (metrics.publications > 0 ? "true" : "false")
+            << " passed=" << (passed ? "true" : "false")
             << " flight_authority=false fc_uart=false mavlink_output=false"
             << " frames_seen=" << frames_seen
             << " frames_observed=" << metrics.frames_observed
+            << " effective_camera_fps=" << effective_camera_fps
             << " effective_observed_fps=" << effective_observed_fps
             << " empty_polls=" << empty_polls
             << " invalid_observations=" << metrics.invalid_observations
@@ -312,10 +346,24 @@ int main(int argc, char** argv) {
             << " selector_latency_ms_max=" << metrics.maximum_selector_latency_ms
             << " publication_latency_ms_avg=" << publication_average
             << " publication_latency_ms_max=" << metrics.maximum_publication_latency_ms
-            << " elapsed_ms=" << elapsed_total_ms
-            << " latest_manifest=" << session.current_manifest_path().string()
+            << " background_submissions=" << background_metrics.submissions
+            << " background_accepted=" << background_metrics.accepted
+            << " background_completed=" << background_metrics.completed
+            << " background_backpressure=" << background_metrics.rejected_backpressure
+            << " background_failed=" << (background_metrics.failed ? "true" : "false")
+            << " background_abandoned=" << background_metrics.abandoned_after_failure
+            << " background_discarded=" << background_metrics.discarded_on_stop
+            << " background_max_outstanding=" << background_metrics.maximum_outstanding_jobs
+            << " background_queue_wait_ms_avg=" << queue_wait_average
+            << " background_queue_wait_ms_max=" << background_metrics.maximum_queue_wait_ms
+            << " background_processing_ms_avg=" << processing_average
+            << " background_processing_ms_max=" << background_metrics.maximum_processing_ms
+            << " capture_elapsed_ms=" << capture_elapsed_ms
+            << " background_drain_ms=" << background_drain_ms
+            << " publisher_elapsed_ms=" << publisher_elapsed_ms
+            << " latest_manifest=" << publisher.current_manifest_path().string()
             << '\n';
-        return metrics.publications > 0 ? 0 : 1;
+        return passed ? 0 : 1;
     } catch (const std::exception& error) {
         std::cerr
             << "live_verification_benchmark_failed"
