@@ -315,12 +315,14 @@ feature remains a local experiment rather than a second full matcher.
 
 ## Milestone Direction
 
-Near-term field work:
+Пункти нижче є design backlog. Поточний execution order ведеться в `CURRENT_PROJECT_STATUS_UA.md`; streaming storage, VHRM/VHIX artifacts, native capture synchronization і перші synchronous/async Pi `1280x800` benchmarks уже завершені.
 
-1. Add bounded streaming route storage before recording kilometer-scale artifacts.
+Remaining work:
+
+1. Wire the accepted producer to live matching in progress-only mode and validate second-pass sparse capture.
 2. Keep `96x72`/`160x100` as the accepted coarse outdoor baseline.
-3. Define a multiscale manifest and sparse native `1280x800` keyframe metadata/index contract.
-4. Benchmark sparse high-resolution capture for 10-15 minutes on Pi before selecting its spatial/time cadence.
+3. Add revision resume/durability, then bounded coarse search plus top-N `1280x800` content verification.
+4. Expand the Pi size/cadence matrix only when a new target, cadence or kilometer-scale cost needs evidence.
 5. Optionally test `128x96` and `160x120` coarse targets for FPS/latency/quality evidence.
 6. Do not jump to `320x240` full-route realtime matching until coarse+top-N refinement is designed.
 7. Reactivate field-useful `visual_scale_*` diagnostics and add route altitude/attitude metadata before depending on handoff distance/altitude.

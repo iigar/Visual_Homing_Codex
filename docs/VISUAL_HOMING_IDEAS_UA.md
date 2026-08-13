@@ -1117,13 +1117,16 @@ Sparse `1280x800` verification кадри можуть бути не тільк�
 
 ## Поточний Найближчий План
 
+Канонічний dated snapshot стану і найближчого slice: `docs/CURRENT_PROJECT_STATUS_UA.md`. Нижня черга зберігає ідеї та залежності; якщо формулювання старішого пункту конфліктує зі snapshot, пріоритет має snapshot і новіший запис у `docs/DECISIONS.md`.
+
 1. Library-only streaming `VHRS v1` writer без camera/runtime caller — виконано (`37/37`).
-2. Bounded streaming recorder integration для live route, зі збереженим in-memory replay recorder — library/desktop integration, Pi async publisher acceptance і fail-closed production composition API виконані; desktop/Pi baseline `46/46`, operational matcher/CLI wiring ще не виконано.
+2. Bounded streaming recorder integration для live route, зі збереженим in-memory replay recorder — library/desktop integration, Pi async publisher acceptance і fail-closed production composition API виконані; desktop/Pi baseline `46/46`. Активний slice: operational matcher/CLI progress-only wiring, software/Pi acceptance, потім disarmed/no-send hand-carried second pass forward/reverse.
 3. Спроєктувати route manifest/chunks/layers та sparse `1280x800` metadata/index/selection/publication contract — VHRM, tracking builder/recovery, VHIX, selector, supplied-native-entry package writer, live frame synchronization і bounded async publication виконані; restart/revision recovery ще попереду.
 4. Провести Pi thermal/load/storage benchmark перед вибором максимальної sparse-keyframe частоти — synchronous і bounded-async `1280x800`/`10 s`/600 s runs виконані; async path прийнято для isolated 60-revision envelope.
-5. Реалізувати offline global coarse search -> top-N high-resolution verification -> multi-frame reacquisition gate.
-6. Додати replay-only transferable-route/off-corridor-entry acceptance для другої системи.
-7. Лише потім композиційно додавати JT_Zero local hold, bounded yaw search і ODOMETRY reset-counter recovery.
+5. Завершити revision resume і physical SD durability acceptance.
+6. Реалізувати offline global coarse search -> top-N high-resolution verification -> multi-frame reacquisition gate.
+7. Додати replay-only transferable-route/off-corridor-entry acceptance для другої системи.
+8. Лише потім композиційно додавати JT_Zero local hold, bounded yaw search і ODOMETRY reset-counter recovery.
 
 Історична endpoint-черга залишається збереженою нижче, але не повинна випереджати bounded long-route storage/reacquisition groundwork:
 

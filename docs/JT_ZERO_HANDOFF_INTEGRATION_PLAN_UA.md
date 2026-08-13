@@ -2,6 +2,8 @@
 
 Цей документ описує наступний інженерний етап після польового evidence від 2026-07-02. Він не авторизує політ і не вмикає live output. Мета: розділити вже доведений dry-run external-nav readiness від майбутнього handoff до JT_Zero / flight controller і зафіксувати порядок робіт без домислів.
 
+Status note `2026-08-13`: це downstream plan, а не поточний immediate slice. Перед handoff спочатку завершуються operational progress-only verification wiring, second-pass route evidence, revision durability, bounded global reacquisition і concrete `reset_reference`. Поточний порядок: `docs/CURRENT_PROJECT_STATUS_UA.md`.
+
 Перед будь-якою Pi/FC/JT_Zero дією прочитати `docs/HARDWARE_ACCESS_BASELINE_UA.md`. Він є source-of-truth для SSH, Pi/FC hardware, physical `TX3/RX3` versus ArduPilot `SERIAL4`, current offline/verified state, firmware version gaps, and the read-only parameter snapshot required before acceptance work.
 
 Перед зміною external-nav estimator/writer також прочитати `docs/COORDINATE_FRAME_CONTRACT_UA.md`; scalar route progress не є `LOCAL_NED`, доки explicit route origin/heading projection не буде застосована й перевірена.

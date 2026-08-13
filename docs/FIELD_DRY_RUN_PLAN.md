@@ -1,5 +1,7 @@
 # Field Dry-Run Plan
 
+> Historical field-stage plan. Accepted evidence and commands remain useful, but the current development slice is maintained in `CURRENT_PROJECT_STATUS_UA.md`; do not treat this file's older "next" wording as the active work queue.
+
 This plan defines the next project stage: prove short outdoor Visual Homing route recording and return matching without live command output.
 
 For the latest consolidated field-test report, conclusions, and next-session command checklist, see:

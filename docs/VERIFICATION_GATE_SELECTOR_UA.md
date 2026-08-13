@@ -53,10 +53,12 @@ WSL/GCC та MSVC 19.44/Ninja проходять `43/43`; dedicated selector і 
 
 ## Наступний Slice
 
-1. Підключити live native-frame capture/synchronization до готового package writer без FC/runtime authority.
-2. Провести Pi Zero 2W matrix для `1280x800` cadence, revision/full-package verification cost, RSS, SD latency, temperature, frequency і throttling.
-3. Додати reviewed resume/recovery contract для immutable verification revisions і окремо перевірити physical SD durability.
-4. Реалізувати bounded offline VHIX scan та top-N provenance output без route lock.
-5. Після high-resolution і multi-frame replay acceptance перейти до окремого global reacquisition state machine та точного `reset_reference`.
+Live native capture/synchronization, bounded publication і перший Pi `1280x800` cadence/load envelope уже прийняті.
+
+1. Підключити fail-closed producer до live matcher/CLI у progress-only mode без gate authority.
+2. Додати reviewed resume/recovery contract для immutable verification revisions і окремо перевірити physical SD durability.
+3. Реалізувати bounded offline VHIX scan та top-N provenance output без route lock.
+4. Після high-resolution і multi-frame replay acceptance перейти до окремого global reacquisition state machine та точного `reset_reference`.
 
 Package writer contract: `docs/VERIFICATION_PACKAGE_WRITER_UA.md`.
+Current execution order: `docs/CURRENT_PROJECT_STATUS_UA.md`.

@@ -32,6 +32,23 @@ status=<accepted|inconclusive|blocked|future idea>
 - дублікати того, що вже краще зафіксовано в evidence docs;
 - будь-які слова, які можуть виглядати як flight authorization без окремого reviewed plan.
 
+## Entry 2026-08-13: Carry-Forward Контекст Поточної Розробки
+
+```text
+source_date=2026-08-13
+covered_dates=2026-07-16..2026-08-13
+scope=operator-confirmed route/wiring facts, Pi verification composition acceptance, next software and physical gates
+status=curated_extract
+```
+
+- Оператор візуально підтвердив Pi TX -> Matek RX3, Pi RX <- Matek TX3 і common GND; активний короткий route був фізично прямим, приблизно `10 m`, на тій самій приблизно `0.5 m` висоті. Це timestamped setup evidence, не гарантія після зміни wiring/hardware.
+- Route-local traversal цього corridor не потребує geographic north. Географічний/shared-frame prior потрібен лише для майбутнього підведення іншої системи до ще невидимого transferred route.
+- Library composition і clean Pi all-output-off baseline завершені `46/46`; operational matcher/CLI caller не існує. First-pass recorder не може чесно створити route progress.
+- Наступний slice — software-only progress-mode wiring і desktop/MSVC/Pi validation. Після нього потрібен hand-carried forward/reverse second pass уже indexed route; indoor corridor приблизно `5 m x 2 m` придатний для pipeline/repeatability evidence за достатнього світла й texture, але не замінює подальші outdoor robustness tests.
+- Reset не повертає дрон із невідомої сцени: він очищає stale local tracking. Поновлення ODOMETRY потребує окремого consistent global route reacquisition; JT_Zero за ідеєю може бути local hold anchor, але не global route finder.
+
+Канонічний snapshot і черга: `docs/CURRENT_PROJECT_STATUS_UA.md`.
+
 ## Entry 2026-07-14: Вижимка З Наданого Попереднього Transcript
 
 ```text

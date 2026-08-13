@@ -1,5 +1,7 @@
 # Raspberry Pi Build
 
+Current accepted all-output-off baseline is `46/46` on Pi Zero 2W/OV9281 at commit `135942f`; evidence and limitations are summarized in `CURRENT_PROJECT_STATUS_UA.md`. Commands below include historical stage-specific wrappers. Do not infer current authorization from the existence of an attach/send wrapper; use the current snapshot and controlling safety plan first.
+
 This document describes the intended Raspberry Pi build path for the C++ core.
 
 The default desktop build remains replay-first and fail-closed. Pi camera capture is enabled only when the hardware backend is explicitly requested.

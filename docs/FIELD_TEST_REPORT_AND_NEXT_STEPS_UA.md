@@ -1,5 +1,7 @@
 # Звіт Польових Тестів І Наступні Кроки
 
+> Timestamped польовий звіт і command reference. Поточна межа проєкту та immediate development order станом на `2026-08-13` зберігаються в `CURRENT_PROJECT_STATUS_UA.md`.
+
 Цей документ підсумовує вже виконані тести Visual Homing, висновки, які з них можна безпечно зробити, і рекомендовані команди для наступної польової сесії.
 
 Англомовний оригінал: [`FIELD_TEST_REPORT_AND_NEXT_STEPS.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS.md).

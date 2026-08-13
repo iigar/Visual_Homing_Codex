@@ -123,6 +123,8 @@ Exact `Copter-4.3.6`/`0c5e999c` SITL acceptance тепер підтвердив 
 
 Reverse camera orientation, точний residual sign для реального монтажу, real-FC origin/Home/RTL semantics, Pi timing, real-FC mode acceptance та props-off UART attachment залишаються незавершеними.
 
+Окремо, `LiveRouteVerificationProducer` може працювати в progress-only mode без metric local pose. У цьому режимі він не перетворює `ROUTE_FRD` progress на `LOCAL_NED|LOCAL_ENU`, зберігає `has_local_pose=false` і не має права створювати gate records. Майбутній trusted local-pose caller мусить назвати frame ID, revision та convention і пройти quality/freshness gates; сам route progress цього не замінює. Поточний порядок інтеграції: `docs/CURRENT_PROJECT_STATUS_UA.md`.
+
 До окремого SITL/props-off review не підключати новий ODOMETRY encoder до UART і не повторювати blind provider-send лише для збільшення лічильника sent messages.
 
 ## Офіційні Джерела

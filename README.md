@@ -27,6 +27,8 @@ Python and web components may remain useful for tooling, monitoring, and offline
 
 The repository is the source of truth for long-term project context.
 
+Start with [`docs/CURRENT_PROJECT_STATUS_UA.md`](docs/CURRENT_PROJECT_STATUS_UA.md) for the concise current boundary and next development slice. Then use `PROJECT_MEMORY.md` for stable context, `SESSION_LOG.md` for chronology, `DECISIONS.md` for accepted decisions, and `ROADMAP.md` for the full milestone queue.
+
 Use the helper script from the repository root:
 
 ```powershell
@@ -44,12 +46,13 @@ Estimate the size of the standard startup context pack:
 .\scripts\context-status.ps1 -MaxTokens 128000
 ```
 
-This is not a live Codex context meter. It estimates the token size of the project memory files plus `git log -3`, which is the context pack normally read at the start of a session.
+This is not a live Codex context meter. It estimates the lean startup pack plus `git log -3`. The full `SESSION_LOG.md` and `DECISIONS.md` are preserved as searchable archives; new sessions should read their newest/relevant sections instead of loading both histories unconditionally.
 
 Rules:
 
 - Technical project decisions go to `docs/DECISIONS.md`.
 - Current progress goes to `docs/SESSION_LOG.md`.
 - Stable project context goes to `docs/PROJECT_MEMORY.md`.
+- The concise current state and immediate next slice go to `docs/CURRENT_PROJECT_STATUS_UA.md`.
 - Ideas and research go to `notes/`.
 - Code changes are captured in detailed git commits.

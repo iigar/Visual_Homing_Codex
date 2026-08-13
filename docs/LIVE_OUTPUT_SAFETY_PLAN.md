@@ -1,5 +1,7 @@
 # Live MAVLink Output Safety Plan
 
+> Controlling safety plan for any future command-output work, but not the current development slice. Current execution order: `CURRENT_PROJECT_STATUS_UA.md`. Its safety requirements remain binding whenever this track resumes.
+
 This document defines the required safety readiness work before any live MAVLink command output can move beyond the current reviewed bench-only boundaries.
 
 Default live output remains blocked. This plan does not authorize flight, tethered tests, ground movement, or autonomous return.

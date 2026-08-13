@@ -1,5 +1,7 @@
 # Field Test Report And Next Steps
 
+> Timestamped field report and command reference. For the current project boundary and immediate development order as of `2026-08-13`, use `CURRENT_PROJECT_STATUS_UA.md`.
+
 This document summarizes the Visual Homing field tests completed so far, the conclusions we can safely draw from them, and the recommended commands for the next field session.
 
 Ukrainian version: [`FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md`](FIELD_TEST_REPORT_AND_NEXT_STEPS_UA.md).

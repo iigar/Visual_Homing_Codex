@@ -59,7 +59,7 @@ route_descriptor_index_builder \
 - Source chunk завантажується у RAM цілком, хоча chunks обробляються по одному. Pi memory/timing benchmark ще потрібен.
 - Якщо index уже фіналізовано, але derived manifest не вдалося записати через I/O failure, може лишитися orphan index; автоматичне видалення не виконується.
 - Формат не містить ANN tree, inverted file або search scores. Перший search може бути bounded linear scan, а сильніший index буде новою version/encoding.
-- Transactional selector і supplied-native-entry package writer уже реалізовані окремими modules, але не читають VHIX напряму і не відкривають live camera. Live capture/synchronization, high-resolution content matching та multi-frame temporal acceptance залишаються наступними етапами.
+- Transactional selector, supplied-native-entry package writer, live capture/synchronization, bounded publisher і fail-closed production evidence composition уже реалізовані окремими modules. Operational matcher/CLI caller ще не підключений; high-resolution content matching та multi-frame temporal acceptance залишаються наступними етапами після progress-only wiring.
 
 ## Перевірка
 
@@ -67,3 +67,4 @@ Desktop tests покривають brightness-offset invariance, exact expected 
 
 Sparse selector contract: `docs/VERIFICATION_GATE_SELECTOR_UA.md`.
 Verification writer contract: `docs/VERIFICATION_PACKAGE_WRITER_UA.md`.
+Current execution order: `docs/CURRENT_PROJECT_STATUS_UA.md`.

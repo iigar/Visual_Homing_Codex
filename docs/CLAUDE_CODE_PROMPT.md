@@ -1,5 +1,7 @@
 # Claude Code Prompt
 
+This is a reusable generic continuation template, not the canonical prompt for the current repository state. For the active project use the startup prompt in `PROJECT_MEMORY.md` and read `CURRENT_PROJECT_STATUS_UA.md` first.
+
 Use this prompt when asking Claude Code to refactor or continue an existing Visual-Homing repository toward the same architecture and safety direction.
 
 ```text

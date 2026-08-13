@@ -76,3 +76,16 @@ Library implementation і deterministic tests завершені. WSL/GCC і cle
 - revision resume, physical SD fault injection, high-resolution content verification, multi-frame route lock і global reacquisition.
 
 Жодний FC/UART/MAVLink output, ODOMETRY, reset, Home або command path не підключений.
+
+## Наступний Integration Slice
+
+Поточний пріоритет станом на `2026-08-13` — підключити producer до live matcher/CLI тільки в progress-only mode:
+
+1. exact native camera frame і match result мають походити з одного кадру/часу;
+2. caller передає tracked progress та fresh health/altitude/scale/yaw;
+3. `has_local_pose` залишається `false`, тому gate metadata не створюється;
+4. CLI явно задає indexed source VHRM/VHIX і output revision directory;
+5. replay/fake-source tests перевіряють rejection, backpressure, terminal failure і clean drain;
+6. після desktop/MSVC/Pi all-output-off acceptance виконується окремий hand-carried second pass уже відомого маршруту forward/reverse без arm/send.
+
+Перший recording pass не є допустимим caller-ом до finalize/index. Канонічна повна черга: `docs/CURRENT_PROJECT_STATUS_UA.md`.

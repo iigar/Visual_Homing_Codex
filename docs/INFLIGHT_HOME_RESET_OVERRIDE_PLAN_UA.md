@@ -128,6 +128,8 @@ Reset не є командою польоту й не повертає апар�
 
 ## Невирішені Межі
 
+Цей reset/reacquisition stream не є поточним coding slice. Спочатку треба завершити operational progress-only verification wiring і second-pass evidence, потім bounded global search та multi-frame lock. Канонічна черга: `docs/CURRENT_PROJECT_STATUS_UA.md`.
+
 - Live RC12 mapping підтверджений лише для поточного transmitter/receiver/FC setup; його треба повторити після remap, firmware/parameter restore або зміни пульта/приймача.
 - Live LOW->HIGH->LOW decoder event прийнятий лише як dry-run input evidence; library-only safety-gate композиція тепер є, але live telemetry/audit/runtime attachment, reset executor і ODOMETRY recovery acceptance ще відсутні.
 - Decoder і gate не виконують reset або Home change; executor/runtime attachment ще відсутні.

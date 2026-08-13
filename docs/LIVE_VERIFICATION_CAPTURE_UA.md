@@ -83,3 +83,5 @@ Publication latency у першому run зросла від `110.024 ms` до 
 - Operational caller у live matcher/route-enrichment runtime ще не підключений. First-pass recorder не може чесно дати route progress до finalize/index; для нового route потрібен окремий двопрохідний workflow.
 - Trusted metric local-pose producer з uncertainty/approach evidence. Pi all-output-off acceptance нового composition module завершено `46/46` на commit `135942f`; log і digest наведені в `docs/LIVE_ROUTE_VERIFICATION_COMPOSITION_UA.md`.
 - High-resolution content verification, multi-frame route lock, global reacquisition і `reset_reference`.
+
+Поточний порядок робіт зафіксовано в `docs/CURRENT_PROJECT_STATUS_UA.md`: спочатку operational progress-only matcher/CLI wiring і software/Pi acceptance, потім hand-carried second-pass capture. Trusted local pose/gates, revision recovery, search і reset залишаються наступними окремими slices.

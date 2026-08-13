@@ -130,11 +130,15 @@ Desktop test покриває:
 
 ## Наступні Кроки
 
-1. Підключити live `1280x800` capture/synchronization до готових selector/package-writer boundaries без flight authority.
-2. Реалізувати bounded offline VHIX coarse search і top-N provenance output без route lock.
-3. Підключити package builder до окремого bounded background recorder лише після review черги/backpressure та recovery metrics.
-4. Провести Pi load/storage/thermal benchmark.
-5. Лише після high-resolution/multi-frame verification реалізувати producer конкретного `reset_reference`.
+Live native-frame synchronization, bounded background publication і Pi `1280x800` load acceptance уже завершені. Поточна черга:
+
+1. Підключити готовий `LiveRouteVerificationProducer` до operational live matcher/CLI в progress-only mode.
+2. Додати immutable verification revision resume та physical SD durability evidence.
+3. Реалізувати bounded offline VHIX coarse search і top-N provenance output без route lock.
+4. Додати high-resolution content verification та multi-frame lock з off-route negatives.
+5. Лише після цього реалізувати producer конкретного `reset_reference`.
+
+Канонічний execution order: `docs/CURRENT_PROJECT_STATUS_UA.md`.
 
 Descriptor/index contract: `docs/ROUTE_DESCRIPTOR_INDEX_V1_UA.md`.
 Selector contract: `docs/VERIFICATION_GATE_SELECTOR_UA.md`.

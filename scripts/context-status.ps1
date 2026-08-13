@@ -9,9 +9,10 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 $contextFiles = @(
     "README.md",
+    "docs/CURRENT_PROJECT_STATUS_UA.md",
     "docs/PROJECT_MEMORY.md",
-    "docs/SESSION_LOG.md",
-    "docs/DECISIONS.md",
+    "docs/HARDWARE_ACCESS_BASELINE_UA.md",
+    "docs/COORDINATE_FRAME_CONTRACT_UA.md",
     "docs/ROADMAP.md",
     "docs/ARCHITECTURE.md"
 )
@@ -100,5 +101,6 @@ Write-Host "Usage:                  [$bar] $percent%"
 Write-Host ""
 Write-Host "Important:"
 Write-Host "- This is not the live Codex conversation context meter."
-Write-Host "- It estimates the startup context pack: project memory docs plus git log -3."
+Write-Host "- It estimates the lean startup pack: current/stable/hardware/frame/roadmap/architecture docs plus git log -3."
+Write-Host "- Full SESSION_LOG and DECISIONS remain searchable archives and are loaded only for the relevant topic/date."
 Write-Host "- Real token counts depend on the model tokenizer and the active chat history."

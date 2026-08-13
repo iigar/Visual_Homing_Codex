@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-08-13 - Make One Snapshot Canonical And Keep The Next Slice Software-Only
+
+Decision:
+- Add `CURRENT_PROJECT_STATUS_UA.md` as the concise canonical snapshot for current boundary, evidence, open gaps and immediate ordering.
+- Preserve role separation: stable facts in `PROJECT_MEMORY.md`, chronology in `SESSION_LOG.md`, accepted choices here, milestone queue in `ROADMAP.md`, hardware facts in `HARDWARE_ACCESS_BASELINE_UA.md`, and immutable timestamped evidence in field/benchmark reports.
+- Make operational progress-only verification wiring the immediate development slice. Keep local-pose gates, global search, reset, ODOMETRY, JT_Zero handoff, FC/UART/MAVLink output and flight authority outside that slice.
+- Require a second-pass route workflow: first finalize/index a new route; only a later traversal or controlled offline enrichment may attach honest normalized progress to verification keyframes.
+
+Why:
+- The library-level producer and Pi resource acceptance are complete, but GitNexus shows no operational production flow. Starting global reacquisition or FC work before attaching and testing the producer would skip the first unresolved boundary.
+- Several older plans correctly preserve historical field/provider work but still use language such as "next action". A single dated snapshot prevents those historical instructions from overruling later architecture decisions.
+- First-pass elapsed time or frame index is not route geometry and must not be stored as if it were normalized progress.
+
+Impact:
+- Documentation and work ordering only; no code symbol, hardware state, output flag or safety gate changed.
+- The accepted desktop/Pi all-output-off baseline remains `46/46`; no new test or hardware claim is created by this reconciliation.
+
+Risk:
+- The snapshot must be refreshed whenever the immediate slice changes, while historical evidence documents must remain immutable except for an explicit scope banner or correction note.
+- Progress-only wiring can create ordinary sparse verification frames but cannot create gate records or a trusted `reset_reference`.
+- Full chronological logs already exceed a practical single-session startup budget. Preserve them intact, but use a lean canonical startup pack and load only newest/topic-relevant archive sections.
+
 ## 2026-07-27 - Add A Fail-Closed Production Verification Composition Boundary
 
 Decision:

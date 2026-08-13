@@ -21,6 +21,21 @@ This core is an operator-in-the-loop command-assist system during the current sa
 
 Module boundaries should stay explicit and replaceable. Capture, preprocessing, route artifact I/O, matching, telemetry, navigation, command output, audit, and safety gates should be testable independently so future sensors or algorithms can be added without rewriting the realtime scheduler.
 
+## Current Implemented Route-Package Path
+
+The current long-route groundwork extends the original single-file route path without granting flight authority:
+
+```text
+bounded tracking recorder -> VHRS chunks -> VHRM manifest -> VHIX descriptors
+live native frame + same-frame route evidence -> LiveRouteVerificationProducer
+-> BoundedVerificationPublisher -> LiveVerificationCaptureSession
+-> immutable native verification revision
+```
+
+The components through `LiveRouteVerificationProducer` are implemented and pass the current all-output-off desktop/Pi `46/46` baseline. The producer is still library-only: no operational live matcher/CLI caller, trusted local pose, coarse-search consumer, high-resolution multi-frame lock, reset, ODOMETRY runtime, UART, FC command, or flight path is attached.
+
+The immediate architecture step is progress-only live-matcher/CLI wiring. Local-pose gates remain disabled until a separately trusted metric pose source exists. The canonical status and ordering are in `CURRENT_PROJECT_STATUS_UA.md`.
+
 ## Extension Points
 
 - Additional cameras and capture paths: visible Pi camera, USB, thermal, or replay.
@@ -32,7 +47,7 @@ The current Gray8/MAD matcher and `64x48` target are a deterministic baseline, n
 
 ## Realtime Rules
 
-- No disk I/O in the camera or command loop.
+- No blocking or unbounded disk I/O in the camera or command loop. Sparse native publication must use the accepted bounded worker and explicit backpressure.
 - No unbounded queues in flight-critical paths.
 - Every sensor sample and command carries a monotonic timestamp.
 - MAVLink command output is single-writer.

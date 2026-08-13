@@ -56,23 +56,15 @@ Validated on Windows with:
 - CMake 3.31.6-msvc6
 - CTest 3.31.6-msvc6
 
-Expected CTest coverage:
+The current registered suite contains `46` CTest tests. It covers replay/camera preprocessing, route signatures and bounded streaming, VHRM/VHIX package artifacts, verification selection/publication/composition, telemetry, route-local ODOMETRY, reset safety, dry-run/live-output boundaries, and matcher/navigation behavior.
 
-- `bounded_navigator`
-- `camera_profile`
-- `camera_smoke`
-- `dry_run_command_sink`
-- `dry_run_mavlink_bridge`
-- `gray8_resize_preprocessor`
-- `replay_frame_source`
-- `health_monitor`
-- `mavlink_telemetry_adapter`
-- `pi_camera_source`
-- `pipeline_harness`
-- `route_signature`
-- `route_signature_recorder`
-- `route_artifact_check`
-- `gray8_route_matcher`
+Accepted baseline:
+
+- WSL/GCC all-output-off: `46/46`;
+- clean Pi Zero 2W/OV9281 all-output-off: `46/46` at commit `135942f`;
+- affected MSVC 19.44/Ninja targets: passed.
+
+Exact current evidence and limitations are summarized in `CURRENT_PROJECT_STATUS_UA.md`. Historical lower test counts in timestamped evidence documents describe those earlier commits and must not be rewritten as current failures.
 
 Latest validation command:
 

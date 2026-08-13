@@ -1,5 +1,7 @@
 # Claude Code Prompt New
 
+This is a reusable from-scratch template, not a status description of the current repository. Current Visual_Homing_Codex state is maintained in `CURRENT_PROJECT_STATUS_UA.md` and `PROJECT_MEMORY.md`.
+
 Use this prompt when asking Claude Code to create a new Visual-Homing-style project from scratch, or to rebuild the architecture in a fresh repository and bring it to the same working safety-readiness state.
 
 ```text

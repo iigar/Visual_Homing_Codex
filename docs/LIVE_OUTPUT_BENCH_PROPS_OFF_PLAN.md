@@ -1,5 +1,7 @@
 # Live Output Bench Props-Off Plan
 
+> Reviewed downstream bench plan, not current authorization or immediate work. Current execution order: `CURRENT_PROJECT_STATUS_UA.md`.
+
 This document defines the reviewed implementation scope for the first possible live MAVLink output boundary after the completed Milestone 6.7 readiness evidence.
 
 This plan does not authorize flight, tethered flight, ground movement, or autonomous return. It does not enable live output by itself.

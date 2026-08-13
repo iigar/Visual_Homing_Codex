@@ -59,7 +59,7 @@ function Get-SafeFileName {
 }
 
 if ($Type -eq "startup") {
-    Write-Output "Продовжуємо Visual_Homing_Codex. Перед роботою прочитай docs/PROJECT_MEMORY.md, docs/HARDWARE_ACCESS_BASELINE_UA.md, docs/COORDINATE_FRAME_CONTRACT_UA.md, docs/SESSION_LOG.md, docs/DECISIONS.md, docs/ROADMAP.md і git log -3."
+    Write-Output "Продовжуємо Visual_Homing_Codex. Спочатку прочитай lean startup pack: docs/CURRENT_PROJECT_STATUS_UA.md, docs/PROJECT_MEMORY.md, docs/HARDWARE_ACCESS_BASELINE_UA.md, docs/COORDINATE_FRAME_CONTRACT_UA.md, поточний focus у docs/ROADMAP.md і git log -3. docs/SESSION_LOG.md та docs/DECISIONS.md є повними chronological archives: прочитай їхні найновіші записи і тематичні секції, потрібні для поточного slice, а не завантажуй обидва файли повністю без потреби. Продовжуй із поточного git status, не змінюй і не коміть чужі untracked файли."
     exit 0
 }
 

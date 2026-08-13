@@ -1,5 +1,7 @@
 # Live Output Readiness Record
 
+> Historical evidence ledger. The `3/3` readiness count remains valid for its recorded scope but is not current flight authorization. Current development order: `CURRENT_PROJECT_STATUS_UA.md`.
+
 This record tracks the clean Pi dry-run evidence required by `docs/LIVE_OUTPUT_SAFETY_PLAN.md`.
 
 Live MAVLink output remains blocked. This record is evidence tracking only.
