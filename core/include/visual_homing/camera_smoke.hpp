@@ -11,6 +11,7 @@
 #include "visual_homing/pi_camera_source.hpp"
 #include "visual_homing/bounded_navigator.hpp"
 #include "visual_homing/external_nav_estimator.hpp"
+#include "visual_homing/live_route_verification.hpp"
 
 namespace vh {
 
@@ -89,6 +90,7 @@ struct LiveRouteRecordingResult {
 
 struct LiveRouteMatchingConfig {
     PiCameraConfig camera;
+    std::string camera_profile_id;
     std::filesystem::path route_path;
     int target_width = 32;
     int target_height = 24;
@@ -127,6 +129,10 @@ struct LiveRouteMatchingConfig {
     ExternalNavEstimatorConfig external_nav{};
     bool visual_scale_diagnostics = false;
     double visual_scale_reference_altitude_m = 0.0;
+    bool publish_progress_only_route_verification = false;
+    BoundedVerificationPublisherConfig route_verification_publisher{};
+    LiveRouteVerificationProducerConfig route_verification_producer{};
+    VerificationCaptureMetadata route_verification_publication_metadata{};
     bool scale_refinement_enabled = false;
     std::size_t scale_refinement_radius = 1;
     bool top_match_diagnostics = false;
@@ -336,6 +342,14 @@ struct LiveRouteMatchingResult {
     std::string final_external_nav_output_reason;
     bool external_nav_output_session_audit_started = false;
     std::string external_nav_output_session_audit_path;
+    bool route_verification_requested = false;
+    bool route_verification_started = false;
+    bool route_verification_passed = true;
+    LiveRouteVerificationProducerMetrics route_verification_producer_metrics{};
+    BoundedVerificationPublisherMetrics route_verification_publisher_metrics{};
+    LiveVerificationCaptureMetrics route_verification_capture_metrics{};
+    std::string route_verification_manifest_path;
+    std::string route_verification_failure_reason = "not_requested";
     bool passed = false;
 };
 
@@ -354,6 +368,7 @@ double live_route_match_next_tracked_progress(const std::string& expected_progre
                                               double raw_progress);
 double live_route_match_next_tracked_visual_scale_ratio(double previous_tracked_scale_ratio,
                                                         double raw_scale_ratio);
+void validate_progress_only_route_verification_config(const LiveRouteMatchingConfig& config);
 LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& config, std::ostream& metrics);
 
 } // namespace vh

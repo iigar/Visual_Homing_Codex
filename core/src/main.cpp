@@ -76,6 +76,7 @@ vh::LiveRouteMatchingConfig live_route_matching_config_from_profile(const vh::Ca
     config.camera.height = profile.capture_height;
     config.camera.frame_rate_hz = fps;
     config.camera.enable_live_capture = true;
+    config.camera_profile_id = profile.id;
     config.frames_to_capture = frames;
     config.route_path = route_path;
     config.target_width = profile.target_width;
@@ -299,6 +300,101 @@ void apply_external_nav_output_environment_overrides(vh::LiveRouteMatchingConfig
 }
 
 void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig& config) {
+    if (const char* enabled = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION")) {
+        config.publish_progress_only_route_verification = parse_bool_arg(enabled);
+    }
+    if (const char* enabled = std::getenv("VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS")) {
+        config.visual_scale_diagnostics = parse_bool_arg(enabled);
+    }
+    if (const char* altitude = std::getenv("VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M")) {
+        config.visual_scale_reference_altitude_m = parse_double_arg(
+            altitude,
+            "VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M");
+    }
+    if (const char* path = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_SOURCE_MANIFEST")) {
+        config.route_verification_publisher.capture.writer.source_manifest_path = path;
+    }
+    if (const char* path = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_OUTPUT_MANIFEST")) {
+        config.route_verification_publisher.capture.writer.output_manifest_base_path = path;
+    }
+    if (const char* id = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_SEARCH_INDEX_ID")) {
+        config.route_verification_publisher.capture.writer.search_index_id = id;
+    }
+    if (const char* id = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_LAYER_ID")) {
+        config.route_verification_publisher.capture.writer.verification_layer.id = id;
+    }
+    if (const char* directory = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DIRECTORY")) {
+        config.route_verification_publisher.capture.writer.verification_relative_directory = directory;
+    }
+    if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_KEYFRAMES")) {
+        config.route_verification_publisher.capture.writer.maximum_keyframes = static_cast<std::uint32_t>(
+            parse_size_arg(count, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_KEYFRAMES"));
+    }
+    if (const char* capacity = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_QUEUE_CAPACITY")) {
+        config.route_verification_publisher.queue_capacity = parse_size_arg(
+            capacity,
+            "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_QUEUE_CAPACITY");
+    }
+    if (const char* dimensions = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS")) {
+        config.route_verification_publisher.capture.writer.selector.descriptor_dimensions =
+            static_cast<std::uint32_t>(parse_size_arg(
+                dimensions,
+                "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS"));
+    }
+    if (const char* length = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_ROUTE_LENGTH_M")) {
+        config.route_verification_publisher.capture.writer.selector.nominal_route_length_m =
+            parse_double_arg(length, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_ROUTE_LENGTH_M");
+    }
+    if (const char* altitude = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_ALTITUDE_M")) {
+        const auto value = parse_double_arg(
+            altitude,
+            "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_ALTITUDE_M");
+        config.route_verification_publisher.capture.writer.verification_layer.minimum_altitude_m = value;
+        config.route_verification_publication_metadata.minimum_altitude_m = value;
+    }
+    if (const char* altitude = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_ALTITUDE_M")) {
+        const auto value = parse_double_arg(
+            altitude,
+            "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_ALTITUDE_M");
+        config.route_verification_publisher.capture.writer.verification_layer.maximum_altitude_m = value;
+        config.route_verification_publication_metadata.maximum_altitude_m = value;
+    }
+    if (const char* interval = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_INTERVAL_MS")) {
+        config.route_verification_publisher.capture.writer.selector.minimum_capture_interval_ns =
+            parse_uint64_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_INTERVAL_MS") * 1'000'000ULL;
+    }
+    if (const char* interval = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_INTERVAL_MS")) {
+        config.route_verification_publisher.capture.writer.selector.maximum_capture_interval_ns =
+            parse_uint64_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_INTERVAL_MS") * 1'000'000ULL;
+    }
+    if (const char* displacement = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_DISPLACEMENT_M")) {
+        config.route_verification_publisher.capture.writer.selector.minimum_displacement_m =
+            parse_double_arg(displacement, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_DISPLACEMENT_M");
+    }
+    if (const char* age = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_CONTEXT_AGE_MS")) {
+        config.route_verification_producer.maximum_frame_context_age_ms =
+            parse_double_arg(age, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_CONTEXT_AGE_MS");
+    }
+    if (const char* age = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_SCALAR_AGE_MS")) {
+        config.route_verification_producer.maximum_scalar_age_ms =
+            parse_double_arg(age, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_SCALAR_AGE_MS");
+    }
+    if (config.publish_progress_only_route_verification) {
+        auto& writer = config.route_verification_publisher.capture.writer;
+        writer.verification_layer.role = vh::RouteLayerRole::Verification;
+        writer.verification_layer.camera_profile_id = config.camera_profile_id;
+        writer.verification_layer.pixel_format = vh::PixelFormat::Gray8;
+        writer.verification_layer.width = static_cast<std::uint16_t>(config.camera.width);
+        writer.verification_layer.height = static_cast<std::uint16_t>(config.camera.height);
+        config.route_verification_producer.minimum_match_confidence = config.minimum_confidence;
+        config.route_verification_producer.require_mavlink_health = true;
+        config.route_verification_publication_metadata.allowed_directions =
+            config.expected_progress == "forward"
+                ? vh::route_gate_direction_forward
+                : (config.expected_progress == "reverse"
+                    ? vh::route_gate_direction_reverse
+                    : vh::route_gate_direction_forward | vh::route_gate_direction_reverse);
+    }
     if (const char* stop_at_endpoint = std::getenv("VISUAL_HOMING_LIVE_ROUTE_MATCH_STOP_AT_ENDPOINT_PROGRESS")) {
         config.stop_at_endpoint_progress = parse_bool_arg(stop_at_endpoint);
     }

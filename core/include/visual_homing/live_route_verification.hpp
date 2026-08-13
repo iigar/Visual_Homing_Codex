@@ -83,6 +83,14 @@ struct LiveRouteVerificationProducerMetrics {
     std::string last_rejection_reason;
 };
 
+LiveRouteVerificationObservation make_progress_only_live_route_verification_observation(
+    const RouteMatch& match,
+    std::optional<double> tracked_route_progress,
+    const HealthSnapshot& health,
+    const LiveRouteVerificationScalarObservation& altitude,
+    const LiveRouteVerificationScalarObservation& scale_ratio,
+    const VerificationCaptureMetadata& publication_metadata = {});
+
 class LiveRouteVerificationProducer {
 public:
     LiveRouteVerificationProducer(

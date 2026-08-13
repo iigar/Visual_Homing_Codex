@@ -763,6 +763,22 @@ if(BUILD_TESTING)
 
     add_test(NAME live_route_verification COMMAND live_route_verification_test)
 
+    add_executable(progress_only_route_verification_wiring_test
+        tests/progress_only_route_verification_wiring_test.cpp
+    )
+
+    target_link_libraries(progress_only_route_verification_wiring_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(progress_only_route_verification_wiring_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(
+        NAME progress_only_route_verification_wiring
+        COMMAND progress_only_route_verification_wiring_test
+    )
+
     add_executable(route_signature_recorder_test
         tests/route_signature_recorder_test.cpp
     )

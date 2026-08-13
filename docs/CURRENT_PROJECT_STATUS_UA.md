@@ -2,9 +2,9 @@
 
 Оновлено: `2026-08-13`.
 
-Repository baseline at reconciliation: `main` commit `2d90dac826e186fa422ebc566073b42a2f42eb84`, synchronized with `origin/main` before these documentation changes.
+Repository baseline before the current implementation: `main` commit `52d686e0ccaa69e5abfdcd5ac5659218daa30f07`, synchronized with `origin/main`.
 
-Local intelligence after reconciliation: Graphify `5527` nodes / `8301` edges / `460` communities; GitNexus `9864` nodes / `20928` edges / `212` clusters / `205` flows. GitNexus FTS/BM25 is unavailable in the current Windows LadybugDB environment, але symbol/context/impact/detect navigation працює.
+Local intelligence after operational wiring: Graphify `5551` nodes / `8354` edges / `462` communities; GitNexus `9894` nodes / `21546` edges / `215` clusters / `207` flows. GitNexus FTS/BM25 is unavailable in the current Windows LadybugDB environment, але symbol/context/impact/detect navigation працює.
 
 Це короткий канонічний snapshot для відповіді на питання «де ми зараз і що робимо далі». Детальні стабільні факти зберігаються в `PROJECT_MEMORY.md`, хронологія — у `SESSION_LOG.md`, рішення — у `DECISIONS.md`, повна черга — у `ROADMAP.md`, а hardware facts — у `HARDWARE_ACCESS_BASELINE_UA.md`.
 
@@ -21,22 +21,21 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - synchronized native-frame capture session;
 - single-worker bounded publisher з explicit backpressure/failure/drain metrics;
 - fail-closed `LiveRouteVerificationProducer`, який приймає тільки same-frame match/progress/health/fresh scalar evidence та optional fully named local pose.
+- operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
 
-- Desktop WSL/GCC all-output-off CTest: `46/46`.
+- Desktop WSL/GCC all-output-off CTest: `47/47` для поточного operational-wiring working tree.
 - Clean Pi Zero 2W/OV9281 all-output-off CTest: `46/46` на commit `135942f`, `1400 s`, `get_throttled=0x0`.
 - Pi build log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260726T225735Z.log`.
 - Log SHA-256: `88d6cacaa5e3c24f4a5333b2b93e191d26056affcefad3893adaa75e6dbacd99`.
 - Accepted async native `1280x800` benchmark: `60/60` verified publications, `8439/8439` accepted/completed, `1514` explicit backpressure, max outstanding `2`, zero worker/publication/abandoned/discarded failures, camera loop `16.5967 fps`, RSS max `25580 KiB`, temperature max `61.224 °C`, throttle `0x0`.
-- MSVC 19.44/Ninja affected tests passed; the new composition test also passed `100` repeated desktop runs.
+- Попередній MSVC 19.44/Ninja affected baseline проходив; поточна Windows перевірка не стартувала, бо локальний Visual Studio Build Tools shell не має доступного `cl.exe`. Це toolchain blocker, не test failure.
 
 Це software/camera/storage evidence. Воно не є real-FC acceptance, allowed-send evidence або flight evidence.
 
 ## Що Ще Не Підключено
 
-- operational caller у live route matcher/CLI або окремому route-enrichment runtime;
-- CLI/environment contract для source VHRM/VHIX, output revision base та scalar sources;
 - trusted metric local pose з uncertainty/approach evidence;
 - restart/resume immutable verification revisions і physical SD power-loss durability;
 - bounded VHIX search consumer, top-N native-resolution content verification і multi-frame lock;
@@ -49,17 +48,16 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 
 Наступний етап знову програмний, без керування дроном:
 
-1. Під’єднати `LiveRouteVerificationProducer` до існуючого live matcher/CLI в progress-only mode.
-2. Додати explicit config для indexed source package, output revision directory і fresh altitude/scale/yaw inputs.
-3. Зберегти `has_local_pose=false`: перший caller може писати sparse verification keyframes, але не gate records.
-4. Додати deterministic replay/fake-source tests для same-frame provenance, stale inputs, backpressure, terminal worker failure, clean drain і first-pass-recording rejection.
-5. Повторити desktop all-output-off suite, affected MSVC tests і clean Pi all-output-off suite.
+1. Закомітити operational progress-only wiring і повторити clean Pi all-output-off suite.
+2. Перевірити на Pi exact VHRM/VHIX/VHRS package binding, publisher drain, zero gates і immutable output revisions без відкриття output path.
+3. Відновити affected MSVC verification після ремонту локального `cl.exe` toolchain; це не блокує Linux/Pi evidence, але лишається release checklist item.
+4. Підготувати окремий hand-carried second-pass wrapper/checker для вже finalized/indexed short route.
 
 Лише після цього потрібен фізичний hand-carried second pass по вже записаному короткому маршруту: forward і reverse, приблизно `5–10 m`, без arm/send. Його мета — довести, що live matcher створює коректно прив’язані sparse verification revisions. Вуличний тест не потрібен для поточного програмного slice; достатнє освітлене приміщення з корисною текстурою і безпечним прямим коридором.
 
 ## Подальші Milestones До Перших Польотів
 
-1. Operational progress-only verification wiring і software/Pi acceptance.
+1. Operational progress-only verification wiring: desktop implementation complete; Pi acceptance pending.
 2. Hand-carried second-pass verification capture forward/reverse.
 3. Immutable revision resume та SD fault/durability acceptance.
 4. Offline bounded VHIX coarse search -> top-N native verification -> multi-frame route lock, включно з off-route negatives.

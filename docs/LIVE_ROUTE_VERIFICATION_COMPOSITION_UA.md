@@ -64,14 +64,46 @@ Producer відхиляє observation до descriptor generation і SD publicati
 
 Metrics рахують observations, rejected, progress-only/local-pose contexts і кожний publisher outcome. Остання причина pre-worker rejection зберігається окремо.
 
+## Operational Progress-Only Caller
+
+`match_live_camera_route` тепер володіє optional bounded publisher/producer lifecycle для другого проходу вже indexed route package:
+
+- source VHRM перевіряється разом з усіма artifacts до відкриття камери;
+- source package мусить мати рівно один tracking chunk, фізично тотожний `.vhrs`, який читає live matcher;
+- camera profile/native dimensions, search-index ID і descriptor dimensions мусять збігатися;
+- producer отримує raw native frame, same-frame processed match, tracked progress, current health, fresh read-only `relative_altitude`, same-frame visual scale та `RouteMatch.direction_error_rad` як image-derived yaw residual; host freshness altitude оновлюється лише коли cumulative inspector бачить збільшення `relative_altitude_samples`, тому повторне читання старого buffer не омолоджує scalar;
+- local-frame contract заборонений у цьому режимі, `local_pose` завжди absent, тому published gate count мусить бути zero;
+- command, external-nav estimate/output і live-output sessions не можуть бути увімкнені разом із цим evidence-only режимом;
+- terminal publisher failure/not-running зупиняє session; backpressure та pre-worker rejection рахуються явно; завершення виконує `stop(drain=true)` і вимагає `accepted == completed`, zero abandoned/discarded/failures, хоча б одну publication і zero gates.
+
+Env contract починається з `VISUAL_HOMING_LIVE_ROUTE_VERIFICATION=1` і явно задає `..._SOURCE_MANIFEST`, `..._OUTPUT_MANIFEST`, `..._SEARCH_INDEX_ID`, `..._LAYER_ID`, `..._DESCRIPTOR_DIMENSIONS`, `..._ROUTE_LENGTH_M`, `..._MIN_ALTITUDE_M`, `..._MAX_ALTITUDE_M`; queue/keyframe/interval/displacement/age bounds мають окремі optional `VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_*` overrides. Visual scale вмикається через `VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS=1` та `VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M`.
+
+Required variable names:
+
+```text
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION=1
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_SOURCE_MANIFEST=<indexed-source.vhrm>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_OUTPUT_MANIFEST=<output-base.vhrm>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_SEARCH_INDEX_ID=<vhix-record-id>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_LAYER_ID=<new-verification-layer-id>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS=<vhix-dimensions>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_ROUTE_LENGTH_M=<measured-route-length>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_ALTITUDE_M=<layer-min>
+VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_ALTITUDE_M=<layer-max>
+VISUAL_HOMING_VISUAL_SCALE_DIAGNOSTICS=1
+VISUAL_HOMING_VISUAL_SCALE_REFERENCE_ALTITUDE_M=<recording-reference-altitude>
+```
+
+Optional exact names: `VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DIRECTORY`, `..._MAX_KEYFRAMES`, `..._QUEUE_CAPACITY`, `..._MIN_INTERVAL_MS`, `..._MAX_INTERVAL_MS`, `..._MIN_DISPLACEMENT_M`, `..._MAX_CONTEXT_AGE_MS`, `..._MAX_SCALAR_AGE_MS`.
+
+Це навмисно ще не multi-chunk live matcher. Kilometer-scale multi-chunk package потребує окремого bounded chunk/window consumer; поточний strict one-chunk contract не дозволяє випадково збагатити не той corridor.
+
 ## Поточний Статус
 
-Library implementation і deterministic tests завершені. WSL/GCC і clean Pi Zero 2W all-output-off suites проходять `46/46`, новий desktop test проходить `100/100` повторів, MSVC 19.44/Ninja проходить три пов’язані tests. Pi run на exact commit `135942f` зайняв `1400 s`, завершився без test failure і залишив `get_throttled=0x0`; log `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260726T225735Z.log`, SHA-256 `88d6cacaa5e3c24f4a5333b2b93e191d26056affcefad3893adaa75e6dbacd99`.
+Library composition та operational live-matcher/CLI progress-only attachment реалізовані. Поточний WSL/GCC all-output-off suite проходить `47/47`, включно з package-binding negative tests; producer tests зберігають stale/provenance/backpressure/terminal-failure coverage. Останній чистий Pi baseline поки лишається `46/46` на exact commit `135942f`; clean Pi test нового caller-а ще pending. Поточний Windows test не стартував через відсутній `cl.exe` у локальній Visual Studio Build Tools installation; попередній MSVC affected baseline був green.
 
 Ще не виконано:
 
-- operational caller у `match_live_camera_route` або окремому route-enrichment runtime;
-- CLI/environment config для source VHRM/VHIX, output revision base і scalar/local-pose sources;
 - trusted metric local-pose source з uncertainty/approach contract;
 - revision resume, physical SD fault injection, high-resolution content verification, multi-frame route lock і global reacquisition.
 
@@ -79,13 +111,6 @@ Library implementation і deterministic tests завершені. WSL/GCC і cle
 
 ## Наступний Integration Slice
 
-Поточний пріоритет станом на `2026-08-13` — підключити producer до live matcher/CLI тільки в progress-only mode:
-
-1. exact native camera frame і match result мають походити з одного кадру/часу;
-2. caller передає tracked progress та fresh health/altitude/scale/yaw;
-3. `has_local_pose` залишається `false`, тому gate metadata не створюється;
-4. CLI явно задає indexed source VHRM/VHIX і output revision directory;
-5. replay/fake-source tests перевіряють rejection, backpressure, terminal failure і clean drain;
-6. після desktop/MSVC/Pi all-output-off acceptance виконується окремий hand-carried second pass уже відомого маршруту forward/reverse без arm/send.
+Поточний пріоритет станом на `2026-08-13` — clean Pi all-output-off build/CTest для нового caller-а, потім окремий hand-carried second pass уже відомого finalized/indexed маршруту forward/reverse без arm/send. Перед фізичним проходом потрібен wrapper/checker, який перевіряє source-package identity, completed drain, published revisions та `gates=0`.
 
 Перший recording pass не є допустимим caller-ом до finalize/index. Канонічна повна черга: `docs/CURRENT_PROJECT_STATUS_UA.md`.

@@ -30,6 +30,8 @@
 #include "visual_homing/live_mavlink_output_safety_gate.hpp"
 #include "visual_homing/live_mavlink_serial_writer.hpp"
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
+#include "visual_homing/route_descriptor_index.hpp"
+#include "visual_homing/route_package_manifest.hpp"
 #include "visual_homing/route_signature.hpp"
 #include "visual_homing/route_signature_recorder.hpp"
 #include "visual_homing/route_signature_streaming_recorder.hpp"
@@ -552,6 +554,131 @@ double live_route_match_next_tracked_visual_scale_ratio(double previous_tracked_
     const auto delta = raw_scale_ratio - previous_tracked_scale_ratio;
     const auto step = std::clamp(delta, -kTrackedVisualScaleMaxStep, kTrackedVisualScaleMaxStep);
     return previous_tracked_scale_ratio + step;
+}
+
+void validate_progress_only_route_verification_config(const LiveRouteMatchingConfig& config) {
+    if (!config.publish_progress_only_route_verification) {
+        return;
+    }
+    if (!config.use_live_telemetry_stream || !config.require_live_telemetry_health) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires healthy read-only live telemetry");
+    }
+    if (config.emit_dry_run_commands
+        || config.emit_live_output_session_audit
+        || config.live_output_runtime_controls_provided
+        || config.emit_external_nav_estimates
+        || config.emit_external_nav_output_session_audit
+        || config.external_nav_output_runtime_controls_provided) {
+        throw std::invalid_argument(
+            "Progress-only route verification is evidence-only and cannot share a command or external-nav session");
+    }
+    if (!config.visual_scale_diagnostics
+        || !std::isfinite(config.visual_scale_reference_altitude_m)
+        || config.visual_scale_reference_altitude_m <= 0.0) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires same-frame visual scale and a positive reference altitude");
+    }
+    if (!config.route_verification_producer.require_mavlink_health) {
+        throw std::invalid_argument(
+            "Progress-only route verification producer must require MAVLink health");
+    }
+    if (!config.route_verification_producer.local_frame_id.empty()
+        || !config.route_verification_producer.local_frame_revision.empty()
+        || !config.route_verification_producer.local_frame_convention.empty()) {
+        throw std::invalid_argument(
+            "Progress-only route verification must not configure a local coordinate frame");
+    }
+
+    const auto& writer = config.route_verification_publisher.capture.writer;
+    if (writer.source_manifest_path.empty()
+        || writer.output_manifest_base_path.empty()
+        || writer.search_index_id.empty()
+        || writer.verification_layer.id.empty()) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires source/output manifests, search index, and layer IDs");
+    }
+    if (config.camera_profile_id.empty()) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires the active camera profile ID");
+    }
+    if (config.camera.width <= 0 || config.camera.height <= 0
+        || config.camera.width > std::numeric_limits<std::uint16_t>::max()
+        || config.camera.height > std::numeric_limits<std::uint16_t>::max()) {
+        throw std::invalid_argument(
+            "Progress-only route verification active camera dimensions are outside VHRM v1 bounds");
+    }
+    if (writer.selector.descriptor_dimensions == 0
+        || !std::isfinite(writer.selector.nominal_route_length_m)
+        || writer.selector.nominal_route_length_m <= 0.0) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires explicit descriptor dimensions and route length");
+    }
+    if (writer.verification_layer.role != RouteLayerRole::Verification
+        || writer.verification_layer.camera_profile_id != config.camera_profile_id
+        || writer.verification_layer.pixel_format != PixelFormat::Gray8
+        || writer.verification_layer.width != config.camera.width
+        || writer.verification_layer.height != config.camera.height
+        || !std::isfinite(writer.verification_layer.minimum_altitude_m)
+        || !std::isfinite(writer.verification_layer.maximum_altitude_m)
+        || writer.verification_layer.minimum_altitude_m < 0.0
+        || writer.verification_layer.maximum_altitude_m
+            <= writer.verification_layer.minimum_altitude_m) {
+        throw std::invalid_argument(
+            "Progress-only route verification native layer is incomplete or incompatible with the active camera");
+    }
+
+    const auto manifest = read_route_package_manifest(writer.source_manifest_path);
+    const auto package_verification = verify_route_package_files(
+        writer.source_manifest_path,
+        manifest);
+    if (!package_verification.passed) {
+        throw std::invalid_argument(
+            "Progress-only route verification source package failed artifact verification");
+    }
+    if (manifest.camera.profile_id != config.camera_profile_id
+        || manifest.camera.pixel_format != PixelFormat::Gray8
+        || manifest.camera.capture_width != config.camera.width
+        || manifest.camera.capture_height != config.camera.height) {
+        throw std::invalid_argument(
+            "Progress-only route verification source package camera does not match the active camera");
+    }
+
+    const auto search_index = std::find_if(
+        manifest.search_indexes.begin(),
+        manifest.search_indexes.end(),
+        [&writer](const RouteSearchIndexRecord& index) {
+            return index.id == writer.search_index_id;
+        });
+    if (search_index == manifest.search_indexes.end()
+        || search_index->descriptor_dimensions != writer.selector.descriptor_dimensions) {
+        throw std::invalid_argument(
+            "Progress-only route verification search index is absent or has different dimensions");
+    }
+
+    std::vector<std::filesystem::path> tracking_chunks;
+    for (const auto& chunk : manifest.chunks) {
+        const auto layer = std::find_if(
+            manifest.layers.begin(),
+            manifest.layers.end(),
+            [&chunk](const RouteLayerRecord& candidate) {
+                return candidate.id == chunk.layer_id;
+            });
+        if (layer != manifest.layers.end() && layer->role == RouteLayerRole::Tracking) {
+            tracking_chunks.push_back(writer.source_manifest_path.parent_path() / chunk.relative_path);
+        }
+    }
+    std::error_code equivalent_error;
+    const auto route_is_tracking_chunk = tracking_chunks.size() == 1
+        && std::filesystem::equivalent(
+            config.route_path,
+            tracking_chunks.front(),
+            equivalent_error)
+        && !equivalent_error;
+    if (!route_is_tracking_chunk) {
+        throw std::invalid_argument(
+            "Progress-only route verification requires one tracking chunk identical to the live matcher VHRS");
+    }
 }
 
 namespace {
@@ -1083,8 +1210,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         throw std::invalid_argument("Live route matching external-nav estimates require live telemetry stream");
     }
     if (config.visual_scale_diagnostics) {
-        if (!config.emit_external_nav_estimates) {
-            throw std::invalid_argument("Live route matching visual-scale diagnostics require external-nav estimates");
+        if (!config.emit_external_nav_estimates
+            && !config.publish_progress_only_route_verification) {
+            throw std::invalid_argument(
+                "Live route matching visual-scale diagnostics require external-nav estimates or route verification");
         }
         if (!std::isfinite(config.visual_scale_reference_altitude_m)
             || config.visual_scale_reference_altitude_m <= 0.0) {
@@ -1150,6 +1279,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             throw std::invalid_argument("Live route matching focus ROI top count must be positive");
         }
     }
+    validate_progress_only_route_verification_config(config);
 
     const auto route = read_route_signature_file(config.route_path);
     const auto route_summary = summarize_route_signature(route);
@@ -1222,6 +1352,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         .required_mode = FlightMode::Guided,
     });
     LiveRouteMatchingResult result;
+    result.route_verification_requested = config.publish_progress_only_route_verification;
+    std::optional<BoundedVerificationPublisher> route_verification_publisher;
+    std::optional<LiveRouteVerificationProducer> route_verification_producer;
+    if (config.publish_progress_only_route_verification) {
+        route_verification_publisher.emplace(config.route_verification_publisher);
+        route_verification_producer.emplace(
+            config.route_verification_producer,
+            *route_verification_publisher);
+        result.route_verification_failure_reason = "not_started";
+    }
 
     metrics << "live_route_match_start width=" << config.camera.width
             << " height=" << config.camera.height
@@ -1267,6 +1407,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_estimates=" << (config.emit_external_nav_estimates ? "true" : "false")
             << " visual_scale_diagnostics=" << (config.visual_scale_diagnostics ? "true" : "false")
             << " visual_scale_reference_altitude_m=" << config.visual_scale_reference_altitude_m
+            << " progress_only_route_verification="
+            << bool_word(config.publish_progress_only_route_verification)
             << " scale_refinement=" << (matcher_config.enable_scale_refinement ? "true" : "false")
             << " scale_refinement_radius=" << matcher_config.scale_refinement_radius
             << " top_match_diagnostics=" << bool_word(config.top_match_diagnostics)
@@ -1590,6 +1732,40 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         }
     }
 
+    if (route_verification_publisher) {
+        result.route_verification_started = route_verification_publisher->start();
+        metrics << "live_route_match_route_verification_start"
+                << " started=" << bool_word(result.route_verification_started)
+                << " source_manifest="
+                << config.route_verification_publisher.capture.writer.source_manifest_path.string()
+                << " output_manifest_base="
+                << config.route_verification_publisher.capture.writer.output_manifest_base_path.string()
+                << " local_pose=false"
+                << " flight_authority=false\n";
+        if (!result.route_verification_started) {
+            result.route_verification_passed = false;
+            result.route_verification_failure_reason = "publisher_start_failed";
+            source.stop();
+            command_sink.stop();
+            if (live_output_session) {
+                live_output_session->stop("route_verification_start_failed");
+            }
+            if (external_nav_output_session) {
+                external_nav_output_session->stop("route_verification_start_failed");
+            }
+            if (telemetry_stream) {
+                telemetry_stream->stop();
+            }
+            metrics << "live_route_match_done started=false warmup_frames_dropped="
+                    << result.warmup_frames_dropped
+                    << " frames_captured=0 valid_matches=0 progress_regressions=0 empty_polls="
+                    << result.empty_polls
+                    << " route_verification_started=false passed=false\n";
+            return result;
+        }
+        result.route_verification_failure_reason = "none";
+    }
+
     const auto capture_started_at = now();
     const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
@@ -1599,6 +1775,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<double> previous_valid_command_yaw_rate;
     std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
     MavlinkTelemetry latest_gate_telemetry;
+    LiveRouteVerificationScalarObservation latest_route_verification_altitude;
+    std::uint64_t last_relative_altitude_samples = 0;
     std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
     std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
     std::map<std::string, std::uint64_t> external_nav_output_block_reasons;
@@ -1740,6 +1918,21 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     live_route_match_telemetry_validation_config(config));
                 copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
+                    const auto has_new_relative_altitude =
+                        telemetry.inspection.relative_altitude_samples
+                            > last_relative_altitude_samples;
+                    if (has_new_relative_altitude) {
+                        latest_route_verification_altitude.valid =
+                            telemetry.inspection.latest.relative_altitude_seen
+                            && std::isfinite(
+                                telemetry.inspection.latest.relative_altitude_m)
+                            && telemetry.inspection.latest.relative_altitude_m >= 0.0;
+                        latest_route_verification_altitude.timestamp = processing_finished;
+                        latest_route_verification_altitude.value =
+                            telemetry.inspection.latest.relative_altitude_m;
+                        last_relative_altitude_samples =
+                            telemetry.inspection.relative_altitude_samples;
+                    }
                     latest_gate_telemetry = telemetry.inspection.latest;
                     latest_gate_telemetry.timestamp = processing_finished;
                     telemetry_adapter.observe(latest_gate_telemetry, processing_finished);
@@ -1799,6 +1992,19 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++live_output_gate_block_reasons[live_output_gate_result.reason];
                 }
             }
+            VisualScaleDiagnostic current_visual_scale;
+            const auto current_visual_scale_reference_altitude_m = config.visual_scale_diagnostics
+                ? config.visual_scale_reference_altitude_m
+                : config.external_nav.bench_diagnostic_altitude_m;
+            if ((config.emit_external_nav_estimates
+                    || config.publish_progress_only_route_verification)
+                && match.route_index < route.entries.size()
+                && current_visual_scale_reference_altitude_m > 0.0) {
+                current_visual_scale = estimate_visual_scale_diagnostic(
+                    processed,
+                    route.entries[static_cast<std::size_t>(match.route_index)],
+                    current_visual_scale_reference_altitude_m);
+            }
             if (config.emit_external_nav_estimates) {
                 auto external_nav_estimate = make_route_progress_external_nav_estimate(
                     match,
@@ -1806,19 +2012,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     latest_gate_telemetry,
                     processing_finished,
                     config.external_nav);
-                const auto visual_scale_reference_altitude_m = config.visual_scale_diagnostics
-                    ? config.visual_scale_reference_altitude_m
-                    : config.external_nav.bench_diagnostic_altitude_m;
-                if (match.route_index < route.entries.size() && visual_scale_reference_altitude_m > 0.0) {
-                    const auto visual_scale = estimate_visual_scale_diagnostic(
-                        processed,
-                        route.entries[static_cast<std::size_t>(match.route_index)],
-                        visual_scale_reference_altitude_m);
-                    external_nav_estimate.visual_scale_valid = visual_scale.valid;
-                    external_nav_estimate.visual_scale_ratio = visual_scale.scale_ratio;
-                    external_nav_estimate.visual_altitude_m = visual_scale.altitude_m;
-                    external_nav_estimate.visual_scale_confidence = visual_scale.confidence;
-                }
+                external_nav_estimate.visual_scale_valid = current_visual_scale.valid;
+                external_nav_estimate.visual_scale_ratio = current_visual_scale.scale_ratio;
+                external_nav_estimate.visual_altitude_m = current_visual_scale.altitude_m;
+                external_nav_estimate.visual_scale_confidence = current_visual_scale.confidence;
                 ++result.external_nav_estimates;
                 if (external_nav_estimate.altitude_valid) {
                     ++result.external_nav_altitude_valid_frames;
@@ -1973,6 +2170,41 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 result.last_tracked_progress = tracked_progress;
                 last_tracked_progress = tracked_progress;
                 current_tracked_progress = tracked_progress;
+            }
+
+            if (route_verification_producer) {
+                const LiveRouteVerificationScalarObservation scale_observation{
+                    current_visual_scale.valid,
+                    processed.timestamp,
+                    current_visual_scale.scale_ratio,
+                };
+                const auto verification_observation =
+                    make_progress_only_live_route_verification_observation(
+                        match,
+                        current_tracked_progress,
+                        health_snapshot,
+                        latest_route_verification_altitude,
+                        scale_observation,
+                        config.route_verification_publication_metadata);
+                const auto verification_result = route_verification_producer->submit(
+                    *frame,
+                    verification_observation);
+                metrics << "live_route_match_route_verification_frame"
+                        << " id=" << frame->id
+                        << " status="
+                        << live_route_verification_status_name(verification_result.status)
+                        << " reason="
+                        << (verification_result.reason.empty() ? "none" : verification_result.reason)
+                        << " local_pose=false\n";
+                if (verification_result.status == LiveRouteVerificationStatus::Failed
+                    || verification_result.status == LiveRouteVerificationStatus::NotRunning) {
+                    result.route_verification_passed = false;
+                    result.route_verification_failure_reason = verification_result.reason.empty()
+                        ? live_route_verification_status_name(verification_result.status)
+                        : verification_result.reason;
+                    result.stop_reason = "route_verification_failed";
+                    break;
+                }
             }
 
             metrics << "live_route_match_frame id=" << processed.id
@@ -2149,6 +2381,55 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     }
 
     source.stop();
+    if (route_verification_publisher) {
+        route_verification_publisher->stop(true);
+        result.route_verification_producer_metrics = route_verification_producer->metrics();
+        result.route_verification_publisher_metrics = route_verification_publisher->metrics();
+        result.route_verification_capture_metrics = route_verification_publisher->capture_metrics();
+        result.route_verification_manifest_path =
+            route_verification_publisher->current_manifest_path().string();
+        const auto& producer_metrics = result.route_verification_producer_metrics;
+        const auto& publisher_metrics = result.route_verification_publisher_metrics;
+        const auto& capture_metrics = result.route_verification_capture_metrics;
+        result.route_verification_passed = result.route_verification_passed
+            && result.route_verification_started
+            && producer_metrics.not_running == 0
+            && producer_metrics.failed == 0
+            && producer_metrics.progress_only_contexts > 0
+            && producer_metrics.local_pose_contexts == 0
+            && publisher_metrics.accepted == publisher_metrics.completed
+            && publisher_metrics.publication_results == capture_metrics.publications
+            && publisher_metrics.processing_failures == 0
+            && publisher_metrics.abandoned_after_failure == 0
+            && publisher_metrics.discarded_on_stop == 0
+            && capture_metrics.publications > 0
+            && capture_metrics.gates_published == 0;
+        if (!result.route_verification_passed
+            && result.route_verification_failure_reason == "none") {
+            result.route_verification_failure_reason = publisher_metrics.failure_reason.empty()
+                ? "route_verification_acceptance_failed"
+                : publisher_metrics.failure_reason;
+        }
+        metrics << "live_route_match_route_verification_stop"
+                << " drain=true"
+                << " passed=" << bool_word(result.route_verification_passed)
+                << " observations=" << producer_metrics.observations
+                << " rejected=" << producer_metrics.rejected
+                << " progress_only=" << producer_metrics.progress_only_contexts
+                << " local_pose=" << producer_metrics.local_pose_contexts
+                << " accepted=" << producer_metrics.accepted
+                << " backpressure=" << producer_metrics.backpressure
+                << " failed=" << producer_metrics.failed
+                << " completed=" << publisher_metrics.completed
+                << " publications=" << capture_metrics.publications
+                << " gates=" << capture_metrics.gates_published
+                << " manifest="
+                << (result.route_verification_manifest_path.empty()
+                    ? "none"
+                    : result.route_verification_manifest_path)
+                << " failure_reason=" << result.route_verification_failure_reason
+                << "\n";
+    }
     if (result.stop_reason == "not_started") {
         result.stop_reason =
             result.frames_captured == static_cast<std::uint64_t>(config.frames_to_capture)
@@ -2328,7 +2609,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         && result.valid_matches == result.frames_captured
         && result.progress_gate_passed
         && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
-        && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed);
+        && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed)
+        && (!config.publish_progress_only_route_verification
+            || result.route_verification_passed);
 
     if (result.external_nav_estimates == 0) {
         result.external_nav_strict_session_reason = "not_requested";
@@ -2594,6 +2877,31 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " external_nav_output_session_audit_started="
             << (result.external_nav_output_session_audit_started ? "true" : "false")
             << " external_nav_output_session_audit_path=" << result.external_nav_output_session_audit_path
+            << " route_verification_requested=" << bool_word(result.route_verification_requested)
+            << " route_verification_started=" << bool_word(result.route_verification_started)
+            << " route_verification_passed=" << bool_word(result.route_verification_passed)
+            << " route_verification_observations="
+            << result.route_verification_producer_metrics.observations
+            << " route_verification_rejected="
+            << result.route_verification_producer_metrics.rejected
+            << " route_verification_progress_only="
+            << result.route_verification_producer_metrics.progress_only_contexts
+            << " route_verification_accepted="
+            << result.route_verification_producer_metrics.accepted
+            << " route_verification_backpressure="
+            << result.route_verification_producer_metrics.backpressure
+            << " route_verification_completed="
+            << result.route_verification_publisher_metrics.completed
+            << " route_verification_publications="
+            << result.route_verification_capture_metrics.publications
+            << " route_verification_gates="
+            << result.route_verification_capture_metrics.gates_published
+            << " route_verification_manifest="
+            << (result.route_verification_manifest_path.empty()
+                ? "none"
+                : result.route_verification_manifest_path)
+            << " route_verification_failure_reason="
+            << result.route_verification_failure_reason
             << " passed=" << (result.passed ? "true" : "false") << "\n";
 
     metrics << "live_route_match_compact"
@@ -2612,6 +2920,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << "/" << result.tracked_reverse_progress_rollback
             << " endpoint_passed=" << bool_word(result.endpoint_progress_passed)
             << " progress_gate_passed=" << bool_word(result.progress_gate_passed)
+            << " route_verification_passed=" << bool_word(result.route_verification_passed)
+            << " route_verification_progress_only="
+            << result.route_verification_producer_metrics.progress_only_contexts
+            << " route_verification_publications="
+            << result.route_verification_capture_metrics.publications
+            << " route_verification_gates="
+            << result.route_verification_capture_metrics.gates_published
             << " endpoint_stop=" << bool_word(result.endpoint_stop_triggered)
             << " endpoint_dwell_ms=" << result.endpoint_dwell_ms
             << " endpoint_dwell_required_ms=" << result.endpoint_dwell_required_ms

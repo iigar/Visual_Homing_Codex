@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-08-13 - Attach Progress-Only Verification To The Live Matcher Without Flight Authority
+
+Decision:
+- Add an opt-in `match_live_camera_route`/environment caller for `LiveRouteVerificationProducer`.
+- Require verified VHRM/VHIX inputs, matching camera profile/native dimensions and exactly one tracking chunk physically identical to the live matcher VHRS before camera start.
+- Use read-only relative altitude, same-frame visual scale and image-derived direction residual; keep local pose absent and forbid command/external-nav sessions in this evidence-only mode.
+- Timestamp altitude evidence only when the cumulative telemetry inspector observes a new relative-altitude sample; never refresh a scalar merely because an old retained buffer still validates.
+- Treat terminal publisher failure as a session stop, preserve explicit rejection/backpressure metrics, drain on stop and require completed accepted work, at least one publication and zero gates.
+
+Why:
+- The accepted library boundary had no production caller, so it could not yet produce honestly route-bound sparse verification revisions during a second traversal.
+- Exact artifact identity prevents attaching verification frames to a different corridor; no-local-pose and mutual exclusion prevent this slice from silently gaining reset, ODOMETRY or flight authority.
+
+Impact:
+- GitNexus pre-change impact was LOW for the matcher/config/env entry points. After reindex, final staged `detect_changes` is HIGH because the new production validator intentionally enters five VHRM read/hash/path-verification flows plus environment parsing. This HIGH result was audited rather than ignored: exact upstream impact for the validator remains LOW with one direct caller (`match_live_camera_route`), and the downstream flows are the intended fail-closed artifact checks. No FC/UART/MAVLink/reset/command flow is present.
+- WSL/GCC all-output-off build and CTest pass `47/47`, including new package-binding negative coverage. Existing producer tests still cover provenance, staleness, backpressure and terminal worker failure.
+
+Risk:
+- The live matcher still consumes one VHRS, so operational verification intentionally rejects multi-chunk tracking packages until a bounded multi-chunk matcher exists.
+- Clean Pi acceptance is pending. Current Windows affected testing is blocked because the local Visual Studio Build Tools installation exposes no `cl.exe`; this is not a code test failure.
+- No real camera second pass, local pose/gate, reset, FC/UART/MAVLink output, ODOMETRY or flight evidence is created by this change.
+
 ## 2026-08-13 - Make One Snapshot Canonical And Keep The Next Slice Software-Only
 
 Decision:

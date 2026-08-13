@@ -68,6 +68,28 @@ const char* live_route_verification_status_name(LiveRouteVerificationStatus stat
     return "unknown";
 }
 
+LiveRouteVerificationObservation make_progress_only_live_route_verification_observation(
+    const RouteMatch& match,
+    std::optional<double> tracked_route_progress,
+    const HealthSnapshot& health,
+    const LiveRouteVerificationScalarObservation& altitude,
+    const LiveRouteVerificationScalarObservation& scale_ratio,
+    const VerificationCaptureMetadata& publication_metadata) {
+    LiveRouteVerificationObservation result;
+    result.match = match;
+    result.tracked_route_progress = tracked_route_progress;
+    result.health = health;
+    result.altitude = altitude;
+    result.scale_ratio = scale_ratio;
+    result.yaw.valid = match.direction_observation_valid
+        && std::isfinite(match.direction_error_rad);
+    result.yaw.timestamp = match.timestamp;
+    result.yaw.value = match.direction_error_rad;
+    result.local_pose.reset();
+    result.publication_metadata = publication_metadata;
+    return result;
+}
+
 LiveRouteVerificationProducer::LiveRouteVerificationProducer(
     LiveRouteVerificationProducerConfig config,
     BoundedVerificationPublisher& publisher)
