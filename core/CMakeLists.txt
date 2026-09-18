@@ -233,6 +233,19 @@ if(BUILD_TESTING)
 
     add_test(NAME camera_smoke COMMAND camera_smoke_test)
 
+    add_executable(live_route_progress_test
+        tests/live_route_progress_test.cpp
+    )
+
+    target_link_libraries(live_route_progress_test PRIVATE visual_homing_core_lib)
+
+    target_compile_options(live_route_progress_test PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    )
+
+    add_test(NAME live_route_progress COMMAND live_route_progress_test)
+
     add_executable(camera_profile_test
         tests/camera_profile_test.cpp
     )

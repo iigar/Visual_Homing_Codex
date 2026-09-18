@@ -512,6 +512,70 @@ double live_route_match_next_tracked_progress(const std::string& expected_progre
     return std::clamp(previous_tracked_progress + step, 0.0, 1.0);
 }
 
+std::optional<double> live_route_match_record_progress(const std::string& expected_progress,
+                                                       double raw_progress,
+                                                       bool valid,
+                                                       LiveRouteMatchProgressState& state,
+                                                       LiveRouteMatchingResult& result) {
+    ++result.frames_captured;
+    if (result.frames_captured == 1) {
+        result.first_progress = raw_progress;
+        result.min_progress_seen = raw_progress;
+        result.max_progress_seen = raw_progress;
+    } else {
+        result.min_progress_seen = std::min(result.min_progress_seen, raw_progress);
+        result.max_progress_seen = std::max(result.max_progress_seen, raw_progress);
+    }
+    result.last_progress = raw_progress;
+    if (!valid) {
+        return std::nullopt;
+    }
+
+    ++result.valid_matches;
+    if (state.last_valid_progress && raw_progress < *state.last_valid_progress) {
+        ++result.progress_regressions;
+        result.progress_rollback += *state.last_valid_progress - raw_progress;
+        result.progress_monotonic = false;
+    }
+    if (state.last_valid_progress && raw_progress > *state.last_valid_progress) {
+        ++result.reverse_progress_regressions;
+        result.reverse_progress_rollback += raw_progress - *state.last_valid_progress;
+        result.reverse_progress_monotonic = false;
+    }
+    state.last_valid_progress = raw_progress;
+
+    const auto tracked_progress = state.last_tracked_progress
+        ? live_route_match_next_tracked_progress(expected_progress, *state.last_tracked_progress, raw_progress)
+        : raw_progress;
+    if (!state.last_tracked_progress) {
+        result.first_tracked_progress = tracked_progress;
+        result.min_tracked_progress_seen = tracked_progress;
+        result.max_tracked_progress_seen = tracked_progress;
+    } else {
+        if (tracked_progress < *state.last_tracked_progress) {
+            const auto rollback = *state.last_tracked_progress - tracked_progress;
+            if (rollback > kTrackedProgressRegressionDeadband) {
+                ++result.tracked_progress_regressions;
+            }
+            result.tracked_progress_rollback += rollback;
+            result.tracked_progress_monotonic = false;
+        }
+        if (tracked_progress > *state.last_tracked_progress) {
+            const auto rollback = tracked_progress - *state.last_tracked_progress;
+            if (rollback > kTrackedProgressRegressionDeadband) {
+                ++result.tracked_reverse_progress_regressions;
+            }
+            result.tracked_reverse_progress_rollback += rollback;
+            result.tracked_reverse_progress_monotonic = false;
+        }
+        result.min_tracked_progress_seen = std::min(result.min_tracked_progress_seen, tracked_progress);
+        result.max_tracked_progress_seen = std::max(result.max_tracked_progress_seen, tracked_progress);
+    }
+    result.last_tracked_progress = tracked_progress;
+    state.last_tracked_progress = tracked_progress;
+    return tracked_progress;
+}
+
 double live_route_match_next_tracked_visual_scale_ratio(double previous_tracked_scale_ratio,
                                                         double raw_scale_ratio) {
     if (!std::isfinite(previous_tracked_scale_ratio) || !std::isfinite(raw_scale_ratio)) {
@@ -1740,8 +1804,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     const auto capture_timeout_ms = 2000.0 + (static_cast<double>(config.frames_to_capture) * 1000.0
         / static_cast<double>(config.camera.frame_rate_hz));
     double confidence_sum = 0.0;
-    std::optional<double> last_valid_progress;
-    std::optional<double> last_tracked_progress;
+    LiveRouteMatchProgressState progress_state;
     std::optional<double> previous_valid_command_yaw_rate;
     std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
     MavlinkTelemetry latest_gate_telemetry;
@@ -2073,74 +2136,14 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
             }
 
-            ++result.frames_captured;
+            const auto current_tracked_progress = live_route_match_record_progress(
+                config.expected_progress, match.progress, match.valid, progress_state, result);
             confidence_sum += match.confidence;
             result.minimum_confidence_seen = result.frames_captured == 1
                 ? match.confidence
                 : std::min(result.minimum_confidence_seen, match.confidence);
-            if (result.frames_captured == 1) {
-                result.first_progress = match.progress;
-                result.min_progress_seen = match.progress;
-                result.max_progress_seen = match.progress;
-            } else {
-                result.min_progress_seen = std::min(result.min_progress_seen, match.progress);
-                result.max_progress_seen = std::max(result.max_progress_seen, match.progress);
-            }
-            result.last_progress = match.progress;
             result.last_frame_age_ms = timing.frame_age_ms;
             result.last_processing_latency_ms = timing.processing_latency_ms;
-
-            std::optional<double> current_tracked_progress;
-            if (match.valid) {
-                ++result.valid_matches;
-                if (last_valid_progress && match.progress < *last_valid_progress) {
-                    ++result.progress_regressions;
-                    result.progress_rollback += *last_valid_progress - match.progress;
-                    result.progress_monotonic = false;
-                }
-                if (last_valid_progress && match.progress > *last_valid_progress) {
-                    ++result.reverse_progress_regressions;
-                    result.reverse_progress_rollback += match.progress - *last_valid_progress;
-                    result.reverse_progress_monotonic = false;
-                }
-                last_valid_progress = match.progress;
-
-                const auto tracked_progress = last_tracked_progress
-                    ? live_route_match_next_tracked_progress(
-                        config.expected_progress,
-                        *last_tracked_progress,
-                        match.progress)
-                    : match.progress;
-                if (!last_tracked_progress) {
-                    result.first_tracked_progress = tracked_progress;
-                    result.min_tracked_progress_seen = tracked_progress;
-                    result.max_tracked_progress_seen = tracked_progress;
-                } else {
-                    if (tracked_progress < *last_tracked_progress) {
-                        const auto rollback = *last_tracked_progress - tracked_progress;
-                        if (rollback > kTrackedProgressRegressionDeadband) {
-                            ++result.tracked_progress_regressions;
-                        }
-                        result.tracked_progress_rollback += rollback;
-                        result.tracked_progress_monotonic = false;
-                    }
-                    if (tracked_progress > *last_tracked_progress) {
-                        const auto rollback = tracked_progress - *last_tracked_progress;
-                        if (rollback > kTrackedProgressRegressionDeadband) {
-                            ++result.tracked_reverse_progress_regressions;
-                        }
-                        result.tracked_reverse_progress_rollback += rollback;
-                        result.tracked_reverse_progress_monotonic = false;
-                    }
-                    result.min_tracked_progress_seen =
-                        std::min(result.min_tracked_progress_seen, tracked_progress);
-                    result.max_tracked_progress_seen =
-                        std::max(result.max_tracked_progress_seen, tracked_progress);
-                }
-                result.last_tracked_progress = tracked_progress;
-                last_tracked_progress = tracked_progress;
-                current_tracked_progress = tracked_progress;
-            }
 
             if (route_verification_producer) {
                 const LiveRouteVerificationScalarObservation scale_observation{
@@ -2182,7 +2185,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " bytes=" << processed.data.size()
                     << " route_index=" << match.route_index
                     << " progress=" << match.progress
-                    << " tracked_progress=" << (last_tracked_progress ? *last_tracked_progress : 0.0)
+                    << " tracked_progress=" << result.last_tracked_progress
                     << " confidence=" << match.confidence
                     << " valid=" << (match.valid ? "true" : "false")
                     << " direction_error_rad=" << match.direction_error_rad

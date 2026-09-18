@@ -26,6 +26,7 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 ## Доведена Валідація
 
 - Desktop WSL/GCC Debug all-output-off CTest: `47/47` до й після першого рефакторингу спільного Gray8 scale-distance kernel (`2026-09-18`), включно з окремим чистим GCC 13.3/Ninja build.
+- Після другого кроку (виділення обліку raw/tracked progress у тому самому модулі) цей WSL/GCC Debug/Ninja build проходить `48/48`, включно з новим `live_route_progress` test. Усі сім `VISUAL_HOMING_*` build flags залишаються `OFF`; Pi/MSVC evidence не оновлювався.
 - Clean Pi Zero 2W/OV9281 all-output-off CTest: `46/46` на commit `135942f`, `1400 s`, `get_throttled=0x0`.
 - Pi build log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260726T225735Z.log`.
 - Log SHA-256: `88d6cacaa5e3c24f4a5333b2b93e191d26056affcefad3893adaa75e6dbacd99`.
@@ -46,7 +47,9 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 
 ## Наступний Робочий Slice
 
-Поточний фокус за запитом користувача — поступове спрощення коду в окремій гілці. Перший крок прибрав дубльований Gray8 scale-distance kernel і список масштабів у matcher/camera runtime, без зміни алгоритму чи нових класів. Наступний кандидат — невелике виділення відповідальностей із `match_live_camera_route` зі збереженням чинних safety/freshness контрактів; не переписування всього runtime одразу.
+Поточний фокус за запитом користувача — поступове спрощення коду в окремій гілці. Перший крок прибрав дубльований Gray8 scale-distance kernel і список масштабів у matcher/camera runtime. Другий виділив облік raw/tracked progress у тестовану функцію `live_route_match_record_progress` у тому самому модулі: `match_live_camera_route` скоротився з `1939` до `1878` фізичних рядків, без зміни формули згладжування, порогів, полів результату чи логів. Невалідний кадр оновлює raw-статистику, але повертає absent current tracked progress; збережене попереднє значення не стає свіжим endpoint/verification evidence. Загальний production-код цього кроку збільшився на `18` рядків через явний інтерфейс/стан; це локалізація відповідальності й закриття прогалини тестів, не заявлена економія пам'яті або FPS.
+
+Наступний кандидат — відокремлення й прямі тести endpoint/dwell decision logic від camera loop, лише після власного impact review. Не переписувати весь runtime одразу й не змішувати структурний рефакторинг зі зміною навігаційної поведінки.
 
 Функціональна черга operational verification залишається окремою і не закривається цим рефакторингом:
 

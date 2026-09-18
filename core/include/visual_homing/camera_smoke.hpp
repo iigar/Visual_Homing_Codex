@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <iosfwd>
+#include <optional>
 #include <string>
 
 #include "visual_homing/mavlink.hpp"
@@ -352,6 +353,20 @@ struct LiveRouteMatchingResult {
     std::string route_verification_failure_reason = "not_requested";
     bool passed = false;
 };
+
+struct LiveRouteMatchProgressState {
+    std::optional<double> last_valid_progress;
+    std::optional<double> last_tracked_progress;
+};
+
+// Record one processed frame, including frame/valid counts and raw/tracked statistics.
+// Keep state and result together for one run. Invalid matches retain tracker state
+// but return no current tracked progress, so stale progress cannot confirm an endpoint.
+std::optional<double> live_route_match_record_progress(const std::string& expected_progress,
+                                                       double raw_progress,
+                                                       bool valid,
+                                                       LiveRouteMatchProgressState& state,
+                                                       LiveRouteMatchingResult& result);
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
