@@ -49,7 +49,23 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 
 Поточний фокус за запитом користувача — поступове спрощення коду в окремій гілці. Перший крок прибрав дубльований Gray8 scale-distance kernel і список масштабів у matcher/camera runtime. Другий виділив облік raw/tracked progress у тестовану функцію `live_route_match_record_progress` у тому самому модулі: `match_live_camera_route` скоротився з `1939` до `1878` фізичних рядків, без зміни формули згладжування, порогів, полів результату чи логів. Невалідний кадр оновлює raw-статистику, але повертає absent current tracked progress; збережене попереднє значення не стає свіжим endpoint/verification evidence. Загальний production-код цього кроку збільшився на `18` рядків через явний інтерфейс/стан; це локалізація відповідальності й закриття прогалини тестів, не заявлена економія пам'яті або FPS.
 
-Наступний кандидат — відокремлення й прямі тести endpoint/dwell decision logic від camera loop, лише після власного impact review. Не переписувати весь runtime одразу й не змішувати структурний рефакторинг зі зміною навігаційної поведінки.
+Після додаткового read-only огляду рекомендований порядок наступних невеликих кроків:
+
+1. Прибрати повторення реєстрації тестів у `core/CMakeLists.txt`: на поточному коді це `833` фізичні рядки та `46` майже однакових блоків test executables/compile options. Використати одну невелику helper-функцію, зберегти назви тестів, compiler flags, `-UNDEBUG`/`/UNDEBUG` та спеціальні сценарії; не вводити нову build-систему.
+2. Винести спільний розбір полів логів зі скриптів: однаковий `extract_field` є щонайменше в `check-external-nav-readiness-log.sh`, `check-live-readiness-log.sh`, `export-external-nav-readiness-json.sh` та `operator-readiness-summary.sh`. Спочатку зафіксувати чинні результати на fixtures; не об'єднувати різні safety/readiness критерії лише через схожість коду.
+3. Відокремити й прямо протестувати endpoint/dwell decision logic від camera loop, експорту кадру та логування, після власного impact review. Важливий відкритий випадок: невалідний match пропускає endpoint-блок і не скидає його таймер. Це спостережена поведінка, не доведений баг; чи має перерва переривати підтвердження, слід визначити окремо. Не змінювати семантику мовчки під виглядом рефакторингу.
+4. Відділити обчислення готовності від форматування звітів, зі збереженням відмінності strict/quality/operator readiness та чинного log contract.
+5. Перевірити конфігурацію (`85` полів, з них `30` bool у `LiveRouteMatchingConfig`) на дублювання значень, суперечливі комбінації й повторення розбору параметрів. Кількість полів сама по собі не доводить зайвість; не створювати універсальний configuration framework.
+
+Це збережені рекомендації, ще не реалізовані зміни. Не переписувати весь runtime одразу, не додавати ієрархії класів або універсальний менеджер компонентів і не прибирати freshness, bounded queues чи fail-closed gates заради LOC. Оцінювати реальне зменшення повторень/залежностей і місць зміни, а не лише перенесення рядків між функціями.
+
+### Точка Відновлення Після Паузи 2026-09-18
+
+- Користувач попросив зберегти роботу до завтра; нову реалізацію під час збереження не починати.
+- Останній code commit: `192bb4c` (progress accounting), попередній: `de1f5bb` (спільний Gray8 scale kernel). Обидва опубліковані в `refactor/optimization-tech-debt`; наступний documentation checkpoint не означає новий test run.
+- Останній перевірений desktop результат: WSL/GCC Debug/Ninja `48/48`, build directory `core/build-wsl-tech-debt`, усі сім `VISUAL_HOMING_*` flags OFF. Pi/MSVC/hardware acceptance цим не підтверджено.
+- При відновленні прочитати цей snapshot і найновіший запис `SESSION_LOG.md`, перевірити `git status`/branch/log; перший рекомендований software-only slice — CMake cleanup. Не підключати обладнання як частину цього cleanup.
+- Залишені локальні untracked `.claude/`, `.codex/`, `AGENTS.md`, `CLAUDE.md`, `codex_jtzero_known_hosts`, `graphify-out/` не додавати до коміту без окремої потреби. Graphify використовувався через query/update; обмеження GitNexus FTS та неповного call graph залишаються чинними.
 
 Функціональна черга operational verification залишається окремою і не закривається цим рефакторингом:
 
