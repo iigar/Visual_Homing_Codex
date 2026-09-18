@@ -1,6 +1,8 @@
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -42,6 +44,71 @@ std::vector<std::uint8_t> offset(std::vector<std::uint8_t> payload, int delta) {
 } // namespace
 
 int main() {
+    // The exact grid/order is part of both refinement and diagnostic behavior.
+    const double expected_scales[] = {
+        0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75,
+        0.80, 0.85, 0.90, 0.95, 1.0, 1.05, 1.10, 1.15, 1.20, 1.25,
+        1.30, 1.35, 1.40, 1.50};
+    static_assert(sizeof(expected_scales) == sizeof(vh::gray8_scale_candidates));
+    assert(std::equal(std::begin(expected_scales), std::end(expected_scales),
+        std::begin(vh::gray8_scale_candidates)));
+
+    auto scale_reference = entry(0, {
+          0,  10,  20,  30,
+         40,  50,  60,  70,
+         80,  90, 100, 110,
+        120, 130, 140, 150,
+    });
+    scale_reference.width = scale_reference.height = 4;
+    auto zoomed = frame(600, {
+         50,  50,  60,  70,
+         50,  50,  60,  70,
+         90,  90, 100, 110,
+        130, 130, 140, 150,
+    });
+    zoomed.width = zoomed.height = 4;
+    // 1.5 tests half-pixel ties (lround), 0.5 tests overlap-only normalization.
+    assert(vh::scaled_normalized_mean_absolute_difference(zoomed, scale_reference, 1.5) == 0.0);
+    assert(vh::scaled_normalized_mean_absolute_difference(zoomed, scale_reference, 1.0) == 200.0 / (16.0 * 255.0));
+    assert(vh::scaled_normalized_mean_absolute_difference(zoomed, scale_reference, 0.5) == 100.0 / (4.0 * 255.0));
+    for (const double invalid_scale : {0.0, -1.0, std::numeric_limits<double>::infinity(),
+                                      std::numeric_limits<double>::quiet_NaN()}) {
+        assert(std::isinf(vh::scaled_normalized_mean_absolute_difference(zoomed, scale_reference, invalid_scale)));
+    }
+    assert(std::isinf(vh::scaled_normalized_mean_absolute_difference(
+        frame(601, {0, 0, 0, 0}), entry(0, {0, 0, 0, 0}), 0.3)));
+
+    auto single_pixel = frame(602, {255});
+    auto single_reference = entry(0, {0});
+    single_pixel.width = single_pixel.height = single_reference.width = single_reference.height = 1;
+    for (const double scale : vh::gray8_scale_candidates) {
+        assert(vh::scaled_normalized_mean_absolute_difference(single_pixel, single_reference, scale) == 1.0);
+    }
+
+    auto odd_frame = frame(603, std::vector<std::uint8_t>(15, 0));
+    auto odd_reference = entry(0, std::vector<std::uint8_t>(15, 0));
+    odd_frame.width = odd_reference.width = 3;
+    odd_frame.height = odd_reference.height = 5;
+    odd_reference.payload[7] = 255;
+    // A 3x5 image at scale 0.3 overlaps only at its exact central pixel.
+    assert(vh::scaled_normalized_mean_absolute_difference(odd_frame, odd_reference, 0.3) == 1.0);
+
+    auto scale_distractor = scale_reference;
+    scale_distractor.frame_id = 1;
+    scale_distractor.payload = offset(zoomed.data, 1);
+    vh::RouteSignatureFile scaled_route;
+    scaled_route.entries = {scale_reference, scale_distractor};
+    vh::Gray8RouteMatcher coarse_scale_matcher(scaled_route, {});
+    assert(coarse_scale_matcher.match(zoomed).route_index == 1);
+    vh::Gray8RouteMatcher refined_scale_matcher(scaled_route, {
+        .enable_scale_refinement = true,
+        .scale_refinement_radius = 1,
+    });
+    const auto reranked = refined_scale_matcher.match(zoomed);
+    assert(reranked.valid);
+    assert(reranked.route_index == 0);
+    assert(reranked.confidence == 1.0);
+
     vh::RouteSignatureFile route;
     route.entries.push_back(entry(0, {0, 0, 0, 0}));
     route.entries.push_back(entry(1, {40, 40, 40, 40}));

@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-08-13`.
+Оновлено: `2026-09-18`.
 
-Repository baseline before the current implementation: `main` commit `52d686e0ccaa69e5abfdcd5ac5659218daa30f07`, synchronized with `origin/main`.
+Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
-Local intelligence after operational wiring: Graphify `5551` nodes / `8354` edges / `462` communities; GitNexus `9894` nodes / `21546` edges / `215` clusters / `207` flows. GitNexus FTS/BM25 is unavailable in the current Windows LadybugDB environment, але symbol/context/impact/detect navigation працює.
+Локальні Graphify/GitNexus індекси — допоміжна навігація, не доказ повноти залежностей. GitNexus FTS/BM25 недоступний; impact у цій сесії повертав неповний `UNKNOWN`, тому виклики додатково перевірено в коді.
 
 Це короткий канонічний snapshot для відповіді на питання «де ми зараз і що робимо далі». Детальні стабільні факти зберігаються в `PROJECT_MEMORY.md`, хронологія — у `SESSION_LOG.md`, рішення — у `DECISIONS.md`, повна черга — у `ROADMAP.md`, а hardware facts — у `HARDWARE_ACCESS_BASELINE_UA.md`.
 
@@ -25,7 +25,7 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 
 ## Доведена Валідація
 
-- Desktop WSL/GCC all-output-off CTest: `47/47` для поточного operational-wiring working tree.
+- Desktop WSL/GCC Debug all-output-off CTest: `47/47` до й після першого рефакторингу спільного Gray8 scale-distance kernel (`2026-09-18`), включно з окремим чистим GCC 13.3/Ninja build.
 - Clean Pi Zero 2W/OV9281 all-output-off CTest: `46/46` на commit `135942f`, `1400 s`, `get_throttled=0x0`.
 - Pi build log: `/home/pi/Visual_Homing_Codex/artifacts/logs/test-core-pi-20260726T225735Z.log`.
 - Log SHA-256: `88d6cacaa5e3c24f4a5333b2b93e191d26056affcefad3893adaa75e6dbacd99`.
@@ -46,9 +46,11 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 
 ## Наступний Робочий Slice
 
-Наступний етап знову програмний, без керування дроном:
+Поточний фокус за запитом користувача — поступове спрощення коду в окремій гілці. Перший крок прибрав дубльований Gray8 scale-distance kernel і список масштабів у matcher/camera runtime, без зміни алгоритму чи нових класів. Наступний кандидат — невелике виділення відповідальностей із `match_live_camera_route` зі збереженням чинних safety/freshness контрактів; не переписування всього runtime одразу.
 
-1. Закомітити operational progress-only wiring і повторити clean Pi all-output-off suite.
+Функціональна черга operational verification залишається окремою і не закривається цим рефакторингом:
+
+1. Повторити clean Pi all-output-off suite для operational progress-only wiring (вже закомічено у `62c772b`) та наступних змін.
 2. Перевірити на Pi exact VHRM/VHIX/VHRS package binding, publisher drain, zero gates і immutable output revisions без відкриття output path.
 3. Відновити affected MSVC verification після ремонту локального `cl.exe` toolchain; це не блокує Linux/Pi evidence, але лишається release checklist item.
 4. Підготувати окремий hand-carried second-pass wrapper/checker для вже finalized/indexed short route.
