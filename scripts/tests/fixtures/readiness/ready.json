@@ -1,0 +1,129 @@
+{
+  "schema": "visual_homing.external_nav_readiness.v1",
+  "source_log": "input route.log",
+  "operator_inputs": {
+    "altitude_preset": "unknown",
+    "requested_handoff_distance_m": null,
+    "requested_handoff_altitude_m": null
+  },
+  "resolved_config": {
+    "altitude_expected_m": 0.5,
+    "altitude_tolerance_m": 0.2,
+    "nominal_route_length_m": null,
+    "pose_frame": "route_frd",
+    "route_frame_alignment_known": false,
+    "route_origin_ned_m": "unknown",
+    "route_heading_ned_rad": null,
+    "altitude_origin_aligned": false,
+    "handoff_distance_supported": false,
+    "handoff_distance_reason": "route_metric_scale_not_authoritative"
+  },
+  "operator": {
+    "readiness": "ready",
+    "reason": "valid"
+  },
+  "handoff": {
+    "route_complete": true,
+    "visual_homing_ready": true,
+    "candidate": true,
+    "decision": "candidate_only",
+    "reason": "jt_zero_not_integrated"
+  },
+  "jt_zero": {
+    "available": false,
+    "ready": false,
+    "reason": "not_integrated"
+  },
+  "route": {
+    "passed": true,
+    "frames_captured": 150,
+    "frames_requested": 150,
+    "valid_matches": 150,
+    "progress_start": 0.95,
+    "progress_end": 0.05,
+    "progress_min": 0.05,
+    "progress_max": 0.95,
+    "tracked_progress_start": 0.94,
+    "tracked_progress_end": 0.06,
+    "tracked_progress_min": 0.06,
+    "tracked_progress_max": 0.94,
+    "tracked_directional_progress": true,
+    "tracked_regressions_forward": 0,
+    "tracked_regressions_reverse": 0,
+    "tracked_rollback_forward": 0,
+    "tracked_rollback_reverse": 0,
+    "endpoint_passed": true,
+    "progress_gate_passed": true,
+    "endpoint_stop": true,
+    "ambiguous_endpoint_hold": false,
+    "ambiguous_endpoint_hold_dwell_ms": 0,
+    "ambiguous_endpoint_hold_required_ms": 500,
+    "ambiguous_endpoint_hold_reason": "none",
+    "ambiguous_endpoint_hold_route_index": null,
+    "ambiguous_endpoint_hold_progress": null,
+    "ambiguous_endpoint_hold_tracked_progress": null,
+    "ambiguous_endpoint_hold_confidence": null,
+    "stop_reason": "endpoint_progress",
+    "confidence_min": 0.81,
+    "confidence_avg": 0.93
+  },
+  "altitude": {
+    "preset": "unknown",
+    "expected_required": true,
+    "expected_m": 0.5,
+    "tolerance_m": 0.2,
+    "observed_min_m": 0.4,
+    "observed_avg_m": 0.5,
+    "observed_max_m": 0.6,
+    "window_passed": true,
+    "blocker": "none"
+  },
+  "telemetry": {
+    "health": true,
+    "dropped_bytes": 0,
+    "mode": "AltHold",
+    "armed": false
+  },
+  "dry_run_command": {
+    "quality": true,
+    "valid": 150,
+    "total": 150
+  },
+  "external_nav": {
+    "session_ready": true,
+    "session_reason": "valid",
+    "strict_session_ready": true,
+    "strict_session_reason": "valid",
+    "quality_ready": true,
+    "quality_reason": "valid",
+    "valid": 150,
+    "total": 150,
+    "valid_fraction": 1,
+    "max_invalid_streak": 0,
+    "invalid_reasons": "none"
+  },
+  "visual_scale": {
+    "required": false,
+    "valid": 150,
+    "total": 150,
+    "valid_fraction": 1,
+    "ratio_min": 0.9,
+    "ratio_avg": 1,
+    "ratio_max": 1.1,
+    "confidence_min": 0.8,
+    "confidence_avg": 0.9,
+    "ratio_histogram": "0.90:20,1.00:100,1.10:30",
+    "ratio_histogram_counts": {"0.90": 20, "1.00": 100, "1.10": 30},
+    "tracked_ratio_start": 1.1,
+    "tracked_ratio_end": 0.9,
+    "tracked_ratio_min": 0.9,
+    "tracked_ratio_avg": 1,
+    "tracked_ratio_max": 1.1
+  },
+  "safety_gate": {
+    "live_output_allowed": 0,
+    "live_output_blocked": 150,
+    "block_reasons": "vehicle_not_armed:150",
+    "final_reason": "vehicle_not_armed"
+  }
+}

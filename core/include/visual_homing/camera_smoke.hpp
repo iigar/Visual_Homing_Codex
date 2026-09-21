@@ -359,6 +359,35 @@ struct LiveRouteMatchProgressState {
     std::optional<double> last_tracked_progress;
 };
 
+struct LiveRouteMatchEndpointState {
+    std::optional<Timestamp> endpoint_dwell_started_at;
+    std::optional<Timestamp> ambiguous_endpoint_hold_started_at;
+};
+
+// Update endpoint diagnostics/evidence and return whether the camera loop should
+// stop. Uses only frame metadata, not pixels; performs no capture, export or I/O.
+// Keep state/result together for one run and use the runtime-validated config.
+// Invalid matches or absent current progress leave both timers unchanged and
+// cannot stop the run. A later valid endpoint sample includes that elapsed gap.
+bool live_route_match_update_endpoint(const LiveRouteMatchingConfig& config,
+                                      const Frame& processed,
+                                      const RouteMatch& match,
+                                      std::optional<double> current_tracked_progress,
+                                      std::optional<double> top_match_gap,
+                                      std::optional<double> edge_top_match_gap,
+                                      Timestamp processing_finished,
+                                      LiveRouteMatchEndpointState& state,
+                                      LiveRouteMatchingResult& result);
+
+// Finalize a single run's accumulated quality/readiness fields using the
+// runtime-validated config. Call once per fresh result, not while accumulating.
+// Route quality precedes the final output-gate diagnostic; session readiness
+// follows it. Neither helper formats logs nor grants command/output authority.
+void live_route_match_evaluate_route_quality(const LiveRouteMatchingConfig& config,
+                                            LiveRouteMatchingResult& result);
+void live_route_match_evaluate_session_readiness(const LiveRouteMatchingConfig& config,
+                                                LiveRouteMatchingResult& result);
+
 // Record one processed frame, including frame/valid counts and raw/tracked statistics.
 // Keep state and result together for one run. Invalid matches retain tracker state
 // but return no current tracked progress, so stale progress cannot confirm an endpoint.

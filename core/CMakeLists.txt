@@ -207,187 +207,34 @@ if(BUILD_TESTING)
         $<$<CXX_COMPILER_ID:MSVC>:/UNDEBUG>
     )
 
-    add_executable(coordinate_frames_test
-        tests/coordinate_frames_test.cpp
-    )
+    # Standard one-source unit tests; special command-line tests stay explicit.
+    function(add_visual_homing_test name)
+        set(test_target "${name}_test")
+        add_executable(${test_target} tests/${test_target}.cpp)
+        target_link_libraries(${test_target} PRIVATE visual_homing_core_lib)
+        target_compile_options(${test_target} PRIVATE
+            $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+            $<$<CXX_COMPILER_ID:MSVC>:/W4>
+        )
+        add_test(NAME ${name} COMMAND ${test_target})
+    endfunction()
 
-    target_link_libraries(coordinate_frames_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(coordinate_frames_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME coordinate_frames COMMAND coordinate_frames_test)
-
-    add_executable(camera_smoke_test
-        tests/camera_smoke_test.cpp
-    )
-
-    target_link_libraries(camera_smoke_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(camera_smoke_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME camera_smoke COMMAND camera_smoke_test)
-
-    add_executable(live_route_progress_test
-        tests/live_route_progress_test.cpp
-    )
-
-    target_link_libraries(live_route_progress_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_route_progress_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_route_progress COMMAND live_route_progress_test)
-
-    add_executable(camera_profile_test
-        tests/camera_profile_test.cpp
-    )
-
-    target_link_libraries(camera_profile_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(camera_profile_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME camera_profile COMMAND camera_profile_test)
-
-    add_executable(bounded_navigator_test
-        tests/bounded_navigator_test.cpp
-    )
-
-    target_link_libraries(bounded_navigator_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(bounded_navigator_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME bounded_navigator COMMAND bounded_navigator_test)
-
-    add_executable(dry_run_command_sink_test
-        tests/dry_run_command_sink_test.cpp
-    )
-
-    target_link_libraries(dry_run_command_sink_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(dry_run_command_sink_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME dry_run_command_sink COMMAND dry_run_command_sink_test)
-
-    add_executable(dry_run_mavlink_bridge_test
-        tests/dry_run_mavlink_bridge_test.cpp
-    )
-
-    target_link_libraries(dry_run_mavlink_bridge_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(dry_run_mavlink_bridge_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME dry_run_mavlink_bridge COMMAND dry_run_mavlink_bridge_test)
-
-    add_executable(external_nav_estimator_test
-        tests/external_nav_estimator_test.cpp
-    )
-
-    target_link_libraries(external_nav_estimator_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(external_nav_estimator_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME external_nav_estimator COMMAND external_nav_estimator_test)
-
-    add_executable(gray8_resize_preprocessor_test
-        tests/gray8_resize_preprocessor_test.cpp
-    )
-
-    target_link_libraries(gray8_resize_preprocessor_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(gray8_resize_preprocessor_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME gray8_resize_preprocessor COMMAND gray8_resize_preprocessor_test)
-
-    add_executable(replay_frame_source_test
-        tests/replay_frame_source_test.cpp
-    )
-
-    target_link_libraries(replay_frame_source_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(replay_frame_source_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME replay_frame_source COMMAND replay_frame_source_test)
-
-    add_executable(health_monitor_test
-        tests/health_monitor_test.cpp
-    )
-
-    target_link_libraries(health_monitor_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(health_monitor_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME health_monitor COMMAND health_monitor_test)
-
-    add_executable(inflight_home_reset_safety_gate_test
-        tests/inflight_home_reset_safety_gate_test.cpp
-    )
-
-    target_link_libraries(inflight_home_reset_safety_gate_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(inflight_home_reset_safety_gate_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME inflight_home_reset_safety_gate COMMAND inflight_home_reset_safety_gate_test)
-
-    add_executable(local_reset_dry_run_session_test
-        tests/local_reset_dry_run_session_test.cpp
-    )
-
-    target_link_libraries(local_reset_dry_run_session_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(local_reset_dry_run_session_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME local_reset_dry_run_session COMMAND local_reset_dry_run_session_test)
-
-    add_executable(rc_switch_trigger_decoder_test
-        tests/rc_switch_trigger_decoder_test.cpp
-    )
-
-    target_link_libraries(rc_switch_trigger_decoder_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(rc_switch_trigger_decoder_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME rc_switch_trigger_decoder COMMAND rc_switch_trigger_decoder_test)
+    add_visual_homing_test(coordinate_frames)
+    add_visual_homing_test(camera_smoke)
+    add_visual_homing_test(live_route_progress)
+    add_visual_homing_test(live_route_endpoint)
+    add_visual_homing_test(live_route_readiness)
+    add_visual_homing_test(camera_profile)
+    add_visual_homing_test(bounded_navigator)
+    add_visual_homing_test(dry_run_command_sink)
+    add_visual_homing_test(dry_run_mavlink_bridge)
+    add_visual_homing_test(external_nav_estimator)
+    add_visual_homing_test(gray8_resize_preprocessor)
+    add_visual_homing_test(replay_frame_source)
+    add_visual_homing_test(health_monitor)
+    add_visual_homing_test(inflight_home_reset_safety_gate)
+    add_visual_homing_test(local_reset_dry_run_session)
+    add_visual_homing_test(rc_switch_trigger_decoder)
 
     add_test(
         NAME rc12_local_reset_dry_run_trace
@@ -409,109 +256,14 @@ if(BUILD_TESTING)
         PROPERTIES WILL_FAIL TRUE
     )
 
-    add_executable(mavlink_telemetry_adapter_test
-        tests/mavlink_telemetry_adapter_test.cpp
-    )
-
-    target_link_libraries(mavlink_telemetry_adapter_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(mavlink_telemetry_adapter_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME mavlink_telemetry_adapter COMMAND mavlink_telemetry_adapter_test)
-
-    add_executable(mavlink_telemetry_inspector_test
-        tests/mavlink_telemetry_inspector_test.cpp
-    )
-
-    target_link_libraries(mavlink_telemetry_inspector_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(mavlink_telemetry_inspector_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME mavlink_telemetry_inspector COMMAND mavlink_telemetry_inspector_test)
-
-    add_executable(mavlink_telemetry_stream_test
-        tests/mavlink_telemetry_stream_test.cpp
-    )
-
-    target_link_libraries(mavlink_telemetry_stream_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(mavlink_telemetry_stream_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME mavlink_telemetry_stream COMMAND mavlink_telemetry_stream_test)
-
-    add_executable(live_mavlink_bridge_test
-        tests/live_mavlink_bridge_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_bridge_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_bridge_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_bridge COMMAND live_mavlink_bridge_test)
-
-    add_executable(live_mavlink_serial_writer_test
-        tests/live_mavlink_serial_writer_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_serial_writer_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_serial_writer_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_serial_writer COMMAND live_mavlink_serial_writer_test)
-
-    add_executable(live_mavlink_external_nav_writer_test
-        tests/live_mavlink_external_nav_writer_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_external_nav_writer_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_external_nav_writer_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_external_nav_writer COMMAND live_mavlink_external_nav_writer_test)
-
-    add_executable(route_local_odometry_test
-        tests/route_local_odometry_test.cpp
-    )
-
-    target_link_libraries(route_local_odometry_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_local_odometry_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_local_odometry COMMAND route_local_odometry_test)
-
-    add_executable(route_local_odometry_estimator_test
-        tests/route_local_odometry_estimator_test.cpp
-    )
-
-    target_link_libraries(route_local_odometry_estimator_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_local_odometry_estimator_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_local_odometry_estimator COMMAND route_local_odometry_estimator_test)
+    add_visual_homing_test(mavlink_telemetry_adapter)
+    add_visual_homing_test(mavlink_telemetry_inspector)
+    add_visual_homing_test(mavlink_telemetry_stream)
+    add_visual_homing_test(live_mavlink_bridge)
+    add_visual_homing_test(live_mavlink_serial_writer)
+    add_visual_homing_test(live_mavlink_external_nav_writer)
+    add_visual_homing_test(route_local_odometry)
+    add_visual_homing_test(route_local_odometry_estimator)
 
     add_executable(route_local_odometry_sitl_producer
         tools/route_local_odometry_sitl_producer.cpp
@@ -529,305 +281,27 @@ if(BUILD_TESTING)
         COMMAND route_local_odometry_sitl_producer --self-test
     )
 
-    add_executable(live_external_nav_output_audit_log_test
-        tests/live_external_nav_output_audit_log_test.cpp
-    )
-
-    target_link_libraries(live_external_nav_output_audit_log_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_external_nav_output_audit_log_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_external_nav_output_audit_log COMMAND live_external_nav_output_audit_log_test)
-
-    add_executable(live_external_nav_output_session_test
-        tests/live_external_nav_output_session_test.cpp
-    )
-
-    target_link_libraries(live_external_nav_output_session_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_external_nav_output_session_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_external_nav_output_session COMMAND live_external_nav_output_session_test)
-
-    add_executable(live_mavlink_output_audit_log_test
-        tests/live_mavlink_output_audit_log_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_output_audit_log_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_output_audit_log_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_output_audit_log COMMAND live_mavlink_output_audit_log_test)
-
-    add_executable(live_mavlink_output_session_test
-        tests/live_mavlink_output_session_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_output_session_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_output_session_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_output_session COMMAND live_mavlink_output_session_test)
-
-    add_executable(live_mavlink_output_session_audit_file_test
-        tests/live_mavlink_output_session_audit_file_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_output_session_audit_file_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_output_session_audit_file_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_output_session_audit_file COMMAND live_mavlink_output_session_audit_file_test)
-
-    add_executable(live_mavlink_output_safety_gate_test
-        tests/live_mavlink_output_safety_gate_test.cpp
-    )
-
-    target_link_libraries(live_mavlink_output_safety_gate_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_mavlink_output_safety_gate_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_mavlink_output_safety_gate COMMAND live_mavlink_output_safety_gate_test)
-
-    add_executable(pipeline_harness_test
-        tests/pipeline_harness_test.cpp
-    )
-
-    target_link_libraries(pipeline_harness_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(pipeline_harness_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME pipeline_harness COMMAND pipeline_harness_test)
-
-    add_executable(pi_camera_source_test
-        tests/pi_camera_source_test.cpp
-    )
-
-    target_link_libraries(pi_camera_source_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(pi_camera_source_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME pi_camera_source COMMAND pi_camera_source_test)
-
-    add_executable(route_signature_test
-        tests/route_signature_test.cpp
-    )
-
-    target_link_libraries(route_signature_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_signature_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_signature COMMAND route_signature_test)
-
-    add_executable(route_signature_stream_writer_test
-        tests/route_signature_stream_writer_test.cpp
-    )
-
-    target_link_libraries(route_signature_stream_writer_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_signature_stream_writer_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_signature_stream_writer COMMAND route_signature_stream_writer_test)
-
-    add_executable(route_signature_streaming_recorder_test
-        tests/route_signature_streaming_recorder_test.cpp
-    )
-
-    target_link_libraries(route_signature_streaming_recorder_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_signature_streaming_recorder_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_signature_streaming_recorder COMMAND route_signature_streaming_recorder_test)
-
-    add_executable(route_package_manifest_test
-        tests/route_package_manifest_test.cpp
-    )
-
-    target_link_libraries(route_package_manifest_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_package_manifest_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_package_manifest COMMAND route_package_manifest_test)
-
-    add_executable(route_package_builder_test
-        tests/route_package_builder_test.cpp
-    )
-
-    target_link_libraries(route_package_builder_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_package_builder_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_package_builder COMMAND route_package_builder_test)
-
-    add_executable(route_descriptor_index_test
-        tests/route_descriptor_index_test.cpp
-    )
-
-    target_link_libraries(route_descriptor_index_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_descriptor_index_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_descriptor_index COMMAND route_descriptor_index_test)
-
-    add_executable(verification_keyframe_selector_test
-        tests/verification_keyframe_selector_test.cpp
-    )
-
-    target_link_libraries(verification_keyframe_selector_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(verification_keyframe_selector_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME verification_keyframe_selector COMMAND verification_keyframe_selector_test)
-
-    add_executable(verification_package_writer_test
-        tests/verification_package_writer_test.cpp
-    )
-
-    target_link_libraries(verification_package_writer_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(verification_package_writer_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME verification_package_writer COMMAND verification_package_writer_test)
-
-    add_executable(live_verification_capture_test
-        tests/live_verification_capture_test.cpp
-    )
-
-    target_link_libraries(live_verification_capture_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_verification_capture_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_verification_capture COMMAND live_verification_capture_test)
-
-    add_executable(bounded_verification_publisher_test
-        tests/bounded_verification_publisher_test.cpp
-    )
-
-    target_link_libraries(bounded_verification_publisher_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(bounded_verification_publisher_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME bounded_verification_publisher COMMAND bounded_verification_publisher_test)
-
-    add_executable(live_route_verification_test
-        tests/live_route_verification_test.cpp
-    )
-
-    target_link_libraries(live_route_verification_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(live_route_verification_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME live_route_verification COMMAND live_route_verification_test)
-
-    add_executable(progress_only_route_verification_wiring_test
-        tests/progress_only_route_verification_wiring_test.cpp
-    )
-
-    target_link_libraries(progress_only_route_verification_wiring_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(progress_only_route_verification_wiring_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(
-        NAME progress_only_route_verification_wiring
-        COMMAND progress_only_route_verification_wiring_test
-    )
-
-    add_executable(route_signature_recorder_test
-        tests/route_signature_recorder_test.cpp
-    )
-
-    target_link_libraries(route_signature_recorder_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_signature_recorder_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_signature_recorder COMMAND route_signature_recorder_test)
-
-    add_executable(route_artifact_check_test
-        tests/route_artifact_check_test.cpp
-    )
-
-    target_link_libraries(route_artifact_check_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(route_artifact_check_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME route_artifact_check COMMAND route_artifact_check_test)
-
-    add_executable(gray8_route_matcher_test
-        tests/gray8_route_matcher_test.cpp
-    )
-
-    target_link_libraries(gray8_route_matcher_test PRIVATE visual_homing_core_lib)
-
-    target_compile_options(gray8_route_matcher_test PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    )
-
-    add_test(NAME gray8_route_matcher COMMAND gray8_route_matcher_test)
+    add_visual_homing_test(live_external_nav_output_audit_log)
+    add_visual_homing_test(live_external_nav_output_session)
+    add_visual_homing_test(live_mavlink_output_audit_log)
+    add_visual_homing_test(live_mavlink_output_session)
+    add_visual_homing_test(live_mavlink_output_session_audit_file)
+    add_visual_homing_test(live_mavlink_output_safety_gate)
+    add_visual_homing_test(pipeline_harness)
+    add_visual_homing_test(pi_camera_source)
+    add_visual_homing_test(route_signature)
+    add_visual_homing_test(route_signature_stream_writer)
+    add_visual_homing_test(route_signature_streaming_recorder)
+    add_visual_homing_test(route_package_manifest)
+    add_visual_homing_test(route_package_builder)
+    add_visual_homing_test(route_descriptor_index)
+    add_visual_homing_test(verification_keyframe_selector)
+    add_visual_homing_test(verification_package_writer)
+    add_visual_homing_test(live_verification_capture)
+    add_visual_homing_test(bounded_verification_publisher)
+    add_visual_homing_test(live_route_verification)
+    add_visual_homing_test(progress_only_route_verification_wiring)
+    add_visual_homing_test(route_signature_recorder)
+    add_visual_homing_test(route_artifact_check)
+    add_visual_homing_test(gray8_route_matcher)
 endif()

@@ -28,13 +28,7 @@ if [[ -z "${compact_line}" ]]; then
     exit 2
 fi
 
-extract_field() {
-    local line="$1"
-    local key="$2"
-    local token
-    token="$(printf '%s\n' "${line}" | tr ' ' '\n' | awk -F= -v key="${key}" '$1 == key { print $2; exit }')"
-    printf '%s' "${token}"
-}
+source "$(dirname "${BASH_SOURCE[0]}")/lib/log-fields.sh"
 
 json_string() {
     printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g'

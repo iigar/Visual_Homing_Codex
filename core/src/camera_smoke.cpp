@@ -459,6 +459,106 @@ bool live_route_match_endpoint_confirmation_passed(const LiveRouteMatchingConfig
         && edge_top_match_gap >= config.endpoint_min_edge_top_match_gap;
 }
 
+bool live_route_match_update_endpoint(const LiveRouteMatchingConfig& config,
+                                      const Frame& processed,
+                                      const RouteMatch& match,
+                                      std::optional<double> current_tracked_progress,
+                                      std::optional<double> top_match_gap,
+                                      std::optional<double> edge_top_match_gap,
+                                      Timestamp processing_finished,
+                                      LiveRouteMatchEndpointState& state,
+                                      LiveRouteMatchingResult& result) {
+    if (config.stop_at_endpoint_progress && match.valid && current_tracked_progress) {
+        if (live_route_match_endpoint_reached(config, *current_tracked_progress)) {
+            bool endpoint_confirmed = true;
+            if (config.endpoint_require_unambiguous_match) {
+                endpoint_confirmed = false;
+                result.endpoint_confirmation_required = true;
+                result.endpoint_confirmation_passed = false;
+                if (!top_match_gap) {
+                    result.endpoint_confirmation_reason = "top_match_gap_unavailable";
+                } else if (!edge_top_match_gap) {
+                    result.endpoint_confirmation_reason = "edge_top_match_gap_unavailable";
+                } else {
+                    result.endpoint_top_match_gap = *top_match_gap;
+                    result.endpoint_edge_top_match_gap = *edge_top_match_gap;
+                    endpoint_confirmed = live_route_match_endpoint_confirmation_passed(
+                        config,
+                        *top_match_gap,
+                        *edge_top_match_gap);
+                    result.endpoint_confirmation_passed = endpoint_confirmed;
+                    if (*top_match_gap < config.endpoint_min_top_match_gap) {
+                        result.endpoint_confirmation_reason = "top_match_gap_low";
+                    } else if (*edge_top_match_gap < config.endpoint_min_edge_top_match_gap) {
+                        result.endpoint_confirmation_reason = "edge_top_match_gap_low";
+                    } else {
+                        result.endpoint_confirmation_reason = "valid";
+                    }
+                }
+            }
+            if (endpoint_confirmed) {
+                state.ambiguous_endpoint_hold_started_at.reset();
+                result.ambiguous_endpoint_hold_dwell_ms = 0.0;
+                result.ambiguous_endpoint_hold_reason =
+                    config.endpoint_allow_ambiguous_hold ? "endpoint_confirmed" : "disabled";
+                if (!state.endpoint_dwell_started_at) {
+                    state.endpoint_dwell_started_at = processing_finished;
+                }
+                result.endpoint_dwell_ms = milliseconds_between(*state.endpoint_dwell_started_at, processing_finished);
+                result.endpoint_dwell_passed = result.endpoint_dwell_ms >= config.endpoint_dwell_ms;
+            } else {
+                state.endpoint_dwell_started_at.reset();
+                result.endpoint_dwell_ms = 0.0;
+                result.endpoint_dwell_passed = false;
+                if (config.endpoint_allow_ambiguous_hold) {
+                    if (!state.ambiguous_endpoint_hold_started_at) {
+                        state.ambiguous_endpoint_hold_started_at = processing_finished;
+                    }
+                    result.ambiguous_endpoint_hold_dwell_ms =
+                        milliseconds_between(*state.ambiguous_endpoint_hold_started_at, processing_finished);
+                    result.ambiguous_endpoint_hold_reason = result.endpoint_confirmation_reason;
+                    result.ambiguous_endpoint_hold_frame_id = processed.id;
+                    result.ambiguous_endpoint_hold_route_index =
+                        static_cast<std::uint64_t>(match.route_index);
+                    result.ambiguous_endpoint_hold_progress = match.progress;
+                    result.ambiguous_endpoint_hold_tracked_progress = *current_tracked_progress;
+                    result.ambiguous_endpoint_hold_confidence = match.confidence;
+                    if (result.ambiguous_endpoint_hold_dwell_ms
+                        >= config.endpoint_ambiguous_hold_dwell_ms) {
+                        result.ambiguous_endpoint_hold_triggered = true;
+                        result.stop_reason = "ambiguous_endpoint_hold";
+                        return true;
+                    }
+                }
+            }
+            if (endpoint_confirmed && result.endpoint_dwell_passed) {
+                result.endpoint_stop_triggered = true;
+                result.stop_reason = "endpoint_progress_reached";
+                result.endpoint_stop_frame_id = processed.id;
+                result.endpoint_stop_frame_width = processed.width;
+                result.endpoint_stop_frame_height = processed.height;
+                result.endpoint_stop_route_index = static_cast<std::uint64_t>(match.route_index);
+                result.endpoint_stop_progress = match.progress;
+                result.endpoint_stop_tracked_progress = *current_tracked_progress;
+                result.endpoint_stop_confidence = match.confidence;
+                return true;
+            }
+        } else {
+            state.endpoint_dwell_started_at.reset();
+            state.ambiguous_endpoint_hold_started_at.reset();
+            result.endpoint_dwell_ms = 0.0;
+            result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
+            result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
+            result.endpoint_confirmation_reason =
+                config.endpoint_require_unambiguous_match ? "not_at_endpoint" : "disabled";
+            result.ambiguous_endpoint_hold_dwell_ms = 0.0;
+            result.ambiguous_endpoint_hold_reason =
+                config.endpoint_allow_ambiguous_hold ? "not_at_endpoint" : "disabled";
+        }
+    }
+    return false;
+}
+
 bool live_route_match_endpoint_progress_passed(const LiveRouteMatchingConfig& config,
                                                const LiveRouteMatchingResult& result) {
     if (config.expected_progress == "forward") {
@@ -481,6 +581,185 @@ bool live_route_match_has_required_frame_count(const LiveRouteMatchingConfig& co
         && result.endpoint_stop_triggered
         && result.frames_captured > 0
         && result.frames_captured < static_cast<std::uint64_t>(config.frames_to_capture);
+}
+
+void live_route_match_evaluate_route_quality(const LiveRouteMatchingConfig& config,
+                                            LiveRouteMatchingResult& result) {
+    if (config.expected_progress == "forward") {
+        result.directional_progress_passed =
+            result.progress_regressions <= config.max_progress_regressions
+            && result.progress_rollback <= config.max_progress_rollback;
+        result.tracked_directional_progress_passed =
+            result.tracked_progress_regressions <= config.max_progress_regressions
+            && result.tracked_progress_rollback <= config.max_progress_rollback;
+    } else if (config.expected_progress == "reverse") {
+        result.directional_progress_passed =
+            result.reverse_progress_regressions <= config.max_progress_regressions
+            && result.reverse_progress_rollback <= config.max_progress_rollback;
+        result.tracked_directional_progress_passed =
+            result.tracked_reverse_progress_regressions <= config.max_progress_regressions
+            && result.tracked_reverse_progress_rollback <= config.max_progress_rollback;
+    } else {
+        result.directional_progress_passed = true;
+        result.tracked_directional_progress_passed = true;
+    }
+
+    result.endpoint_progress_passed = live_route_match_endpoint_progress_passed(config, result);
+
+    result.progress_gate_passed = config.require_endpoint_progress
+        ? result.endpoint_progress_passed
+        : result.directional_progress_passed;
+    if (config.live_output_runtime_controls_provided) {
+        result.progress_gate_passed = result.progress_gate_passed && result.directional_progress_passed;
+    }
+
+    if (config.emit_dry_run_commands) {
+        result.valid_dry_run_command_fraction = result.dry_run_commands > 0
+            ? static_cast<double>(result.valid_dry_run_commands) / static_cast<double>(result.dry_run_commands)
+            : 0.0;
+        result.dry_run_command_quality_passed =
+            result.dry_run_commands == result.frames_captured
+            && result.valid_dry_run_command_fraction >= config.minimum_valid_dry_run_command_fraction
+            && result.max_invalid_dry_run_command_streak <= config.max_invalid_dry_run_command_streak
+            && result.max_abs_dry_run_yaw_rate_radps <= config.max_abs_dry_run_yaw_rate_radps
+            && result.dry_run_yaw_rate_sign_flips <= config.max_dry_run_yaw_rate_sign_flips
+            && result.max_dry_run_yaw_rate_delta_radps <= config.max_dry_run_yaw_rate_delta_radps;
+    }
+    if (config.use_live_telemetry_stream) {
+        result.live_telemetry_health_passed =
+            result.telemetry_warmup_passed
+            && result.telemetry_health_degraded_frames == 0
+            && result.telemetry_health_ready_frames == result.frames_captured;
+    }
+}
+
+void live_route_match_evaluate_session_readiness(const LiveRouteMatchingConfig& config,
+                                                LiveRouteMatchingResult& result) {
+    if (result.external_nav_estimates > 0) {
+        result.external_nav_valid_fraction =
+            static_cast<double>(result.external_nav_valid_for_fc) / static_cast<double>(result.external_nav_estimates);
+        result.visual_scale_valid_fraction =
+            static_cast<double>(result.visual_scale_valid) / static_cast<double>(result.external_nav_estimates);
+    }
+    result.external_nav_expected_relative_altitude_required = config.emit_external_nav_estimates
+        && std::isfinite(config.external_nav_expected_relative_altitude_m)
+        && config.external_nav_expected_relative_altitude_m > 0.0
+        && std::isfinite(config.external_nav_expected_relative_altitude_tolerance_m)
+        && config.external_nav_expected_relative_altitude_tolerance_m > 0.0;
+    if (result.external_nav_expected_relative_altitude_required) {
+        const auto altitude_min_allowed = config.external_nav_expected_relative_altitude_m
+            - config.external_nav_expected_relative_altitude_tolerance_m;
+        const auto altitude_max_allowed = config.external_nav_expected_relative_altitude_m
+            + config.external_nav_expected_relative_altitude_tolerance_m;
+        result.external_nav_relative_altitude_window_passed =
+            result.external_nav_relative_altitude_seen_frames == result.external_nav_estimates
+            && result.external_nav_relative_altitude_min_m >= altitude_min_allowed
+            && result.external_nav_relative_altitude_max_m <= altitude_max_allowed;
+    }
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_altitude_blocker = "not_requested";
+    } else if (result.external_nav_altitude_valid_frames > 0) {
+        result.external_nav_altitude_blocker = "none";
+    } else if (result.external_nav_relative_altitude_seen_frames == 0) {
+        result.external_nav_altitude_blocker = "relative_altitude_not_seen";
+    } else if (result.external_nav_relative_altitude_max_m <= 0.0) {
+        result.external_nav_altitude_blocker = "relative_altitude_non_positive";
+    } else if (result.external_nav_bench_altitude_frames > 0) {
+        result.external_nav_altitude_blocker = "bench_diagnostic_altitude_used";
+    } else {
+        result.external_nav_altitude_blocker = "altitude_not_valid";
+    }
+    result.visual_scale_required = config.emit_external_nav_estimates
+        && std::isfinite(config.external_nav.bench_diagnostic_altitude_m)
+        && config.external_nav.bench_diagnostic_altitude_m > 0.0;
+
+    result.passed = result.started
+        && live_route_match_has_required_frame_count(config, result)
+        && result.valid_matches == result.frames_captured
+        && result.progress_gate_passed
+        && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
+        && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed)
+        && (!config.publish_progress_only_route_verification
+            || result.route_verification_passed);
+
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_strict_session_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_strict_session_reason = "ambiguous_endpoint_hold";
+    } else if (!result.passed) {
+        result.external_nav_strict_session_reason = "route_session_not_passed";
+    } else if (result.external_nav_valid_for_fc != result.external_nav_estimates) {
+        result.external_nav_strict_session_reason = "per_frame_external_nav_invalid";
+    } else {
+        result.external_nav_strict_session_ready = true;
+        result.external_nav_strict_session_reason = "valid";
+    }
+    result.external_nav_session_valid_for_fc = result.external_nav_valid_for_fc;
+
+    constexpr double kExternalNavMinimumValidFraction = 0.95;
+    constexpr std::uint64_t kExternalNavMaxInvalidStreak = 3;
+    constexpr double kVisualScaleMinimumValidFraction = 0.95;
+    constexpr double kVisualScaleMinimumRatio = 0.80;
+    constexpr double kVisualScaleMaximumRatio = 1.25;
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_quality_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_quality_reason = "ambiguous_endpoint_hold";
+    } else if (!result.passed) {
+        result.external_nav_quality_reason = "route_session_not_passed";
+    } else if (config.require_live_telemetry_health && !result.live_telemetry_health_passed) {
+        result.external_nav_quality_reason = "telemetry_health_not_passed";
+    } else if (result.external_nav_expected_relative_altitude_required
+               && !result.external_nav_relative_altitude_window_passed) {
+        result.external_nav_quality_reason = "relative_altitude_out_of_expected_window";
+    } else if (result.external_nav_valid_fraction < kExternalNavMinimumValidFraction) {
+        result.external_nav_quality_reason = "external_nav_valid_fraction_low";
+    } else if (result.external_nav_max_invalid_streak > kExternalNavMaxInvalidStreak) {
+        result.external_nav_quality_reason = "external_nav_invalid_streak_high";
+    } else if (result.visual_scale_required
+               && result.visual_scale_valid_fraction < kVisualScaleMinimumValidFraction) {
+        result.external_nav_quality_reason = "visual_scale_valid_fraction_low";
+    } else if (result.visual_scale_required
+               && (result.visual_scale_ratio_min < kVisualScaleMinimumRatio
+                   || result.visual_scale_ratio_max > kVisualScaleMaximumRatio)) {
+        result.external_nav_quality_reason = "visual_scale_ratio_out_of_range";
+    } else {
+        result.external_nav_quality_ready = true;
+        result.external_nav_quality_reason = "valid";
+    }
+    result.external_nav_session_ready = result.external_nav_quality_ready;
+    result.external_nav_session_reason = result.external_nav_quality_reason;
+    constexpr std::uint64_t kExternalNavOperatorMaxProgressRegressions = 15;
+    constexpr double kExternalNavOperatorMaxProgressRollback = 1.0;
+    const auto operator_progress_regressions = config.expected_progress == "reverse"
+        ? result.tracked_reverse_progress_regressions
+        : result.tracked_progress_regressions;
+    const auto operator_progress_rollback = config.expected_progress == "reverse"
+        ? result.tracked_reverse_progress_rollback
+        : result.tracked_progress_rollback;
+    const auto operator_directional_progress_soft_passed =
+        config.expected_progress == "any"
+        || (operator_progress_regressions <= kExternalNavOperatorMaxProgressRegressions
+            && operator_progress_rollback <= kExternalNavOperatorMaxProgressRollback);
+    if (result.external_nav_estimates == 0) {
+        result.external_nav_operator_readiness = "not_requested";
+        result.external_nav_operator_reason = "not_requested";
+    } else if (result.ambiguous_endpoint_hold_triggered) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "ambiguous_endpoint_hold";
+    } else if (!result.external_nav_quality_ready) {
+        result.external_nav_operator_readiness = "blocked";
+        result.external_nav_operator_reason = result.external_nav_quality_reason;
+    } else if (!operator_directional_progress_soft_passed) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "route_tracked_directional_progress_soft_high";
+    } else if (!result.external_nav_strict_session_ready) {
+        result.external_nav_operator_readiness = "marginal";
+        result.external_nav_operator_reason = "external_nav_strict_session_not_ready";
+    } else {
+        result.external_nav_operator_readiness = "ready";
+        result.external_nav_operator_reason = "valid";
+    }
 }
 
 double live_route_match_next_tracked_progress(const std::string& expected_progress,
@@ -1828,8 +2107,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::uint64_t focus_roi_top_match_gap_frames = 0;
     std::uint64_t current_external_nav_invalid_streak = 0;
     std::uint64_t current_invalid_command_streak = 0;
-    std::optional<Timestamp> endpoint_dwell_started_at;
-    std::optional<Timestamp> ambiguous_endpoint_hold_started_at;
+    LiveRouteMatchEndpointState endpoint_state;
     result.endpoint_dwell_required_ms = config.endpoint_dwell_ms;
     result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
     result.endpoint_confirmation_required = config.endpoint_require_unambiguous_match;
@@ -2234,114 +2512,32 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             }
             metrics << "\n";
 
-            if (config.stop_at_endpoint_progress && match.valid && current_tracked_progress) {
-                if (live_route_match_endpoint_reached(config, *current_tracked_progress)) {
-                    bool endpoint_confirmed = true;
-                    if (config.endpoint_require_unambiguous_match) {
-                        endpoint_confirmed = false;
-                        result.endpoint_confirmation_required = true;
-                        result.endpoint_confirmation_passed = false;
-                        if (!top_match_gap) {
-                            result.endpoint_confirmation_reason = "top_match_gap_unavailable";
-                        } else if (!edge_top_match_gap) {
-                            result.endpoint_confirmation_reason = "edge_top_match_gap_unavailable";
-                        } else {
-                            result.endpoint_top_match_gap = *top_match_gap;
-                            result.endpoint_edge_top_match_gap = *edge_top_match_gap;
-                            endpoint_confirmed = live_route_match_endpoint_confirmation_passed(
-                                config,
-                                *top_match_gap,
-                                *edge_top_match_gap);
-                            result.endpoint_confirmation_passed = endpoint_confirmed;
-                            if (*top_match_gap < config.endpoint_min_top_match_gap) {
-                                result.endpoint_confirmation_reason = "top_match_gap_low";
-                            } else if (*edge_top_match_gap < config.endpoint_min_edge_top_match_gap) {
-                                result.endpoint_confirmation_reason = "edge_top_match_gap_low";
-                            } else {
-                                result.endpoint_confirmation_reason = "valid";
-                            }
-                        }
-                    }
-                    if (endpoint_confirmed) {
-                        ambiguous_endpoint_hold_started_at.reset();
-                        result.ambiguous_endpoint_hold_dwell_ms = 0.0;
-                        result.ambiguous_endpoint_hold_reason =
-                            config.endpoint_allow_ambiguous_hold ? "endpoint_confirmed" : "disabled";
-                        if (!endpoint_dwell_started_at) {
-                            endpoint_dwell_started_at = processing_finished;
-                        }
-                        result.endpoint_dwell_ms = milliseconds_between(*endpoint_dwell_started_at, processing_finished);
-                        result.endpoint_dwell_passed = result.endpoint_dwell_ms >= config.endpoint_dwell_ms;
-                    } else {
-                        endpoint_dwell_started_at.reset();
-                        result.endpoint_dwell_ms = 0.0;
-                        result.endpoint_dwell_passed = false;
-                        if (config.endpoint_allow_ambiguous_hold) {
-                            if (!ambiguous_endpoint_hold_started_at) {
-                                ambiguous_endpoint_hold_started_at = processing_finished;
-                            }
-                            result.ambiguous_endpoint_hold_dwell_ms =
-                                milliseconds_between(*ambiguous_endpoint_hold_started_at, processing_finished);
-                            result.ambiguous_endpoint_hold_reason = result.endpoint_confirmation_reason;
-                            result.ambiguous_endpoint_hold_frame_id = processed.id;
-                            result.ambiguous_endpoint_hold_route_index =
-                                static_cast<std::uint64_t>(match.route_index);
-                            result.ambiguous_endpoint_hold_progress = match.progress;
-                            result.ambiguous_endpoint_hold_tracked_progress = *current_tracked_progress;
-                            result.ambiguous_endpoint_hold_confidence = match.confidence;
-                            if (result.ambiguous_endpoint_hold_dwell_ms
-                                >= config.endpoint_ambiguous_hold_dwell_ms) {
-                                result.ambiguous_endpoint_hold_triggered = true;
-                                result.stop_reason = "ambiguous_endpoint_hold";
-                                break;
-                            }
-                        }
-                    }
-                    if (endpoint_confirmed && result.endpoint_dwell_passed) {
-                        result.endpoint_stop_triggered = true;
-                        result.stop_reason = "endpoint_progress_reached";
-                        result.endpoint_stop_frame_id = processed.id;
-                        result.endpoint_stop_frame_width = processed.width;
-                        result.endpoint_stop_frame_height = processed.height;
-                        result.endpoint_stop_route_index = static_cast<std::uint64_t>(match.route_index);
-                        result.endpoint_stop_progress = match.progress;
-                        result.endpoint_stop_tracked_progress = *current_tracked_progress;
-                        result.endpoint_stop_confidence = match.confidence;
-                        if (config.export_endpoint_stop_frame) {
-                            const auto filename = std::string("endpoint-stop-frame-")
-                                + wall_time_utc_compact()
-                                + "-id-" + std::to_string(processed.id)
-                                + "-route-" + std::to_string(match.route_index)
-                                + ".pgm";
-                            const auto path = config.endpoint_stop_frame_dir / filename;
-                            write_gray8_frame_pgm(path, processed);
-                            result.endpoint_stop_frame_written = true;
-                            result.endpoint_stop_frame_path = path.string();
-                            metrics << "live_route_match_endpoint_stop_frame"
-                                    << " path=" << result.endpoint_stop_frame_path
-                                    << " frame_id=" << result.endpoint_stop_frame_id
-                                    << " width=" << result.endpoint_stop_frame_width
-                                    << " height=" << result.endpoint_stop_frame_height
-                                    << " route_index=" << result.endpoint_stop_route_index
-                                    << " progress=" << result.endpoint_stop_progress
-                                    << " tracked_progress=" << result.endpoint_stop_tracked_progress
-                                    << " confidence=" << result.endpoint_stop_confidence
-                                    << "\n";
-                        }
-                        break;
-                    }
-                } else {
-                    endpoint_dwell_started_at.reset();
-                    ambiguous_endpoint_hold_started_at.reset();
-                    result.endpoint_dwell_ms = 0.0;
-                    result.endpoint_dwell_passed = config.endpoint_dwell_ms <= 0.0;
-                    result.endpoint_confirmation_passed = !config.endpoint_require_unambiguous_match;
-                    result.endpoint_confirmation_reason =
-                        config.endpoint_require_unambiguous_match ? "not_at_endpoint" : "disabled";
-                    result.ambiguous_endpoint_hold_dwell_ms = 0.0;
-                    result.ambiguous_endpoint_hold_reason =
-                        config.endpoint_allow_ambiguous_hold ? "not_at_endpoint" : "disabled";
+            if (live_route_match_update_endpoint(
+                    config, processed, match, current_tracked_progress,
+                    top_match_gap, edge_top_match_gap, processing_finished,
+                    endpoint_state, result)) {
+                if (result.endpoint_stop_triggered && config.export_endpoint_stop_frame) {
+                    const auto filename = std::string("endpoint-stop-frame-")
+                        + wall_time_utc_compact()
+                        + "-id-" + std::to_string(processed.id)
+                        + "-route-" + std::to_string(match.route_index)
+                        + ".pgm";
+                    const auto path = config.endpoint_stop_frame_dir / filename;
+                    write_gray8_frame_pgm(path, processed);
+                    result.endpoint_stop_frame_written = true;
+                    result.endpoint_stop_frame_path = path.string();
+                    metrics << "live_route_match_endpoint_stop_frame"
+                            << " path=" << result.endpoint_stop_frame_path
+                            << " frame_id=" << result.endpoint_stop_frame_id
+                            << " width=" << result.endpoint_stop_frame_width
+                            << " height=" << result.endpoint_stop_frame_height
+                            << " route_index=" << result.endpoint_stop_route_index
+                            << " progress=" << result.endpoint_stop_progress
+                            << " tracked_progress=" << result.endpoint_stop_tracked_progress
+                            << " confidence=" << result.endpoint_stop_confidence
+                            << "\n";
                 }
+                break;
             }
         } else {
             ++result.empty_polls;
@@ -2469,52 +2665,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.focus_roi_top_match_gap_avg = focus_roi_top_match_gap_frames > 0
         ? focus_roi_top_match_gap_sum / static_cast<double>(focus_roi_top_match_gap_frames)
         : 0.0;
-    if (config.expected_progress == "forward") {
-        result.directional_progress_passed =
-            result.progress_regressions <= config.max_progress_regressions
-            && result.progress_rollback <= config.max_progress_rollback;
-        result.tracked_directional_progress_passed =
-            result.tracked_progress_regressions <= config.max_progress_regressions
-            && result.tracked_progress_rollback <= config.max_progress_rollback;
-    } else if (config.expected_progress == "reverse") {
-        result.directional_progress_passed =
-            result.reverse_progress_regressions <= config.max_progress_regressions
-            && result.reverse_progress_rollback <= config.max_progress_rollback;
-        result.tracked_directional_progress_passed =
-            result.tracked_reverse_progress_regressions <= config.max_progress_regressions
-            && result.tracked_reverse_progress_rollback <= config.max_progress_rollback;
-    } else {
-        result.directional_progress_passed = true;
-        result.tracked_directional_progress_passed = true;
-    }
-
-    result.endpoint_progress_passed = live_route_match_endpoint_progress_passed(config, result);
-
-    result.progress_gate_passed = config.require_endpoint_progress
-        ? result.endpoint_progress_passed
-        : result.directional_progress_passed;
-    if (config.live_output_runtime_controls_provided) {
-        result.progress_gate_passed = result.progress_gate_passed && result.directional_progress_passed;
-    }
-
-    if (config.emit_dry_run_commands) {
-        result.valid_dry_run_command_fraction = result.dry_run_commands > 0
-            ? static_cast<double>(result.valid_dry_run_commands) / static_cast<double>(result.dry_run_commands)
-            : 0.0;
-        result.dry_run_command_quality_passed =
-            result.dry_run_commands == result.frames_captured
-            && result.valid_dry_run_command_fraction >= config.minimum_valid_dry_run_command_fraction
-            && result.max_invalid_dry_run_command_streak <= config.max_invalid_dry_run_command_streak
-            && result.max_abs_dry_run_yaw_rate_radps <= config.max_abs_dry_run_yaw_rate_radps
-            && result.dry_run_yaw_rate_sign_flips <= config.max_dry_run_yaw_rate_sign_flips
-            && result.max_dry_run_yaw_rate_delta_radps <= config.max_dry_run_yaw_rate_delta_radps;
-    }
-    if (config.use_live_telemetry_stream) {
-        result.live_telemetry_health_passed =
-            result.telemetry_warmup_passed
-            && result.telemetry_health_degraded_frames == 0
-            && result.telemetry_health_ready_frames == result.frames_captured;
-    }
+    live_route_match_evaluate_route_quality(config, result);
     if (config.emit_dry_run_commands && last_live_output_gate_snapshot) {
         const LiveMavlinkOutputSafetyGate final_gate(
             live_output_gate_config_from_match_config(config, result.dry_run_command_quality_passed));
@@ -2525,30 +2676,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.live_output_gate_block_reasons = format_reason_counts(live_output_gate_block_reasons);
     result.external_nav_invalid_reasons = format_reason_counts(external_nav_invalid_reasons);
     result.external_nav_output_block_reasons = format_reason_counts(external_nav_output_block_reasons);
-    if (result.external_nav_estimates > 0) {
-        result.external_nav_valid_fraction =
-            static_cast<double>(result.external_nav_valid_for_fc) / static_cast<double>(result.external_nav_estimates);
-        result.visual_scale_valid_fraction =
-            static_cast<double>(result.visual_scale_valid) / static_cast<double>(result.external_nav_estimates);
-    }
     if (result.external_nav_relative_altitude_seen_frames > 0) {
         result.external_nav_relative_altitude_avg_m = external_nav_relative_altitude_sum_m
             / static_cast<double>(result.external_nav_relative_altitude_seen_frames);
-    }
-    result.external_nav_expected_relative_altitude_required = config.emit_external_nav_estimates
-        && std::isfinite(config.external_nav_expected_relative_altitude_m)
-        && config.external_nav_expected_relative_altitude_m > 0.0
-        && std::isfinite(config.external_nav_expected_relative_altitude_tolerance_m)
-        && config.external_nav_expected_relative_altitude_tolerance_m > 0.0;
-    if (result.external_nav_expected_relative_altitude_required) {
-        const auto altitude_min_allowed = config.external_nav_expected_relative_altitude_m
-            - config.external_nav_expected_relative_altitude_tolerance_m;
-        const auto altitude_max_allowed = config.external_nav_expected_relative_altitude_m
-            + config.external_nav_expected_relative_altitude_tolerance_m;
-        result.external_nav_relative_altitude_window_passed =
-            result.external_nav_relative_altitude_seen_frames == result.external_nav_estimates
-            && result.external_nav_relative_altitude_min_m >= altitude_min_allowed
-            && result.external_nav_relative_altitude_max_m <= altitude_max_allowed;
     }
     if (result.visual_scale_valid > 0) {
         result.visual_scale_ratio_avg = visual_scale_ratio_sum / static_cast<double>(result.visual_scale_valid);
@@ -2560,110 +2690,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     result.visual_scale_ratio_histogram = ratio_histogram_text(visual_scale_ratio_histogram);
     result.external_nav_latest_telemetry_armed = latest_gate_telemetry.armed;
     result.external_nav_latest_telemetry_mode = to_string(latest_gate_telemetry.mode);
-    if (result.external_nav_estimates == 0) {
-        result.external_nav_altitude_blocker = "not_requested";
-    } else if (result.external_nav_altitude_valid_frames > 0) {
-        result.external_nav_altitude_blocker = "none";
-    } else if (result.external_nav_relative_altitude_seen_frames == 0) {
-        result.external_nav_altitude_blocker = "relative_altitude_not_seen";
-    } else if (result.external_nav_relative_altitude_max_m <= 0.0) {
-        result.external_nav_altitude_blocker = "relative_altitude_non_positive";
-    } else if (result.external_nav_bench_altitude_frames > 0) {
-        result.external_nav_altitude_blocker = "bench_diagnostic_altitude_used";
-    } else {
-        result.external_nav_altitude_blocker = "altitude_not_valid";
-    }
-    result.visual_scale_required = config.emit_external_nav_estimates
-        && std::isfinite(config.external_nav.bench_diagnostic_altitude_m)
-        && config.external_nav.bench_diagnostic_altitude_m > 0.0;
-
-    result.passed = result.started
-        && live_route_match_has_required_frame_count(config, result)
-        && result.valid_matches == result.frames_captured
-        && result.progress_gate_passed
-        && (!config.require_live_telemetry_health || result.live_telemetry_health_passed)
-        && (!config.require_dry_run_command_quality || result.dry_run_command_quality_passed)
-        && (!config.publish_progress_only_route_verification
-            || result.route_verification_passed);
-
-    if (result.external_nav_estimates == 0) {
-        result.external_nav_strict_session_reason = "not_requested";
-    } else if (result.ambiguous_endpoint_hold_triggered) {
-        result.external_nav_strict_session_reason = "ambiguous_endpoint_hold";
-    } else if (!result.passed) {
-        result.external_nav_strict_session_reason = "route_session_not_passed";
-    } else if (result.external_nav_valid_for_fc != result.external_nav_estimates) {
-        result.external_nav_strict_session_reason = "per_frame_external_nav_invalid";
-    } else {
-        result.external_nav_strict_session_ready = true;
-        result.external_nav_strict_session_reason = "valid";
-    }
-    result.external_nav_session_valid_for_fc = result.external_nav_valid_for_fc;
-
-    constexpr double kExternalNavMinimumValidFraction = 0.95;
-    constexpr std::uint64_t kExternalNavMaxInvalidStreak = 3;
-    constexpr double kVisualScaleMinimumValidFraction = 0.95;
-    constexpr double kVisualScaleMinimumRatio = 0.80;
-    constexpr double kVisualScaleMaximumRatio = 1.25;
-    if (result.external_nav_estimates == 0) {
-        result.external_nav_quality_reason = "not_requested";
-    } else if (result.ambiguous_endpoint_hold_triggered) {
-        result.external_nav_quality_reason = "ambiguous_endpoint_hold";
-    } else if (!result.passed) {
-        result.external_nav_quality_reason = "route_session_not_passed";
-    } else if (config.require_live_telemetry_health && !result.live_telemetry_health_passed) {
-        result.external_nav_quality_reason = "telemetry_health_not_passed";
-    } else if (result.external_nav_expected_relative_altitude_required
-               && !result.external_nav_relative_altitude_window_passed) {
-        result.external_nav_quality_reason = "relative_altitude_out_of_expected_window";
-    } else if (result.external_nav_valid_fraction < kExternalNavMinimumValidFraction) {
-        result.external_nav_quality_reason = "external_nav_valid_fraction_low";
-    } else if (result.external_nav_max_invalid_streak > kExternalNavMaxInvalidStreak) {
-        result.external_nav_quality_reason = "external_nav_invalid_streak_high";
-    } else if (result.visual_scale_required
-               && result.visual_scale_valid_fraction < kVisualScaleMinimumValidFraction) {
-        result.external_nav_quality_reason = "visual_scale_valid_fraction_low";
-    } else if (result.visual_scale_required
-               && (result.visual_scale_ratio_min < kVisualScaleMinimumRatio
-                   || result.visual_scale_ratio_max > kVisualScaleMaximumRatio)) {
-        result.external_nav_quality_reason = "visual_scale_ratio_out_of_range";
-    } else {
-        result.external_nav_quality_ready = true;
-        result.external_nav_quality_reason = "valid";
-    }
-    result.external_nav_session_ready = result.external_nav_quality_ready;
-    result.external_nav_session_reason = result.external_nav_quality_reason;
-    constexpr std::uint64_t kExternalNavOperatorMaxProgressRegressions = 15;
-    constexpr double kExternalNavOperatorMaxProgressRollback = 1.0;
-    const auto operator_progress_regressions = config.expected_progress == "reverse"
-        ? result.tracked_reverse_progress_regressions
-        : result.tracked_progress_regressions;
-    const auto operator_progress_rollback = config.expected_progress == "reverse"
-        ? result.tracked_reverse_progress_rollback
-        : result.tracked_progress_rollback;
-    const auto operator_directional_progress_soft_passed =
-        config.expected_progress == "any"
-        || (operator_progress_regressions <= kExternalNavOperatorMaxProgressRegressions
-            && operator_progress_rollback <= kExternalNavOperatorMaxProgressRollback);
-    if (result.external_nav_estimates == 0) {
-        result.external_nav_operator_readiness = "not_requested";
-        result.external_nav_operator_reason = "not_requested";
-    } else if (result.ambiguous_endpoint_hold_triggered) {
-        result.external_nav_operator_readiness = "marginal";
-        result.external_nav_operator_reason = "ambiguous_endpoint_hold";
-    } else if (!result.external_nav_quality_ready) {
-        result.external_nav_operator_readiness = "blocked";
-        result.external_nav_operator_reason = result.external_nav_quality_reason;
-    } else if (!operator_directional_progress_soft_passed) {
-        result.external_nav_operator_readiness = "marginal";
-        result.external_nav_operator_reason = "route_tracked_directional_progress_soft_high";
-    } else if (!result.external_nav_strict_session_ready) {
-        result.external_nav_operator_readiness = "marginal";
-        result.external_nav_operator_reason = "external_nav_strict_session_not_ready";
-    } else {
-        result.external_nav_operator_readiness = "ready";
-        result.external_nav_operator_reason = "valid";
-    }
+    live_route_match_evaluate_session_readiness(config, result);
 
     metrics << "live_route_match_done started=true"
             << " warmup_frames_dropped=" << result.warmup_frames_dropped

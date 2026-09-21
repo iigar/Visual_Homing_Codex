@@ -25,13 +25,7 @@ case "${require_strict_session}" in
         ;;
 esac
 
-extract_field() {
-    local line="$1"
-    local key="$2"
-    local token
-    token="$(printf '%s\n' "${line}" | tr ' ' '\n' | awk -F= -v key="${key}" '$1 == key { print $2; exit }')"
-    printf '%s' "${token}"
-}
+source "$(dirname "${BASH_SOURCE[0]}")/lib/log-fields.sh"
 
 require_field() {
     local log_path="$1"
