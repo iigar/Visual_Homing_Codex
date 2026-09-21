@@ -23,6 +23,23 @@ The new core is not intended to be a long-range metric SLAM system. The target i
 
 Python and web components may remain useful for tooling, monitoring, and offline experiments. Flight-critical logic should live in the C++ core.
 
+## Local Software Validation
+
+On Linux/WSL, run the Debug and Release core suites plus the readiness log tests:
+
+```sh
+bash scripts/test-software.sh
+```
+
+The runner needs a C++20 compiler, CMake, Ninja, Python 3 and Bash. It explicitly
+disables all seven camera/output build options and retains test assertions in
+Release. Builds go under `core/build-software`; an optional first argument selects
+another build parent. `VISUAL_HOMING_TEST_JOBS` selects build parallelism (default 2).
+Any configure, build or test failure returns a nonzero status.
+
+See [the software validation report](docs/SOFTWARE_VALIDATION_2026-09-21_UA.md)
+for the checked scenarios and the remaining real-data/hardware evidence gaps.
+
 ## Project Memory
 
 The repository is the source of truth for long-term project context.

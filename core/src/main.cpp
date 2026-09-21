@@ -1,5 +1,7 @@
 #include <iostream>
 #include <chrono>
+#include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <cstdint>
 #include <ctime>
@@ -111,11 +113,18 @@ double parse_double_arg(const std::string& value, const std::string& name) {
     if (parsed != value.size()) {
         throw std::invalid_argument(name + " must be a complete floating-point number");
     }
+    if (!std::isfinite(result)) {
+        throw std::invalid_argument(name + " must be finite");
+    }
     return result;
 }
 
 std::uint64_t parse_uint64_arg(const std::string& value, const std::string& name) {
-    if (!value.empty() && value.front() == '-') {
+    std::size_t first = 0;
+    while (first < value.size() && std::isspace(static_cast<unsigned char>(value[first]))) {
+        ++first;
+    }
+    if (first < value.size() && value[first] == '-') {
         throw std::invalid_argument(name + " must be a non-negative integer");
     }
     std::size_t parsed = 0;
@@ -124,6 +133,23 @@ std::uint64_t parse_uint64_arg(const std::string& value, const std::string& name
         throw std::invalid_argument(name + " must be a complete non-negative integer");
     }
     return static_cast<std::uint64_t>(result);
+}
+
+std::uint32_t parse_uint32_arg(const std::string& value, const std::string& name) {
+    const auto result = parse_uint64_arg(value, name);
+    if (result > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::invalid_argument(name + " is outside uint32_t range");
+    }
+    return static_cast<std::uint32_t>(result);
+}
+
+std::uint64_t parse_milliseconds_as_nanoseconds_arg(const std::string& value, const std::string& name) {
+    const auto result = parse_uint64_arg(value, name);
+    constexpr std::uint64_t nanoseconds_per_millisecond = 1'000'000;
+    if (result > std::numeric_limits<std::uint64_t>::max() / nanoseconds_per_millisecond) {
+        throw std::invalid_argument(name + " is too large to convert to nanoseconds");
+    }
+    return result * nanoseconds_per_millisecond;
 }
 
 std::size_t parse_size_arg(const std::string& value, const std::string& name) {
@@ -327,8 +353,8 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
         config.route_verification_publisher.capture.writer.verification_relative_directory = directory;
     }
     if (const char* count = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_KEYFRAMES")) {
-        config.route_verification_publisher.capture.writer.maximum_keyframes = static_cast<std::uint32_t>(
-            parse_size_arg(count, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_KEYFRAMES"));
+        config.route_verification_publisher.capture.writer.maximum_keyframes =
+            parse_uint32_arg(count, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_KEYFRAMES");
     }
     if (const char* capacity = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_QUEUE_CAPACITY")) {
         config.route_verification_publisher.queue_capacity = parse_size_arg(
@@ -337,9 +363,9 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     }
     if (const char* dimensions = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS")) {
         config.route_verification_publisher.capture.writer.selector.descriptor_dimensions =
-            static_cast<std::uint32_t>(parse_size_arg(
+            parse_uint32_arg(
                 dimensions,
-                "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS"));
+                "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_DESCRIPTOR_DIMENSIONS");
     }
     if (const char* length = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_ROUTE_LENGTH_M")) {
         config.route_verification_publisher.capture.writer.selector.nominal_route_length_m =
@@ -361,11 +387,11 @@ void apply_live_route_matching_environment_overrides(vh::LiveRouteMatchingConfig
     }
     if (const char* interval = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_INTERVAL_MS")) {
         config.route_verification_publisher.capture.writer.selector.minimum_capture_interval_ns =
-            parse_uint64_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_INTERVAL_MS") * 1'000'000ULL;
+            parse_milliseconds_as_nanoseconds_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_INTERVAL_MS");
     }
     if (const char* interval = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_INTERVAL_MS")) {
         config.route_verification_publisher.capture.writer.selector.maximum_capture_interval_ns =
-            parse_uint64_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_INTERVAL_MS") * 1'000'000ULL;
+            parse_milliseconds_as_nanoseconds_arg(interval, "VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MAX_INTERVAL_MS");
     }
     if (const char* displacement = std::getenv("VISUAL_HOMING_LIVE_ROUTE_VERIFICATION_MIN_DISPLACEMENT_M")) {
         config.route_verification_publisher.capture.writer.selector.minimum_displacement_m =

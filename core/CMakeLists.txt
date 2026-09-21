@@ -224,6 +224,16 @@ if(BUILD_TESTING)
     add_visual_homing_test(live_route_progress)
     add_visual_homing_test(live_route_endpoint)
     add_visual_homing_test(live_route_readiness)
+    add_visual_homing_test(live_route_config)
+    add_test(
+        NAME cli_numeric_arguments
+        COMMAND ${CMAKE_COMMAND}
+            "-DCORE_EXE=$<TARGET_FILE:visual_homing_core>"
+            "-DPROFILE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../config/camera_profiles"
+            "-DTEST_DIR=${CMAKE_CURRENT_BINARY_DIR}/cli numeric arguments"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_numeric_arguments_test.cmake"
+    )
+    set_tests_properties(cli_numeric_arguments PROPERTIES TIMEOUT 120)
     add_visual_homing_test(camera_profile)
     add_visual_homing_test(bounded_navigator)
     add_visual_homing_test(dry_run_command_sink)

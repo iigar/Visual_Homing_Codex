@@ -1456,17 +1456,19 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     if (config.route_path.empty()) {
         throw std::invalid_argument("Live route matching route path must not be empty");
     }
-    if (config.max_progress_rollback < 0.0) {
-        throw std::invalid_argument("Live route matching max_progress_rollback must not be negative");
+    if (!std::isfinite(config.max_progress_rollback) || config.max_progress_rollback < 0.0) {
+        throw std::invalid_argument("Live route matching max_progress_rollback must be finite and non-negative");
     }
     if (config.expected_progress != "any" && config.expected_progress != "forward" && config.expected_progress != "reverse") {
         throw std::invalid_argument("Live route matching expected_progress must be one of: any, forward, reverse");
     }
-    if (config.endpoint_start_progress < 0.0 || config.endpoint_start_progress > 1.0) {
-        throw std::invalid_argument("Live route matching endpoint_start_progress must be in [0, 1]");
+    if (!std::isfinite(config.endpoint_start_progress)
+        || config.endpoint_start_progress < 0.0 || config.endpoint_start_progress > 1.0) {
+        throw std::invalid_argument("Live route matching endpoint_start_progress must be finite and in [0, 1]");
     }
-    if (config.endpoint_end_progress < 0.0 || config.endpoint_end_progress > 1.0) {
-        throw std::invalid_argument("Live route matching endpoint_end_progress must be in [0, 1]");
+    if (!std::isfinite(config.endpoint_end_progress)
+        || config.endpoint_end_progress < 0.0 || config.endpoint_end_progress > 1.0) {
+        throw std::invalid_argument("Live route matching endpoint_end_progress must be finite and in [0, 1]");
     }
     if (config.endpoint_start_progress >= config.endpoint_end_progress) {
         throw std::invalid_argument("Live route matching endpoint_start_progress must be less than endpoint_end_progress");
