@@ -1,5 +1,11 @@
 # Session Log
 
+## 2026-09-22
+
+- Reconnected to the intended `pi@jtzero` using the original dedicated identity and strict repo-local host-key checking. The board matched the previously trusted ED25519 key and remained on `2d90dac`; no board deployment or camera/FC/UART/output operation was performed. The different device encountered on 2026-09-21 did not cause any known_hosts replacement.
+- Inventoried 683 project artifact/keyframe files. Found six recorded 160x100 Gray8 routes (2583 frames with timestamps), 30 overview PGM files, 13 stop-frame PGM files, historical matching logs, and sparse verification benchmark packages (6/60/60 native captures). No full independent second-pass image sequence was found in the searched locations. A broader recording-format search found 49 files in the old corrupt checkout; all six backup VHRS hashes match the current route files.
+- Copied six routes and 13 stop frames to ignored `artifacts/board-inventory-20260922/data/` (19 files, 41,624,113 bytes); all SHA-256 hashes match the source board. The current local core based on `7761d3a` successfully inspected all six copied routes. Saved inventory, source/local reader summaries, session summaries and hashes alongside the data. Added `BOARD_RECORDING_INVENTORY_2026-09-22_UA.md` with exact scope and remaining evidence gaps. This enables offline artifact/benchmark work but does not establish recognition accuracy on an independent second pass.
+
 ## 2026-09-21
 
 - Committed the previously validated CMake, shell parser, endpoint/dwell and readiness slices as `5793361`; the pre-change Debug baseline passed 50/50. Unrelated local tooling/graph files were left untracked.

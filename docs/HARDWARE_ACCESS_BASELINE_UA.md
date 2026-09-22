@@ -55,8 +55,8 @@ The relevant `SERIAL_ORDER` places `USART3` at the ArduPilot `SERIAL4` position.
 | Pi SSH user | `pi` | `CONFIRMED` | Live connection and readiness evidence 2026-07-16 |
 | Dedicated key name | `id_ed25519_jtzero` | `CONFIRMED` | Batch-mode key access verified 2026-07-16 |
 | Repo-local host-key file | `codex_jtzero_known_hosts` | `CONFIRMED`, `NOT_TRACKED` | Exists in the current repo root and contains a public host fingerprint only; preserve/recreate explicitly after a fresh clone |
-| Last recorded SSH key confirmation | `2026-07-19` | `CONFIRMED` | Strict host-key and dedicated-key reconnect for the camera benchmark |
-| Current live SSH availability | Connected and reachable as `pi@jtzero` on `2026-07-19` | `CONFIRMED` | Timestamped evidence; reverify after power/network changes |
+| Last recorded SSH key confirmation | `2026-09-22` | `CONFIRMED` | Strict host-key and dedicated-key reconnect for read-only recording inventory; ED25519 matches repo-local known_hosts |
+| Current live SSH availability | Connected and reachable as `pi@jtzero` on `2026-09-22` | `CONFIRMED` | Timestamped SSH/filesystem evidence only; reverify after power/network changes |
 
 PowerShell command template from the repository root:
 
@@ -66,6 +66,15 @@ ssh -i $key -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=
 ```
 
 If `jtzero` does not resolve while Pi is disconnected, that is not evidence that the key or SSH configuration was lost. After Pi is connected, first verify hostname/IP reachability; do not regenerate keys or replace host fingerprints automatically.
+
+The `2026-09-22` reconnect matched ED25519 fingerprint
+`SHA256:Zcis5XEvQYtGNnMq+vSMg8kc2on6JiaHx0tMUXvQUKc`, authenticated as `pi`,
+and read repository HEAD `2d90dac826e186fa422ebc566073b42a2f42eb84`.
+The device seen on `2026-09-21` had a different host key; the user indicated it
+was probably a different board. No host keys were replaced. The new reconnect
+only inspected/copied existing recordings; it did not refresh camera, FC, UART,
+CTest or performance acceptance. See
+[`BOARD_RECORDING_INVENTORY_2026-09-22_UA.md`](BOARD_RECORDING_INVENTORY_2026-09-22_UA.md).
 
 Never commit or paste private-key contents, passwords, recovery codes, or unrestricted credentials into project memory. The key filename and public host fingerprint are sufficient for the baseline.
 
