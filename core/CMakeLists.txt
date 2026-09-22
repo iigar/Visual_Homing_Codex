@@ -183,6 +183,13 @@ target_compile_options(route_descriptor_index_builder PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
+add_executable(gray8_matcher_benchmark tools/gray8_matcher_benchmark.cpp)
+target_link_libraries(gray8_matcher_benchmark PRIVATE visual_homing_core_lib)
+target_compile_options(gray8_matcher_benchmark PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
 add_executable(live_verification_capture_benchmark
     tools/live_verification_capture_benchmark.cpp
 )
@@ -314,4 +321,5 @@ if(BUILD_TESTING)
     add_visual_homing_test(route_signature_recorder)
     add_visual_homing_test(route_artifact_check)
     add_visual_homing_test(gray8_route_matcher)
+    add_test(NAME gray8_matcher_benchmark_self_test COMMAND gray8_matcher_benchmark --self-test)
 endif()

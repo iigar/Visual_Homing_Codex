@@ -41,4 +41,5 @@ for configuration in Debug Release; do
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
-echo "Software validation passed: Debug, Release and readiness log consumers."
+python3 "${repo_dir}/scripts/tests/test_recorded_route_benchmark.py" -v
+echo "Software validation passed: Debug, Release, readiness logs and recorded-route benchmark helpers."
