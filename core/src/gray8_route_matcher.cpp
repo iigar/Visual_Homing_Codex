@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -203,6 +204,11 @@ double route_progress_for_index(const RouteSignatureFile& route, std::size_t ind
 
 } // namespace
 
+struct Gray8RouteMatcher::EdgeCache {
+    std::once_flag initialized;
+    std::vector<std::vector<std::uint8_t>> payloads;
+};
+
 Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcherConfig config)
     : route_(std::move(route)), config_(config) {
     if (route_.entries.empty()) {
@@ -228,13 +234,17 @@ Gray8RouteMatcher::Gray8RouteMatcher(RouteSignatureFile route, Gray8RouteMatcher
         throw std::invalid_argument("Gray8RouteMatcher directional search bias must be non-negative");
     }
 
-    route_edge_payloads_.reserve(route_.entries.size());
     for (const auto& entry : route_.entries) {
         if (entry.format != PixelFormat::Gray8) {
             throw std::runtime_error("Gray8 route matcher only accepts Gray8 route entries");
         }
-        route_edge_payloads_.push_back(gray8_edge_payload(entry.width, entry.height, entry.payload));
+        const auto expected_size = static_cast<std::size_t>(entry.width)
+            * static_cast<std::size_t>(entry.height);
+        if (entry.width == 0 || entry.height == 0 || entry.payload.size() != expected_size) {
+            throw std::runtime_error("Gray8 edge diagnostics received malformed payload");
+        }
     }
+    edge_cache_ = std::make_shared<EdgeCache>();
 }
 
 RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
@@ -387,13 +397,27 @@ RouteMatchEdgeDiagnostics Gray8RouteMatcher::probe_edge_diagnostics(
     };
 
     const auto current_edges = gray8_edge_payload(frame.width, frame.height, frame.data);
+    // An empty moved-from matcher has no route entries to inspect.
+    if (route_.entries.empty()) {
+        return diagnostics;
+    }
+    std::call_once(edge_cache_->initialized, [this] {
+        std::vector<std::vector<std::uint8_t>> edge_payloads;
+        edge_payloads.reserve(route_.entries.size());
+        for (const auto& entry : route_.entries) {
+            edge_payloads.push_back(gray8_edge_payload(entry.width, entry.height, entry.payload));
+        }
+        // Publish only after all allocations succeed; call_once retries after an exception.
+        edge_cache_->payloads = std::move(edge_payloads);
+    });
+    const auto& route_edge_payloads = edge_cache_->payloads;
     std::vector<double> best_distances(
         diagnostics.zone_candidates.size(),
         std::numeric_limits<double>::infinity());
     for (std::size_t index = 0; index < route_.entries.size(); ++index) {
         const auto& entry = route_.entries[index];
         validate_frame_against_entry(frame, entry);
-        const auto distance = normalized_mean_absolute_difference(current_edges, route_edge_payloads_[index]);
+        const auto distance = normalized_mean_absolute_difference(current_edges, route_edge_payloads[index]);
         const auto candidate = candidate_from_distance(route_, index, distance);
         insert_top_candidate(diagnostics.top_candidates, top_candidate_count, candidate);
         const auto progress = candidate.progress;

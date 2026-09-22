@@ -95,6 +95,10 @@ target_include_directories(visual_homing_core_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(visual_homing_core_lib PUBLIC Threads::Threads)
+
 if(VISUAL_HOMING_ATTACH_BENCH_PROPS_OFF_SERIAL_WRITER)
     target_compile_definitions(visual_homing_core_lib PUBLIC
         VISUAL_HOMING_LIVE_MAVLINK_OUTPUT_BLOCKED=0
@@ -189,6 +193,12 @@ target_compile_options(gray8_matcher_benchmark PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(gray8_edge_cache_benchmark tools/gray8_edge_cache_benchmark.cpp)
+    target_link_libraries(gray8_edge_cache_benchmark PRIVATE visual_homing_core_lib)
+    target_compile_options(gray8_edge_cache_benchmark PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 add_executable(live_verification_capture_benchmark
     tools/live_verification_capture_benchmark.cpp
@@ -321,5 +331,6 @@ if(BUILD_TESTING)
     add_visual_homing_test(route_signature_recorder)
     add_visual_homing_test(route_artifact_check)
     add_visual_homing_test(gray8_route_matcher)
+    add_visual_homing_test(gray8_edge_cache)
     add_test(NAME gray8_matcher_benchmark_self_test COMMAND gray8_matcher_benchmark --self-test)
 endif()

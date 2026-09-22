@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -48,11 +49,14 @@ public:
     RouteMatchEdgeDiagnostics probe_edge_diagnostics(const Frame& frame, std::size_t top_candidate_count) const;
 
 private:
+    struct EdgeCache;
     RouteSignatureFile route_;
     Gray8RouteMatcherConfig config_;
     std::optional<std::size_t> last_index_;
     std::vector<RouteMatchCandidate> recent_top_candidates_;
-    std::vector<std::vector<std::uint8_t>> route_edge_payloads_;
+    // Shared only by copies of this immutable route. Initialization is synchronized
+    // so concurrent const diagnostics retain their previous read-only behavior.
+    std::shared_ptr<EdgeCache> edge_cache_;
 };
 
 } // namespace vh
