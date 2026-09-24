@@ -58,13 +58,14 @@ Pass measure_pass(const vh::RouteSignatureFile& route,
 
 vh::Gray8RouteMatcherConfig configuration(const std::string& mode) {
     if (mode != "self-global" && mode != "self-window30"
-        && mode != "self-window30-scale" && mode != "pgm") {
+        && mode != "self-window30-scale" && mode != "pgm" && mode != "pgm-scale") {
         throw std::invalid_argument("Unknown mode: " + mode);
     }
-    return {.window_radius = mode == "self-global" || mode == "pgm" ? 0U : 30U,
-        .minimum_confidence = mode == "pgm" ? 0.0 : 0.99,
-        .enable_scale_refinement = mode == "self-window30-scale",
-        .top_candidate_count = mode == "pgm" ? 5U : 0U};
+    const bool image_mode = mode == "pgm" || mode == "pgm-scale";
+    return {.window_radius = mode == "self-global" || image_mode ? 0U : 30U,
+        .minimum_confidence = image_mode ? 0.0 : 0.99,
+        .enable_scale_refinement = mode == "self-window30-scale" || mode == "pgm-scale",
+        .top_candidate_count = image_mode ? 5U : 0U};
 }
 
 void self_test() {
@@ -80,7 +81,7 @@ void self_test() {
     }
     const auto frames = route_frames(route);
     const std::vector<std::size_t> expected{0, 1, 1, 3};
-    for (const std::string mode : {"self-global", "self-window30", "self-window30-scale", "pgm"}) {
+    for (const std::string mode : {"self-global", "self-window30", "self-window30-scale", "pgm", "pgm-scale"}) {
         for (int repeat = 0; repeat < measured_passes; ++repeat) {
             const auto pass = measure_pass(route, frames, configuration(mode));
             if (pass.samples.size() != expected.size()) {
@@ -90,7 +91,7 @@ void self_test() {
                 const auto& sample = pass.samples[i];
                 if (!sample.match.valid || sample.match.route_index != expected[i]
                     || sample.match.confidence != 1.0
-                    || (mode == "pgm" && (sample.candidates.size() != 4
+                    || ((mode == "pgm" || mode == "pgm-scale") && (sample.candidates.size() != 4
                         || sample.candidates.front().confidence != 1.0
                         || sample.candidates.front().route_index != (i == 1 || i == 2 ? 2U : expected[i])))) {
                     throw std::runtime_error("Self-test: exact/duplicate frame result changed");
@@ -124,19 +125,20 @@ int main(int argc, char** argv) {
         }
         if (argc < 3 || argc > 4) {
             throw std::invalid_argument(
-                "usage: gray8_matcher_benchmark ROUTE {self-global|self-window30|self-window30-scale|pgm} [IMAGE.pgm]");
+                "usage: gray8_matcher_benchmark ROUTE {self-global|self-window30|self-window30-scale|pgm|pgm-scale} [IMAGE.pgm]");
         }
         const std::string mode = argv[2];
         const auto config = configuration(mode);
-        if ((mode == "pgm") != (argc == 4)) {
-            throw std::invalid_argument("Only pgm mode requires an image path");
+        const bool image_mode = mode == "pgm" || mode == "pgm-scale";
+        if (image_mode != (argc == 4)) {
+            throw std::invalid_argument("Only pgm and pgm-scale modes require an image path");
         }
         const auto route = vh::read_route_signature_file(argv[1]);
         if (route.entries.empty()) {
             throw std::invalid_argument("Empty route");
         }
         std::vector<vh::Frame> frames;
-        if (mode == "pgm") {
+        if (image_mode) {
             const std::filesystem::path path = argv[3];
             vh::ReplayFrameSource source(path.parent_path(), {{0, 0, path.filename()}});
             source.start();
@@ -169,12 +171,18 @@ int main(int argc, char** argv) {
                 std::cout << "{\"kind\":\"match\",\"pass\":" << repeat << ",\"query\":" << i
                           << ",\"match_us\":" << sample.match_us
                           << ",\"route_index\":" << sample.match.route_index
+                          << ",\"timestamp_ns\":" << std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                 sample.match.timestamp.time_since_epoch()).count()
+                          << ",\"progress\":" << sample.match.progress
+                          << ",\"direction_error_rad\":" << sample.match.direction_error_rad
+                          << ",\"direction_observation_valid\":" << (sample.match.direction_observation_valid ? "true" : "false")
                           << ",\"confidence\":" << sample.match.confidence
                           << ",\"valid\":" << (sample.match.valid ? "true" : "false")
                           << ",\"candidates\":[";
                 for (std::size_t j = 0; j < sample.candidates.size(); ++j) {
                     if (j != 0) std::cout << ',';
                     std::cout << "{\"route_index\":" << sample.candidates[j].route_index
+                              << ",\"progress\":" << sample.candidates[j].progress
                               << ",\"confidence\":" << sample.candidates[j].confidence << '}';
                 }
                 std::cout << "]}\n";

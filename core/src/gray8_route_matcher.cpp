@@ -126,6 +126,9 @@ double best_scaled_normalized_mean_absolute_difference(
     double best_distance = std::numeric_limits<double>::infinity();
     for (const auto scale : gray8_scale_candidates) {
         best_distance = std::min(best_distance, scaled_normalized_mean_absolute_difference(current, reference, scale));
+        if (best_distance == 0.0) {
+            break; // Absolute differences cannot improve on zero.
+        }
     }
     return best_distance;
 }
@@ -307,7 +310,9 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
             ? std::max(begin, best_index - config_.scale_refinement_radius)
             : begin;
         const auto refine_end = std::min(end, best_index + config_.scale_refinement_radius + 1);
-        for (std::size_t index = refine_begin; index < refine_end; ++index) {
+        // Scaled scores are nonnegative. A zero or negative ranked score (which
+        // may include directional bias) cannot be improved by refinement.
+        for (std::size_t index = refine_begin; index < refine_end && best_distance > 0.0; ++index) {
             const auto& entry = route_.entries[index];
             const auto distance = best_scaled_normalized_mean_absolute_difference(frame, entry);
             if (distance < best_distance) {
