@@ -1,6 +1,7 @@
 #include "visual_homing/gray8_route_matcher.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <mutex>
@@ -22,23 +23,42 @@ double scaled_normalized_mean_absolute_difference(
     const double center_y = (static_cast<double>(current.height) - 1.0) * 0.5;
     std::uint64_t sum = 0;
     std::size_t count = 0;
-    for (int y = 0; y < current.height; ++y) {
-        for (int x = 0; x < current.width; ++x) {
+    // Reuse each column mapping across rows. Fixed-size blocks keep scratch
+    // storage bounded and avoid allocation for arbitrary validated dimensions.
+    constexpr int columns_per_block = 128;
+    std::array<int, columns_per_block> current_columns;
+    std::array<int, columns_per_block> reference_columns;
+    for (int block_begin = 0; block_begin < current.width;) {
+        const int block_end = block_begin + std::min(columns_per_block, current.width - block_begin);
+        int column_count = 0;
+        for (int x = block_begin; x < block_end; ++x) {
             const auto reference_x = static_cast<int>(
                 std::lround(center_x + (static_cast<double>(x) - center_x) / scale_ratio));
+            if (reference_x >= 0 && reference_x < current.width) {
+                current_columns[column_count] = x;
+                reference_columns[column_count] = reference_x;
+                ++column_count;
+            }
+        }
+        block_begin = block_end;
+        if (column_count == 0) {
+            continue;
+        }
+        for (int y = 0; y < current.height; ++y) {
             const auto reference_y = static_cast<int>(
                 std::lround(center_y + (static_cast<double>(y) - center_y) / scale_ratio));
-            if (reference_x < 0 || reference_x >= current.width || reference_y < 0 || reference_y >= current.height) {
+            if (reference_y < 0 || reference_y >= current.height) {
                 continue;
             }
-
-            const auto current_index = static_cast<std::size_t>(y) * static_cast<std::size_t>(current.width)
-                + static_cast<std::size_t>(x);
-            const auto reference_index = static_cast<std::size_t>(reference_y) * static_cast<std::size_t>(current.width)
-                + static_cast<std::size_t>(reference_x);
-            const auto delta = static_cast<int>(current.data[current_index]) - static_cast<int>(reference.payload[reference_index]);
-            sum += static_cast<std::uint64_t>(std::abs(delta));
-            ++count;
+            const auto current_row = static_cast<std::size_t>(y) * static_cast<std::size_t>(current.width);
+            const auto reference_row = static_cast<std::size_t>(reference_y) * static_cast<std::size_t>(current.width);
+            for (int column = 0; column < column_count; ++column) {
+                const auto current_index = current_row + static_cast<std::size_t>(current_columns[column]);
+                const auto reference_index = reference_row + static_cast<std::size_t>(reference_columns[column]);
+                const auto delta = static_cast<int>(current.data[current_index]) - static_cast<int>(reference.payload[reference_index]);
+                sum += static_cast<std::uint64_t>(std::abs(delta));
+            }
+            count += static_cast<std::size_t>(column_count);
         }
     }
 
