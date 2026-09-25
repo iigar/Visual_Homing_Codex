@@ -75,10 +75,20 @@ double normalized_mean_absolute_difference(const std::vector<std::uint8_t>& curr
         throw std::runtime_error("Gray8 route matcher payload sizes must match");
     }
 
+    // Bound each partial sum so the pixel loop can use uint32_t without
+    // overflowing, while uint64_t still covers the complete payload.
+    constexpr std::size_t block_size = 65536;
+    static_assert(block_size <= std::numeric_limits<std::uint32_t>::max() / 255);
     std::uint64_t sum = 0;
-    for (std::size_t index = 0; index < current.size(); ++index) {
-        const auto delta = static_cast<int>(current[index]) - static_cast<int>(reference[index]);
-        sum += static_cast<std::uint64_t>(std::abs(delta));
+    for (std::size_t begin = 0; begin < current.size();) {
+        const auto end = begin + std::min(block_size, current.size() - begin);
+        std::uint32_t partial_sum = 0;
+        for (std::size_t index = begin; index < end; ++index) {
+            const auto delta = static_cast<int>(current[index]) - static_cast<int>(reference[index]);
+            partial_sum += static_cast<std::uint32_t>(std::abs(delta));
+        }
+        sum += partial_sum;
+        begin = end;
     }
 
     return static_cast<double>(sum) / (static_cast<double>(current.size()) * 255.0);
