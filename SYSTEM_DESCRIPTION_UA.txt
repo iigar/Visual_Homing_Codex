@@ -1,0 +1,395 @@
+VISUAL HOMING — СТРУКТУРА, АЛГОРИТМИ ТА ОЦІНКА СИСТЕМИ
+======================================================
+
+Дата первинного опису: 2026-09-27.
+Перевірена початкова версія: 6b7060b, гілка refactor/optimization-tech-debt.
+Документ описує реалізацію в цьому репозиторії, а не бажаний кінцевий продукт.
+Статус поточних виправлень слід звіряти з docs/CURRENT_PROJECT_STATUS_UA.md.
+
+1. ПРИЗНАЧЕННЯ ТА ПОТОЧНА ГОТОВНІСТЬ
+------------------------------------
+
+Visual Homing — експериментальна система візуального повернення вздовж раніше
+записаного маршруту без використання GPS як основного джерела впізнавання.
+Цільова платформа — пристрій класу Raspberry Pi Zero 2W із камерою; стабілізація
+літального апарата й керування двигунами залишаються відповідальністю ArduPilot.
+
+Практична задача ядра: записати компактні зображення маршруту, знайти найбільш
+схожий еталон для поточного кадру, оцінити положення в послідовності та обмежену
+кутову поправку, перевірити придатність даних для наступного споживача.
+
+Поточний matcher не будує глобальну 3D-карту, не виконує повний metric SLAM
+і сам по собі не вимірює географічні координати, абсолютну відстань до дому
+або фактичне утримання позиції. Успішне впізнавання кінця запису не доводить
+точного фізичного прибуття чи hover. Кілометрові маршрути — напрям розвитку
+форматів і пошуку, а не підтверджена дальність польоту цієї версії.
+
+Чинне ядро має локальні тести, інструменти replay і попередні camera/Pi
+перевірки. Повного незалежного запису другого проходу з розміткою для оцінки
+точності наразі немає. Default-збірка вимикає камеру та live output; поточна
+розробка не означає приймання системи для автономного польоту.
+
+2. СТРУКТУРА РЕПОЗИТОРІЮ
+-------------------------
+
+core/include/visual_homing/ — публічні C++ типи, інтерфейси, конфігурації.
+core/src/                  — реалізація чинного ядра і CLI у main.cpp.
+core/tests/                — C++ unit, integration та CLI regression tests.
+core/tools/                — benchmarks, offline/SITL допоміжні програми.
+core/CMakeLists.txt         — складання бібліотеки, програм, тестів і flags.
+scripts/                   — збірка, перевірки, benchmark, аналіз журналів,
+                             інструменти Pi/SITL; наявність скрипта не означає,
+                             що його hardware сценарій виконано чи прийнято.
+scripts/tests/             — Python-тести tooling та log contracts.
+config/camera_profiles/    — профілі камер, зокрема IMX219 та OV9281.
+config/sitl/               — окремі конфігурації симулятора.
+docs/                     — статус, архітектура, рішення, плани, звіти.
+artifacts/                — локальні збірки, журнали, виміри та дані перевірок;
+                             значна частина не входить у Git.
+keyframes/                — локальна директорія кадрових матеріалів.
+notes/                    — робочі нотатки.
+reference/                — збережена попередня реалізація для порівняння.
+                             Її можливості не є автоматично можливостями core.
+.gitnexus/, graphify-out/  — допоміжні індекси зв'язків коду; не runtime.
+
+Основний build створює visual_homing_core_lib і CLI visual_homing_core.
+Алгоритми та transport відділено інтерфейсами CameraSource,
+FramePreprocessor, RouteRecorder, RouteMatcher, Navigator, MavlinkBridge
+та MavlinkTelemetrySource у core/include/visual_homing/interfaces.hpp.
+
+3. МОВИ, ФОРМАТИ ТА ЗАЛЕЖНОСТІ
+-------------------------------
+
+C++20 — чинне ядро: зображення, matching, час, маршрутні формати, навігаційні
+пропозиції, gates, telemetry, workers. Використовуються std::chrono,
+std::filesystem, контейнери, RAII, mutex/condition_variable/thread, optional.
+
+CMake/CTest — конфігурація, збірка і реєстрація тестів; Ninja — build executor.
+Поточна desktop evidence отримана у WSL/GCC. Є Windows/MSVC tooling, але
+поточна MSVC acceptance не завершена через відсутність доступного cl.exe.
+
+Python 3 — benchmarks, порівняння результатів, тестування скриптів,
+offline-аналіз, допоміжні SITL/FC capture інструменти.
+Bash — Linux/Pi збірка, сценарії перевірок, запуск і аналіз журналів.
+PowerShell — Windows helpers і обслуговування контексту проєкту.
+
+libcamera — опціональний backend фізичної камери на Pi; вмикається окремо.
+POSIX serial API — read-only telemetry та окремо контрольовані output paths.
+MAVLink v1/v2 — формат обміну телеметрією/повідомленнями з FC.
+ArduPilot/SITL — зовнішній автопілот і середовище симуляції, не власний
+контролер стабілізації Visual Homing.
+
+PGM/Gray8 — прості файлові кадри replay; CSV — manifest із ID, часом і шляхом.
+VHRS/VHRM/VHIX — власні версійовані формати маршруту та індексу.
+JSON, key=value, текстові логи — конфігурація, звіти й machine-readable дані.
+SHA-256 у route package перевіряє відповідність вмісту заявленому digest;
+сам digest без довіреного джерела не є автентифікацією автора пакета.
+
+У reference присутні Python backend/vision, C++ прототип, Android на Kotlin,
+web-код і TypeScript-тести. Це історична база. Чинний CMake build не включає
+їх у нове ядро. Android/Pi HTTP UI та JT_Zero handoff не слід описувати як
+завершену інтеграцію поточної системи.
+
+Чинний Gray8 matcher — числове порівняння pixels, без навченої нейромережі
+або обов'язкового OpenCV runtime. Згадки ML/SLAM у планах чи reference
+не доводять їх використання в цьому matching path.
+
+4. ОСНОВНИЙ РУХ ДАНИХ
+---------------------
+
+                         +-> recorder -> VHRS -> VHRM/VHIX
+camera / replay -> resize -> matcher -> match/progress/confidence
+                                      |               |
+telemetry -> adapter -> health --------+-> navigator -> dry-run proposals
+                                      |
+native frame + current evidence ------+-> verification producer
+                                          -> bounded publisher
+                                          -> immutable verification revision
+
+Live orchestration розміщена переважно в camera_smoke.cpp; попри історичну
+назву, файл містить recording, matching і багато readiness/output wiring.
+Offline loop розміщена в pipeline_harness.cpp. Вони не тотожні: replay test
+не виконує автоматично весь camera loop, endpoint або verification path.
+
+5. ОТРИМАННЯ ТА ПІДГОТОВКА КАДРУ
+---------------------------------
+
+PiCameraSource приймає завершений camera request, переносить Gray8 дані
+у Frame, ставить ID і timestamp. Черга обмежена двома кадрами; при надлишку
+старі кадри витісняються. Це стримує накопичення затримки та пам'яті.
+Timestamp ставиться за host clock у callback перед копіюванням, тому
+не є часом експозиції сенсора і не охоплює затримку до callback.
+
+ReplayFrameSource читає PGM за CSV manifest. Timestamp береться з manifest
+без автоматичного rebasing; записи обробляються в порядку файлу без pacing.
+Для детермінованої перевірки match_replay_route приймає явний clock callback.
+Старий API використовує now. Clock і timestamps manifest мають спільну epoch.
+
+Gray8ResizePreprocessor зменшує зображення усередненням прямокутного блоку
+вхідних pixels для кожного вихідного pixel із цілочисельним округленням.
+ID і timestamp зберігаються. Малий tracking image знижує CPU/RAM, але втрачає
+дрібну текстуру. Thermal16 зарезервований у форматах; чинний resize/matcher
+працює з Gray8, а не з готовим тепловізійним pipeline.
+
+CameraProfile задає capture/target dimensions, FOV та інші перевірювані
+параметри; кутовий масштаб може походити з профілю. Правильність профілю
+й відповідність фактичній оптиці необхідні для змістовності кутових оцінок.
+
+6. ЗАПИС І ЗБЕРІГАННЯ МАРШРУТУ
+-------------------------------
+
+Frame перетворюється на RouteSignatureEntry із payload і metadata.
+Простий recorder зберігає entries; streaming recorder переносить запис
+у worker з обмеженою чергою, явними queue-full/write failure та finalize.
+Проміжні checkpoints і recovery scanner допомагають розібрати неповний запис.
+Факт finalize/checkpoint сам по собі не доводить фізичної стійкості SD-карти
+до раптового вимкнення живлення — таке випробування лишається окремим.
+
+VHRS — послідовність frame signatures і metadata.
+VHRM v1 — manifest пакета: tracking chunks, шари, індекси, зв'язки та digests.
+VHIX v1 — компактний coarse index із посиланнями на chunk/entry.
+Пакети перевіряються щодо версії, розмірів, кількості, шляхів, сумісності
+та відповідності artifacts. Дані розбиваються на bounded chunks.
+
+Coarse descriptor gray8-centered-block-mean-i8-v1 отримують із сітки
+середніх яскравостей блоків із центруванням; значення квантуються у int8.
+Це компактний підпис зовнішнього вигляду, не 3D landmarks. Offline builder
+індексу реалізовано; bounded глобальний VHIX search consumer і повний
+coarse-to-native reacquisition pipeline ще не завершені.
+
+7. АЛГОРИТМ ЗІСТАВЛЕННЯ З МАРШРУТОМ
+------------------------------------
+
+Для поточного зображення I та еталона R однакового розміру:
+
+    D(I,R) = sum(abs(I[p] - R[p])) / (255 * кількість pixels)
+    confidence = clamp(1 - D, 0, 1)
+
+Менша різниця означає більшу подібність. Confidence — нормалізована оцінка
+подібності, не статистично калібрована ймовірність правильного місця.
+
+Пошук може охоплювати весь route або локальне вікно біля попереднього
+прийнятого index. Initial progress window обмежує початкових кандидатів;
+directional policy обмежує/зміщує ranking у заданий бік. Тільки valid match
+оновлює last_index. Локальне вікно економить роботу, але без окремого
+reacquisition не гарантує відновлення після виходу за його межі.
+
+За опцією scale refinement перевіряє фіксовану сітку 24 масштабів біля
+найкращого кандидата. Координати масштабуються навколо центра, округлюються
+до найближчого pixel; різниця рахується лише на спільній області.
+Точний нуль дозволяє завершити пошук, бо абсолютна різниця не буває від'ємною.
+Це дискретна scale correction, не повна perspective/rotation invariant модель.
+
+Raw progress = index / (N-1), для єдиного еталона — 1.
+Це частка послідовності, не частка фізичної довжини: нерівномірна швидкість
+запису і паузи змінюють відповідність index відстані.
+Tracked progress згладжує прийняті значення, обліковує regressions/rollback.
+Невалідний кадр не дає нового current progress, хоча історія зберігається.
+
+Кутовий residual оцінюється перебором горизонтальних зсувів від -K до +K
+і перетворенням найкращого зсуву на radians_per_pixel. Це image-derived
+поправка, а не абсолютний heading або перевірена метрична бокова помилка.
+Досягнення межі пошуку не вважається valid direction observation для
+verification. Навігаційний consumer має окремий, менш строгий контракт.
+
+Для неоднозначності аналізуються top candidates, розриви їхніх scores
+і edge diagnostics. Edge image використовує локальні абсолютні різниці
+сусідніх pixels по x/y із насиченням до 255; це не ORB/SIFT feature matching.
+Edge cache створюється один раз при першій потребі через std::call_once.
+
+8. ENDPOINT, HEALTH І НАВІГАЦІЙНІ ПРОПОЗИЦІЇ
+--------------------------------------------
+
+Endpoint оцінюється за forward/reverse progress threshold, raw/edge gaps,
+часом dwell і конфігурацією підтвердження неоднозначного кінця маршруту.
+За поточною policy invalid gap не очищає dwell timer. Після повернення
+valid evidence elapsed gap може входити в dwell; водночас invalid frame
+може провалити загальний route-quality pass. Цю поведінку зафіксовано тестом.
+
+HealthMonitor збирає frame counts/drops, processing latency, вік кадру,
+confidence та camera/MAVLink/navigation readiness. Frame age у метриці
+вимірюється на початку processing, processing latency — між start/end.
+Consumers окремо порівнюють match.timestamp із health.timestamp.
+
+BoundedNavigator вимагає Ready health, valid match, достатню confidence
+і прийнятний невід'ємний вік. Далі застосовує пропорційну yaw correction:
+
+    yaw_rate = clamp(direction_error * yaw_gain, -max_rate, +max_rate)
+
+Для наступних valid commands додатково обмежує зміну yaw_rate через
+max_yaw_acceleration * elapsed_time. Forward speed задається конфігурацією,
+vy дорівнює нулю. При відмові command невалідна; стан попередньої valid
+команди скидається. Це bounded proportional controller із rate limiting,
+а не повний PID/MPC або контролер утримання позиції.
+
+DryRunCommandSink і DryRunMavlinkBridge дають журнал та scripted telemetry
+для програмних перевірок. Live command/external-nav output мають окремі
+build/runtime/operator/audit/health/single-writer gates. Наявність writer
+класу не дорівнює дозволу чи доказу реального надсилання на FC.
+
+9. TELEMETRY, VERIFICATION І EXTERNAL NAVIGATION
+-----------------------------------------------
+
+Read-only telemetry worker читає bytes, тримає bounded tail; inspector
+розпізнає MAVLink framing і потрібні payloads (heartbeat, attitude,
+relative altitude та допоміжні повідомлення). Adapter переносить стан
+у health. На версії 6b7060b виявлено два підтверджені дефекти caller:
+повторне читання старого tail освіжає telemetry time; кількість altitude
+samples у sliding window помилково використовується як ознака нового sample.
+Докладне відтворення: docs/RUNTIME_TIMESTAMP_AUDIT_2026-09-27_UA.md.
+
+Окрема межа inspector: поточний framing parser враховує довжину checksum
+і підпису, але inspect_mavlink_telemetry_bytes не перевіряє їхній вміст
+і не фільтрує source sysid/compid. Тому його structural validation
+не можна вважати повною перевіркою цілісності чи довіри до телеметрії.
+Виправлення timestamps саме по собі не закриває цей окремий недолік.
+
+LiveRouteVerificationProducer прив'язує native frame до match, tracked
+progress, health, altitude, scale і yaw. Перевіряє timestamp binding,
+скінченність, confidence agreement і свіжість. У progress-only caller
+local_pose відсутня; метричні gates не вигадуються з одного image match.
+
+VerificationKeyframeSelector оцінює потребу native capture за інтервалом,
+зміною progress/displacement, altitude, log-scale, yaw і scene novelty.
+Evaluate/commit відокремлені: стан змінюється після успішного прийняття.
+BoundedVerificationPublisher має один worker, обмежену outstanding queue,
+явні backpressure/failure/drain metrics. Capture/session/writer створюють
+immutable verification revision з native image та пов'язаним evidence.
+
+Перший recording pass не знає надійного normalized progress майбутнього
+finalized route. Verification layer потребує повторного проходу або
+контрольованого offline enrichment із підтвердженим зв'язком із маршрутом.
+
+Є бібліотечні route-local odometry/external-nav estimators, перетворення
+coordinate frames, reset safety logic і SITL tooling. Це не доказ готового
+trusted metric pose. Реальна інтеграція ODOMETRY, reset/reacquisition,
+узгодження з EKF/FC і передача відповідальності JT_Zero ще потребують роботи.
+
+10. МЕТОДИ РОЗРОБКИ ТА ПЕРЕВІРКИ
+---------------------------------
+
+- Replay-first: алгоритми можна запускати локально на файлах і керованому часі.
+- Явні інтерфейси й typed configs; перевірка dimensions, finite values,
+  numeric bounds до небезпечних приведень/множень у виправлених CLI paths.
+- RAII для ресурсів, bounded queues/buffers, явні failure states.
+- Unit tests для окремих функцій і integration tests для послідовності API.
+- Characterization tests спочатку фіксують стару поведінку, потім дозволяють
+  виділяти helpers без непомітної зміни policy.
+- Scalar oracle і before/after comparisons перевіряють еквівалентність
+  математичних оптимізацій; профілювання визначає реальні дорогі операції.
+- Debug/Release перевірки; assertions у Release tests зберігаються через
+  -UNDEBUG після -DNDEBUG. BUILD_TESTING=OFF перевіряється окремо.
+- Окремі ASan/UBSan/ThreadSanitizer прогони виконувалися для зазначених
+  optimization slices; це не blanket sanitizer coverage всього проєкту.
+- Git checkpoints, звіти з командами/даними/межами, перевірка remote commit.
+- GitNexus/Graphify допомагають знаходити зв'язки; missing/stale/empty-ID
+  результати доповнюються direct source review. Граф не замінює execution.
+
+Початкова для цього опису software evidence: 60/60 CTest у Debug і Release,
+Python suites 15/15 та 5/5. Вісім replay timing cases виконуються двічі
+з однаковими журналами. 24 offline API і 21 downstream freshness scenarios
+покривають додаткові комбінації. Кількість tests не є мірою повного покриття.
+
+11. СИЛЬНІ СТОРОНИ — З ПІДСТАВАМИ
+----------------------------------
+
+1) Прозорий matching. Формула проста, deterministic і перевіряється oracle;
+   рішення можна пояснювати конкретними pixels/scores/indices.
+2) Невеликий dependency footprint ядра. Базова offline збірка потребує
+   стандартної C++ бібліотеки/threads без важкого vision inference runtime.
+3) Контроль ресурсів. Обмежені capture/storage/publisher queues і buffer;
+   витіснення, backpressure та помилки явно обліковуються.
+4) Розділення evidence, command proposal і реального output. Свіжість,
+   узгодженість кадру й готовність consumers перевіряються окремо.
+5) Відтворюваність. Файлові fixtures, керований час і тестування граничних
+   умов дають конкретні regression cases без доступу до борту.
+6) Підтверджені локальні оптимізації: raw-distance loop використовує
+   uint32 partial sums із uint64 total; scale kernel повторно використовує
+   координати; lazy edge cache зменшує стартове споживання пам'яті.
+   На 13 локальних PGM benchmark raw match median 2.727 -> 0.579 ms,
+   із scale refinement 3.504 -> 1.381 ms у відповідному звіті.
+   Це конкретні desktop виміри, не прогноз FPS польотної системи.
+7) Версійовані route packages і immutable verification revisions дозволяють
+   перевіряти, з якими саме даними отримано evidence.
+
+12. СЛАБКІ СТОРОНИ ТА НЕЗАКРИТІ ПИТАННЯ
+----------------------------------------
+
+Підтверджені кодом/відтворенням:
+- Два telemetry provenance defects на 6b7060b, описані в розділі 9.
+- Structural MAVLink inspection без перевірки CRC/signature/source identity.
+- Timestamp камери — callback time; processing latency live loop
+  не охоплює пізні scale/verification етапи.
+- Route-only quality/readiness не має самостійного match-age gate;
+  navigator і verification мають свої gates з різними контрактами.
+- camera_smoke.cpp поєднує багато orchestration/diagnostics/config/output
+  відповідальностей; його складніше перевіряти як цілий runtime loop.
+- Full-route matching росте приблизно як N * кількість pixels; локальне
+  вікно допомагає tracking, але глобальний coarse index consumer ще відсутній.
+- Pi/MSVC acceptance відстає від поточної desktop версії; physical SD
+  power-loss durability та revision restart/resume ще не прийняті.
+
+Обмеження методу, що випливають із реалізованої моделі:
+- Pixel MAD залежить від освітлення/експозиції; однакова геометрія з іншою
+  яскравістю дає інший score. Реальну частоту помилок ще не виміряно.
+- Схожі або малотекстурні ділянки можуть мати близькі scores; diagnostics
+  зменшують невизначеність, але не гарантують унікальне впізнавання.
+- Масштабна сітка та горизонтальний зсув не компенсують довільну перспективу,
+  roll/pitch, значний yaw, оклюзії чи зміну сцени.
+- Progress залежить від порядку запису, не є metric position. Висота,
+  масштаб, напрямок і local pose потребують окремої перевіреної прив'язки.
+- Повний matched route у RAM і додатковий edge cache мають вартість O(N*P);
+  підтримка chunked storage сама не робить поточний matcher out-of-core.
+
+Прогалини evidence:
+- Self-match показує внутрішню узгодженість, а не accuracy другого проходу.
+- Немає labeled full second pass із negative/off-route ділянками,
+  незалежною ground truth і різними умовами освітлення/швидкості/висоти.
+- Не доведено реальну надійність closed-loop navigation, точність hover,
+  повну runtime latency distribution або граничну дальність маршруту.
+- GitNexus іноді повертає UNKNOWN або некоректний CRITICAL через порожні
+  symbol IDs; Graphify змішує core і reference. Це обмеження аналізу коду.
+
+13. ПОРЯДОК ПОДАЛЬШОЇ РОБОТИ
+-----------------------------
+
+Найближче: regression tests і виправлення receive-time/sample identity
+телеметрії без послаблення freshness/output gates. Далі — окремий review
+integrity/source validation parser та завершення вимірювання часу runtime.
+
+Для оцінки розпізнавання: повний повторний прохід із кадрами/timestamps,
+розміткою progress/endpoint та off-route negatives; виміряти false matches,
+misses, час відновлення, precision/recall для визначених критеріїв.
+Пороги коригувати за такими даними, а не лише за self-match.
+
+Для довгих маршрутів: bounded VHIX search -> native candidate verification
+-> multi-frame lock -> explicit reacquisition/reset. Для метричної навігації:
+trusted pose/uncertainty, coordinate conventions, FC acceptance і окремі
+hardware stages. UI й handoff мають споживати підтверджений стан ядра.
+
+14. ДЕ ПЕРЕВІРИТИ ТВЕРДЖЕННЯ
+----------------------------
+
+Статус і черга: docs/CURRENT_PROJECT_STATUS_UA.md, docs/ROADMAP.md.
+Рішення й історія: docs/DECISIONS.md, docs/SESSION_LOG.md.
+Межі модулів: core/include/visual_homing/interfaces.hpp.
+Алгоритми: core/src/gray8_resize_preprocessor.cpp, gray8_route_matcher.cpp,
+bounded_navigator.cpp, health_monitor.cpp, camera_smoke.cpp.
+Replay: core/src/replay_frame_source.cpp, pipeline_harness.cpp.
+Storage/index: core/src/route_signature_streaming_recorder.cpp,
+route_signature_stream_writer.cpp, route_package_manifest.cpp,
+route_package_builder.cpp, route_descriptor_index.cpp.
+Verification: core/src/live_route_verification.cpp,
+verification_keyframe_selector.cpp, bounded_verification_publisher.cpp,
+live_verification_capture.cpp, verification_package_writer.cpp.
+Telemetry: core/src/mavlink_telemetry_stream.cpp,
+mavlink_telemetry_inspector.cpp, mavlink_telemetry_adapter.cpp.
+Поточні звіти: docs/RUNTIME_TIMESTAMP_AUDIT_2026-09-27_UA.md,
+DOWNSTREAM_FRESHNESS_VALIDATION_2026-09-26_UA.md,
+OFFLINE_INTEGRATION_VALIDATION_2026-09-26_UA.md,
+RAW_DISTANCE_OPTIMIZATION_2026-09-26_UA.md,
+SCALE_KERNEL_OPTIMIZATION_2026-09-25_UA.md,
+EDGE_CACHE_OPTIMIZATION_2026-09-22_UA.md.
+
+Локальна software перевірка: bash scripts/test-software.sh
+Вона не запускає борт і явно вимикає сім camera/output build options.

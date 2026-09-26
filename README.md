@@ -4,6 +4,8 @@ Experimental GPS-denied visual return system for Raspberry Pi Zero 2W class hard
 
 This repository keeps the previous implementation as a reference baseline and builds a new C++ flight core from a clean architecture.
 
+Detailed Ukrainian system description, algorithms, implementation languages, strengths and limitations: [SYSTEM_DESCRIPTION_UA.txt](SYSTEM_DESCRIPTION_UA.txt).
+
 ## Layout
 
 - `reference/` - imported baseline project, kept for comparison and reuse.
