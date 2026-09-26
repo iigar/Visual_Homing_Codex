@@ -2,11 +2,13 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <iosfwd>
 #include <optional>
 
 #include "visual_homing/camera_profile.hpp"
 #include "visual_homing/mavlink.hpp"
+#include "visual_homing/time.hpp"
 
 namespace vh {
 
@@ -54,5 +56,9 @@ struct PipelineResult {
 PipelineResult run_replay_pipeline(const PipelineConfig& config, std::ostream& metrics);
 PipelineResult record_replay_route(const RouteRecordingConfig& config, std::ostream& metrics);
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics);
+// Explicit processing clock for deterministic offline execution. It must share
+// the manifest timestamps' epoch; frame timestamps are preserved, not rebased.
+PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
+                                 const std::function<Timestamp()>& read_clock);
 
 } // namespace vh

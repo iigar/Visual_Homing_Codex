@@ -116,6 +116,14 @@ PipelineResult record_replay_route(const RouteRecordingConfig& config, std::ostr
 }
 
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics) {
+    return match_replay_route(config, metrics, now);
+}
+
+PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
+                                 const std::function<Timestamp()>& read_clock) {
+    if (!read_clock) {
+        throw std::invalid_argument("Replay processing clock must not be empty");
+    }
     if (config.target_width <= 0 || config.target_height <= 0) {
         throw std::invalid_argument("Route matching target dimensions must be positive");
     }
@@ -149,7 +157,7 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
         telemetry.mode = config.dry_run_mavlink_mode;
     }
     Gray8ResizePreprocessor preprocessor(config.target_width, config.target_height);
-    HealthMonitor health(now());
+    HealthMonitor health(read_clock());
     health.set_links(true, false, true);
     DryRunCommandSink command_sink(&metrics);
     DryRunMavlinkBridge mavlink_bridge(std::move(telemetry_script), &metrics);
@@ -175,10 +183,10 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
     metrics << "\n";
 
     while (const auto frame = replay.poll()) {
-        const auto processing_started = now();
+        const auto processing_started = read_clock();
         const auto processed = preprocessor.process(*frame);
         const auto match = matcher.match(processed);
-        const auto processing_finished = now();
+        const auto processing_finished = read_clock();
         if (auto telemetry = mavlink_bridge.poll_telemetry()) {
             telemetry_adapter.observe(*telemetry, processing_finished);
         }
