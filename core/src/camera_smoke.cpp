@@ -439,6 +439,31 @@ LiveMavlinkOutputSafetySnapshot live_output_gate_snapshot(
 
 } // namespace
 
+LiveRouteMatchTelemetryObservation live_route_match_telemetry_observation(
+    const MavlinkTelemetryStreamSnapshot& snapshot,
+    const MavlinkTelemetryValidationConfig& validation_config,
+    Timestamp evaluated_at) {
+    LiveRouteMatchTelemetryObservation observation;
+    if (!validate_mavlink_telemetry(snapshot.inspection, validation_config).passed) return observation;
+    const auto& receipts = snapshot.receipts;
+    for (const auto* receipt : {&receipts.heartbeat, &receipts.attitude, &receipts.relative_altitude}) {
+        if (receipt->end_offset == 0 || !receipt->received_at
+            || *receipt->received_at == Timestamp{} || *receipt->received_at > evaluated_at) {
+            return observation;
+        }
+    }
+    observation.telemetry = snapshot.inspection.latest;
+    observation.telemetry.timestamp = std::min({*receipts.heartbeat.received_at,
+        *receipts.attitude.received_at, *receipts.relative_altitude.received_at});
+    observation.altitude.valid = observation.telemetry.relative_altitude_seen
+        && std::isfinite(observation.telemetry.relative_altitude_m)
+        && observation.telemetry.relative_altitude_m >= 0.0;
+    observation.altitude.timestamp = *receipts.relative_altitude.received_at;
+    observation.altitude.value = observation.telemetry.relative_altitude_m;
+    observation.valid = true;
+    return observation;
+}
+
 bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress) {
     if (config.expected_progress == "forward") {
         return progress >= config.endpoint_end_progress;
@@ -1836,14 +1861,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         while (milliseconds_between(telemetry_warmup_started, now()) <
                static_cast<double>(config.telemetry_warmup_timeout_ms)) {
             const auto telemetry = telemetry_stream->snapshot();
-            const auto validation = validate_mavlink_telemetry(
-                telemetry.inspection,
-                live_route_match_telemetry_validation_config(config));
+            const auto evaluated_at = now();
+            const auto observation = live_route_match_telemetry_observation(
+                telemetry, live_route_match_telemetry_validation_config(config), evaluated_at);
             copy_telemetry_stream_metrics(result, telemetry);
-            if (validation.passed) {
-                result.telemetry_warmup_passed = true;
-                telemetry_adapter.observe(telemetry.inspection.latest, now());
-                break;
+            if (observation.valid) {
+                telemetry_adapter.observe(observation.telemetry, observation.telemetry.timestamp);
+                if (telemetry_adapter.mavlink_ok(evaluated_at)) {
+                    result.telemetry_warmup_passed = true;
+                    break;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
@@ -2090,7 +2117,6 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     std::optional<LiveMavlinkOutputSafetySnapshot> last_live_output_gate_snapshot;
     MavlinkTelemetry latest_gate_telemetry;
     LiveRouteVerificationScalarObservation latest_route_verification_altitude;
-    std::uint64_t last_relative_altitude_samples = 0;
     std::map<std::string, std::uint64_t> live_output_gate_block_reasons;
     std::map<std::string, std::uint64_t> external_nav_invalid_reasons;
     std::map<std::string, std::uint64_t> external_nav_output_block_reasons;
@@ -2226,31 +2252,16 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             health.set_route_match_confidence(match.confidence);
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
-                const auto validation = validate_mavlink_telemetry(
-                    telemetry.inspection,
-                    live_route_match_telemetry_validation_config(config));
                 copy_telemetry_stream_metrics(result, telemetry);
-                if (validation.passed) {
-                    const auto has_new_relative_altitude =
-                        telemetry.inspection.relative_altitude_samples
-                            > last_relative_altitude_samples;
-                    if (has_new_relative_altitude) {
-                        latest_route_verification_altitude.valid =
-                            telemetry.inspection.latest.relative_altitude_seen
-                            && std::isfinite(
-                                telemetry.inspection.latest.relative_altitude_m)
-                            && telemetry.inspection.latest.relative_altitude_m >= 0.0;
-                        latest_route_verification_altitude.timestamp = processing_finished;
-                        latest_route_verification_altitude.value =
-                            telemetry.inspection.latest.relative_altitude_m;
-                        last_relative_altitude_samples =
-                            telemetry.inspection.relative_altitude_samples;
-                    }
-                    latest_gate_telemetry = telemetry.inspection.latest;
-                    latest_gate_telemetry.timestamp = processing_finished;
-                    telemetry_adapter.observe(latest_gate_telemetry, processing_finished);
+                const auto observation = live_route_match_telemetry_observation(
+                    telemetry, live_route_match_telemetry_validation_config(config), processing_finished);
+                if (observation.valid) {
+                    latest_route_verification_altitude = observation.altitude;
+                    latest_gate_telemetry = observation.telemetry;
+                    telemetry_adapter.observe(latest_gate_telemetry, latest_gate_telemetry.timestamp);
                 }
-                const bool telemetry_health_ready = telemetry_adapter.mavlink_ok(processing_finished);
+                const bool telemetry_health_ready = observation.valid
+                    && telemetry_adapter.mavlink_ok(processing_finished);
                 health.set_links(true, telemetry_health_ready, true);
                 if (telemetry_health_ready) {
                     ++result.telemetry_health_ready_frames;

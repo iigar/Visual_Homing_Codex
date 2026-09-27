@@ -46,6 +46,11 @@ struct MavlinkTelemetryInspectionSummary {
     std::uint8_t heartbeat_system_status = 0;
     std::uint8_t heartbeat_mavlink_version = 0;
     MavlinkTelemetry latest{};
+    // Exclusive frame-end offsets in the inspected bytes; zero means absent.
+    // These locate the messages supplying latest fields, not a cumulative count.
+    std::uint64_t heartbeat_end_offset = 0;
+    std::uint64_t attitude_end_offset = 0;
+    std::uint64_t relative_altitude_end_offset = 0;
 };
 
 struct MavlinkTelemetryValidationConfig {

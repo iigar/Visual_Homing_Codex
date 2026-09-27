@@ -398,6 +398,19 @@ std::optional<double> live_route_match_record_progress(const std::string& expect
                                                        LiveRouteMatchingResult& result);
 
 CameraSmokeResult run_pi_camera_smoke(const CameraSmokeConfig& config, std::ostream& metrics);
+struct LiveRouteMatchTelemetryObservation {
+    bool valid = false;
+    MavlinkTelemetry telemetry{};
+    LiveRouteVerificationScalarObservation altitude{};
+};
+
+// Compose read-only evidence with source receive times. The aggregate timestamp
+// is the oldest required component, so a new message cannot refresh old fields.
+LiveRouteMatchTelemetryObservation live_route_match_telemetry_observation(
+    const MavlinkTelemetryStreamSnapshot& snapshot,
+    const MavlinkTelemetryValidationConfig& validation_config,
+    Timestamp evaluated_at);
+
 LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig& config, std::ostream& metrics);
 bool live_route_match_endpoint_reached(const LiveRouteMatchingConfig& config, double progress);
 bool live_route_match_endpoint_confirmation_passed(const LiveRouteMatchingConfig& config,

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -16,6 +17,19 @@ struct MavlinkTelemetryStreamConfig {
     std::uint64_t max_buffer_bytes = 65536;
 };
 
+struct MavlinkTelemetryReceipt {
+    // Absolute exclusive byte position within one stream run, unaffected by tail eviction.
+    std::uint64_t end_offset = 0;
+    // Host receive time of the read completing this message; absent if unknown.
+    std::optional<Timestamp> received_at;
+};
+
+struct MavlinkTelemetryReceipts {
+    MavlinkTelemetryReceipt heartbeat;
+    MavlinkTelemetryReceipt attitude;
+    MavlinkTelemetryReceipt relative_altitude;
+};
+
 struct MavlinkTelemetryStreamSnapshot {
     bool supported = false;
     bool opened = false;
@@ -24,6 +38,7 @@ struct MavlinkTelemetryStreamSnapshot {
     std::uint64_t bytes_retained = 0;
     std::uint64_t bytes_dropped = 0;
     MavlinkTelemetryInspectionSummary inspection{};
+    MavlinkTelemetryReceipts receipts{};
 };
 
 class MavlinkTelemetryByteBuffer final {
@@ -31,18 +46,23 @@ public:
     explicit MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes);
 
     void append(const char* data, std::size_t size);
+    void append(const char* data, std::size_t size, Timestamp received_at);
     void clear();
 
     const std::string& bytes() const;
     std::uint64_t bytes_captured() const;
     std::uint64_t bytes_retained() const;
     std::uint64_t bytes_dropped() const;
+    const MavlinkTelemetryInspectionSummary& inspection() const;
+    const MavlinkTelemetryReceipts& receipts() const;
 
 private:
     std::uint64_t max_buffer_bytes_ = 0;
     std::uint64_t bytes_captured_ = 0;
     std::uint64_t bytes_dropped_ = 0;
     std::string bytes_;
+    MavlinkTelemetryInspectionSummary inspection_{};
+    MavlinkTelemetryReceipts receipts_{};
 };
 
 class MavlinkTelemetryStream final {

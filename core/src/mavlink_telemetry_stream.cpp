@@ -102,10 +102,18 @@ MavlinkTelemetryByteBuffer::MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_
 }
 
 void MavlinkTelemetryByteBuffer::append(const char* data, std::size_t size) {
+    append(data, size, now());
+}
+
+void MavlinkTelemetryByteBuffer::append(const char* data, std::size_t size, Timestamp received_at) {
     if (size == 0) {
         return;
     }
 
+    if (size > std::numeric_limits<std::uint64_t>::max() - bytes_captured_) {
+        throw std::overflow_error("MAVLink telemetry byte position overflow");
+    }
+    const auto previous_end = bytes_captured_;
     bytes_captured_ += static_cast<std::uint64_t>(size);
     const auto max_size = static_cast<std::size_t>(std::min<std::uint64_t>(
         max_buffer_bytes_,
@@ -115,21 +123,41 @@ void MavlinkTelemetryByteBuffer::append(const char* data, std::size_t size) {
         bytes_dropped_ += static_cast<std::uint64_t>(bytes_.size());
         bytes_dropped_ += static_cast<std::uint64_t>(size - max_size);
         bytes_.assign(data + (size - max_size), max_size);
-        return;
+    } else {
+        bytes_.append(data, size);
+        if (bytes_.size() > max_size) {
+            const auto overflow = bytes_.size() - max_size;
+            bytes_.erase(0, overflow);
+            bytes_dropped_ += static_cast<std::uint64_t>(overflow);
+        }
     }
 
-    bytes_.append(data, size);
-    if (bytes_.size() > max_size) {
-        const auto overflow = bytes_.size() - max_size;
-        bytes_.erase(0, overflow);
-        bytes_dropped_ += static_cast<std::uint64_t>(overflow);
-    }
+    // Parse once on receipt, not on every camera snapshot. Keep only three
+    // receipt records; no per-byte or per-read timestamp history is allocated.
+    inspection_ = inspect_mavlink_telemetry_bytes(bytes_);
+    const auto update = [&](MavlinkTelemetryReceipt& receipt, std::uint64_t relative_end) {
+        if (relative_end == 0) {
+            receipt = {};
+            return;
+        }
+        const auto absolute_end = bytes_dropped_ + relative_end;
+        if (receipt.end_offset == absolute_end) return;
+        receipt.end_offset = absolute_end;
+        // Re-parsing an old tail after eviction must not manufacture a receive time.
+        receipt.received_at = absolute_end > previous_end
+            ? std::optional<Timestamp>(received_at) : std::nullopt;
+    };
+    update(receipts_.heartbeat, inspection_.heartbeat_end_offset);
+    update(receipts_.attitude, inspection_.attitude_end_offset);
+    update(receipts_.relative_altitude, inspection_.relative_altitude_end_offset);
 }
 
 void MavlinkTelemetryByteBuffer::clear() {
     bytes_.clear();
     bytes_captured_ = 0;
     bytes_dropped_ = 0;
+    inspection_ = {};
+    receipts_ = {};
 }
 
 const std::string& MavlinkTelemetryByteBuffer::bytes() const {
@@ -146,6 +174,14 @@ std::uint64_t MavlinkTelemetryByteBuffer::bytes_retained() const {
 
 std::uint64_t MavlinkTelemetryByteBuffer::bytes_dropped() const {
     return bytes_dropped_;
+}
+
+const MavlinkTelemetryInspectionSummary& MavlinkTelemetryByteBuffer::inspection() const {
+    return inspection_;
+}
+
+const MavlinkTelemetryReceipts& MavlinkTelemetryByteBuffer::receipts() const {
+    return receipts_;
 }
 
 MavlinkTelemetryStream::MavlinkTelemetryStream(MavlinkTelemetryStreamConfig config)
@@ -195,7 +231,8 @@ MavlinkTelemetryStreamSnapshot MavlinkTelemetryStream::snapshot() const {
     snapshot.bytes_captured = bytes_.bytes_captured();
     snapshot.bytes_retained = bytes_.bytes_retained();
     snapshot.bytes_dropped = bytes_.bytes_dropped();
-    snapshot.inspection = inspect_mavlink_telemetry_bytes(bytes_.bytes());
+    snapshot.inspection = bytes_.inspection();
+    snapshot.receipts = bytes_.receipts();
     return snapshot;
 }
 
@@ -241,8 +278,9 @@ void MavlinkTelemetryStream::read_loop() {
 
             const auto bytes_read = read(fd.get(), buffer, sizeof(buffer));
             if (bytes_read > 0) {
+                const auto received_at = now();
                 std::lock_guard<std::mutex> lock(mutex_);
-                bytes_.append(buffer, static_cast<std::size_t>(bytes_read));
+                bytes_.append(buffer, static_cast<std::size_t>(bytes_read), received_at);
                 continue;
             }
             if (bytes_read < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {

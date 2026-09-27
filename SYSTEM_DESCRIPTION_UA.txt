@@ -6,6 +6,12 @@ VISUAL HOMING — СТРУКТУРА, АЛГОРИТМИ ТА ОЦІНКА СИ�
 Документ описує реалізацію в цьому репозиторії, а не бажаний кінцевий продукт.
 Статус поточних виправлень слід звіряти з docs/CURRENT_PROJECT_STATUS_UA.md.
 
+Оновлення того самого дня після первинного опису: два telemetry timestamp
+defects з версії 6b7060b виправлено через receive metadata і спільний caller
+helper. Поточна software suite — 61/61 Debug/Release; історичні 60/60 нижче
+належать початковому стану опису. Деталі й межі:
+docs/TELEMETRY_RECEIPT_FIX_2026-09-27_UA.md.
+
 1. ПРИЗНАЧЕННЯ ТА ПОТОЧНА ГОТОВНІСТЬ
 ------------------------------------
 
@@ -316,7 +322,8 @@ Python suites 15/15 та 5/5. Вісім replay timing cases виконують�
 ----------------------------------------
 
 Підтверджені кодом/відтворенням:
-- Два telemetry provenance defects на 6b7060b, описані в розділі 9.
+- Два telemetry provenance defects на 6b7060b, описані в розділі 9;
+  виправлено в наступному receipt fix, див. оновлення на початку документа.
 - Structural MAVLink inspection без перевірки CRC/signature/source identity.
 - Timestamp камери — callback time; processing latency live loop
   не охоплює пізні scale/verification етапи.
@@ -353,8 +360,8 @@ Python suites 15/15 та 5/5. Вісім replay timing cases виконують�
 13. ПОРЯДОК ПОДАЛЬШОЇ РОБОТИ
 -----------------------------
 
-Найближче: regression tests і виправлення receive-time/sample identity
-телеметрії без послаблення freshness/output gates. Далі — окремий review
+Receive-time/sample identity fix із regression tests виконано після
+первинного опису (див. оновлення на початку). Найближче — окремий review
 integrity/source validation parser та завершення вимірювання часу runtime.
 
 Для оцінки розпізнавання: повний повторний прохід із кадрами/timestamps,

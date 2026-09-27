@@ -245,6 +245,17 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
     summary.bytes_read = bytes.size();
     InspectionAccumulation accumulation;
 
+    const auto inspect_frame = [&](std::uint32_t message_id, const unsigned char* payload,
+                                   std::size_t payload_size, std::size_t end_offset) {
+        const auto heartbeats = summary.heartbeat_messages;
+        const auto attitudes = summary.attitude_messages;
+        const auto altitudes = summary.relative_altitude_samples;
+        inspect_payload(message_id, payload, payload_size, summary, accumulation);
+        if (summary.heartbeat_messages != heartbeats) summary.heartbeat_end_offset = end_offset;
+        if (summary.attitude_messages != attitudes) summary.attitude_end_offset = end_offset;
+        if (summary.relative_altitude_samples != altitudes) summary.relative_altitude_end_offset = end_offset;
+    };
+
     std::size_t offset = 0;
     while (offset < bytes.size()) {
         const auto stx = static_cast<unsigned char>(bytes[offset]);
@@ -271,7 +282,7 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
             ++summary.frames_seen;
             ++summary.mavlink1_frames;
             ++summary.message_id_counts[message_id];
-            inspect_payload(message_id, payload, payload_size, summary, accumulation);
+            inspect_frame(message_id, payload, payload_size, offset + frame_size);
             offset += frame_size;
             continue;
         }
@@ -299,7 +310,7 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
         ++summary.frames_seen;
         ++summary.mavlink2_frames;
         ++summary.message_id_counts[message_id];
-        inspect_payload(message_id, payload, payload_size, summary, accumulation);
+        inspect_frame(message_id, payload, payload_size, offset + frame_size);
         offset += frame_size;
     }
 
