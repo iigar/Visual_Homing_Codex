@@ -586,6 +586,10 @@ void print_mavlink_telemetry_inspection(const std::string& path,
            << " mavlink1_frames=" << summary.mavlink1_frames
            << " mavlink2_frames=" << summary.mavlink2_frames
            << " malformed_frames=" << summary.malformed_frames
+           << " checksum_errors=" << summary.checksum_errors
+           << " unsupported_message_frames=" << summary.unsupported_message_frames
+           << " unsupported_incompatibility_frames=" << summary.unsupported_incompatibility_frames
+           << " unsupported_signed_frames=" << summary.unsupported_signed_frames
            << " heartbeat_messages=" << summary.heartbeat_messages
            << " attitude_messages=" << summary.attitude_messages
            << " global_position_int_messages=" << summary.global_position_int_messages

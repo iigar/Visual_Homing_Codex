@@ -7,6 +7,7 @@
 
 #include "visual_homing/camera_smoke.hpp"
 #include "visual_homing/mavlink_telemetry_adapter.hpp"
+#include "mavlink_test_packets.hpp"
 
 namespace {
 using namespace std::chrono_literals;
@@ -16,8 +17,7 @@ void u32(std::string& payload, std::size_t offset, std::uint32_t value) {
     for (unsigned i = 0; i < 4; ++i) payload.at(offset + i) = static_cast<char>(value >> (8 * i));
 }
 
-// Structural packet fixtures, as in mavlink_telemetry_inspector_test.
-// CRC/signature authentication is not supplied by the current inspector.
+// Valid CRCs, with an optional deliberately unauthenticated signature suffix.
 std::string packet(unsigned id, const std::string& payload, bool v2 = true, bool signed_frame = false) {
     std::string bytes(v2 ? 10 : 6, '\0');
     bytes[0] = static_cast<char>(v2 ? 0xFD : 0xFE);
@@ -26,7 +26,10 @@ std::string packet(unsigned id, const std::string& payload, bool v2 = true, bool
     bytes[v2 ? 6 : 4] = 1;
     bytes[v2 ? 7 : 5] = static_cast<char>(id);
     if (v2 && signed_frame) bytes[2] = 1;
-    return bytes + payload + std::string(2 + (v2 && signed_frame ? 13 : 0), '\0');
+    bytes += payload;
+    mavlink_test::finish_crc(bytes, mavlink_test::crc_extra(id));
+    if (v2 && signed_frame) bytes += std::string(13, '\0');
+    return bytes;
 }
 
 std::string heartbeat(bool v2 = false) {
@@ -133,6 +136,12 @@ int main() {
             assert(!observe(fragmented, 1100).valid); // Existing strict malformed-tail policy.
             append(fragmented, message.substr(split), 1200);
             const auto complete = observe(fragmented, 1200);
+            if (static_cast<unsigned char>(message[0]) == 0xFD && message[2] == 1) {
+                assert(!complete.valid);
+                assert(fragmented.inspection().unsupported_signed_frames == 1);
+                assert(fragmented.receipts().relative_altitude.received_at == at(1000));
+                continue;
+            }
             assert(complete.valid && complete.altitude.value == 6.0);
             assert(complete.altitude.timestamp == at(1200));
             assert(complete.telemetry.timestamp == at(1000));
@@ -190,9 +199,30 @@ int main() {
     missing = snapshot(buffer);
     missing.receipts.attitude.received_at = at(11001);
     assert(!vh::live_route_match_telemetry_observation(missing, {}, at(11000)).valid);
-    append(mixed, packet(33, std::string(19, '\0')), 11000);
+    append(mixed, packet(33, std::string(19, '\0'), false), 11000); // v1 cannot truncate.
     assert(!observe(mixed, 11000).valid);
     assert(mixed.receipts().relative_altitude.received_at == at(10010));
+
+    // Corrupt packets cannot replace values or receive times. A relaxed malformed
+    // threshold can retain old evidence, but cannot make it fresh in the adapter.
+    vh::MavlinkTelemetryByteBuffer integrity(bytes.size() * 4);
+    append(integrity, bytes, 1000);
+    for (auto corrupt : {heartbeat(), attitude(), position(9000)}) {
+        corrupt[corrupt.size() - 1] ^= 1;
+        append(integrity, corrupt, 10000);
+        assert(!observe(integrity, 10000).valid);
+        assert(integrity.receipts().heartbeat.received_at == at(1000));
+        assert(integrity.receipts().attitude.received_at == at(1000));
+        assert(integrity.receipts().relative_altitude.received_at == at(1000));
+        assert(integrity.inspection().latest.relative_altitude_m == 42.5);
+    }
+    vh::MavlinkTelemetryValidationConfig tolerate;
+    tolerate.maximum_malformed_frames = 3;
+    const auto retained = vh::live_route_match_telemetry_observation(snapshot(integrity), tolerate, at(10000));
+    assert(retained.valid && retained.telemetry.timestamp == at(1000) && !ready(retained, at(10000)));
+    append(integrity, std::string(bytes.size() * 4, 'x') + fixture(9000), 10010);
+    assert(ready(observe(integrity, 10010), at(10010)));
+    assert(observe(integrity, 10010).altitude.value == 9.0);
 
     buffer.clear();
     assert(!observe(buffer, 12000).valid);

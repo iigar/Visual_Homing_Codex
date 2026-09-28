@@ -1,9 +1,11 @@
 #include "visual_homing/mavlink_telemetry_inspector.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -26,6 +28,39 @@ struct InspectionAccumulation {
     double relative_altitude_sum_m = 0.0;
     double distance_sensor_current_sum_m = 0.0;
 };
+
+struct MessageLayout {
+    std::size_t base_size;
+    std::size_t decoded_size;
+    unsigned char crc_extra;
+};
+
+// common.xml wire layouts; independently packed fixtures pin these constants.
+std::optional<MessageLayout> message_layout(std::uint32_t id) {
+    switch (id) {
+    case msg_heartbeat: return MessageLayout{9, 9, 50};
+    case msg_attitude: return MessageLayout{28, 28, 39};
+    case msg_global_position_int: return MessageLayout{28, 28, 104};
+    case msg_optical_flow: return MessageLayout{26, 34, 175};
+    case msg_optical_flow_rad: return MessageLayout{44, 44, 138};
+    case msg_distance_sensor: return MessageLayout{14, 39, 85};
+    case msg_altitude: return MessageLayout{32, 32, 47};
+    default: return std::nullopt;
+    }
+}
+
+std::uint16_t frame_checksum(const unsigned char* data, std::size_t size, unsigned char extra) {
+    std::uint16_t crc = 0xffff;
+    const auto accumulate = [&](unsigned char byte) {
+        auto tmp = static_cast<unsigned char>(byte ^ (crc & 0xff));
+        tmp ^= static_cast<unsigned char>(tmp << 4);
+        crc = static_cast<std::uint16_t>((crc >> 8) ^ (static_cast<std::uint16_t>(tmp) << 8) ^
+                                        (static_cast<std::uint16_t>(tmp) << 3) ^ (tmp >> 4));
+    };
+    for (std::size_t i = 0; i < size; ++i) accumulate(data[i]);
+    accumulate(extra);
+    return crc;
+}
 
 std::uint32_t read_u32_le(const unsigned char* data) {
     return static_cast<std::uint32_t>(data[0]) |
@@ -129,10 +164,8 @@ void inspect_payload(std::uint32_t message_id,
         }
         ++summary.optical_flow_messages;
         summary.optical_flow_distance_seen = true;
-        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 24));
-        if (payload_size >= 34) {
-            summary.optical_flow_quality = payload[33];
-        }
+        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 16));
+        summary.optical_flow_quality = payload[25];
         return;
     }
 
@@ -143,8 +176,8 @@ void inspect_payload(std::uint32_t message_id,
         }
         ++summary.optical_flow_rad_messages;
         summary.optical_flow_distance_seen = true;
-        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 40));
-        summary.optical_flow_quality = payload[35];
+        summary.optical_flow_distance_m = static_cast<double>(read_f32_le(payload + 36));
+        summary.optical_flow_quality = payload[43];
         return;
     }
 
@@ -245,12 +278,43 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
     summary.bytes_read = bytes.size();
     InspectionAccumulation accumulation;
 
-    const auto inspect_frame = [&](std::uint32_t message_id, const unsigned char* payload,
-                                   std::size_t payload_size, std::size_t end_offset) {
+    const auto inspect_frame = [&](std::uint32_t message_id, const unsigned char* frame,
+                                   std::size_t header_size, std::size_t payload_size,
+                                   std::size_t end_offset, bool v2) {
+        // Signing/key/replay validation is not implemented. Never treat the
+        // signature's presence as authentication or use these packets as evidence.
+        if (v2 && frame[2] != 0) {
+            if ((frame[2] & 1) != 0) ++summary.unsupported_signed_frames;
+            if ((frame[2] & ~1U) != 0) ++summary.unsupported_incompatibility_frames;
+            ++summary.malformed_frames;
+            return;
+        }
+        const auto layout = message_layout(message_id);
+        if (!layout) {
+            ++summary.unsupported_message_frames;
+            return;
+        }
+        // MAVLink 1 has a fixed base payload. MAVLink 2 may truncate down to
+        // one byte, or append future extension fields that we do not decode.
+        if ((!v2 && payload_size != layout->base_size) || (v2 && payload_size == 0)) {
+            ++summary.malformed_frames;
+            return;
+        }
+        const auto checksum_offset = header_size + payload_size;
+        const auto received_crc = static_cast<std::uint16_t>(frame[checksum_offset]) |
+                                  (static_cast<std::uint16_t>(frame[checksum_offset + 1]) << 8);
+        if (frame_checksum(frame + 1, checksum_offset - 1, layout->crc_extra) != received_crc) {
+            ++summary.checksum_errors;
+            ++summary.malformed_frames;
+            return;
+        }
+        // Decode only owned, zero-padded payload bytes; never header/CRC/suffix.
+        std::array<unsigned char, 44> payload{};
+        std::copy_n(frame + header_size, std::min(payload_size, layout->decoded_size), payload.begin());
         const auto heartbeats = summary.heartbeat_messages;
         const auto attitudes = summary.attitude_messages;
         const auto altitudes = summary.relative_altitude_samples;
-        inspect_payload(message_id, payload, payload_size, summary, accumulation);
+        inspect_payload(message_id, payload.data(), layout->decoded_size, summary, accumulation);
         if (summary.heartbeat_messages != heartbeats) summary.heartbeat_end_offset = end_offset;
         if (summary.attitude_messages != attitudes) summary.attitude_end_offset = end_offset;
         if (summary.relative_altitude_samples != altitudes) summary.relative_altitude_end_offset = end_offset;
@@ -278,11 +342,11 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
                 break;
             }
             const auto message_id = static_cast<std::uint32_t>(static_cast<unsigned char>(bytes[offset + 5]));
-            const auto* payload = reinterpret_cast<const unsigned char*>(bytes.data() + offset + header_size);
+            const auto* frame = reinterpret_cast<const unsigned char*>(bytes.data() + offset);
             ++summary.frames_seen;
             ++summary.mavlink1_frames;
             ++summary.message_id_counts[message_id];
-            inspect_frame(message_id, payload, payload_size, offset + frame_size);
+            inspect_frame(message_id, frame, header_size, payload_size, offset + frame_size, false);
             offset += frame_size;
             continue;
         }
@@ -306,11 +370,11 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
             static_cast<std::uint32_t>(static_cast<unsigned char>(bytes[offset + 7])) |
             (static_cast<std::uint32_t>(static_cast<unsigned char>(bytes[offset + 8])) << 8) |
             (static_cast<std::uint32_t>(static_cast<unsigned char>(bytes[offset + 9])) << 16);
-        const auto* payload = reinterpret_cast<const unsigned char*>(bytes.data() + offset + header_size);
+        const auto* frame = reinterpret_cast<const unsigned char*>(bytes.data() + offset);
         ++summary.frames_seen;
         ++summary.mavlink2_frames;
         ++summary.message_id_counts[message_id];
-        inspect_frame(message_id, payload, payload_size, offset + frame_size);
+        inspect_frame(message_id, frame, header_size, payload_size, offset + frame_size, true);
         offset += frame_size;
     }
 

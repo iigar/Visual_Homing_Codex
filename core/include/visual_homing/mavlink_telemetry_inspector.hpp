@@ -14,6 +14,12 @@ struct MavlinkTelemetryInspectionSummary {
     std::uint64_t mavlink1_frames = 0;
     std::uint64_t mavlink2_frames = 0;
     std::uint64_t malformed_frames = 0;
+    // Counts below describe complete frames. Unsupported IDs are counted but
+    // never decoded or CRC-validated. Rejected frames cannot refresh receipts.
+    std::uint64_t checksum_errors = 0;
+    std::uint64_t unsupported_message_frames = 0;
+    std::uint64_t unsupported_incompatibility_frames = 0;
+    std::uint64_t unsupported_signed_frames = 0;
     std::uint64_t heartbeat_messages = 0;
     std::uint64_t attitude_messages = 0;
     std::uint64_t global_position_int_messages = 0;

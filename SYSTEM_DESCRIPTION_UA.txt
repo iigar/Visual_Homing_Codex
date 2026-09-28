@@ -8,9 +8,15 @@ VISUAL HOMING — СТРУКТУРА, АЛГОРИТМИ ТА ОЦІНКА СИ�
 
 Оновлення того самого дня після первинного опису: два telemetry timestamp
 defects з версії 6b7060b виправлено через receive metadata і спільний caller
-helper. Поточна software suite — 61/61 Debug/Release; історичні 60/60 нижче
+helper. Тодішня software suite — 61/61 Debug/Release; історичні 60/60 нижче
 належать початковому стану опису. Деталі й межі:
 docs/TELEMETRY_RECEIPT_FIX_2026-09-27_UA.md.
+
+Наступне оновлення 2026-09-27: parser перевіряє CRC семи відомих повідомлень,
+правильно читає optical flow та скорочені MAVLink 2 payloads; signed packets
+відхиляються до реалізації перевірки підпису. Поточні тести — 62/62 у Debug
+і Release. Довіра до source sysid/compid та mode mapping ще не забезпечена.
+Деталі: docs/MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md.
 
 1. ПРИЗНАЧЕННЯ ТА ПОТОЧНА ГОТОВНІСТЬ
 ------------------------------------
@@ -244,11 +250,13 @@ relative altitude та допоміжні повідомлення). Adapter п�
 samples у sliding window помилково використовується як ознака нового sample.
 Докладне відтворення: docs/RUNTIME_TIMESTAMP_AUDIT_2026-09-27_UA.md.
 
-Окрема межа inspector: поточний framing parser враховує довжину checksum
-і підпису, але inspect_mavlink_telemetry_bytes не перевіряє їхній вміст
-і не фільтрує source sysid/compid. Тому його structural validation
-не можна вважати повною перевіркою цілісності чи довіри до телеметрії.
-Виправлення timestamps саме по собі не закриває цей окремий недолік.
+Після parser fix перевіряється CRC семи декодованих message IDs; відсутні
+нульові байти MAVLink 2 відновлюються перед читанням полів. Signed packets
+і невідомі incompatibility flags відхиляються. Невідомі IDs лише рахуються,
+їхня CRC не перевіряється. Source sysid/compid досі не фільтрується: пакети
+різних джерел можуть скластися в один стан, а custom_mode безумовно
+трактується як ArduCopter. Це підтверджені залишкові недоліки; CRC не
+забезпечує автентифікацію. Див. MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md.
 
 LiveRouteVerificationProducer прив'язує native frame до match, tracked
 progress, health, altitude, scale і yaw. Перевіряє timestamp binding,
@@ -324,7 +332,9 @@ Python suites 15/15 та 5/5. Вісім replay timing cases виконують�
 Підтверджені кодом/відтворенням:
 - Два telemetry provenance defects на 6b7060b, описані в розділі 9;
   виправлено в наступному receipt fix, див. оновлення на початку документа.
-- Structural MAVLink inspection без перевірки CRC/signature/source identity.
+- MAVLink source identity та відповідність mode mapping типу автопілота
+  не перевіряються. Signed packets не підтримуються й відхиляються;
+  CRC перевіряється лише для семи декодованих message IDs.
 - Timestamp камери — callback time; processing latency live loop
   не охоплює пізні scale/verification етапи.
 - Route-only quality/readiness не має самостійного match-age gate;

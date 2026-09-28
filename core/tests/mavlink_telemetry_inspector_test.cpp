@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "visual_homing/mavlink_telemetry_inspector.hpp"
+#include "mavlink_test_packets.hpp"
 
 namespace {
 
@@ -41,8 +42,7 @@ std::string mavlink1_frame(std::uint8_t message_id, const std::vector<unsigned c
     for (const auto byte : payload) {
         frame.push_back(static_cast<char>(byte));
     }
-    frame.push_back(static_cast<char>(0));
-    frame.push_back(static_cast<char>(0));
+    mavlink_test::finish_crc(frame, mavlink_test::crc_extra(message_id));
     return frame;
 }
 
@@ -61,8 +61,7 @@ std::string mavlink2_frame(std::uint32_t message_id, const std::vector<unsigned 
     for (const auto byte : payload) {
         frame.push_back(static_cast<char>(byte));
     }
-    frame.push_back(static_cast<char>(0));
-    frame.push_back(static_cast<char>(0));
+    mavlink_test::finish_crc(frame, mavlink_test::crc_extra(message_id));
     return frame;
 }
 
@@ -246,12 +245,12 @@ int main() {
     append_f32(optical_flow_rad, 0.0F);
     append_f32(optical_flow_rad, 0.0F);
     append_f32(optical_flow_rad, 0.0F);
+    append_u32(optical_flow_rad, 10000);
+    append_f32(optical_flow_rad, 0.73F);
     optical_flow_rad.push_back(0);
     optical_flow_rad.push_back(0);
     optical_flow_rad.push_back(1);
     optical_flow_rad.push_back(220);
-    append_u32(optical_flow_rad, 10000);
-    append_f32(optical_flow_rad, 0.73F);
     const auto optical_flow_summary = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(106, optical_flow_rad));
     assert(optical_flow_summary.optical_flow_rad_messages == 1);
     assert(optical_flow_summary.optical_flow_distance_seen);
