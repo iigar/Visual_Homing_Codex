@@ -1,5 +1,9 @@
 # Project Memory
 
+## Latest Session Handoff — 2026-10-01
+
+Start a resumed session with [SESSION_HANDOFF_2026-10-01_UA.md](SESSION_HANDOFF_2026-10-01_UA.md), then CURRENT_PROJECT_STATUS_UA.md and local AGENTS.md. Published checkpoint before this documentation save: c73514b; last code fix: 6107675 (CRC/payload), preceded by db699fb (receipt freshness). Debug/Release 62/62, Python 15/15 and 5/5; tested code hashes rechecked on 2026-10-01. Next bounded work: explicit telemetry source sysid/compid and heartbeat/mode semantics, followed by full runtime timing and measured optimization. No hardware/output authorization follows. The root SYSTEM_DESCRIPTION_UA.txt now begins with the target conditional workflow, scaling, gates and portable route use by other vehicles; future behavior is labeled separately from implemented code. The older entries below retain their dated evidence and are not the immediate execution queue.
+
 ## Stable Context
 
 - Project goal: build an independent StabX-like coarse GPS-denied visual return system.

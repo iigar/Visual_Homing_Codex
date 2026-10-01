@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-10-01
+
+- At the user's explicit request, saved the full working handoff for a new session in SESSION_HANDOFF_2026-10-01_UA.md and linked it from current status, project memory and README. Captures completed optimization/refactoring commits, measured limits, parser/receipt contracts, source/mode reproductions, next bounded slice, later profiling/runtime/data/search work, complete planned-system references, artifacts, commands and tool/environment pitfalls. No new implementation or hardware work started.
+- Initial HEAD c73514b, last code checkpoint 6107675. Tracked tree clean before documentation edits; all recorded tested-source hashes still match and no core/scripts/config changes exist between those checkpoints. Re-read previous 62/62 Debug/Release, Python 15/15 and 5/5 and targeted parser sanitizer logs; tests were not rerun for documentation only. Local dataset still contains 6 VHRS plus 13 PGM; no complete second-pass dataset is claimed. Local artifacts/tooling remain outside the documentation commit.
+- c73514b already published the user's requested beginning of SYSTEM_DESCRIPTION_UA.txt: 14 conditional target-workflow subsections, scaling, safety gates versus gate-keyframes, transferred routes and vehicle-B entry, recovery, RTL/HOVER, reset/Home, ROI/thermal/UI plans and explicit implemented/planned boundaries.
+- Handoff review: all 14 relative links and 11 listed artifact directories exist. GitNexus staged/main returned CRITICAL 163/193; staged attributes every changed step to one README Section with empty id/name, including unrelated JSX flows. Reviewed actual five-document staged diff; no runtime symbols changed. Raw graph results saved under artifacts/context-handoff-20261001/; graph counts are not a reliable runtime impact verdict.
+
 ## 2026-09-28
 
 - Resumed the parser slice after interrupted execution and disk-full error 112. Terminal access recovered; SHA-256 of all tested code/build files still matches the recorded validation. Actual Release CLI rejects a corrupt heartbeat with exit 2, checksum_errors=1 and heartbeat_messages=0. Fourteen staged files only; camera/stream/adapter/output writers match the baseline. Windows/WSL Git differences in three documents are CRLF-only; no unrelated files rewritten. Verification log: `artifacts/mavlink-parser-20260927/verify-final.log`.

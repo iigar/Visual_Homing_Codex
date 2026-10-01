@@ -6,6 +6,8 @@ This repository keeps the previous implementation as a reference baseline and bu
 
 Detailed Ukrainian system description, algorithms, implementation languages, strengths and limitations: [SYSTEM_DESCRIPTION_UA.txt](SYSTEM_DESCRIPTION_UA.txt).
 
+Resume the saved session and optimization plan: [2026-10-01 handoff](docs/SESSION_HANDOFF_2026-10-01_UA.md).
+
 ## Layout
 
 - `reference/` - imported baseline project, kept for comparison and reuse.
