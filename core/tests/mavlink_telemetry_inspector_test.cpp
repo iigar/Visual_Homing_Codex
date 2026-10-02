@@ -72,7 +72,7 @@ int main() {
     append_u32(heartbeat, 4);
     heartbeat.push_back(2);
     heartbeat.push_back(3);
-    heartbeat.push_back(128);
+    heartbeat.push_back(129);
     heartbeat.push_back(4);
     heartbeat.push_back(3);
 
@@ -103,7 +103,7 @@ int main() {
         mavlink2_frame(30, attitude) +
         mavlink2_frame(33, global_position);
 
-    const auto summary = vh::inspect_mavlink_telemetry_bytes(bytes);
+    const auto summary = vh::inspect_mavlink_telemetry_bytes(bytes, {1, 1});
     assert(summary.bytes_read == bytes.size());
     assert(summary.frames_seen == 3);
     assert(summary.mavlink1_frames == 1);
@@ -121,7 +121,7 @@ int main() {
     assert(summary.heartbeat_custom_mode == 4);
     assert(summary.heartbeat_type == 2);
     assert(summary.heartbeat_autopilot == 3);
-    assert(summary.heartbeat_base_mode == 128);
+    assert(summary.heartbeat_base_mode == 129);
     assert(summary.heartbeat_system_status == 4);
     assert(summary.heartbeat_mavlink_version == 3);
     assert(summary.latest.heartbeat_seen);
@@ -137,7 +137,7 @@ int main() {
     assert(summary.relative_altitude_max_m == 42.5);
     assert(vh::to_string(summary.latest.mode) == "Guided");
 
-    const auto validation = vh::validate_mavlink_telemetry(summary, {});
+    const auto validation = vh::validate_mavlink_telemetry(summary, {.expected_source = {1, 1}});
     assert(validation.passed);
     assert(validation.heartbeat_passed);
     assert(validation.attitude_passed);
@@ -145,7 +145,7 @@ int main() {
     assert(validation.altitude_passed);
     assert(validation.malformed_passed);
 
-    vh::MavlinkTelemetryValidationConfig strict_validation_config;
+    vh::MavlinkTelemetryValidationConfig strict_validation_config{.expected_source = {1, 1}};
     strict_validation_config.minimum_heartbeat_messages = 2;
     const auto strict_validation = vh::validate_mavlink_telemetry(summary, strict_validation_config);
     assert(!strict_validation.passed);
@@ -162,7 +162,7 @@ int main() {
     append_i32(truncated_global_position, 0);
     append_i32(truncated_global_position, 42500);
     const auto truncated_summary =
-        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(33, truncated_global_position));
+        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(33, truncated_global_position), {1, 1});
     assert(truncated_summary.malformed_frames == 0);
     assert(truncated_summary.global_position_int_messages == 1);
     assert(truncated_summary.altitude_messages == 1);
@@ -180,14 +180,14 @@ int main() {
     const auto altitude_only = vh::inspect_mavlink_telemetry_bytes(
         mavlink2_frame(0, heartbeat) +
         mavlink2_frame(30, attitude) +
-        mavlink2_frame(141, altitude));
+        mavlink2_frame(141, altitude), {1, 1});
     assert(altitude_only.global_position_int_messages == 0);
     assert(altitude_only.altitude_messages == 1);
     assert(altitude_only.relative_altitude_samples == 1);
     assert(altitude_only.latest.relative_altitude_seen);
     assert(altitude_only.latest.relative_altitude_m > 3.24);
     assert(altitude_only.latest.relative_altitude_m < 3.26);
-    vh::MavlinkTelemetryValidationConfig relaxed_validation_config;
+    vh::MavlinkTelemetryValidationConfig relaxed_validation_config{.expected_source = {1, 1}};
     relaxed_validation_config.minimum_global_position_int_messages = 0;
     const auto relaxed_validation = vh::validate_mavlink_telemetry(altitude_only, relaxed_validation_config);
     assert(relaxed_validation.passed);
@@ -201,7 +201,7 @@ int main() {
     append_f32(truncated_altitude, 1.0F);
     append_f32(truncated_altitude, 3.25F);
     const auto truncated_altitude_summary =
-        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(141, truncated_altitude));
+        vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(141, truncated_altitude), {1, 1});
     assert(truncated_altitude_summary.malformed_frames == 0);
     assert(truncated_altitude_summary.altitude_messages == 1);
     assert(truncated_altitude_summary.latest.relative_altitude_m > 3.24);
@@ -219,7 +219,7 @@ int main() {
     distance_sensor.push_back(3);
     distance_sensor.push_back(25);
     distance_sensor.push_back(0);
-    const auto rangefinder_summary = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(132, distance_sensor));
+    const auto rangefinder_summary = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(132, distance_sensor), {1, 1});
     assert(rangefinder_summary.distance_sensor_messages == 1);
     assert(rangefinder_summary.distance_sensor_seen);
     assert(rangefinder_summary.distance_sensor_current_m > 0.72);
@@ -251,7 +251,7 @@ int main() {
     optical_flow_rad.push_back(0);
     optical_flow_rad.push_back(1);
     optical_flow_rad.push_back(220);
-    const auto optical_flow_summary = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(106, optical_flow_rad));
+    const auto optical_flow_summary = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(106, optical_flow_rad), {1, 1});
     assert(optical_flow_summary.optical_flow_rad_messages == 1);
     assert(optical_flow_summary.optical_flow_distance_seen);
     assert(optical_flow_summary.optical_flow_distance_m > 0.72);
@@ -265,13 +265,13 @@ int main() {
     alt_hold_heartbeat.push_back(81);
     alt_hold_heartbeat.push_back(3);
     alt_hold_heartbeat.push_back(3);
-    const auto alt_hold = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(0, alt_hold_heartbeat));
+    const auto alt_hold = vh::inspect_mavlink_telemetry_bytes(mavlink2_frame(0, alt_hold_heartbeat), {1, 1});
     assert(alt_hold.heartbeat_custom_mode == 2);
     assert(!alt_hold.latest.armed);
     assert(alt_hold.latest.mode == vh::FlightMode::AltHold);
     assert(vh::to_string(alt_hold.latest.mode) == "AltHold");
 
-    const auto malformed = vh::inspect_mavlink_telemetry_bytes(std::string(1, static_cast<char>(0xFE)));
+    const auto malformed = vh::inspect_mavlink_telemetry_bytes(std::string(1, static_cast<char>(0xFE)), {1, 1});
     assert(malformed.malformed_frames == 1);
     assert(malformed.frames_seen == 0);
 

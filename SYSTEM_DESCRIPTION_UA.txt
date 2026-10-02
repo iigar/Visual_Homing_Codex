@@ -65,9 +65,10 @@ FC Home — різні сутності. Якщо маршрут викорис�
 знайомого коридору не потребує geographic north; перехід до конкретного
 FC coordinate contract може вимагати окремого origin/alignment.
 
-Статус: частина preflight/gates реалізована. Очікуване telemetry source
-sysid/compid і перевірка mode mapping за autopilot/type ще не забезпечені;
-це найближчий програмний крок після CRC/payload fix.
+Статус: частина preflight/gates реалізована. З 2026-10-02 telemetry потребує
+явного nonzero source sysid/compid; heartbeat family/type/version і прапорець
+custom mode перевіряються. Це source selection, не автентифікація. Наступний
+програмний крок — повні межі runtime timing.
 
 0.3. Борт А записує новий маршрут
 
@@ -362,7 +363,7 @@ latency і повторної acceptance. Денний OV9281 маршрут н�
 
 Сходинки до цільового сценарію:
 
-  (1) закрити telemetry source/mode і залишкові freshness/timing gaps;
+  (1) після source/mode fix закрити залишкові freshness/timing gaps;
   (2) незалежний second-pass replay, forward/reverse та off-route negatives;
   (3) revision recovery/SD durability і bounded multi-chunk/index search;
   (4) native top-N verification → multi-frame lock → reset_reference;
@@ -390,7 +391,8 @@ latency і повторної acceptance. Денний OV9281 маршрут н�
   docs/VISUAL_HOMING_RTL_HOVER_PLAN_UA.md — RTL/HOVER acceptance ladder;
   docs/INFLIGHT_HOME_RESET_OVERRIDE_PLAN_UA.md — reset і Home окремо;
   docs/LIVE_OUTPUT_SAFETY_PLAN.md — output permissions і межі;
-  docs/MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md — поточні source/mode gaps.
+  docs/MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md — CRC/payload validation;
+  docs/TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md — source/mode contract.
 
 Нижче — технічний опис наявної реалізації та її перевірених обмежень.
 
@@ -407,9 +409,16 @@ docs/TELEMETRY_RECEIPT_FIX_2026-09-27_UA.md.
 
 Наступне оновлення 2026-09-27: parser перевіряє CRC семи відомих повідомлень,
 правильно читає optical flow та скорочені MAVLink 2 payloads; signed packets
-відхиляються до реалізації перевірки підпису. Поточні тести — 62/62 у Debug
-і Release. Довіра до source sysid/compid та mode mapping ще не забезпечена.
+відхиляються до реалізації перевірки підпису. Тодішні тести — 62/62 у Debug
+і Release; source/mode були наступним кроком.
 Деталі: docs/MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md.
+
+Оновлення 2026-10-02: явний source для всіх decoded fields і heartbeat/mode
+contract реалізовано; без source inspector дає лише structural inspection.
+CLI потребує обох VISUAL_HOMING_TELEMETRY_SYSTEM_ID та
+VISUAL_HOMING_TELEMETRY_COMPONENT_ID. Debug/Release 63/63, CLI 7/7 для кожної
+збірки, targeted ASan/UBSan пройшов. Автентифікація лишається окремою прогалиною.
+Деталі: docs/TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md.
 
 1. ПРИЗНАЧЕННЯ ТА ПОТОЧНА ГОТОВНІСТЬ
 ------------------------------------
@@ -646,10 +655,12 @@ samples у sliding window помилково використовується я
 Після parser fix перевіряється CRC семи декодованих message IDs; відсутні
 нульові байти MAVLink 2 відновлюються перед читанням полів. Signed packets
 і невідомі incompatibility flags відхиляються. Невідомі IDs лише рахуються,
-їхня CRC не перевіряється. Source sysid/compid досі не фільтрується: пакети
-різних джерел можуть скластися в один стан, а custom_mode безумовно
-трактується як ArduCopter. Це підтверджені залишкові недоліки; CRC не
-забезпечує автентифікацію. Див. MAVLINK_PARSER_VALIDATION_2026-09-27_UA.md.
+їхня CRC не перевіряється. З source/mode fix 2026-10-02 декодуються тільки
+пакети явно вибраної nonzero пари sysid/compid. Сторонні повідомлення не
+оновлюють values/receipt times. Підтриманий ArduCopter heartbeat перевіряється
+за autopilot/type/version; custom_mode без enabled flag дає Unknown.
+CRC і source IDs не забезпечують автентифікацію. Див.
+docs/TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md.
 
 LiveRouteVerificationProducer прив'язує native frame до match, tracked
 progress, health, altitude, scale і yaw. Перевіряє timestamp binding,

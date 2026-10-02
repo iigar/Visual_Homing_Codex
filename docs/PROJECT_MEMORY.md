@@ -1,6 +1,10 @@
 # Project Memory
 
-## Latest Session Handoff — 2026-10-01
+## Latest Checkpoint — 2026-10-02
+
+The source/mode slice planned in the 2026-10-01 handoff is implemented; start with [TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md](TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md) and CURRENT_PROJECT_STATUS_UA.md. Telemetry requires one explicit nonzero system/component pair; no auto-discovery/default 1:1. CLI requires both VISUAL_HOMING_TELEMETRY_SYSTEM_ID and VISUAL_HOMING_TELEMETRY_COMPONENT_ID. Unconfigured inspection is structural only. Supported ArduCopter heartbeat family/type/version and custom-mode flag gate mode decoding; unsupported heartbeat fails validation and unknown mode never becomes Guided. Debug/Release 63/63, source CLI 7/7 each, existing Python 15/15 and 5/5. Next bounded software work: full runtime timing including late scale/verification stages and deterministic replay. No hardware/output work is authorized by this checkpoint. The older entries below retain dated evidence.
+
+## Previous Session Handoff — 2026-10-01
 
 Start a resumed session with [SESSION_HANDOFF_2026-10-01_UA.md](SESSION_HANDOFF_2026-10-01_UA.md), then CURRENT_PROJECT_STATUS_UA.md and local AGENTS.md. Published checkpoint before this documentation save: c73514b; last code fix: 6107675 (CRC/payload), preceded by db699fb (receipt freshness). Debug/Release 62/62, Python 15/15 and 5/5; tested code hashes rechecked on 2026-10-01. Next bounded work: explicit telemetry source sysid/compid and heartbeat/mode semantics, followed by full runtime timing and measured optimization. No hardware/output authorization follows. The root SYSTEM_DESCRIPTION_UA.txt now begins with the target conditional workflow, scaling, gates and portable route use by other vehicles; future behavior is labeled separately from implemented code. The older entries below retain their dated evidence and are not the immediate execution queue.
 

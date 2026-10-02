@@ -24,3 +24,16 @@ each resolves it relative to its own location. Readiness decisions remain in the
 individual consumers. Their historical differences are characterized by these
 tests, not endorsed as a common policy. The suite is separate from C++ CTest and
 does not add Python/Bash requirements to Windows core builds.
+
+## Telemetry source CLI tests
+
+```sh
+python3 scripts/tests/test_telemetry_source_cli.py path/to/visual_homing_core -v
+```
+
+Runs seven offline tests against the actual CLI with temporary binary fixtures.
+Checks explicit/missing/partial/out-of-range source IDs, mixed and zero sources,
+unsupported heartbeat families, structural-only inspection, CRC rejection, and
+paths containing spaces. Uses only the Python standard library; no devices,
+network, or pymavlink installation. `scripts/test-software.sh` runs this suite
+against both Debug and Release executables.

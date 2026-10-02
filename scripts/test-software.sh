@@ -38,6 +38,7 @@ for configuration in Debug Release; do
         "-DCMAKE_BUILD_TYPE=${configuration}" "${flags[@]}"
     cmake --build "${build_dir}" --parallel "${jobs}"
     ctest --test-dir "${build_dir}" --output-on-failure
+    python3 "${repo_dir}/scripts/tests/test_telemetry_source_cli.py" "${build_dir}/visual_homing_core" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v

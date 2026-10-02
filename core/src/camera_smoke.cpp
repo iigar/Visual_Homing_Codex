@@ -396,6 +396,7 @@ void copy_telemetry_stream_metrics(
 MavlinkTelemetryValidationConfig live_route_match_telemetry_validation_config(
     const LiveRouteMatchingConfig& config) {
     MavlinkTelemetryValidationConfig validation_config;
+    validation_config.expected_source = config.telemetry_stream.expected_source;
     if (config.emit_external_nav_estimates) {
         validation_config.minimum_global_position_int_messages = 0;
     }
@@ -1237,12 +1238,15 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
         metrics << "live_route_telemetry_stream_start"
                 << " device=" << config.telemetry_stream.device_path
                 << " baud_rate=" << config.telemetry_stream.baud_rate
+                << " expected_system_id=" << static_cast<int>(config.telemetry_stream.expected_source.system_id)
+                << " expected_component_id=" << static_cast<int>(config.telemetry_stream.expected_source.component_id)
                 << " started=true\n";
         const auto telemetry_warmup_started = now();
         while (milliseconds_between(telemetry_warmup_started, now()) <
                static_cast<double>(config.telemetry_warmup_timeout_ms)) {
             const auto telemetry = telemetry_stream->snapshot();
-            const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+            const auto validation = validate_mavlink_telemetry(
+                telemetry.inspection, {.expected_source = config.telemetry_stream.expected_source});
             copy_telemetry_stream_metrics(result, telemetry);
             if (validation.passed) {
                 result.telemetry_warmup_passed = true;
@@ -1348,7 +1352,8 @@ LiveRouteRecordingResult record_live_camera_route(const LiveRouteRecordingConfig
             }
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
-                const auto validation = validate_mavlink_telemetry(telemetry.inspection, {});
+                const auto validation = validate_mavlink_telemetry(
+                    telemetry.inspection, {.expected_source = config.telemetry_stream.expected_source});
                 copy_telemetry_stream_metrics(result, telemetry);
                 if (validation.passed) {
                     last_valid_live_telemetry = telemetry.inspection.latest;
@@ -1856,6 +1861,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
         metrics << "live_route_match_telemetry_stream_start"
                 << " device=" << config.telemetry_stream.device_path
                 << " baud_rate=" << config.telemetry_stream.baud_rate
+                << " expected_system_id=" << static_cast<int>(config.telemetry_stream.expected_source.system_id)
+                << " expected_component_id=" << static_cast<int>(config.telemetry_stream.expected_source.component_id)
                 << " started=true\n";
         const auto telemetry_warmup_started = now();
         while (milliseconds_between(telemetry_warmup_started, now()) <

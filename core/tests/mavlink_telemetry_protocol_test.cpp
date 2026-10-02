@@ -21,7 +21,7 @@ void values(const Summary& s, unsigned id, bool zero) {
         assert(s.heartbeat_messages == 1 && s.latest.heartbeat_seen);
         assert(s.heartbeat_custom_mode == (zero ? 0 : 4));
         assert(s.latest.armed == !zero);
-        assert(s.latest.mode == (zero ? vh::FlightMode::Stabilize : vh::FlightMode::Guided));
+        assert(s.latest.mode == vh::FlightMode::Unknown);
         assert(s.heartbeat_type == (zero ? 0 : 2) && s.heartbeat_autopilot == (zero ? 0 : 3));
         break;
     case 30:
@@ -80,7 +80,7 @@ int main() {
         auto recreated = wire.substr(0, checksum_offset);
         mavlink_test::finish_crc(recreated, mavlink_test::crc_extra(p.id));
         assert(recreated == wire.substr(0, checksum_offset + 2));
-        const auto s = vh::inspect_mavlink_telemetry_bytes(wire);
+        const auto s = vh::inspect_mavlink_telemetry_bytes(wire, {42, 17});
         assert(s.frames_seen == 1 && s.message_id_counts.at(p.id) == 1);
         if (p.signed_frame) {
             assert(s.unsupported_signed_frames == 1 && s.malformed_frames == 1 && decoded(s) == 0);
@@ -98,7 +98,7 @@ int main() {
                 for (unsigned bit = 0; bit < 8; ++bit) {
                     auto damaged = wire;
                     damaged[index] ^= static_cast<char>(1U << bit);
-                    const auto bad = vh::inspect_mavlink_telemetry_bytes(damaged);
+                    const auto bad = vh::inspect_mavlink_telemetry_bytes(damaged, {42, 17});
                     assert(bad.checksum_errors == 1 && bad.malformed_frames == 1 && decoded(bad) == 0);
                     assert(bad.heartbeat_end_offset == 0 && bad.attitude_end_offset == 0 && bad.relative_altitude_end_offset == 0);
                     ++corruptions;
@@ -108,7 +108,7 @@ int main() {
                 // All byte-sized lengths. v2 may have future extensions; v1 is fixed.
                 for (unsigned length = 0; length <= 255; ++length) {
                     const auto resized = with_payload(wire, std::string(length, '\0'), p.id);
-                    const auto result = vh::inspect_mavlink_telemetry_bytes(resized);
+                    const auto result = vh::inspect_mavlink_telemetry_bytes(resized, {42, 17});
                     const bool accepted = p.v2 ? length != 0 : length == payload_size;
                     assert(decoded(result) == (accepted ? 1U : 0U));
                     assert(result.malformed_frames == (accepted ? 0U : 1U));
@@ -122,16 +122,16 @@ int main() {
                                            p.id == 0 ? 9U : p.id == 106 ? 44U : p.id == 141 ? 32U : 28U;
                     extended_payload.resize(full_size, '\0');
                     extended_payload.resize(255, static_cast<char>(0xA5));
-                    values(vh::inspect_mavlink_telemetry_bytes(with_payload(wire, extended_payload, p.id)), p.id, false);
+                    values(vh::inspect_mavlink_telemetry_bytes(with_payload(wire, extended_payload, p.id), {42, 17}), p.id, false);
                     auto compatible = wire.substr(0, checksum_offset);
                     compatible[3] = static_cast<char>(0xff);
                     mavlink_test::finish_crc(compatible, mavlink_test::crc_extra(p.id));
-                    values(vh::inspect_mavlink_telemetry_bytes(compatible), p.id, false);
+                    values(vh::inspect_mavlink_telemetry_bytes(compatible, {42, 17}), p.id, false);
                     for (unsigned bit = 1; bit < 8; ++bit) {
                         auto unsupported = wire.substr(0, checksum_offset);
                         unsupported[2] = static_cast<char>(1U << bit);
                         mavlink_test::finish_crc(unsupported, mavlink_test::crc_extra(p.id));
-                        const auto rejected = vh::inspect_mavlink_telemetry_bytes(unsupported);
+                        const auto rejected = vh::inspect_mavlink_telemetry_bytes(unsupported, {42, 17});
                         assert(rejected.unsupported_incompatibility_frames == 1 && rejected.malformed_frames == 1);
                         assert(decoded(rejected) == 0);
                     }
@@ -140,7 +140,7 @@ int main() {
         }
         // Every incomplete prefix, including CRC and signature, supplies no evidence.
         for (std::size_t split = 1; split < wire.size(); ++split) {
-            const auto partial = vh::inspect_mavlink_telemetry_bytes(wire.substr(0, split));
+            const auto partial = vh::inspect_mavlink_telemetry_bytes(wire.substr(0, split), {42, 17});
             assert(partial.malformed_frames == 1 && decoded(partial) == 0);
             ++prefixes;
         }
@@ -150,7 +150,7 @@ int main() {
     auto unknown = mavlink_test::from_hex(mavlink_golden::packets[14].hex);
     unknown[8] = 1;
     unknown[9] = 2;
-    const auto u = vh::inspect_mavlink_telemetry_bytes(unknown);
+    const auto u = vh::inspect_mavlink_telemetry_bytes(unknown, {42, 17});
     assert(u.message_id_counts.at(0x020100) == 1 && u.unsupported_message_frames == 1);
     assert(decoded(u) == 0 && !vh::validate_mavlink_telemetry(u, {}).passed);
 
@@ -161,14 +161,14 @@ int main() {
     const auto pos = mavlink_test::from_hex(mavlink_golden::packets[4].hex);
     auto damaged = pos;
     damaged[22] ^= 1;
-    const auto retained = vh::inspect_mavlink_telemetry_bytes("noise" + hb + att + pos + damaged + unknown);
+    const auto retained = vh::inspect_mavlink_telemetry_bytes("noise" + hb + att + pos + damaged + unknown, {42, 17});
     assert(retained.relative_altitude_samples == 1 && retained.latest.relative_altitude_m == 42.5);
     assert(retained.relative_altitude_end_offset == 5 + hb.size() + att.size() + pos.size());
-    assert(!vh::validate_mavlink_telemetry(retained, {}).passed);
-    vh::MavlinkTelemetryValidationConfig tolerate;
+    assert(!vh::validate_mavlink_telemetry(retained, {.expected_source = {42, 17}}).passed);
+    vh::MavlinkTelemetryValidationConfig tolerate{.expected_source = {42, 17}};
     tolerate.maximum_malformed_frames = 1;
     assert(vh::validate_mavlink_telemetry(retained, tolerate).passed);
-    const auto recovery = vh::inspect_mavlink_telemetry_bytes(damaged + hb + att + pos);
+    const auto recovery = vh::inspect_mavlink_telemetry_bytes(damaged + hb + att + pos, {42, 17});
     assert(recovery.latest.relative_altitude_m == 42.5 && recovery.relative_altitude_end_offset == damaged.size() + hb.size() + att.size() + pos.size());
     std::cout << "golden=35 single_bit_corruptions=" << corruptions << " payload_lengths=" << lengths
               << " incomplete_prefixes=" << prefixes << '\n';

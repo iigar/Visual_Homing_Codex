@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-10-02 - Select One Explicit Telemetry Producer And Validate Heartbeat Semantics
+
+- Require an explicit nonzero system/component pair for all decoded telemetry; do not infer trust from the first packet, assume 1:1, or combine different components. Keep the selected pair immutable within each buffer/stream. Unconfigured inspection remains structural only and cannot pass telemetry validation.
+- Keep wire-wide structural counters separate from selected-producer values/counts and source rejection diagnostics. Ignore foreign/zero-source values without refreshing receipts; retain the existing global malformed-frame gate. CRC and source IDs are not authentication.
+- Support the explicit ArduCopter heartbeat type/autopilot/version allowlist documented in [the contract](TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md). Decode existing custom modes only when CUSTOM_MODE_ENABLED is present; otherwise return Unknown. Unsupported heartbeat blocks validation; unknown mode does not grant Guided permission. Flight/output gates remain unchanged.
+- CLI configuration uses VISUAL_HOMING_TELEMETRY_SYSTEM_ID and VISUAL_HOMING_TELEMETRY_COMPONENT_ID; both are required for telemetry use. No hardware defaults are added. Other producer topologies/autopilot families require a separate explicit contract and tests.
+
 ## 2026-08-13 - Attach Progress-Only Verification To The Live Matcher Without Flight Authority
 
 Decision:

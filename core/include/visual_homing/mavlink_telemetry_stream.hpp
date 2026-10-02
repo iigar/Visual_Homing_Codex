@@ -15,6 +15,7 @@ struct MavlinkTelemetryStreamConfig {
     std::string device_path;
     int baud_rate = 57600;
     std::uint64_t max_buffer_bytes = 65536;
+    MavlinkTelemetrySourceId expected_source{};
 };
 
 struct MavlinkTelemetryReceipt {
@@ -43,7 +44,7 @@ struct MavlinkTelemetryStreamSnapshot {
 
 class MavlinkTelemetryByteBuffer final {
 public:
-    explicit MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes);
+    explicit MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes, MavlinkTelemetrySourceId source = {});
 
     void append(const char* data, std::size_t size);
     void append(const char* data, std::size_t size, Timestamp received_at);
@@ -57,6 +58,7 @@ public:
     const MavlinkTelemetryReceipts& receipts() const;
 
 private:
+    const MavlinkTelemetrySourceId source_;
     std::uint64_t max_buffer_bytes_ = 0;
     std::uint64_t bytes_captured_ = 0;
     std::uint64_t bytes_dropped_ = 0;

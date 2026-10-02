@@ -99,6 +99,22 @@ FlightMode ardupilot_custom_mode_to_flight_mode(std::uint32_t custom_mode) {
     }
 }
 
+bool supported_copter_heartbeat(const unsigned char* payload) {
+    // MAV_AUTOPILOT_ARDUPILOTMEGA, heartbeat protocol version 3 (also on v1).
+    if (payload[5] != 3 || payload[8] != 3) return false;
+    switch (payload[4]) {
+    case 2:  // MAV_TYPE_QUADROTOR
+    case 3:  // MAV_TYPE_COAXIAL
+    case 4:  // MAV_TYPE_HELICOPTER
+    case 13: // MAV_TYPE_HEXAROTOR
+    case 14: // MAV_TYPE_OCTOROTOR
+    case 15: // MAV_TYPE_TRICOPTER
+        return true;
+    default:
+        return false;
+    }
+}
+
 void inspect_payload(std::uint32_t message_id,
                      const unsigned char* payload,
                      std::size_t payload_size,
@@ -120,7 +136,10 @@ void inspect_payload(std::uint32_t message_id,
         summary.heartbeat_mavlink_version = payload[8];
         summary.latest.heartbeat_seen = true;
         summary.latest.armed = (base_mode & mav_mode_flag_safety_armed) != 0;
-        summary.latest.mode = ardupilot_custom_mode_to_flight_mode(custom_mode);
+        summary.heartbeat_contract_passed = supported_copter_heartbeat(payload);
+        // A new unsupported heartbeat must clear, not retain, the previous mode.
+        summary.latest.mode = summary.heartbeat_contract_passed && (base_mode & 1) != 0
+            ? ardupilot_custom_mode_to_flight_mode(custom_mode) : FlightMode::Unknown;
         return;
     }
 
@@ -273,8 +292,10 @@ std::string format_mavlink_message_id_counts(const std::map<std::uint32_t, std::
     return output.str();
 }
 
-MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::string& bytes) {
+MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(
+    const std::string& bytes, MavlinkTelemetrySourceId source) {
     MavlinkTelemetryInspectionSummary summary;
+    summary.selected_source = source;
     summary.bytes_read = bytes.size();
     InspectionAccumulation accumulation;
 
@@ -308,6 +329,16 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
             ++summary.malformed_frames;
             return;
         }
+        const MavlinkTelemetrySourceId packet_source{frame[v2 ? 5 : 3], frame[v2 ? 6 : 4]};
+        if (!packet_source.configured()) {
+            ++summary.invalid_source_frames;
+            return;
+        }
+        if (!source.configured() || packet_source != source) {
+            ++summary.unselected_source_frames;
+            return;
+        }
+        ++summary.selected_source_frames;
         // Decode only owned, zero-padded payload bytes; never header/CRC/suffix.
         std::array<unsigned char, 44> payload{};
         std::copy_n(frame + header_size, std::min(payload_size, layout->decoded_size), payload.begin());
@@ -390,27 +421,31 @@ MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::str
     return summary;
 }
 
-MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(const std::string& path) {
+MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(
+    const std::string& path, MavlinkTelemetrySourceId source) {
     std::ifstream input(path, std::ios::binary);
     if (!input) {
         throw std::runtime_error("Could not open MAVLink telemetry file for read: " + path);
     }
 
     const std::string bytes((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
-    return inspect_mavlink_telemetry_bytes(bytes);
+    return inspect_mavlink_telemetry_bytes(bytes, source);
 }
 
 MavlinkTelemetryValidationResult validate_mavlink_telemetry(
     const MavlinkTelemetryInspectionSummary& summary,
     const MavlinkTelemetryValidationConfig& config) {
     MavlinkTelemetryValidationResult result;
+    result.source_passed = config.expected_source.configured()
+        && summary.selected_source == config.expected_source && summary.selected_source_frames > 0;
+    result.heartbeat_contract_passed = summary.heartbeat_contract_passed;
     result.heartbeat_passed = summary.heartbeat_messages >= config.minimum_heartbeat_messages;
     result.attitude_passed = summary.attitude_messages >= config.minimum_attitude_messages;
     result.global_position_int_passed =
         summary.global_position_int_messages >= config.minimum_global_position_int_messages;
     result.altitude_passed = summary.altitude_messages > 0 || config.minimum_global_position_int_messages == 0;
     result.malformed_passed = summary.malformed_frames <= config.maximum_malformed_frames;
-    result.passed = result.heartbeat_passed &&
+    result.passed = result.source_passed && result.heartbeat_contract_passed && result.heartbeat_passed &&
                     result.attitude_passed &&
                     result.global_position_int_passed &&
                     result.altitude_passed &&

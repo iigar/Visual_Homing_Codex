@@ -143,6 +143,22 @@ std::uint32_t parse_uint32_arg(const std::string& value, const std::string& name
     return static_cast<std::uint32_t>(result);
 }
 
+vh::MavlinkTelemetrySourceId telemetry_source_from_environment() {
+    const char* system = std::getenv("VISUAL_HOMING_TELEMETRY_SYSTEM_ID");
+    const char* component = std::getenv("VISUAL_HOMING_TELEMETRY_COMPONENT_ID");
+    if (!system && !component) return {};
+    if (!system || !component) {
+        throw std::invalid_argument("Both VISUAL_HOMING_TELEMETRY_SYSTEM_ID and VISUAL_HOMING_TELEMETRY_COMPONENT_ID are required");
+    }
+    const auto parse_id = [](const char* value, const char* name) {
+        const auto id = parse_uint32_arg(value, name);
+        if (id == 0 || id > 255) throw std::invalid_argument(std::string(name) + " must be in [1,255]");
+        return static_cast<std::uint8_t>(id);
+    };
+    return {parse_id(system, "VISUAL_HOMING_TELEMETRY_SYSTEM_ID"),
+            parse_id(component, "VISUAL_HOMING_TELEMETRY_COMPONENT_ID")};
+}
+
 std::uint64_t parse_milliseconds_as_nanoseconds_arg(const std::string& value, const std::string& name) {
     const auto result = parse_uint64_arg(value, name);
     constexpr std::uint64_t nanoseconds_per_millisecond = 1'000'000;
@@ -206,6 +222,7 @@ void apply_live_route_dry_run_command_args(vh::LiveRouteMatchingConfig& config, 
 }
 
 void apply_live_route_match_telemetry_args(vh::LiveRouteMatchingConfig& config, char** argv, int first_index) {
+    config.telemetry_stream.expected_source = telemetry_source_from_environment();
     config.use_live_telemetry_stream = parse_bool_arg(argv[first_index]);
     config.telemetry_stream.device_path = argv[first_index + 1];
     config.telemetry_stream.baud_rate = parse_int_arg(argv[first_index + 2], "baud_rate");
@@ -581,6 +598,12 @@ void print_mavlink_telemetry_inspection(const std::string& path,
                                         const vh::MavlinkTelemetryInspectionSummary& summary,
                                         std::ostream& output) {
     output << "mavlink_telemetry_inspect path=" << path
+           << " selected_system_id=" << static_cast<int>(summary.selected_source.system_id)
+           << " selected_component_id=" << static_cast<int>(summary.selected_source.component_id)
+           << " selected_source_frames=" << summary.selected_source_frames
+           << " unselected_source_frames=" << summary.unselected_source_frames
+           << " invalid_source_frames=" << summary.invalid_source_frames
+           << " heartbeat_contract_passed=" << (summary.heartbeat_contract_passed ? "true" : "false")
            << " bytes_read=" << summary.bytes_read
            << " frames_seen=" << summary.frames_seen
            << " mavlink1_frames=" << summary.mavlink1_frames
@@ -638,6 +661,10 @@ void print_mavlink_telemetry_validation(const std::string& path,
                                         const vh::MavlinkTelemetryValidationResult& result,
                                         std::ostream& output) {
     output << "mavlink_telemetry_validate path=" << path
+           << " expected_system_id=" << static_cast<int>(config.expected_source.system_id)
+           << " expected_component_id=" << static_cast<int>(config.expected_source.component_id)
+           << " source_passed=" << (result.source_passed ? "true" : "false")
+           << " heartbeat_contract_passed=" << (result.heartbeat_contract_passed ? "true" : "false")
            << " min_heartbeat_messages=" << config.minimum_heartbeat_messages
            << " min_attitude_messages=" << config.minimum_attitude_messages
            << " min_global_position_int_messages=" << config.minimum_global_position_int_messages
@@ -670,6 +697,7 @@ void print_mavlink_telemetry_validation(const std::string& path,
 
 vh::MavlinkTelemetryValidationConfig mavlink_validation_config_from_args(char** argv, int first_index) {
     vh::MavlinkTelemetryValidationConfig config;
+    config.expected_source = telemetry_source_from_environment();
     config.minimum_heartbeat_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index]));
     config.minimum_attitude_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index + 1]));
     config.minimum_global_position_int_messages = static_cast<std::uint64_t>(std::stoull(argv[first_index + 2]));
@@ -680,9 +708,10 @@ vh::MavlinkTelemetryValidationConfig mavlink_validation_config_from_args(char** 
 void apply_mavlink_telemetry_snapshot(vh::LiveRouteRecordingConfig& config,
                                       const std::string& path,
                                       std::ostream& output) {
-    const auto summary = vh::inspect_mavlink_telemetry_file(path);
+    const auto source = telemetry_source_from_environment();
+    const auto summary = vh::inspect_mavlink_telemetry_file(path, source);
     print_mavlink_telemetry_inspection(path, summary, output);
-    const vh::MavlinkTelemetryValidationConfig validation_config;
+    const vh::MavlinkTelemetryValidationConfig validation_config{.expected_source = source};
     const auto validation = vh::validate_mavlink_telemetry(summary, validation_config);
     print_mavlink_telemetry_validation(path, summary, validation_config, validation, output);
     if (!validation.passed) {
@@ -1160,6 +1189,7 @@ int main(int argc, char** argv) {
                 std::stod(argv[8]),
                 static_cast<std::size_t>(std::stoull(argv[9])));
             config.use_live_telemetry_stream = true;
+            config.telemetry_stream.expected_source = telemetry_source_from_environment();
             config.telemetry_stream.device_path = argv[10];
             config.telemetry_stream.baud_rate = std::stoi(argv[11]);
             if (argc == 13 || argc == 15 || argc == 16 || argc == 18) {
@@ -1285,7 +1315,7 @@ int main(int argc, char** argv) {
 
     if (argc == 3 && std::string(argv[1]) == "--inspect-mavlink-telemetry") {
         try {
-            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
+            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2], telemetry_source_from_environment());
             print_mavlink_telemetry_inspection(argv[2], summary, std::cout);
             return summary.frames_seen > 0 && summary.malformed_frames == 0 ? 0 : 2;
         } catch (const std::exception& error) {
@@ -1297,7 +1327,7 @@ int main(int argc, char** argv) {
     if (argc == 7 && std::string(argv[1]) == "--validate-mavlink-telemetry") {
         try {
             const auto config = mavlink_validation_config_from_args(argv, 3);
-            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2]);
+            const auto summary = vh::inspect_mavlink_telemetry_file(argv[2], config.expected_source);
             print_mavlink_telemetry_inspection(argv[2], summary, std::cout);
             const auto result = vh::validate_mavlink_telemetry(summary, config);
             print_mavlink_telemetry_validation(argv[2], summary, config, result, std::cout);
@@ -1310,6 +1340,7 @@ int main(int argc, char** argv) {
 
     if (argc == 6 && std::string(argv[1]) == "--capture-mavlink-telemetry") {
         try {
+            const auto source = telemetry_source_from_environment();
             vh::MavlinkTelemetryCaptureConfig config;
             config.device_path = argv[2];
             config.baud_rate = std::stoi(argv[3]);
@@ -1326,7 +1357,7 @@ int main(int argc, char** argv) {
                       << " bytes_captured=" << capture.bytes_captured
                       << " elapsed_ms=" << capture.elapsed_ms
                       << "\n";
-            const auto summary = vh::inspect_mavlink_telemetry_file(config.output_path);
+            const auto summary = vh::inspect_mavlink_telemetry_file(config.output_path, source);
             print_mavlink_telemetry_inspection(config.output_path, summary, std::cout);
             return capture.bytes_captured > 0 ? 0 : 2;
         } catch (const std::exception& error) {
@@ -1499,6 +1530,8 @@ int main(int argc, char** argv) {
     std::cout << "usage: visual_homing_core --record-live-route-active-profile-live-telemetry <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <fallback_altitude_m> <fallback_heading_hint_rad> <warmup_frames> <mavlink_device> <baud_rate> [telemetry_warmup_timeout_ms] [target_width target_height] [operator_cue_enabled operator_cue_seconds operator_cue_bell]\n";
     std::cout << "usage: visual_homing_core --match-live-route-active-profile <profile_dir> <active_profile_state> <fps> <frames> <route.vhrs> <warmup_frames> <window_radius> <minimum_confidence> <max_direction_shift_px> [any|forward|reverse [...]] [--external-nav-estimates enabled nominal_route_length_m minimum_match_confidence maximum_altitude_age_ms source_tag [bench_diagnostic_altitude_m [expected_relative_altitude_m expected_relative_altitude_tolerance_m [visual_scale_diagnostics visual_scale_reference_altitude_m [route_frame_alignment_known route_origin_north_m route_origin_east_m route_origin_down_m route_heading_ned_rad altitude_origin_aligned]]]]]\n";
     std::cout << "usage: visual_homing_core --inspect-mavlink-telemetry <mavlink.bin>\n";
+    std::cout << "usage: visual_homing_core --validate-mavlink-telemetry <mavlink.bin> <min_heartbeat> <min_attitude> <min_position> <max_malformed>\n";
+    std::cout << "telemetry source: set both VISUAL_HOMING_TELEMETRY_SYSTEM_ID and VISUAL_HOMING_TELEMETRY_COMPONENT_ID to [1,255]; unset means structural inspection only\n";
     std::cout << "usage: visual_homing_core --capture-mavlink-telemetry <device> <baud_rate> <duration_ms> <output.bin>\n";
     std::cout << "usage: visual_homing_core --inspect-route <route.vhrs>\n";
     std::cout << "usage: visual_homing_core --export-route-keyframes <route.vhrs> <output_dir>\n";

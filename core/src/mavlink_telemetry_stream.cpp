@@ -94,8 +94,8 @@ void configure_serial_read_only(int fd, int baud_rate) {
 
 } // namespace
 
-MavlinkTelemetryByteBuffer::MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes)
-    : max_buffer_bytes_(max_buffer_bytes) {
+MavlinkTelemetryByteBuffer::MavlinkTelemetryByteBuffer(std::uint64_t max_buffer_bytes, MavlinkTelemetrySourceId source)
+    : source_(source), max_buffer_bytes_(max_buffer_bytes) {
     if (max_buffer_bytes_ == 0) {
         throw std::invalid_argument("MAVLink telemetry stream max buffer bytes must be positive");
     }
@@ -134,7 +134,7 @@ void MavlinkTelemetryByteBuffer::append(const char* data, std::size_t size, Time
 
     // Parse once on receipt, not on every camera snapshot. Keep only three
     // receipt records; no per-byte or per-read timestamp history is allocated.
-    inspection_ = inspect_mavlink_telemetry_bytes(bytes_);
+    inspection_ = inspect_mavlink_telemetry_bytes(bytes_, source_);
     const auto update = [&](MavlinkTelemetryReceipt& receipt, std::uint64_t relative_end) {
         if (relative_end == 0) {
             receipt = {};
@@ -186,12 +186,15 @@ const MavlinkTelemetryReceipts& MavlinkTelemetryByteBuffer::receipts() const {
 
 MavlinkTelemetryStream::MavlinkTelemetryStream(MavlinkTelemetryStreamConfig config)
     : config_(std::move(config)),
-      bytes_(config_.max_buffer_bytes) {
+      bytes_(config_.max_buffer_bytes, config_.expected_source) {
     if (config_.device_path.empty()) {
         throw std::invalid_argument("MAVLink telemetry stream device path must not be empty");
     }
     if (config_.baud_rate <= 0) {
         throw std::invalid_argument("MAVLink telemetry stream baud rate must be positive");
+    }
+    if (!config_.expected_source.configured()) {
+        throw std::invalid_argument("MAVLink telemetry stream requires explicit nonzero system and component IDs");
     }
 }
 

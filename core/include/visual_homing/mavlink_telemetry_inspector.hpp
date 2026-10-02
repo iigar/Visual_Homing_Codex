@@ -8,7 +8,23 @@
 
 namespace vh {
 
+// One explicitly selected producer for all decoded telemetry. Zero is unconfigured,
+// never a wildcard or an instruction to trust the first packet on the wire.
+struct MavlinkTelemetrySourceId {
+    std::uint8_t system_id = 0;
+    std::uint8_t component_id = 0;
+
+    bool configured() const { return system_id != 0 && component_id != 0; }
+    bool operator==(const MavlinkTelemetrySourceId&) const = default;
+};
+
 struct MavlinkTelemetryInspectionSummary {
+    MavlinkTelemetrySourceId selected_source{};
+    // Source counters cover only structurally accepted, CRC-checked known IDs.
+    std::uint64_t selected_source_frames = 0;
+    std::uint64_t unselected_source_frames = 0;
+    std::uint64_t invalid_source_frames = 0;
+    bool heartbeat_contract_passed = false;
     std::uint64_t bytes_read = 0;
     std::uint64_t frames_seen = 0;
     std::uint64_t mavlink1_frames = 0;
@@ -64,10 +80,13 @@ struct MavlinkTelemetryValidationConfig {
     std::uint64_t minimum_attitude_messages = 1;
     std::uint64_t minimum_global_position_int_messages = 1;
     std::uint64_t maximum_malformed_frames = 0;
+    MavlinkTelemetrySourceId expected_source{};
 };
 
 struct MavlinkTelemetryValidationResult {
     bool passed = false;
+    bool source_passed = false;
+    bool heartbeat_contract_passed = false;
     bool heartbeat_passed = false;
     bool attitude_passed = false;
     bool global_position_int_passed = false;
@@ -75,8 +94,12 @@ struct MavlinkTelemetryValidationResult {
     bool malformed_passed = false;
 };
 
-MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(const std::string& bytes);
-MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(const std::string& path);
+// An unconfigured source performs structural inspection only: no decoded values
+// or receipt offsets, and validation always fails closed.
+MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_bytes(
+    const std::string& bytes, MavlinkTelemetrySourceId source = {});
+MavlinkTelemetryInspectionSummary inspect_mavlink_telemetry_file(
+    const std::string& path, MavlinkTelemetrySourceId source = {});
 MavlinkTelemetryValidationResult validate_mavlink_telemetry(
     const MavlinkTelemetryInspectionSummary& summary,
     const MavlinkTelemetryValidationConfig& config);

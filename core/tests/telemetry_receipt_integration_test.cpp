@@ -35,7 +35,10 @@ std::string packet(unsigned id, const std::string& payload, bool v2 = true, bool
 std::string heartbeat(bool v2 = false) {
     std::string payload(9, '\0');
     u32(payload, 0, 4); // Guided, armed.
-    payload[6] = static_cast<char>(128);
+    payload[4] = 2;
+    payload[5] = 3;
+    payload[6] = static_cast<char>(129);
+    payload[8] = 3;
     return packet(0, payload, v2);
 }
 std::string attitude(bool v2 = true) { return packet(30, std::string(28, '\0'), v2); }
@@ -67,7 +70,7 @@ vh::MavlinkTelemetryStreamSnapshot snapshot(const vh::MavlinkTelemetryByteBuffer
     return result;
 }
 vh::LiveRouteMatchTelemetryObservation observe(const vh::MavlinkTelemetryByteBuffer& buffer, int ms) {
-    return vh::live_route_match_telemetry_observation(snapshot(buffer), {}, at(ms));
+    return vh::live_route_match_telemetry_observation(snapshot(buffer), {.expected_source = {1, 1}}, at(ms));
 }
 bool ready(const vh::LiveRouteMatchTelemetryObservation& observation, vh::Timestamp evaluated_at) {
     vh::MavlinkTelemetryAdapter adapter({.max_telemetry_age_ms = 500.0});
@@ -79,7 +82,7 @@ bool ready(const vh::LiveRouteMatchTelemetryObservation& observation, vh::Timest
 int main() {
     const auto bytes = fixture();
     assert(bytes.size() == 102);
-    vh::MavlinkTelemetryByteBuffer buffer(bytes.size());
+    vh::MavlinkTelemetryByteBuffer buffer(bytes.size(), {1, 1});
     append(buffer, bytes, 1000);
     auto observation = observe(buffer, 1000);
     assert(observation.valid && observation.altitude.valid && observation.altitude.value == 42.5);
@@ -112,7 +115,7 @@ int main() {
     assert(buffer.receipts().relative_altitude.end_offset == buffer.bytes_captured());
 
     // New noise, irrelevant messages, or only one fresh component cannot refresh the others.
-    vh::MavlinkTelemetryByteBuffer mixed(4096);
+    vh::MavlinkTelemetryByteBuffer mixed(4096, {1, 1});
     append(mixed, bytes, 1000);
     append(mixed, "noise" + packet(200, "payload"), 10000);
     assert(observe(mixed, 10000).telemetry.timestamp == at(1000));
@@ -129,7 +132,7 @@ int main() {
     // Every possible split of a frame, including header, checksum and v2 signature.
     for (const auto& message : {position(6000, false), position(6000), position(6000, true, true)}) {
         for (std::size_t split = 1; split < message.size(); ++split) {
-            vh::MavlinkTelemetryByteBuffer fragmented(4096);
+            vh::MavlinkTelemetryByteBuffer fragmented(4096, {1, 1});
             append(fragmented, bytes, 1000);
             append(fragmented, message.substr(0, split), 1100);
             assert(fragmented.receipts().relative_altitude.received_at == at(1000));
@@ -149,10 +152,10 @@ int main() {
     }
 
     // Byte-at-a-time reception and cache equivalence to the existing full inspector.
-    vh::MavlinkTelemetryByteBuffer fragmented(bytes.size());
+    vh::MavlinkTelemetryByteBuffer fragmented(bytes.size(), {1, 1});
     for (std::size_t i = 0; i < bytes.size(); ++i) {
         fragmented.append(bytes.data() + i, 1, at(1000 + static_cast<int>(i)));
-        const auto expected = vh::inspect_mavlink_telemetry_bytes(fragmented.bytes());
+        const auto expected = vh::inspect_mavlink_telemetry_bytes(fragmented.bytes(), {1, 1});
         assert(fragmented.inspection().frames_seen == expected.frames_seen);
         assert(fragmented.inspection().malformed_frames == expected.malformed_frames);
         assert(fragmented.inspection().message_id_counts == expected.message_id_counts);
@@ -162,7 +165,7 @@ int main() {
     assert(fragmented.receipts().relative_altitude.received_at == at(1101));
 
     // Rollover with only part of the old tail retained; absolute identity stays stable.
-    vh::MavlinkTelemetryByteBuffer rolling(2 * bytes.size());
+    vh::MavlinkTelemetryByteBuffer rolling(2 * bytes.size(), {1, 1});
     append(rolling, bytes, 1000);
     append(rolling, bytes, 1100);
     const auto retained_id = rolling.receipts().relative_altitude.end_offset;
@@ -178,10 +181,10 @@ int main() {
     assert(ready(observe(rolling, 1500), at(1500)));
 
     // ALTITUDE replaces GLOBAL_POSITION_INT only with the existing explicit config.
-    vh::MavlinkTelemetryByteBuffer alternate(4096);
+    vh::MavlinkTelemetryByteBuffer alternate(4096, {1, 1});
     append(alternate, heartbeat() + attitude() + altitude(7.5F), 1000);
     assert(!observe(alternate, 1000).valid);
-    vh::MavlinkTelemetryValidationConfig altitude_only;
+    vh::MavlinkTelemetryValidationConfig altitude_only{.expected_source = {1, 1}};
     altitude_only.minimum_global_position_int_messages = 0;
     auto alternate_observation = vh::live_route_match_telemetry_observation(snapshot(alternate), altitude_only, at(1000));
     assert(alternate_observation.valid && alternate_observation.altitude.value == 7.5);
@@ -192,20 +195,20 @@ int main() {
     // No receive metadata, zero/future receive time, and malformed payloads fail closed.
     auto missing = snapshot(buffer);
     missing.receipts.attitude.received_at.reset();
-    assert(!vh::live_route_match_telemetry_observation(missing, {}, at(11000)).valid);
+    assert(!vh::live_route_match_telemetry_observation(missing, {.expected_source = {1, 1}}, at(11000)).valid);
     missing = snapshot(buffer);
     missing.receipts.heartbeat.received_at = vh::Timestamp{};
-    assert(!vh::live_route_match_telemetry_observation(missing, {}, at(11000)).valid);
+    assert(!vh::live_route_match_telemetry_observation(missing, {.expected_source = {1, 1}}, at(11000)).valid);
     missing = snapshot(buffer);
     missing.receipts.attitude.received_at = at(11001);
-    assert(!vh::live_route_match_telemetry_observation(missing, {}, at(11000)).valid);
+    assert(!vh::live_route_match_telemetry_observation(missing, {.expected_source = {1, 1}}, at(11000)).valid);
     append(mixed, packet(33, std::string(19, '\0'), false), 11000); // v1 cannot truncate.
     assert(!observe(mixed, 11000).valid);
     assert(mixed.receipts().relative_altitude.received_at == at(10010));
 
     // Corrupt packets cannot replace values or receive times. A relaxed malformed
     // threshold can retain old evidence, but cannot make it fresh in the adapter.
-    vh::MavlinkTelemetryByteBuffer integrity(bytes.size() * 4);
+    vh::MavlinkTelemetryByteBuffer integrity(bytes.size() * 4, {1, 1});
     append(integrity, bytes, 1000);
     for (auto corrupt : {heartbeat(), attitude(), position(9000)}) {
         corrupt[corrupt.size() - 1] ^= 1;
@@ -216,7 +219,7 @@ int main() {
         assert(integrity.receipts().relative_altitude.received_at == at(1000));
         assert(integrity.inspection().latest.relative_altitude_m == 42.5);
     }
-    vh::MavlinkTelemetryValidationConfig tolerate;
+    vh::MavlinkTelemetryValidationConfig tolerate{.expected_source = {1, 1}};
     tolerate.maximum_malformed_frames = 3;
     const auto retained = vh::live_route_match_telemetry_observation(snapshot(integrity), tolerate, at(10000));
     assert(retained.valid && retained.telemetry.timestamp == at(1000) && !ready(retained, at(10000)));
