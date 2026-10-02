@@ -55,6 +55,7 @@ add_library(visual_homing_core_lib
     src/gray8_resize_preprocessor.cpp
     src/gray8_route_matcher.cpp
     src/health_monitor.cpp
+    src/route_frame_timing.cpp
     src/inflight_home_reset_safety_gate.cpp
     src/live_verification_capture.cpp
     src/live_route_verification.cpp
@@ -340,6 +341,7 @@ if(BUILD_TESTING)
     add_visual_homing_test(live_route_offline_integration)
     add_visual_homing_test(match_freshness_integration)
     add_visual_homing_test(replay_timing_integration)
+    add_visual_homing_test(route_frame_timing)
     add_visual_homing_test(telemetry_receipt_integration)
     add_test(NAME gray8_matcher_benchmark_self_test COMMAND gray8_matcher_benchmark --self-test)
 endif()

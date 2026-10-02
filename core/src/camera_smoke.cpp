@@ -2155,8 +2155,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
     while (result.frames_captured < config.frames_to_capture) {
         if (auto frame = source.poll()) {
             const auto processing_started = now();
+            RouteFrameTiming frame_timing(frame->timestamp, processing_started);
             const auto processed = preprocessor.process(*frame);
+            frame_timing.complete(RouteFrameStage::Preprocess, now());
             const auto match = matcher.match(processed);
+            frame_timing.complete(RouteFrameStage::Match, now());
+            const auto finish_frame_timing = [&] {
+                frame_timing.complete(RouteFrameStage::Reporting, now());
+                result.last_frame_timing = frame_timing.summary();
+                ++result.timed_frames;
+                log_route_frame_timing(metrics, "live", processed.id, result.last_frame_timing);
+            };
             const auto top_candidates = matcher.recent_top_candidates();
             const auto zone_candidates = config.zone_probe_diagnostics
                 ? matcher.probe_progress_zones(processed)
@@ -2255,28 +2264,33 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
             }
             const auto processing_finished = now();
+            frame_timing.complete(RouteFrameStage::Diagnostics, processing_finished);
             const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
             health.set_route_match_confidence(match.confidence);
             if (telemetry_stream) {
                 const auto telemetry = telemetry_stream->snapshot();
                 copy_telemetry_stream_metrics(result, telemetry);
+                const auto telemetry_evaluated_at = now();
                 const auto observation = live_route_match_telemetry_observation(
-                    telemetry, live_route_match_telemetry_validation_config(config), processing_finished);
+                    telemetry, live_route_match_telemetry_validation_config(config), telemetry_evaluated_at);
                 if (observation.valid) {
                     latest_route_verification_altitude = observation.altitude;
                     latest_gate_telemetry = observation.telemetry;
                     telemetry_adapter.observe(latest_gate_telemetry, latest_gate_telemetry.timestamp);
                 }
                 const bool telemetry_health_ready = observation.valid
-                    && telemetry_adapter.mavlink_ok(processing_finished);
+                    && telemetry_adapter.mavlink_ok(telemetry_evaluated_at);
                 health.set_links(true, telemetry_health_ready, true);
-                if (telemetry_health_ready) {
+            }
+            const auto health_snapshot = refresh_route_frame_health(
+                health.snapshot(processing_finished), telemetry_stream ? &telemetry_adapter : nullptr, now());
+            if (telemetry_stream) {
+                if (health_snapshot.mavlink_ok) {
                     ++result.telemetry_health_ready_frames;
                 } else {
                     ++result.telemetry_health_degraded_frames;
                 }
             }
-            const auto health_snapshot = health.snapshot(processing_finished);
             NavigationCommand command;
             LiveMavlinkOutputSafetyResult live_output_gate_result{false, "dry_run_commands_disabled"};
             if (config.emit_dry_run_commands) {
@@ -2307,7 +2321,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 const LiveMavlinkOutputSafetyGate gate(
                     live_output_gate_config_from_match_config(config, true));
                 last_live_output_gate_snapshot =
-                    live_output_gate_snapshot(processing_finished, latest_gate_telemetry, match, command);
+                    live_output_gate_snapshot(now(), latest_gate_telemetry, match, command);
                 live_output_gate_result = gate.evaluate(*last_live_output_gate_snapshot);
                 if (live_output_session) {
                     const auto session_result = live_output_session->process(*last_live_output_gate_snapshot);
@@ -2323,6 +2337,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     ++live_output_gate_block_reasons[live_output_gate_result.reason];
                 }
             }
+            frame_timing.complete(RouteFrameStage::Navigation, now());
             VisualScaleDiagnostic current_visual_scale;
             const auto current_visual_scale_reference_altitude_m = config.visual_scale_diagnostics
                 ? config.visual_scale_reference_altitude_m
@@ -2336,13 +2351,17 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     route.entries[static_cast<std::size_t>(match.route_index)],
                     current_visual_scale_reference_altitude_m);
             }
+            frame_timing.complete(RouteFrameStage::Scale, now());
             if (config.emit_external_nav_estimates) {
                 auto external_nav_estimate = make_route_progress_external_nav_estimate(
                     match,
                     route_summary,
                     latest_gate_telemetry,
-                    processing_finished,
+                    now(),
                     config.external_nav);
+                // Refresh evaluation time without rebasing the existing estimate
+                // timestamp to the end of potentially slow scale diagnostics.
+                external_nav_estimate.timestamp = processing_finished;
                 external_nav_estimate.visual_scale_valid = current_visual_scale.valid;
                 external_nav_estimate.visual_scale_ratio = current_visual_scale.scale_ratio;
                 external_nav_estimate.visual_altitude_m = current_visual_scale.altitude_m;
@@ -2415,9 +2434,10 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
                 metrics << external_nav_estimate_log_line(external_nav_estimate) << "\n";
                 if (external_nav_output_session) {
+                    const auto output_evaluated_at = now();
                     const auto output_result = external_nav_output_session->process(
                         LiveExternalNavOutputSnapshot{
-                            processing_finished,
+                            output_evaluated_at,
                             external_nav_estimate,
                             monotonic_time_usec(processing_finished),
                         });
@@ -2434,6 +2454,7 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                 }
             }
 
+            frame_timing.complete(RouteFrameStage::ExternalNavigation, now());
             const auto current_tracked_progress = live_route_match_record_progress(
                 config.expected_progress, match.progress, match.valid, progress_state, result);
             confidence_sum += match.confidence;
@@ -2449,11 +2470,13 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     processed.timestamp,
                     current_visual_scale.scale_ratio,
                 };
+                const auto verification_health = refresh_route_frame_health(
+                    health_snapshot, telemetry_stream ? &telemetry_adapter : nullptr, now());
                 const auto verification_observation =
                     make_progress_only_live_route_verification_observation(
                         match,
                         current_tracked_progress,
-                        health_snapshot,
+                        verification_health,
                         latest_route_verification_altitude,
                         scale_observation,
                         config.route_verification_publication_metadata);
@@ -2474,9 +2497,12 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                         ? live_route_verification_status_name(verification_result.status)
                         : verification_result.reason;
                     result.stop_reason = "route_verification_failed";
+                    frame_timing.complete(RouteFrameStage::Verification, now());
+                    finish_frame_timing();
                     break;
                 }
             }
+            frame_timing.complete(RouteFrameStage::Verification, now());
 
             metrics << "live_route_match_frame id=" << processed.id
                     << " size=" << processed.width << "x" << processed.height
@@ -2488,7 +2514,8 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                     << " valid=" << (match.valid ? "true" : "false")
                     << " direction_error_rad=" << match.direction_error_rad
                     << " age_ms=" << timing.frame_age_ms
-                    << " latency_ms=" << timing.processing_latency_ms;
+                    << " latency_ms=" << timing.processing_latency_ms
+                    << " latency_scope=through_diagnostics";
             if (config.emit_dry_run_commands) {
                 metrics << " command_valid=" << (command.valid ? "true" : "false")
                         << " command_yaw_rate_radps=" << command.yaw_rate_radps
@@ -2532,10 +2559,11 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             }
             metrics << "\n";
 
-            if (live_route_match_update_endpoint(
+            const bool endpoint_stop = live_route_match_update_endpoint(
                     config, processed, match, current_tracked_progress,
-                    top_match_gap, edge_top_match_gap, processing_finished,
-                    endpoint_state, result)) {
+                    top_match_gap, edge_top_match_gap, now(),
+                    endpoint_state, result);
+            if (endpoint_stop) {
                 if (result.endpoint_stop_triggered && config.export_endpoint_stop_frame) {
                     const auto filename = std::string("endpoint-stop-frame-")
                         + wall_time_utc_compact()
@@ -2557,8 +2585,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
                             << " confidence=" << result.endpoint_stop_confidence
                             << "\n";
                 }
-                break;
             }
+            finish_frame_timing();
+            if (endpoint_stop) break;
         } else {
             ++result.empty_polls;
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -2825,6 +2854,9 @@ LiveRouteMatchingResult match_live_camera_route(const LiveRouteMatchingConfig& c
             << " live_telemetry_health_passed=" << (result.live_telemetry_health_passed ? "true" : "false")
             << " last_age_ms=" << result.last_frame_age_ms
             << " last_latency_ms=" << result.last_processing_latency_ms
+            << " timed_frames=" << result.timed_frames
+            << " last_frame_work_ms=" << result.last_frame_timing.frame_work_ms
+            << " last_source_age_at_finish_ms=" << result.last_frame_timing.source_age_at_finish_ms
             << " elapsed_ms=" << result.elapsed_ms
             << " effective_fps=" << result.effective_fps
             << " dry_run_commands=" << result.dry_run_commands

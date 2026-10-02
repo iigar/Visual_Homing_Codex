@@ -9,6 +9,7 @@
 
 #include "visual_homing/mavlink.hpp"
 #include "visual_homing/mavlink_telemetry_stream.hpp"
+#include "visual_homing/route_frame_timing.hpp"
 #include "visual_homing/pi_camera_source.hpp"
 #include "visual_homing/bounded_navigator.hpp"
 #include "visual_homing/external_nav_estimator.hpp"
@@ -279,6 +280,8 @@ struct LiveRouteMatchingResult {
     bool live_telemetry_health_passed = true;
     double last_frame_age_ms = 0.0;
     double last_processing_latency_ms = 0.0;
+    std::uint64_t timed_frames = 0;
+    RouteFrameTimingSummary last_frame_timing{};
     double elapsed_ms = 0.0;
     double effective_fps = 0.0;
     std::uint64_t dry_run_commands = 0;

@@ -81,9 +81,8 @@ std::string field(const std::string& line, const std::string& key) {
     throw std::runtime_error("Missing test log field: " + key);
 }
 
-std::string replay(const Fixture& fixture) {
-    const std::vector<vh::Timestamp> times{
-        at_ms(900), // HealthMonitor initialization, then start/end per frame.
+std::string replay(const Fixture& fixture, bool late_work = false) {
+    const std::vector<vh::Timestamp> phase_times{
         at_ms(1000), at_ms(1000),
         at_ms(1190), at_ms(1300), // Match age exactly 200 ms, processing latency 110 ms.
         at_ms(1300), at_ms(1400) + 1ns,
@@ -92,6 +91,15 @@ std::string replay(const Fixture& fixture) {
         at_ms(1900), at_ms(1903),
         at_ms(2000), at_ms(2001),
         at_ms(2100), at_ms(2107)};
+    std::vector<vh::Timestamp> times{at_ms(900)}; // HealthMonitor initialization.
+    for (std::size_t i = 0; i < 8; ++i) {
+        const auto start = phase_times[2 * i], end = phase_times[2 * i + 1];
+        const bool delayed = late_work && i == 1;
+        // Start, preprocess end, match end, evaluation, navigation end, reporting end.
+        times.insert(times.end(), {start, start, end,
+            end + (delayed ? 1ns : 0ns), end + (delayed ? 2ms : 0ms),
+            end + (delayed ? 5ms : 0ms)});
+    }
     std::size_t next = 0;
     std::ostringstream metrics;
     const auto result = vh::match_replay_route(fixture.config, metrics, [&]() {
@@ -100,12 +108,14 @@ std::string replay(const Fixture& fixture) {
     });
     assert(next == times.size());
     assert(result.frames_processed == 8);
+    assert(result.timed_frames == 8 && result.last_frame_timing.valid);
+    assert(result.last_frame_timing.frame_work_ms == 7 && result.last_frame_timing.source_age_at_finish_ms == 7);
     assert(result.last_frame_age_ms == 0.0 && result.last_processing_latency_ms == 7.0);
-    const bool expected_commands[] = {true, true, false, false, false, true, false, true};
+    const bool expected_commands[] = {true, !late_work, false, false, false, true, false, true};
     const int expected_indices[] = {0, 1, 0, 1, -1, 1, 0, 0};
     std::istringstream output(metrics.str());
     std::string line;
-    std::size_t frames = 0, commands = 0;
+    std::size_t frames = 0, commands = 0, timings = 0;
     while (std::getline(output, line)) {
         if (line.starts_with("match_frame ")) {
             assert(frames < 8);
@@ -118,15 +128,30 @@ std::string replay(const Fixture& fixture) {
                 assert(field(line, "confidence") == "1");
             }
             if (frames == 1) assert(field(line, "latency_ms") == "110");
+            assert(field(line, "latency_scope") == "through_match");
             ++frames;
         } else if (line.starts_with("dry_run_command ")) {
             assert(commands < 8);
             assert(field(line, "valid") == (expected_commands[commands] ? "true" : "false"));
             assert(field(line, "vx_mps") == (expected_commands[commands] ? "0.5" : "0"));
             ++commands;
+        } else if (line.starts_with("route_frame_timing ")) {
+            assert(timings < 8);
+            assert(field(line, "caller") == "replay" && field(line, "id") == std::to_string(10 + timings));
+            assert(field(line, "timing_valid") == "true" && field(line, "source_timestamp_present") == "true");
+            assert(field(line, "scale_ms") == "0" && field(line, "verification_ms") == "0");
+            if (timings == 1) {
+                assert(field(line, "match_ms") == "110");
+                assert(field(line, "frame_work_ms") == (late_work ? "115" : "110"));
+                assert(field(line, "source_age_at_start_ms") == "90");
+                assert(field(line, "source_age_at_finish_ms") == (late_work ? "205" : "200"));
+                assert(field(line, "navigation_ms") == (late_work ? "2" : "0"));
+                assert(field(line, "reporting_endpoint_ms") == (late_work ? "3" : "0"));
+            }
+            ++timings;
         }
     }
-    assert(frames == 8 && commands == 8);
+    assert(frames == 8 && commands == 8 && timings == 8);
     return metrics.str();
 }
 } // namespace
@@ -136,6 +161,7 @@ int main() {
     const auto first = replay(fixture);
     const auto second = replay(fixture);
     assert(first == second); // Whole actual caller output is deterministic, not just decisions.
+    assert(replay(fixture, true) == replay(fixture, true));
     bool rejected = false;
     std::ostringstream empty_output;
     try {

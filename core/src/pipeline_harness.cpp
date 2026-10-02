@@ -184,18 +184,29 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
 
     while (const auto frame = replay.poll()) {
         const auto processing_started = read_clock();
+        RouteFrameTiming frame_timing(frame->timestamp, processing_started);
         const auto processed = preprocessor.process(*frame);
+        frame_timing.complete(RouteFrameStage::Preprocess, read_clock());
         const auto match = matcher.match(processed);
         const auto processing_finished = read_clock();
+        frame_timing.complete(RouteFrameStage::Match, processing_finished);
+        frame_timing.complete(RouteFrameStage::Diagnostics, processing_finished);
         if (auto telemetry = mavlink_bridge.poll_telemetry()) {
             telemetry_adapter.observe(*telemetry, processing_finished);
         }
         const auto timing = health.observe_processed_frame(processed, processing_started, processing_finished);
         health.set_route_match_confidence(match.confidence);
-        telemetry_adapter.apply_to_health(health, processing_finished, true, true);
-        auto snapshot = health.snapshot(processing_finished);
+        const auto evaluated_at = read_clock();
+        telemetry_adapter.apply_to_health(health, evaluated_at, true, true);
+        const auto snapshot = refresh_route_frame_health(
+            health.snapshot(processing_finished), &telemetry_adapter, evaluated_at);
         const auto command = navigator.update(match, snapshot);
         command_sink.send(command);
+        const auto navigation_finished = read_clock();
+        frame_timing.complete(RouteFrameStage::Navigation, navigation_finished);
+        frame_timing.complete(RouteFrameStage::Scale, navigation_finished);
+        frame_timing.complete(RouteFrameStage::ExternalNavigation, navigation_finished);
+        frame_timing.complete(RouteFrameStage::Verification, navigation_finished);
 
         ++result.frames_processed;
         result.last_frame_age_ms = timing.frame_age_ms;
@@ -212,7 +223,12 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
                 << " command_valid=" << (command.valid ? "true" : "false")
                 << " yaw_rate_radps=" << command.yaw_rate_radps
                 << " latency_ms=" << timing.processing_latency_ms
+                << " latency_scope=through_match"
                 << "\n";
+        frame_timing.complete(RouteFrameStage::Reporting, read_clock());
+        result.last_frame_timing = frame_timing.summary();
+        ++result.timed_frames;
+        log_route_frame_timing(metrics, "replay", processed.id, result.last_frame_timing);
     }
 
     replay.stop();

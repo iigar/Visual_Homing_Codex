@@ -9,6 +9,7 @@
 #include "visual_homing/camera_profile.hpp"
 #include "visual_homing/mavlink.hpp"
 #include "visual_homing/time.hpp"
+#include "visual_homing/route_frame_timing.hpp"
 
 namespace vh {
 
@@ -51,13 +52,17 @@ struct PipelineResult {
     std::uint64_t frames_processed = 0;
     double last_frame_age_ms = 0.0;
     double last_processing_latency_ms = 0.0;
+    std::uint64_t timed_frames = 0;
+    RouteFrameTimingSummary last_frame_timing{};
 };
 
 PipelineResult run_replay_pipeline(const PipelineConfig& config, std::ostream& metrics);
 PipelineResult record_replay_route(const RouteRecordingConfig& config, std::ostream& metrics);
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics);
-// Explicit processing clock for deterministic offline execution. It must share
-// the manifest timestamps' epoch; frame timestamps are preserved, not rebased.
+// Explicit processing clock for deterministic offline execution: initialization,
+// then start/preprocess/match/navigation evaluation/navigation end/reporting end
+// per frame. It must share the manifest timestamps' epoch; frame timestamps are
+// preserved, not rebased.
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
                                  const std::function<Timestamp()>& read_clock);
 

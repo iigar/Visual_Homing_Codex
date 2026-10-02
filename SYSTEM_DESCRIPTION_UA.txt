@@ -420,6 +420,14 @@ VISUAL_HOMING_TELEMETRY_COMPONENT_ID. Debug/Release 63/63, CLI 7/7 для кож
 збірки, targeted ASan/UBSan пройшов. Автентифікація лишається окремою прогалиною.
 Деталі: docs/TELEMETRY_SOURCE_CONTRACT_2026-10-02_UA.md.
 
+Наступне оновлення 2026-10-02: route_frame_timing вимірює вісім синхронних
+етапів matching caller, включно зі scale/verification/reporting/endpoint.
+Legacy latency має явний scope, consumers отримують актуальний evaluation
+time без rebasing source timestamps. Debug/Release 64/64, CLI 7/7 кожна,
+Python 15/15 і 5/5, targeted timing/replay ASan/UBSan. Camera loop лише
+скомпільовано з output OFF; це не Pi або sensor-to-output measurement.
+Деталі: docs/RUNTIME_TIMING_CONTRACT_2026-10-02_UA.md.
+
 1. ПРИЗНАЧЕННЯ ТА ПОТОЧНА ГОТОВНІСТЬ
 ------------------------------------
 
@@ -624,6 +632,11 @@ HealthMonitor збирає frame counts/drops, processing latency, вік кад
 confidence та camera/MAVLink/navigation readiness. Frame age у метриці
 вимірюється на початку processing, processing latency — між start/end.
 Consumers окремо порівнюють match.timestamp із health.timestamp.
+З timing fix 2026-10-02 evaluation time оновлюється перед navigation та
+після пізніх stages перед verification, без повторного обліку кадру.
+Окремий route_frame_timing охоплює synchronous work до reporting/endpoint;
+legacy latency залишається through_match (replay) або through_diagnostics
+(live). Timing log, poll wait, async storage/drain і cleanup поза цією межею.
 
 BoundedNavigator вимагає Ready health, valid match, достатню confidence
 і прийнятний невід'ємний вік. Далі застосовує пропорційну yaw correction:
@@ -736,11 +749,12 @@ Python suites 15/15 та 5/5. Вісім replay timing cases виконують�
 Підтверджені кодом/відтворенням:
 - Два telemetry provenance defects на 6b7060b, описані в розділі 9;
   виправлено в наступному receipt fix, див. оновлення на початку документа.
-- MAVLink source identity та відповідність mode mapping типу автопілота
-  не перевіряються. Signed packets не підтримуються й відхиляються;
+- MAVLink source identity та heartbeat/mode contract перевіряються з
+  2026-10-02; автентифікації немає. Signed packets відхиляються;
   CRC перевіряється лише для семи декодованих message IDs.
-- Timestamp камери — callback time; processing latency live loop
-  не охоплює пізні scale/verification етапи.
+- Timestamp камери — callback time. Legacy processing latency не охоплює
+  пізні stages; новий frame_work_ms включає scale/verification, але не
+  sensor exposure delay, async storage або повний session lifetime.
 - Route-only quality/readiness не має самостійного match-age gate;
   navigator і verification мають свої gates з різними контрактами.
 - camera_smoke.cpp поєднує багато orchestration/diagnostics/config/output
@@ -774,9 +788,11 @@ Python suites 15/15 та 5/5. Вісім replay timing cases виконують�
 13. ПОРЯДОК ПОДАЛЬШОЇ РОБОТИ
 -----------------------------
 
-Receive-time/sample identity fix із regression tests виконано після
-первинного опису (див. оновлення на початку). Найближче — окремий review
-integrity/source validation parser та завершення вимірювання часу runtime.
+Receive-time, parser integrity/source та bounded synchronous runtime timing
+fixes виконано після первинного опису (див. оновлення на початку). Найближче
+локально — перевірити достатність dataset і контракт незалежного second pass.
+Full live/sensor/async timing distributions потребують окремого evidence;
+software checkpoint не означає дозволу на апаратний запуск.
 
 Для оцінки розпізнавання: повний повторний прохід із кадрами/timestamps,
 розміткою progress/endpoint та off-route negatives; виміряти false matches,
