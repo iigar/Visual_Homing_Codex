@@ -6,7 +6,7 @@
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
-Локальні Graphify/GitNexus індекси — допоміжна навігація, не доказ повноти залежностей. GitNexus FTS/BM25 недоступний; impact повертав `UNKNOWN` та `CRITICAL` із некоректними upstream edges. Прямі виклики й фактичний diff перевіряються окремо; чистого graph verdict не заявлено.
+Локальні Graphify/GitNexus індекси — допоміжна навігація, не доказ повноти залежностей. [Tooling repair 2026-10-03](CODE_GRAPH_TOOLING_2026-10-03_UA.md): локальний GitNexus 1.6.12, FTS/BM25 відновлено, CLI й окремий MCP-сервер узгоджені; поточний host transport досі closed і потребує перепідключення. Graphify перебудовано в code-only scope; AGENTS містить явний fallback на source/diff/tests. Відомі пропуски й помилки caller resolution залишилися. Runtime unchanged; наступний dataset-validator slice не змінено.
 
 Це короткий канонічний snapshot для відповіді на питання «де ми зараз і що робимо далі». Детальні стабільні факти зберігаються в `PROJECT_MEMORY.md`, хронологія — у `SESSION_LOG.md`, рішення — у `DECISIONS.md`, повна черга — у `ROADMAP.md`, а hardware facts — у `HARDWARE_ACCESS_BASELINE_UA.md`.
 

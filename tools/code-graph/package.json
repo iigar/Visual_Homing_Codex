@@ -1,0 +1,8 @@
+{
+  "name": "visual-homing-code-graph-tools",
+  "private": true,
+  "description": "Pinned local code navigation tooling; not part of the runtime build.",
+  "dependencies": {
+    "gitnexus": "1.6.12"
+  }
+}

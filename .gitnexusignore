@@ -1,0 +1,16 @@
+# Index active project sources; reference is analyzed in its separate checkout.
+reference/
+artifacts/
+keyframes/
+build/
+**/build*/
+**/node_modules/
+.gitnexus/
+graphify-out/
+.claude/
+.codex/
+.agents/
+tools/code-graph/
+AGENTS.md
+CLAUDE.md
+codex_jtzero_known_hosts

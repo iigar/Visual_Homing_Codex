@@ -36,3 +36,8 @@ __pycache__/
 *.swp
 Thumbs.db
 desktop.ini
+
+# Local code navigation tools and generated indexes
+**/node_modules/
+.gitnexus/
+graphify-out/
