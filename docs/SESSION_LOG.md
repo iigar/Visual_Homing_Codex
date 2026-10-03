@@ -1,5 +1,13 @@
 # Session Log
 
+## 2026-10-03
+
+- Resumed verified 6e5964d with a clean tracked tree. Completed the planned bounded local dataset sufficiency audit; no Pi/camera/FC/UART/output work. Rechecked 19/19 saved inventory hashes, 6 VHRS/2583 frames via the current Release reader, and six distinctiveness diagnostics with all seven flags OFF. The 183-frame route remains quality_pass=false with ambiguous_nearest_fraction=1; CLI exit 0 is computation success, not a quality verdict.
+- Expanded local file enumeration found 50 PGM and 33 PNG. Twenty of 35 preview keyframes exactly match four reference routes after verifying nearest-neighbour display scaling; 10 previews have no corresponding local VHRS and five in the 20260712 group lack the expected exact pixel mapping. Two extra stop-PGM are byte duplicates; 27 PNG repeat PGM pixels. Stop images have historical explicit route/log bindings but no independent ground truth. Full independent sequence/annotations were not confirmed within the documented scan scope.
+- Added DATASET_AUDIT_2026-10-03_UA.md and SECOND_PASS_DATASET_CONTRACT_UA.md: immutable route/query identity, clocks/order/gaps, reviewed independent labels, unknowns, session splits, fixed scoring policy and distinct matcher/navigation/endpoint outcomes. This is a specification for the next offline validator, not an implemented importer/scorer or hardware authorization. Local read-only audit scripts, raw inventories, pixel/hash results and CLI logs are under artifacts/dataset-audit-20261003/.
+- All 217 code/build/script/config hashes still match the validated runtime checkpoint. Read the prior 64/64 Debug/Release, CLI 7/7 each, Python 15/15 and 5/5 logs; full suite not rerun for documentation-only work. GitNexus MCP transport is closed; CLI has missing FTS and incorrect cross-language relationships, so dataset conclusions use actual source/data evidence.
+- Documentation review: refreshed GitNexus index 15698 nodes / 34129 edges / 211 flows and Graphify AST 6106 nodes / 9474 edges / 491 communities. Staged/main checks report CRITICAL 143/170; the five-document staged diff has only documentation sections while JSX flows are attributed to an evidence heading. Reviewed actual diff, unchanged software hashes and 26 relative links; no clean graph verdict claimed. Raw responses remain in the local audit directory.
+
 ## 2026-10-02
 
 - Continued from a5f2b38 with the saved bounded runtime timing slice. Before changing production code, reproduced stale verification admission using a real progress-only builder/producer/publisher: frame=1000 ms, cached evaluation=1100 ms admitted; evaluation at the actual simulated late boundary=1400 ms rejected with health_frame_context_stale (limit 200 ms).
