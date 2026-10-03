@@ -43,4 +43,5 @@ done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
 python3 "${repo_dir}/scripts/tests/test_recorded_route_benchmark.py" -v
-echo "Software validation passed: Debug, Release, readiness logs and recorded-route benchmark helpers."
+python3 "${repo_dir}/scripts/tests/test_second_pass_dataset.py" -v
+echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark and second-pass dataset validator."

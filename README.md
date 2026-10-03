@@ -8,6 +8,9 @@ Detailed Ukrainian system description, algorithms, implementation languages, str
 
 Resume the saved session and optimization plan: [2026-10-01 handoff](docs/SESSION_HANDOFF_2026-10-01_UA.md).
 
+Current checkpoint and next slice: [project status](docs/CURRENT_PROJECT_STATUS_UA.md).
+Offline second-pass inputs: [dataset validator and schema](docs/SECOND_PASS_VALIDATOR_UA.md).
+
 ## Layout
 
 - `reference/` - imported baseline project, kept for comparison and reuse.
@@ -29,7 +32,7 @@ Python and web components may remain useful for tooling, monitoring, and offline
 
 ## Local Software Validation
 
-On Linux/WSL, run the Debug and Release core suites plus the readiness log tests:
+On Linux/WSL, run the Debug/Release core and CLI suites plus the offline Python tests:
 
 ```sh
 bash scripts/test-software.sh

@@ -1,6 +1,10 @@
 # Project Memory
 
-## Latest Checkpoint — 2026-10-03
+## Latest Checkpoint — 2026-10-04
+
+Continued from 6d8f547 with a standalone standard-library [second-pass dataset validator](SECOND_PASS_VALIDATOR_UA.md). Exact v1 metadata schema, contained regular-file paths, streamed VHRS/PGM hashes/pixels, capture config/evidence/original hashes, integer clocks/order, complete labels, gaps/counts, review status and collection split checks are implemented. CLI exits 0 structurally_valid, 2 invalid, 3 needs_review; semantic_independence_verified is always false. All splits must be passed together; optional disjoint reference policy is explicit. Runtime/core/config and legacy replay reader are unchanged. WSL Debug/Release 64/64, source CLI 7/7 each, Python 15/15, 5/5 and new validator 31/31 passed with all seven camera/output flags OFF. Evidence: artifacts/dataset-validator-20261004/. Next bounded local slice: deterministic offline scorer with fixed policy and synthetic oracle fixtures; actual accuracy still requires an independently captured/annotated complete sequence. No hardware/output work, threshold tuning or inferred ground truth is authorized by this checkpoint.
+
+## Previous Tooling And Dataset Checkpoint — 2026-10-03
 
 The subsequent user-authorized [code graph tooling repair](CODE_GRAPH_TOOLING_2026-10-03_UA.md) pins local GitNexus 1.6.12, restores FTS using existing Git-for-Windows OpenSSL DLLs in the child PATH, and verifies CLI/standalone MCP parity. Codex config now launches the pinned runner; the current host transport remains closed and needs reconnection. Graphify 0.9.25 is freshly code-only with explicit doc exclusions that survive incremental update. Maintained AGENTS/CLAUDE make graph checks advisory with direct source/diff/test fallback. Known caller omissions remain; all 217 runtime hashes are unchanged. The next bounded project slice remains the offline dataset validator below.
 

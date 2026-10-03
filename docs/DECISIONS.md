@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-10-04 - Validate Second-Pass Inputs Separately From Semantic Acceptance
+
+- Implement the [v1 dataset contract](SECOND_PASS_VALIDATOR_UA.md) as a standalone read-only Python standard-library CLI; do not widen the legacy replay reader or runtime interface in this slice. Fail on inconsistent structure, hashes, paths, order, labels, counters or split leakage; preserve source timestamps and report unknowns explicitly.
+- Require monotone unsigned source IDs within a dataset, explicit drop intervals/counts, stable query geometry and hashed config/evidence/original mapping. Check all supplied splits together; shared reference is allowed for known-route evaluation unless disjoint-reference policy is requested. Report that unsupplied data, scene identity and unknown derivatives are outside the comparison scope.
+- Separate structurally_valid (exit 0), invalid (2) and needs_review (3). Declared completed review is not a physical independence/annotation/accuracy proof; keep semantic_independence_verified=false even on success. No dataset result grants runtime/output authority.
+- Keep scoring policy, deterministic scorer/oracles and eventual real-data accuracy as the next separate bounded slice; synthetic fixtures and existing sparse/self imagery are not independent second-pass evidence.
+
 ## 2026-10-02 - Select One Explicit Telemetry Producer And Validate Heartbeat Semantics
 
 - Require an explicit nonzero system/component pair for all decoded telemetry; do not infer trust from the first packet, assume 1:1, or combine different components. Keep the selected pair immutable within each buffer/stream. Unconfigured inspection remains structural only and cannot pass telemetry validation.

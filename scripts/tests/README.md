@@ -37,3 +37,18 @@ unsupported heartbeat families, structural-only inspection, CRC rejection, and
 paths containing spaces. Uses only the Python standard library; no devices,
 network, or pymavlink installation. `scripts/test-software.sh` runs this suite
 against both Debug and Release executables.
+
+## Second-pass dataset validator
+
+```sh
+python3 scripts/tests/test_second_pass_dataset.py -v
+```
+
+31 standard-library synthetic tests for the standalone dataset validator;
+included in `scripts/test-software.sh`. Temporary fixtures independently encode
+small VHRS/PGM files, JSON metadata and CSV rows. Cover corruption/truncation,
+path and symlink escape/cycles, strict integer clocks/order, complete labels,
+gaps/counts, review states, conversion originals, split leakage and CLI exits.
+Symlink tests skip only when the host cannot create links; WSL runs them.
+These fixtures are explicitly synthetic and do not establish physical data
+independence. See [the schema and CLI contract](../../docs/SECOND_PASS_VALIDATOR_UA.md).

@@ -1,8 +1,9 @@
 # Контракт незалежного повторного проходу, v1
 
 Зафіксовано `2026-10-03` після [локального audit](DATASET_AUDIT_2026-10-03_UA.md).
-Це вхідний контракт для наступного offline validator та майбутнього scorer.
-JSON/CSV interfaces нижче ще не реалізовано. Чинний core replay reader
+Це вхідний контракт для offline validator та майбутнього scorer.
+Validator реалізовано `2026-10-04`: [точна JSON-схема, CLI та межі](SECOND_PASS_VALIDATOR_UA.md).
+Importer/scorer ще не реалізовано. Чинний core replay reader
 приймає тільки три колонки `id,timestamp_ns,path` без header; він не читає
 labels і сам не перевіряє цей контракт. Дані не надають output authority.
 
@@ -150,12 +151,12 @@ thresholds, matcher state/reset policy, preprocessing та scoring policy.
 production thresholds. Спершу потрібні достатні data/annotations і наперед
 визначений evaluation protocol; hardware/flight acceptance — окремий етап.
 
-## Наступна реалізація
+## Реалізація та наступний крок
 
-Перший slice — offline validator: schema/paths/hashes/dimensions, unique IDs,
+Завершений перший slice — [offline validator](SECOND_PASS_VALIDATOR_UA.md): schema/paths/hashes/dimensions, unique IDs,
 strict clocks/order, complete label coverage, index ranges, evidence links,
 explicit gaps і group/hash overlap між splits. Відсутні або непідтверджені
-дані повинні давати зрозумілу причину; synthetic fixtures мають перевірити
+дані дають зрозумілу причину; synthetic fixtures перевіряють
 негативні випадки. Немає автоматичного виправлення timestamps/labels,
 додавання фіктивної ground truth, threshold tuning або hardware викликів.
 Semantic independence/annotation quality залишаються явним review status.
