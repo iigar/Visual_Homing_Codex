@@ -1,5 +1,9 @@
 # Deterministic offline scorer повторного проходу, v1
 
+Оновлення 2026-10-05 після `2c6964e`: наступний
+[controlled offline exporter](SECOND_PASS_EXPORTER_UA.md) реалізовано.
+Нижче збережено contract і evidence саме scorer checkpoint.
+
 Реалізовано `2026-10-04` поверх checkpoint `00e4b13`. Scorer
 [score-second-pass.py](../scripts/score-second-pass.py) оцінює явно збережені
 покадрові результати щодо незалежної розмітки за

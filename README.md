@@ -11,6 +11,7 @@ Resume the saved session and optimization plan: [2026-10-01 handoff](docs/SESSIO
 Current checkpoint and next slice: [project status](docs/CURRENT_PROJECT_STATUS_UA.md).
 Offline second-pass inputs: [dataset validator and schema](docs/SECOND_PASS_VALIDATOR_UA.md).
 Recorded prediction evaluation: [offline scorer and policy](docs/SECOND_PASS_SCORER_UA.md).
+Controlled local replay: [second-pass exporter and frozen run contract](docs/SECOND_PASS_EXPORTER_UA.md).
 
 ## Layout
 

@@ -195,6 +195,13 @@ target_compile_options(gray8_matcher_benchmark PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
+add_executable(second_pass_replay tools/second_pass_replay.cpp)
+target_link_libraries(second_pass_replay PRIVATE visual_homing_core_lib)
+target_compile_options(second_pass_replay PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_executable(gray8_edge_cache_benchmark tools/gray8_edge_cache_benchmark.cpp)
     target_link_libraries(gray8_edge_cache_benchmark PRIVATE visual_homing_core_lib)

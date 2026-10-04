@@ -121,6 +121,12 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
 
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
                                  const std::function<Timestamp()>& read_clock) {
+    return match_replay_route(config, metrics, read_clock, {});
+}
+
+PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
+                                 const std::function<Timestamp()>& read_clock,
+                                 const std::function<void(const ReplayMatchObservation&)>& observe) {
     if (!read_clock) {
         throw std::invalid_argument("Replay processing clock must not be empty");
     }
@@ -225,6 +231,11 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
                 << " latency_ms=" << timing.processing_latency_ms
                 << " latency_scope=through_match"
                 << "\n";
+        if (observe) {
+            observe({result.frames_processed - 1, processed.id, processed.timestamp,
+                     match.valid ? std::optional<std::size_t>(match.route_index) : std::nullopt,
+                     command.valid});
+        }
         frame_timing.complete(RouteFrameStage::Reporting, read_clock());
         result.last_frame_timing = frame_timing.summary();
         ++result.timed_frames;

@@ -81,7 +81,7 @@ std::string field(const std::string& line, const std::string& key) {
     throw std::runtime_error("Missing test log field: " + key);
 }
 
-std::string replay(const Fixture& fixture, bool late_work = false) {
+std::string replay(const Fixture& fixture, bool late_work = false, bool with_observer = true) {
     const std::vector<vh::Timestamp> phase_times{
         at_ms(1000), at_ms(1000),
         at_ms(1190), at_ms(1300), // Match age exactly 200 ms, processing latency 110 ms.
@@ -102,10 +102,17 @@ std::string replay(const Fixture& fixture, bool late_work = false) {
     }
     std::size_t next = 0;
     std::ostringstream metrics;
-    const auto result = vh::match_replay_route(fixture.config, metrics, [&]() {
+    std::vector<vh::ReplayMatchObservation> observations;
+    const std::function<void(const vh::ReplayMatchObservation&)> observer = with_observer
+        ? std::function<void(const vh::ReplayMatchObservation&)>([&](const auto& frame) { observations.push_back(frame); })
+        : std::function<void(const vh::ReplayMatchObservation&)>{};
+    const auto clock = [&]() {
         assert(next < times.size());
         return times.at(next++);
-    });
+    };
+    const auto result = with_observer
+        ? vh::match_replay_route(fixture.config, metrics, clock, observer)
+        : vh::match_replay_route(fixture.config, metrics, clock);
     assert(next == times.size());
     assert(result.frames_processed == 8);
     assert(result.timed_frames == 8 && result.last_frame_timing.valid);
@@ -113,6 +120,17 @@ std::string replay(const Fixture& fixture, bool late_work = false) {
     assert(result.last_frame_age_ms == 0.0 && result.last_processing_latency_ms == 7.0);
     const bool expected_commands[] = {true, !late_work, false, false, false, true, false, true};
     const int expected_indices[] = {0, 1, 0, 1, -1, 1, 0, 0};
+    const std::int64_t source_ns[] = {1000000000, 1100000000, 1200000000, 1700000001,
+                                    1800000000, 1900000000, 100000000, 2100000000};
+    assert(observations.size() == (with_observer ? 8 : 0));
+    for (std::size_t i = 0; i < observations.size(); ++i) {
+        const auto& frame = observations[i];
+        assert(frame.sequence == i && frame.frame_id == 10 + i);
+        assert(frame.timestamp == vh::Timestamp{} + std::chrono::nanoseconds(source_ns[i]));
+        assert(frame.navigation_command_valid == expected_commands[i]);
+        assert(frame.reference_index.has_value() == (expected_indices[i] >= 0));
+        if (frame.reference_index) assert(*frame.reference_index == static_cast<std::size_t>(expected_indices[i]));
+    }
     std::istringstream output(metrics.str());
     std::string line;
     std::size_t frames = 0, commands = 0, timings = 0;
@@ -161,6 +179,7 @@ int main() {
     const auto first = replay(fixture);
     const auto second = replay(fixture);
     assert(first == second); // Whole actual caller output is deterministic, not just decisions.
+    assert(first == replay(fixture, false, false)); // Observer leaves existing output/clock contract unchanged.
     assert(replay(fixture, true) == replay(fixture, true));
     bool rejected = false;
     std::ostringstream empty_output;

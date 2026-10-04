@@ -39,10 +39,11 @@ for configuration in Debug Release; do
     cmake --build "${build_dir}" --parallel "${jobs}"
     ctest --test-dir "${build_dir}" --output-on-failure
     python3 "${repo_dir}/scripts/tests/test_telemetry_source_cli.py" "${build_dir}/visual_homing_core" -v
+    python3 "${repo_dir}/scripts/tests/test_second_pass_exporter.py" "${build_dir}/second_pass_replay" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
 python3 "${repo_dir}/scripts/tests/test_recorded_route_benchmark.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_dataset.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_scorer.py" -v
-echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator and scorer."
+echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer and exporter."

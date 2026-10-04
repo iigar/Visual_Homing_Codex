@@ -56,6 +56,16 @@ struct PipelineResult {
     RouteFrameTimingSummary last_frame_timing{};
 };
 
+// Observed replay results only. An invalid match has no reference index;
+// endpoint/readiness/verification/publication are not evaluated by this caller.
+struct ReplayMatchObservation {
+    std::uint64_t sequence = 0;
+    std::uint64_t frame_id = 0;
+    Timestamp timestamp{};
+    std::optional<std::size_t> reference_index;
+    bool navigation_command_valid = false; // Dry-run navigator with scripted telemetry.
+};
+
 PipelineResult run_replay_pipeline(const PipelineConfig& config, std::ostream& metrics);
 PipelineResult record_replay_route(const RouteRecordingConfig& config, std::ostream& metrics);
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics);
@@ -65,5 +75,9 @@ PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostrea
 // preserved, not rebased.
 PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
                                  const std::function<Timestamp()>& read_clock);
+// Synchronous observer; exceptions abort replay. The observer must not alter inputs.
+PipelineResult match_replay_route(const RouteMatchingConfig& config, std::ostream& metrics,
+                                 const std::function<Timestamp()>& read_clock,
+                                 const std::function<void(const ReplayMatchObservation&)>& observe);
 
 } // namespace vh

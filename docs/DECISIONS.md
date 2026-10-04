@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-10-05 - Freeze Offline Replay Inputs Before Source-Bound Export
+
+- Add a synchronous structured observer to the existing replay caller and a separate offline executable; keep existing overloads/logs, matcher behavior and runtime/output gates. Export actual processed source identity, optional valid index and dry-run command result; unsupported endpoint/readiness/verification/publication must be unknown.
+- Freeze hash-checked copies of all admitted datasets/peers, executable, explicit configuration, policy and tool sources before launch. Bind generated manifest/clock/argv in a closed plan; recheck frozen files after execution and scoring. Keep original inputs read-only. Reject existing output; retain failed artifacts for review without overwriting a prior run.
+- Use a source-time zero-work clock and explicitly synthetic armed Guided telemetry. Fresh process resets state per dataset; preserve matcher/navigator state across gaps, while scoring independently breaks temporal continuity. Do not claim real processing latency, real telemetry readiness or output authority from this simulation.
+- Give failed, timed-out or malformed replay no partial credit: every source frame gets an explicit missing reason, execution is failed and CLI exits nonzero, even when coverage/FN scoring completes. Write completion with plan/output hashes last; do not claim atomic durability, adversarial integrity, compiler/dynamic-library reproducibility or revision attestation. Add a separate read-only saved-bundle checker next. See [the contract](SECOND_PASS_EXPORTER_UA.md).
+
 ## 2026-10-04 - Score Pinned Results With Explicit Coverage And Temporal Policy
 
 - Use a standalone [scorer contract](SECOND_PASS_SCORER_UA.md) for immutable dataset/policy/implementation/config/prediction bindings. Require an explicit row for every stored source frame and never infer GT, rebase time or treat omitted outcomes as false. Keep pre-run provenance as a declared claim until a controlled exporter/runner establishes the workflow.

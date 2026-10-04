@@ -66,3 +66,19 @@ and +1 ns, censored events, consecutive-correct reacquisition, gap boundaries,
 large exact timestamps, read-only deterministic CLI and exit 0/2/3. Reuses the
 dataset fixture factory; no matcher, hardware or external dependencies are run.
 Included in `scripts/test-software.sh`. See [the scorer contract](../../docs/SECOND_PASS_SCORER_UA.md).
+
+## Second-pass replay exporter
+
+```sh
+python3 scripts/tests/test_second_pass_exporter.py path/to/second_pass_replay -v
+```
+
+21 synthetic integration tests, run against both Debug and Release by
+`scripts/test-software.sh`. Real C++ replay produces source-bound predictions
+with a hand-calculated TP=3/FP=2/FN=3 oracle; tests cover deterministic repeats,
+resize, maximum integer identities, state across gaps, frozen inputs before
+launch, later mutation, review/split/schema guards and invalid/unsupported rows.
+Controlled test shims also exercise actual process timeout and nonzero exits;
+all partial results become explicit missing. No devices or network. The existing
+C++ replay timing test verifies observer identity and unchanged legacy logs.
+See [the exporter contract](../../docs/SECOND_PASS_EXPORTER_UA.md).
