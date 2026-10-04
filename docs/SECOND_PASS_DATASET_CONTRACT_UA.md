@@ -1,9 +1,10 @@
 # Контракт незалежного повторного проходу, v1
 
 Зафіксовано `2026-10-03` після [локального audit](DATASET_AUDIT_2026-10-03_UA.md).
-Це вхідний контракт для offline validator та майбутнього scorer.
+Це вхідний контракт для offline validator та scorer.
 Validator реалізовано `2026-10-04`: [точна JSON-схема, CLI та межі](SECOND_PASS_VALIDATOR_UA.md).
-Importer/scorer ще не реалізовано. Чинний core replay reader
+Scorer також реалізовано `2026-10-04`: [pinned inputs, policy та метрики](SECOND_PASS_SCORER_UA.md).
+Controlled replay exporter ще не реалізовано. Чинний core replay reader
 приймає тільки три колонки `id,timestamp_ns,path` без header; він не читає
 labels і сам не перевіряє цей контракт. Дані не надають output authority.
 
@@ -161,6 +162,8 @@ explicit gaps і group/hash overlap між splits. Відсутні або не�
 додавання фіктивної ground truth, threshold tuning або hardware викликів.
 Semantic independence/annotation quality залишаються явним review status.
 
-Після цього — окремий deterministic offline scorer на прийнятому наборі,
-із журналом усіх входів/рішень і policy. Сам validator не доводить accuracy;
-наявні sparse/self артефакти не стають labeled second pass від факту імпорту.
+Окремий [deterministic offline scorer](SECOND_PASS_SCORER_UA.md) перевіряє
+прийнятний dataset та pinned per-frame results, записує всі рішення й policy.
+Далі — controlled offline exporter/runner із freeze plan і actual replay
+binding. Самі validator/scorer не доводять real accuracy; наявні sparse/self
+артефакти не стають labeled second pass від факту імпорту.

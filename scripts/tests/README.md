@@ -52,3 +52,17 @@ gaps/counts, review states, conversion originals, split leakage and CLI exits.
 Symlink tests skip only when the host cannot create links; WSL runs them.
 These fixtures are explicitly synthetic and do not establish physical data
 independence. See [the schema and CLI contract](../../docs/SECOND_PASS_VALIDATOR_UA.md).
+
+## Second-pass scorer
+
+```sh
+python3 scripts/tests/test_second_pass_scorer.py -v
+```
+
+27 synthetic tests, including a hand-calculated confusion matrix and 40 exhaustive
+interval/index oracle cases. Cover pinned input/policy hashes, malformed rows,
+missing/unknown coverage, independent downstream outcomes, endpoint tolerances
+and +1 ns, censored events, consecutive-correct reacquisition, gap boundaries,
+large exact timestamps, read-only deterministic CLI and exit 0/2/3. Reuses the
+dataset fixture factory; no matcher, hardware or external dependencies are run.
+Included in `scripts/test-software.sh`. See [the scorer contract](../../docs/SECOND_PASS_SCORER_UA.md).

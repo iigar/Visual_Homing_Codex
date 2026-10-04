@@ -235,8 +235,9 @@ references та diff. GitNexus status показав індекс checkpoint `6d
 stale щодо нових Python files. Його не оновлювали й не використовували як
 impact verdict; застосовано source/diff/tests fallback чинного AGENTS.md.
 
-Наступний bounded slice — deterministic offline scorer із наперед
-зафіксованою scoring policy та synthetic oracle fixtures, або валідація
+Наступний запланований slice [offline scorer](SECOND_PASS_SCORER_UA.md)
+реалізовано `2026-10-04` із pinned scoring policy та synthetic oracle fixtures.
+Подальший крок — controlled offline exporter/runner або валідація
 реального незалежного dataset, якщо його надано. Поточні sparse/self дані
 не перетворювалися на labeled second pass. Threshold tuning, hardware
 capture/output і заяви про accuracy цим checkpoint не авторизуються.

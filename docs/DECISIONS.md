@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-10-04 - Score Pinned Results With Explicit Coverage And Temporal Policy
+
+- Use a standalone [scorer contract](SECOND_PASS_SCORER_UA.md) for immutable dataset/policy/implementation/config/prediction bindings. Require an explicit row for every stored source frame and never infer GT, rebase time or treat omitted outcomes as false. Keep pre-run provenance as a declared claim until a controlled exporter/runner establishes the workflow.
+- Wrong valid on-route predictions contribute both FP and FN. Missing positive predictions contribute FN; missing negatives do not become true negatives or dilute observed-negative FP fraction. Always report coverage, missing/unknown reasons and zero-denominator nulls. Keep match quality separate from downstream gate outcomes.
+- Break temporal scoring at declared or policy-exceeding gaps; never carry confirmation streaks across them. Score exported endpoint event pulses against independently annotated regions with fixed inclusive tolerances; reject overlapping assignment windows. Preserve censored/missed events and unconfirmed reacquisition episodes instead of reporting only successful cases.
+- Do not change matcher thresholds, runtime dwell semantics, clocks or output gates. Add the actual replay exporter as the next bounded slice and preserve unsupported outcome fields as absent. Synthetic correctness proves the scoring contract, not physical accuracy.
+
 ## 2026-10-04 - Validate Second-Pass Inputs Separately From Semantic Acceptance
 
 - Implement the [v1 dataset contract](SECOND_PASS_VALIDATOR_UA.md) as a standalone read-only Python standard-library CLI; do not widen the legacy replay reader or runtime interface in this slice. Fail on inconsistent structure, hashes, paths, order, labels, counters or split leakage; preserve source timestamps and report unknowns explicitly.
