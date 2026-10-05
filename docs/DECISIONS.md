@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-06 - Bind Evaluation Inventory And Preserve Missing Runs
+
+- Add an explicit collection manifest with catalog datasets independent of bundle completion, exact dataset IDs/splits/input maps, unique expected run IDs/paths, plan/completion hashes and peer IDs. Validate the whole catalog together and require embedded copies to match it; embedded-only peer checks cannot establish collection-wide split isolation.
+- Treat null anchors or absent completion/plan files as incomplete without adopting existing results. A provided hash mismatch is invalid. Preserve expected runs and stored-frame/run denominators for failed, incomplete and invalid runs; expose trusted metrics only for verified or consistently failed bundles. Do not pool metrics across configurations/policies or infer predictions for absent runs.
+- Keep read-only/no-archive-execution behavior, closed collection inventory and final original-hash checks. Allow an external manifest hash to anchor membership and results; do not claim historical chronology, selection completeness, authorship or physical independence from post-hoc hashes. Next add a controlled collection runner that freezes the declared matrix before exporter calls and retains failures without implicit retries. See [the collection contract](SECOND_PASS_COLLECTION_UA.md).
+
 ## 2026-10-05 - Verify Saved Exporter Bundles Without Executing Their Contents
 
 - Add a read-only closed-bundle checker that validates exact plan/completion schemas, every frozen/output binding, embedded peers, argv/source identity, producer/run consistency and complete/failed observations. A missing completion is incomplete; invalid or incomplete checks must not expose a score. Valid failed replay retains a nonzero status even when its all-missing score is reproducible.

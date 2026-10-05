@@ -144,3 +144,7 @@ validator production sources у цьому slice не змінені.
 coverage у collection report. Не підбирати thresholds і не видавати
 синтетичні або sparse/self кадри за незалежну accuracy. Реальний повний
 annotated capture лишається окремою потребою; hardware не входить у цей план.
+
+Оновлення `2026-10-06`: цей collection slice реалізовано окремим
+[read-only collection checker](SECOND_PASS_COLLECTION_UA.md); актуальний
+наступний крок наведено у [current status](CURRENT_PROJECT_STATUS_UA.md).

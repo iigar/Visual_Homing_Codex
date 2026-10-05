@@ -47,4 +47,5 @@ python3 "${repo_dir}/scripts/tests/test_recorded_route_benchmark.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_dataset.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_scorer.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_bundle.py" -v
-echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter and bundle checker."
+python3 "${repo_dir}/scripts/tests/test_second_pass_collection.py" -v
+echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter, bundle and collection checkers."

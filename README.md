@@ -13,6 +13,7 @@ Offline second-pass inputs: [dataset validator and schema](docs/SECOND_PASS_VALI
 Recorded prediction evaluation: [offline scorer and policy](docs/SECOND_PASS_SCORER_UA.md).
 Controlled local replay: [second-pass exporter and frozen run contract](docs/SECOND_PASS_EXPORTER_UA.md).
 Saved replay verification: [read-only bundle checker](docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).
+Evaluation inventory and coverage: [read-only collection checker](docs/SECOND_PASS_COLLECTION_UA.md).
 
 ## Layout
 

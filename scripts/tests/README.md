@@ -97,3 +97,18 @@ roots, exact rescoring, symlinks/FIFO, limits, external anchors, mutation during
 checking and deterministic read-only CLI exits 0/2/3/4. Exporter integration
 tests also check real C++ success and actual timeout/nonzero bundles against
 both Debug and Release workflows. See [the checker contract](../../docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).
+
+## Second-pass evaluation collection checker
+
+```sh
+python3 scripts/tests/test_second_pass_collection.py -v
+```
+
+27 standard-library synthetic tests, included once in `scripts/test-software.sh`.
+Cover explicit dataset/run inventory, complete input maps, plan/completion and
+external manifest anchors, missing/unsealed/failed runs, per-dataset/split
+frame-run coverage, distinct policies without pooled accuracy, catalog-wide
+cross-split leakage beyond embedded peers, exact embedded snapshots, review,
+schema/types/limits, closed inventory, symlinks/FIFO, changes during checking,
+relocation and deterministic read-only CLI exits 0/2/3/4/5. Archived binaries are
+inert data; no replay is executed. See [the collection contract](../../docs/SECOND_PASS_COLLECTION_UA.md).
