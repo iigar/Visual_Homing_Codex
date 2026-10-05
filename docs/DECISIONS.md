@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-05 - Verify Saved Exporter Bundles Without Executing Their Contents
+
+- Add a read-only closed-bundle checker that validates exact plan/completion schemas, every frozen/output binding, embedded peers, argv/source identity, producer/run consistency and complete/failed observations. A missing completion is incomplete; invalid or incomplete checks must not expose a score. Valid failed replay retains a nonzero status even when its all-missing score is reproducible.
+- Rescore only with adjacent trusted tools whose bytes match pinned tool copies. Treat bundled Python and executable as hashed data. Compare the full archived report with type-sensitive JSON equality; normalize only dataset root display paths for archive relocation. Recheck original hashes and inventory after scoring instead of repinning changes.
+- Permit an optional externally retained plan hash and exact expected peer IDs. Explain their limits: embedded-only scope cannot detect omitted sessions without an external inventory, and hashes alone cannot authenticate execution/history or consistently rewritten outputs. Preserve semantic_independence_verified=false and chronology_authenticated=false. Next add explicit collection membership and plan/completion anchors; no matcher, threshold, hardware or output changes. See [the checker contract](SECOND_PASS_BUNDLE_CHECKER_UA.md).
+
 ## 2026-10-05 - Freeze Offline Replay Inputs Before Source-Bound Export
 
 - Add a synchronous structured observer to the existing replay caller and a separate offline executable; keep existing overloads/logs, matcher behavior and runtime/output gates. Export actual processed source identity, optional valid index and dry-run command result; unsupported endpoint/readiness/verification/publication must be unknown.

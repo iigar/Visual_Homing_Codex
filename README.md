@@ -12,6 +12,7 @@ Current checkpoint and next slice: [project status](docs/CURRENT_PROJECT_STATUS_
 Offline second-pass inputs: [dataset validator and schema](docs/SECOND_PASS_VALIDATOR_UA.md).
 Recorded prediction evaluation: [offline scorer and policy](docs/SECOND_PASS_SCORER_UA.md).
 Controlled local replay: [second-pass exporter and frozen run contract](docs/SECOND_PASS_EXPORTER_UA.md).
+Saved replay verification: [read-only bundle checker](docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).
 
 ## Layout
 

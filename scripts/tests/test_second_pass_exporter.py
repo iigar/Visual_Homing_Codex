@@ -113,6 +113,10 @@ class ExporterTests(unittest.TestCase):
         self.assertEqual(metric["recall"]["value"], 1 / 2)
         self.assertFalse(report["semantic_independence_verified"])
         self.assertEqual(self.read("execution.json")["status"], "complete")
+        checker = t.load("actual_bundle_checker", SCRIPT.with_name("check-second-pass-bundle.py"))
+        checked = checker.check(self.output, e.binding(self.output, "plan.json")["sha256"], [])
+        self.assertEqual(checked["status"], "verified", checked)
+        self.assertEqual(checked["score"]["metrics"], metric)
         plan = self.read("plan.json")
         e.verify_frozen(self.output, plan["input_sha256"])
         self.assertEqual(self.read("run.json")["input_sha256"], before)
@@ -394,6 +398,10 @@ class ExporterTests(unittest.TestCase):
                 self.assertEqual(json.loads(result.stdout)["status"], "replay_failed")
                 self.assert_missing_failure("replay_timeout" if mode == "timeout" else "replay_failed")
                 self.assertIn(b"synthetic partial", (self.output / "raw-predictions.csv").read_bytes())
+                checker = t.load("failed_bundle_checker", SCRIPT.with_name("check-second-pass-bundle.py"))
+                checked = checker.check(self.output)
+                self.assertEqual(checked["status"], "replay_failed", checked)
+                self.assertTrue(checked["score_reproduced"])
 
     def test_cli_invalid_and_pending_exit_codes(self):
         self.meta["independence"]["review_status"] = "pending"

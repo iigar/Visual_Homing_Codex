@@ -82,3 +82,18 @@ Controlled test shims also exercise actual process timeout and nonzero exits;
 all partial results become explicit missing. No devices or network. The existing
 C++ replay timing test verifies observer identity and unchanged legacy logs.
 See [the exporter contract](../../docs/SECOND_PASS_EXPORTER_UA.md).
+
+## Saved second-pass bundle checker
+
+```sh
+python3 scripts/tests/test_second_pass_bundle.py -v
+```
+
+24 standard-library synthetic tests, included once in `scripts/test-software.sh`.
+Fixtures encode saved bundles with inert binary contents; no executable is run.
+Cover all bound file hashes, closed inventory/peers, strict schemas/types,
+simulation/argv/manifest consistency, failed and incomplete outcomes, relocated
+roots, exact rescoring, symlinks/FIFO, limits, external anchors, mutation during
+checking and deterministic read-only CLI exits 0/2/3/4. Exporter integration
+tests also check real C++ success and actual timeout/nonzero bundles against
+both Debug and Release workflows. See [the checker contract](../../docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).

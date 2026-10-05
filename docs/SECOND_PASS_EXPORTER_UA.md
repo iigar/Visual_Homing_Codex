@@ -2,6 +2,10 @@
 
 Початок: 2026-10-04; завершення: 2026-10-05. Продовження checkpoint `2c6964e`.
 
+Після exporter commit `dc458ec` реалізовано
+[read-only checker збережених bundles](SECOND_PASS_BUNDLE_CHECKER_UA.md).
+Нижче збережено contract та evidence самого exporter checkpoint.
+
 `scripts/export-second-pass.py` зберігає перевірені копії dataset, split peers,
 executable, конфігурації й scoring policy **до запуску** окремого
 `second_pass_replay`. C++ adapter викликає чинний `match_replay_route` та отримує
