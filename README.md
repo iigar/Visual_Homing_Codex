@@ -14,6 +14,7 @@ Recorded prediction evaluation: [offline scorer and policy](docs/SECOND_PASS_SCO
 Controlled local replay: [second-pass exporter and frozen run contract](docs/SECOND_PASS_EXPORTER_UA.md).
 Saved replay verification: [read-only bundle checker](docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).
 Evaluation inventory and coverage: [read-only collection checker](docs/SECOND_PASS_COLLECTION_UA.md).
+Controlled evaluation execution: [collection runner](docs/SECOND_PASS_COLLECTION_RUNNER_UA.md).
 
 ## Layout
 

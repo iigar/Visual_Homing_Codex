@@ -199,3 +199,7 @@ physical accuracy acceptance. `semantic_independence_verified` та
 і зберігає failed/incomplete slots без неявних retry чи вилучення. Реальний
 незалежний annotated dataset лишається необхідним для accuracy; hardware,
 output enabling і threshold tuning у цю чергу не входять.
+
+Оновлення `2026-10-06`: [контрольований collection runner](SECOND_PASS_COLLECTION_RUNNER_UA.md)
+реалізовано. Він зберігає initial inventory й snapshots до exporter calls;
+актуальний наступний крок — read-only audit outer runner archive.

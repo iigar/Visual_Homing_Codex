@@ -40,6 +40,7 @@ for configuration in Debug Release; do
     ctest --test-dir "${build_dir}" --output-on-failure
     python3 "${repo_dir}/scripts/tests/test_telemetry_source_cli.py" "${build_dir}/visual_homing_core" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_exporter.py" "${build_dir}/second_pass_replay" -v
+    python3 "${repo_dir}/scripts/tests/test_second_pass_collection_runner.py" "${build_dir}/second_pass_replay" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
@@ -48,4 +49,4 @@ python3 "${repo_dir}/scripts/tests/test_second_pass_dataset.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_scorer.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_bundle.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_collection.py" -v
-echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter, bundle and collection checkers."
+echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter, bundle/collection checkers and collection runner."

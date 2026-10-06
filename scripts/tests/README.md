@@ -112,3 +112,18 @@ cross-split leakage beyond embedded peers, exact embedded snapshots, review,
 schema/types/limits, closed inventory, symlinks/FIFO, changes during checking,
 relocation and deterministic read-only CLI exits 0/2/3/4/5. Archived binaries are
 inert data; no replay is executed. See [the collection contract](../../docs/SECOND_PASS_COLLECTION_UA.md).
+
+## Second-pass collection runner
+
+```sh
+python3 scripts/tests/test_second_pass_collection_runner.py path/to/second_pass_replay -v
+```
+
+23 integration tests run against both Debug and Release by `test-software.sh`.
+Cover actual C++ oracle results, full plan before launch, immutable snapshots,
+all catalog peers, request/config/review/split preflight, nonzero/timeout/launch/
+malformed-output failures, partial exporter exceptions, interrupted and pending
+slots, no retry/resume/overwrite, shared controls and previous-result drift,
+failed manifest writes, wrong-policy admission, deterministic repeats, archive
+relocation and CLI exits 0/2/3/4/5. No devices or network. See
+[the runner contract](../../docs/SECOND_PASS_COLLECTION_RUNNER_UA.md).

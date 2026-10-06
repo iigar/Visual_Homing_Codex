@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-06 - Freeze The Full Evaluation Request Before One Attempt Per Run
+
+- Add a collection runner that freezes the explicit dataset/config/policy matrix, trusted CLI binary and tool sources before invoking the existing exporter. Preserve an immutable initial manifest and runner plan alongside mutable progress/result anchors; use every other catalog dataset as an explicit peer. Validate every configuration/policy before the first export and reject existing output roots.
+- Never retry, silently resume, drop failed/incomplete slots or infer predictions. Admit a completed/failed bundle only after checking its exact request bindings; preserve partial outputs and pending slots after interruption. Stop later launches on shared input/control/previous-result drift or failed progress persistence. Use guarded same-directory atomic JSON replacement without claiming multi-file transaction or power-loss durability.
+- Keep standalone collection checks distinct from an outer runner archive audit. The next slice will bind saved request/initial plan to final inventory/progress/report read-only. File hashes and procedural ordering do not authenticate chronology, authorship, binary/source provenance, physical independence or completeness of real captures. No runtime thresholds, hardware or output changes. See [the runner contract](SECOND_PASS_COLLECTION_RUNNER_UA.md).
+
 ## 2026-10-06 - Bind Evaluation Inventory And Preserve Missing Runs
 
 - Add an explicit collection manifest with catalog datasets independent of bundle completion, exact dataset IDs/splits/input maps, unique expected run IDs/paths, plan/completion hashes and peer IDs. Validate the whole catalog together and require embedded copies to match it; embedded-only peer checks cannot establish collection-wide split isolation.
