@@ -15,6 +15,7 @@ Controlled local replay: [second-pass exporter and frozen run contract](docs/SEC
 Saved replay verification: [read-only bundle checker](docs/SECOND_PASS_BUNDLE_CHECKER_UA.md).
 Evaluation inventory and coverage: [read-only collection checker](docs/SECOND_PASS_COLLECTION_UA.md).
 Controlled evaluation execution: [collection runner](docs/SECOND_PASS_COLLECTION_RUNNER_UA.md).
+Saved evaluation request and results: [read-only runner archive audit](docs/SECOND_PASS_RUNNER_AUDIT_UA.md).
 
 ## Layout
 

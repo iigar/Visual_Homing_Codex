@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-12 - Audit The Entire Saved Runner Request And Final State Read-Only
+
+- Bind initial request, frozen catalog/config/policy/binary/tools, final run inventory, progress and saved collection audit without executing archive contents. A standalone internally valid bundle is insufficient: its admission parameters must match the original request. Compare the full saved report with type-sensitive JSON equality, normalizing only known dataset root display paths for relocation; recheck outer and inner bytes before releasing results.
+- Preserve expected runs and coverage for finalized interrupted archives. Treat absent controls, running states and known atomic-write temporaries as incomplete with results withheld; never adopt unsealed output or repair/resume a transaction. Invalid recorded outcomes remain invalid. No multi-file durability or adversarial filesystem guarantee.
+- Keep optional externally retained runner-plan and final-state hashes separate: the former anchors inputs, the latter also anchors results. Internal resealing alone cannot prove execution, chronology, authorship or physical independence. Next validate a bounded actual Debug/Release synthetic campaign across datasets/splits and policy/config variants. No runtime thresholds, hardware or output changes. See [the archive audit contract](SECOND_PASS_RUNNER_AUDIT_UA.md).
+
 ## 2026-10-06 - Freeze The Full Evaluation Request Before One Attempt Per Run
 
 - Add a collection runner that freezes the explicit dataset/config/policy matrix, trusted CLI binary and tool sources before invoking the existing exporter. Preserve an immutable initial manifest and runner plan alongside mutable progress/result anchors; use every other catalog dataset as an explicit peer. Validate every configuration/policy before the first export and reject existing output roots.

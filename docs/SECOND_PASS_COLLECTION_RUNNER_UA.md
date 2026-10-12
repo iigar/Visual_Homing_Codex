@@ -197,3 +197,10 @@ synthetic Guided telemetry та unsupported outcomes exporter не змінен�
 `semantic_independence_verified` і `chronology_authenticated` лишаються false.
 Точність на реальних даних потребує незалежних повних annotated captures;
 threshold tuning і hardware/output enabling у цей slice не входять.
+
+## Read-only outer audit — 2026-10-12
+
+[Runner archive checker](SECOND_PASS_RUNNER_AUDIT_UA.md) тепер зв'язує frozen
+request/initial plan із final inventory/progress/report, включно з interrupted
+archives. Перевірка не запускає binary, не відновлює run і не змінює archive.
+Optional final-state anchor фіксує результати додатково до initial-plan anchor.

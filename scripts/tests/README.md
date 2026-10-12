@@ -127,3 +127,19 @@ slots, no retry/resume/overwrite, shared controls and previous-result drift,
 failed manifest writes, wrong-policy admission, deterministic repeats, archive
 relocation and CLI exits 0/2/3/4/5. No devices or network. See
 [the runner contract](../../docs/SECOND_PASS_COLLECTION_RUNNER_UA.md).
+
+## Second-pass runner archive audit
+
+```sh
+python3 scripts/tests/test_second_pass_runner_audit.py -v
+```
+
+30 synthetic tests run once in `test-software.sh`. Inert archived executables;
+no runner/exporter or child process may execute during the API audit. Cover
+request/initial/final inventory, full frozen map and tools, bundle admission
+against requested binary/config/policy/revision/timeout, entire catalog peers,
+ordered progress/counts, failed/interrupted/pending slots and denominators,
+atomic-write crash windows, missing/null/malformed controls, full typed saved
+report equality, external plan versus final state anchors, readonly relocation,
+closed inventory, symlinks/FIFO, mutation during checking and CLI exits 0/2/3/4.
+See [the audit contract](../../docs/SECOND_PASS_RUNNER_AUDIT_UA.md).
