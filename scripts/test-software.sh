@@ -41,6 +41,7 @@ for configuration in Debug Release; do
     python3 "${repo_dir}/scripts/tests/test_telemetry_source_cli.py" "${build_dir}/visual_homing_core" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_exporter.py" "${build_dir}/second_pass_replay" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_collection_runner.py" "${build_dir}/second_pass_replay" -v
+    python3 "${repo_dir}/scripts/tests/test_second_pass_campaign.py" "${build_dir}/second_pass_replay" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
@@ -50,4 +51,4 @@ python3 "${repo_dir}/scripts/tests/test_second_pass_scorer.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_bundle.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_collection.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_runner_audit.py" -v
-echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter, bundle/collection/runner checkers and collection runner."
+echo "Software validation passed: Debug, Release, readiness logs, recorded-route benchmark, second-pass validator, scorer, exporter, bundle/collection/runner checkers, collection runner and synthetic campaign."

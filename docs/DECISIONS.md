@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-13 - Validate A Complete Synthetic Campaign Before Optimizing Evaluation Tools
+
+- Exercise the existing runner, actual offline adapter and full archive audit together with a fixed 3-split x 2-config x 2-policy matrix. Define per-frame and per-run oracles before execution; distinguish changed predictions from policy-dependent scoring denominators. Require the full expected matrix, all catalog peers, original source identity and separate per-run scores; no pooled accuracy or post-hoc run selection.
+- Preserve failed/incomplete/pending slots across controlled child failures, partial exporter output and interruption. Check all coverage groups, read-only relocation/repeats and no resume; whole-catalog review/leakage rejection must precede all output. Keep pixel permutations and scripted labels explicitly synthetic, even when structural/disjoint-reference checks pass.
+- Make this a test/evidence change only. Keep production thresholds, core/tools/config and output gates unchanged. Next measure bounded wall-time/peak-RSS scaling and identify hotspots before changing evaluation performance. Physical accuracy still requires independent complete annotated captures; no hardware authorization. See [the campaign contract](SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
+
 ## 2026-10-12 - Audit The Entire Saved Runner Request And Final State Read-Only
 
 - Bind initial request, frozen catalog/config/policy/binary/tools, final run inventory, progress and saved collection audit without executing archive contents. A standalone internally valid bundle is insufficient: its admission parameters must match the original request. Compare the full saved report with type-sensitive JSON equality, normalizing only known dataset root display paths for relocation; recheck outer and inner bytes before releasing results.

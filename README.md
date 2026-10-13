@@ -16,6 +16,7 @@ Saved replay verification: [read-only bundle checker](docs/SECOND_PASS_BUNDLE_CH
 Evaluation inventory and coverage: [read-only collection checker](docs/SECOND_PASS_COLLECTION_UA.md).
 Controlled evaluation execution: [collection runner](docs/SECOND_PASS_COLLECTION_RUNNER_UA.md).
 Saved evaluation request and results: [read-only runner archive audit](docs/SECOND_PASS_RUNNER_AUDIT_UA.md).
+End-to-end synthetic matrix: [multi-dataset campaign validation](docs/SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
 
 ## Layout
 

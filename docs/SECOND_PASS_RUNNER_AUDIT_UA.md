@@ -156,3 +156,11 @@ Core/build/config, matcher thresholds, runner/exporter/scorer/validator та
 datasets/splits і policy/config variants через actual Debug/Release runner
 та цей archive checker, зі failures і expected denominators. Реальна accuracy
 досі потребує незалежних повних annotated captures.
+
+## Campaign validation — 2026-10-13
+
+[Наскрізна синтетична кампанія](SECOND_PASS_CAMPAIGN_2026-10-13_UA.md) тепер
+перевіряє цей audit із actual Debug/Release runner: три datasets/splits,
+дві configurations, дві policies, 12 runs / 96 frame-run pairs, включно
+з failed children, partial exporter та interruption. Production audit
+і runner у цьому наступному slice не змінювалися.

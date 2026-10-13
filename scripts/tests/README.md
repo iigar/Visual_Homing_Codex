@@ -143,3 +143,20 @@ atomic-write crash windows, missing/null/malformed controls, full typed saved
 report equality, external plan versus final state anchors, readonly relocation,
 closed inventory, symlinks/FIFO, mutation during checking and CLI exits 0/2/3/4.
 See [the audit contract](../../docs/SECOND_PASS_RUNNER_AUDIT_UA.md).
+
+## Second-pass multi-dataset campaign
+
+```sh
+python3 scripts/tests/test_second_pass_campaign.py path/to/second_pass_replay -v
+```
+
+Four integration tests run against both Debug and Release in `test-software.sh`.
+Exercise an explicit 3-split x 2-config x 2-policy matrix (12 runs, 96 frame/run
+pairs) through actual replay, runner and read-only archive audit. Independent
+per-run TP/FP/FN and prediction oracles distinguish config effects from policy
+effects. Cover frozen request before every child, all catalog peers/disjoint
+references, full source IDs/times, repeats/relocation, failed children,
+partial export followed by interruption, future pending slots, no resume,
+all denominator groups, and campaign-wide review/split rejection before launch.
+Fixtures are related synthetic pixels/labels, not independent physical captures.
+See [the campaign evidence](../../docs/SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
