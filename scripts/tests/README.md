@@ -160,3 +160,27 @@ partial export followed by interruption, future pending slots, no resume,
 all denominator groups, and campaign-wide review/split rejection before launch.
 Fixtures are related synthetic pixels/labels, not independent physical captures.
 See [the campaign evidence](../../docs/SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
+
+## Second-pass campaign scaling probe (manual, Linux)
+
+```sh
+python3 scripts/tests/benchmark_second_pass_campaign.py \
+  --binary path/to/second_pass_replay --output path/to/new-evidence \
+  --runs 12 24 48 --repeats 3 --work-dir /tmp
+```
+
+Copies the seven trusted Python tools, four fixture modules, probe and local
+binary to temporary storage. Uses one excluded 12-run warmup, fresh workers
+for runner/audit, round-robin sizes, and a separate largest-size cProfile run.
+Each matrix repeats the existing 12-run synthetic fixture with unique run IDs;
+dataset/frame sizes stay fixed. Every sample must pass full coverage, prediction
+and metric oracles; audits must leave bytes/mtime unchanged. Failures abort the
+probe rather than being dropped from averages. No retries or performance gates.
+
+Wall time covers the API call; imports, fixture creation, oracle checks and
+evidence persistence are excluded. Peak RSS is the Linux Python worker's own
+high-water mark (KiB), including imports and excluding replay child processes;
+it is not simultaneous whole-process-tree memory. Warm cache, no cache eviction.
+The native evidence tarball contains all samples, inputs, copied sources/binary,
+reports and profiles. Timing runs are deliberately outside `test-software.sh`.
+See [the measured baseline](../../docs/SECOND_PASS_SCALING_2026-10-18_UA.md).

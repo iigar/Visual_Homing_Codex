@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-18 - Measure Campaign Scaling Before Changing Integrity Checks
+
+- Establish an explicit 12/24/48-run baseline with unchanged 3-dataset, 8-frame synthetic fixtures and actual Release replay. Use fresh phase workers, native WSL copies, three round-robin samples, excluded warmup and a separate cProfile pair. Record API wall time and Python worker self peak RSS with explicit exclusions; do not describe this as tree-wide memory, CLI latency, cold-cache throughput, hardware performance or accuracy evidence.
+- Require full request coverage and exact prediction/metric oracles for every sample, readonly archive checks and persisted hash-bound readback. Failed samples abort instead of disappearing from aggregates; no retry or performance thresholds. Preserve sources, binary, all archives, raw timings and profiles locally; keep large generated evidence ignored.
+- Profile/source review identifies repeated integrity guards and path handling as the first optimization target. Next bound work to portable-path/containment overhead while retaining fresh resolve/stat/read/hash, all guard boundaries and existing mutation rejection. Do not cache content hashes across guards. Require behavior regressions and same-workload before/after; leave production unchanged if equivalence is uncertain. See [the measured baseline](SECOND_PASS_SCALING_2026-10-18_UA.md).
+
 ## 2026-10-13 - Validate A Complete Synthetic Campaign Before Optimizing Evaluation Tools
 
 - Exercise the existing runner, actual offline adapter and full archive audit together with a fixed 3-split x 2-config x 2-policy matrix. Define per-frame and per-run oracles before execution; distinguish changed predictions from policy-dependent scoring denominators. Require the full expected matrix, all catalog peers, original source identity and separate per-run scores; no pooled accuracy or post-hoc run selection.

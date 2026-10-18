@@ -14,6 +14,22 @@ thresholds і output gates не змінені. Значення нижче іс
 
 ## Фіксована матриця та oracle
 
+### Що означає «зберігаються всі очікувані slots»
+
+Slot — це запис одного заздалегідь запланованого запуску: dataset +
+configuration + policy, з власним run ID. Це не комірка пам'яті. У перевіреному
+сценарії partial export + interruption із 12 запусків 4 завершено успішно,
+2 залишилися незавершеними, 6 ще не почато (`pending`). У звіті залишаються всі
+12 записів. Аудит враховує pending як incomplete: 32 verified + 64 incomplete
+пар «кадр–запуск», разом 96. Не можна видалити невдалі записи й показати лише
+4 успішні як повністю завершену кампанію.
+
+Це облік повноти запланованої роботи, а не відновлення втрачених результатів
+чи автоматичний повтор. Твердження стосується перевірених сценаріїв і вже
+зафіксованого плану; довільна втрата живлення або диска не має гарантії
+збереження всіх файлів. Якщо потрібні controls відсутні, audit не підтверджує
+завершеність і не відновлює їх самостійно.
+
 Три datasets мають splits `development`, `validation`, `test`, різні query /
 reference sessions, frame IDs і timestamps. Кожен містить 8 source frames та
 4 reference entries, geometry 2×2 Gray8. Pixel permutations зберігають
@@ -129,8 +145,8 @@ Synthetic source-time clock, Guided telemetry й unsupported outcomes
 попереднього exporter не змінені. Chronology/authorship, binary-source
 attestation, physical independence та accuracy не підтверджуються.
 
-Наступний bounded software slice — виміряти час і peak RSS offline campaign
-та archive audit при збільшенні кількості явно заданих runs, зафіксувати
-baseline і hotspots до будь-якої оптимізації. Незалежні повні annotated
+Запланований тут baseline часу та peak RSS зі збільшенням кількості runs
+продовжено у [вимірюванні 2026-10-18](SECOND_PASS_SCALING_2026-10-18_UA.md).
+Незалежні повні annotated
 captures залишаються необхідними для реальної accuracy; hardware/output
 або threshold tuning цей checkpoint не авторизує.
