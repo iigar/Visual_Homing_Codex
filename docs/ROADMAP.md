@@ -1,6 +1,20 @@
 # Roadmap
 
-## Current Focus - 2026-08-13
+## Current Focus - 2026-10-20
+
+Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
+and [current status](CURRENT_PROJECT_STATUS_UA.md). Published code checkpoint
+658220f records the offline campaign/audit 12/24/48-run baseline. Next: bounded
+Dataset.path portable-path/containment overhead reduction with fresh filesystem
+and hash checks, all mutation guards, regression/full-suite and before/after
+evidence. No hardware/output or threshold changes. Completed telemetry/timing
+and second-pass evaluation work is recorded in current status; do not restart it.
+
+The milestone sections below preserve historical evidence and the deferred
+functional queue. Their older "immediate next" wording is not authorization
+for hardware work and does not override the current software-only focus.
+
+## Historical Focus - 2026-08-13
 
 Milestone 6.10 operational progress-only verification wiring is implemented and passes WSL/GCC all-output-off `47/47`. The immediate gate is clean Pi all-output-off acceptance, plus affected MSVC retest after the local missing-`cl.exe` toolchain is repaired. Then perform a disarmed/no-send hand-carried forward/reverse second pass over an already finalized/indexed route.
 

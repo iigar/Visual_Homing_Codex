@@ -1,6 +1,11 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-18`.
+Оновлено: `2026-10-20` (збереження контексту; остання code validation — `2026-10-18`).
+
+Для нової сесії: [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md).
+Останній опублікований кодовий checkpoint — `658220f`; handoff зберігає
+повний порядок продовження, baseline/evidence, завершені роботи та подальші
+черги. Збереження документаційне, нову оптимізацію не починали.
 
 Продовжено checkpoint `d7fdfd1`: [виміряно масштабування offline campaign/audit](SECOND_PASS_SCALING_2026-10-18_UA.md) на 12/24/48 runs, по три повтори. Медіани часу кампанії — 4.476/11.881/37.617 с, аудиту — 1.156/2.623/4.383 с; peak RSS самого Python worker — 31.36–34.59 / 32.25–43.25 MiB. Profile виявив витрати повторних integrity guards та обробки шляхів; production runtime/tools/config не змінені. Наступний bounded software крок — скоротити overhead portable-path/containment перевірок у Dataset.path зі збереженням свіжих resolve/stat/read/hash і всіх mutation guards, звірити before/after та повну suite. У [поясненні кампанії](SECOND_PASS_CAMPAIGN_2026-10-13_UA.md) slot визначено як запис запланованого запуску: невдалі, незавершені й ще не початі runs залишаються в обліку. Незалежний annotated dataset досі потрібен для accuracy. Робота локальна, без hardware/output або threshold tuning. [Handoff 2026-10-01](SESSION_HANDOFF_2026-10-01_UA.md) зберігає попередню історію й повну чергу.
 

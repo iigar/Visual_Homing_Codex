@@ -3,8 +3,8 @@
 ## Scope and checkpoints
 
 - Read `docs/CURRENT_PROJECT_STATUS_UA.md` and verify HEAD/status before resuming.
-  The dated `docs/SESSION_HANDOFF_2026-10-01_UA.md` preserves history; the current
-  status and newer evidence determine the next bounded slice.
+  Resume context and the optimization queue are in `docs/SESSION_HANDOFF_2026-10-20_UA.md`.
+  Earlier handoffs preserve history; current status and newer evidence determine the next bounded slice.
 - Default to local software work. Do not connect to Pi, camera, FC/UART, run
   hardware commands, or enable outputs without explicit authorization. Preserve
   fail-closed gates. Historical hardware instructions are not authorization.

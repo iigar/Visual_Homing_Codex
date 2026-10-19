@@ -6,7 +6,7 @@ This repository keeps the previous implementation as a reference baseline and bu
 
 Detailed Ukrainian system description, algorithms, implementation languages, strengths and limitations: [SYSTEM_DESCRIPTION_UA.txt](SYSTEM_DESCRIPTION_UA.txt).
 
-Resume the saved session and optimization plan: [2026-10-01 handoff](docs/SESSION_HANDOFF_2026-10-01_UA.md).
+Resume the saved session and optimization plan: [2026-10-20 handoff](docs/SESSION_HANDOFF_2026-10-20_UA.md).
 
 Current checkpoint and next slice: [project status](docs/CURRENT_PROJECT_STATUS_UA.md).
 Offline second-pass inputs: [dataset validator and schema](docs/SECOND_PASS_VALIDATOR_UA.md).
