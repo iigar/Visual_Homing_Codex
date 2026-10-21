@@ -1,13 +1,14 @@
 # Roadmap
 
-## Current Focus - 2026-10-20
+## Current Focus - 2026-10-21
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
-and [current status](CURRENT_PROJECT_STATUS_UA.md). Published code checkpoint
-658220f records the offline campaign/audit 12/24/48-run baseline. Next: bounded
-Dataset.path portable-path/containment overhead reduction with fresh filesystem
-and hash checks, all mutation guards, regression/full-suite and before/after
-evidence. No hardware/output or threshold changes. Completed telemetry/timing
+and [current status](CURRENT_PROJECT_STATUS_UA.md). The baseline in 658220f now
+has a [measured Dataset.path optimization](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md)
+with unchanged fresh filesystem/hash checks and mutation guards. Next: characterize
+and reduce relative-path construction in closed archive inventory, preserving
+every fresh scandir/stat, rejection rule and guard; require equivalence, full-suite
+and same-matrix before/after evidence. No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 
 The milestone sections below preserve historical evidence and the deferred

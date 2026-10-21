@@ -1,13 +1,15 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-20` (збереження контексту; остання code validation — `2026-10-18`).
+Оновлено: `2026-10-21` (Dataset.path optimization та нова software validation).
 
-Для нової сесії: [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md).
-Останній опублікований кодовий checkpoint — `658220f`; handoff зберігає
-повний порядок продовження, baseline/evidence, завершені роботи та подальші
-черги. Збереження документаційне, нову оптимізацію не починали.
+Для нової сесії: [останній path slice і next inventory step](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md),
+потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
+Продовжено `74d73bd`; описаний у handoff path slice завершено. Актуальний
+HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-Продовжено checkpoint `d7fdfd1`: [виміряно масштабування offline campaign/audit](SECOND_PASS_SCALING_2026-10-18_UA.md) на 12/24/48 runs, по три повтори. Медіани часу кампанії — 4.476/11.881/37.617 с, аудиту — 1.156/2.623/4.383 с; peak RSS самого Python worker — 31.36–34.59 / 32.25–43.25 MiB. Profile виявив витрати повторних integrity guards та обробки шляхів; production runtime/tools/config не змінені. Наступний bounded software крок — скоротити overhead portable-path/containment перевірок у Dataset.path зі збереженням свіжих resolve/stat/read/hash і всіх mutation guards, звірити before/after та повну suite. У [поясненні кампанії](SECOND_PASS_CAMPAIGN_2026-10-13_UA.md) slot визначено як запис запланованого запуску: невдалі, незавершені й ще не початі runs залишаються в обліку. Незалежний annotated dataset досі потрібен для accuracy. Робота локальна, без hardware/output або threshold tuning. [Handoff 2026-10-01](SESSION_HANDOFF_2026-10-01_UA.md) зберігає попередню історію й повну чергу.
+У `Dataset.path` два Python scans замінено compiled regex, перебір ancestors — порівнянням єдиного предка потрібної глибини з native Path equality. Fresh resolve/stat/read/hash, всі mutation guards та output gates збережені. На новому before/after 12/24/48-run benchmark медіани campaign time **4.519/12.646/38.599 → 3.928/10.694/32.257 с**, audit **1.254/2.593/4.680 → 1.050/2.171/4.073 с**. Worker RSS приблизно незмінний; це synthetic warm WSL API measurements, не Pi/accuracy evidence. 11 archives кожної версії мають однакові predictions/metrics/coverage та проходять повторний read-only relocation audit. [Метод, усі межі й profile](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md); [попередній baseline](SECOND_PASS_SCALING_2026-10-18_UA.md).
+
+Наступний bounded software крок — characterization та скорочення relative-path construction у closed archive `inventory()`, який займає близько 39% profiled audit time. Зберегти кожен fresh scandir/stat, closed inventory, symlink/nonregular/extra-file rejection, hashes і guards; підтвердити equivalence, full suite та same-matrix before/after. Не починати broad rewrite або кешувати filesystem/content checks. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -31,6 +33,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Path slice (`2026-10-21`): нові **12/12** path/mutation tests проходять до й після, включно з 783 character cases і pure Windows/POSIX containment. Full WSL Debug/Release CTest **64/64**, telemetry CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4** кожна; readiness **15/15**, benchmark **5/5**, validator **31/31**, scorer **27/27**, bundle **24/24**, collection **27/27**, audit **30/30**. 22 benchmark archives / 624 runs / 4992 frame-run pairs мають точну before/after equivalence; повторні read-only audits не змінюють bytes/mtime. Profile counts resolve/stat/read/hash/guard збігаються. **235** source hashes; з попередніх 234 змінено лише validator, software runner і tests README, додано path tests. C++/config незмінені, сім flags OFF; без нових native sanitizer/NoTests/MSVC/hardware runs. Evidence: `artifacts/path-overhead-20261021/`.
 
 - Scaling baseline (`2026-10-18`): 9 unprofiled campaign/audit pairs + окремі warmup/profile; 12/24/48 runs, незмінні три синтетичні datasets. Всі 11 archives / 312 runs / 2496 frame-run pairs verified, точні prediction/metric/coverage oracles; hash-bound tar readback, повторний relocation audit та незмінені bytes/mtime. Peak RSS обмежений Python worker, replay children не виміряні; warm native WSL filesystem, API time без startup/підготовки/persistence. Повний Debug/Release CTest **64/64**, telemetry CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4** кожна; readiness **15/15**, benchmark **5/5**, validator **31/31**, scorer **27/27**, bundle **24/24**, collection **27/27**, outer audit **30/30**. **234** source hashes; попередні 233 відрізняються лише tests README, додано manual probe. Сім flags OFF; production/core/config/build/runner unchanged, без нових native sanitizer/NoTests/hardware runs. [Baseline і межі](SECOND_PASS_SCALING_2026-10-18_UA.md), evidence `artifacts/second-pass-scaling-20261018/`.
 

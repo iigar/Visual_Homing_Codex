@@ -161,6 +161,22 @@ all denominator groups, and campaign-wide review/split rejection before launch.
 Fixtures are related synthetic pixels/labels, not independent physical captures.
 See [the campaign evidence](../../docs/SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
 
+## Dataset path and mutation characterization
+
+```sh
+python3 scripts/tests/test_second_pass_paths.py -v
+```
+
+12 tests run once in `test-software.sh`. Cover portable component syntax,
+783 character/position cases, native filenames/case, strict containment with
+POSIX and Windows drive/UNC/case path semantics, internal symlinks and root
+aliases, sibling-prefix escapes, cycles/missing files, root/link replacement,
+directory/FIFO/socket rejection and content changes with preserved size/mtime.
+Hash checks cover consumed bytes, expected digests and mutation during reading.
+Windows pure-path cases do not claim Windows filesystem/junction acceptance.
+The same suite passes before and after the path optimization; closed archive
+symlink rejection remains covered by bundle/collection/audit suites.
+
 ## Second-pass campaign scaling probe (manual, Linux)
 
 ```sh

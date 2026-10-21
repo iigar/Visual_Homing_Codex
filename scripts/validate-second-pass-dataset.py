@@ -22,6 +22,7 @@ U64 = (1 << 64) - 1
 I64 = (1 << 63) - 1
 MAX_ROWS = 100000
 MAX_PIXELS = 64 * 1024 * 1024
+FORBIDDEN_PATH_CHARACTER = re.compile(r"[\\:,\x00-\x1f]")
 FRAME_FIELDS = "sequence frame_id timestamp_ns path sha256 width height".split()
 LABEL_FIELDS = ("frame_id location reference_index_min reference_index_max "
                 "endpoint direction visibility evidence_id").split()
@@ -200,14 +201,17 @@ class Dataset:
 
     def path(self, value):
         string(value, "path")
-        require(not any(c in value for c in "\\:,\r\n") and
-                not any(ord(c) < 32 for c in value) and value == value.strip(),
+        require(not FORBIDDEN_PATH_CHARACTER.search(value) and value == value.strip(),
                 value, "expected portable relative path without comma/control/colon/backslash")
         parts = value.split("/")
         require(all(p not in ("", ".", "..") and p == p.strip() for p in parts), value,
                 "absolute, empty, dot or parent path component")
         path = resolved(self.root / value)
-        require(self.root in path.parents, value, "path escapes dataset root")
+        # Only the ancestor with root's component count can equal root. Keep
+        # Path equality (including native drive/case semantics), not a prefix.
+        depth = len(path.parts) - len(self.root.parts)
+        require(depth > 0 and path.parents[depth - 1] == self.root,
+                value, "path escapes dataset root")
         require(stat.S_ISREG(path.stat().st_mode), value, "expected regular file")
         return path
 

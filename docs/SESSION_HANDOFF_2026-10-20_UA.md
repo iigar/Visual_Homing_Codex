@@ -1,5 +1,10 @@
 # Visual_Homing: handoff для нової сесії
 
+Оновлення `2026-10-21`: описаний нижче path/containment slice завершено;
+див. [результати та наступний inventory slice](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md)
+і [current status](CURRENT_PROJECT_STATUS_UA.md). Цей handoff зберігає
+попередній checkpoint та повну чергу; path optimization не починати повторно.
+
 Збережено `2026-10-20` за прямим запитом користувача після переривання
 попередньої спроби збереження. Це документаційний checkpoint: нову
 оптимізацію, зміну policy чи hardware роботу під час збереження не починати.
