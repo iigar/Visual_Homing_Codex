@@ -177,6 +177,22 @@ Windows pure-path cases do not claim Windows filesystem/junction acceptance.
 The same suite passes before and after the path optimization; closed archive
 symlink rejection remains covered by bundle/collection/audit suites.
 
+## Closed archive inventory characterization
+
+```sh
+python3 scripts/tests/test_second_pass_inventory.py -v
+```
+
+12 tests run once in `test-software.sh`. Cover exact nested/empty/hidden/deep/
+wide membership, native Unicode/case and POSIX literal names, relative/dot/root
+aliases, simulated Windows drive/UNC paths, internal/external/broken/cyclic
+symlinks, FIFO/socket rejection, combined file/directory limits, fresh scandir
+and no-follow stat on every call, type/membership mutation, removal before stat,
+error propagation and scan closure. The suite passes before and after the
+inventory optimization. Simulated Windows cases are not native filesystem
+acceptance; bundle/collection/runner suites cover closed-membership rejection,
+hash guards and mutation during complete audits.
+
 ## Second-pass campaign scaling probe (manual, Linux)
 
 ```sh

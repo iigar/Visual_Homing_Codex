@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-10-23
+
+- Resumed on October 22 from 27532ce with matching remote and clean tracked tree. Current status superseded older memory: Dataset.path was already complete, so followed the next inventory slice. No subagents or hardware/output work. Direct source/caller/diff review used because graph metadata remains 6d8f547.
+- Replaced per-entry Path.relative_to/as_posix with a directory-prefix stack in bundle inventory. All fresh scandir/no-follow stat, closed membership/rejection, hash checks and guards retained. Added 12 characterization tests, passed on baseline/candidate and registered in full runner: native/simulated Windows names, aliases, deep/wide/empty membership, symlinks/FIFO/socket, limits, fresh traversal and mutation/error behavior.
+- Fresh 12/24/48 matrix with three samples, separate warmup/profile and unchanged Release binary: campaign medians 4.302/10.975/31.605 -> 3.801/10.087/31.291 s; audit 1.101/2.064/4.049 -> 0.755/1.565/3.009 s. All samples retained; 48-run campaign improvement only 1%, RSS unchanged, warm WSL synthetic scope and host variance explicitly documented. Profile I/O/hash/guard counts exactly equal. All 22 relocated archives / 624 runs / 4992 pairs preserve predictions/metrics/coverage and readonly bytes/mtime.
+- Full WSL Debug/Release CTest 64/64, CLI 7/7, exporter 21/21, runner 23/23, campaign 4/4 each; readiness 15/15, benchmark 5/5, validator 31/31, paths 12/12, inventory 12/12, scorer 27/27, bundle 24/24, collection 27/27, audit 30/30. Recorded 236 source hashes; only checker/runner/tests README changed among previous 235 plus new test. Core/config unchanged, seven flags OFF; no new native sanitizer/NoTests/MSVC/hardware runs. Report INVENTORY_OPTIMIZATION_2026-10-23_UA.md; local evidence artifacts/inventory-overhead-20261022/. Next: independent frame-count scaling with exact oracles before further production optimization.
+
 ## 2026-10-21
 
 - Resumed published 74d73bd with clean tracked status and matching remote. Followed the October 20 path/containment slice; no subagents, hardware or output work. Graph metadata remained 6d8f547, so used direct source/caller/diff review. Production change is confined to Dataset.path: compiled forbidden-character search and one ancestor at root depth, retaining Path equality, fresh strict resolve/stat/read/hash and all existing guards.

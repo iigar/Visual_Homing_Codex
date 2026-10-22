@@ -42,16 +42,18 @@ EXIT_CODES = {"verified": 0, "invalid": 2, "replay_failed": 3, "incomplete": 4}
 
 def inventory(root):
     """Closed bundle: no symlinks, devices, unbound files or hidden peer folders."""
-    files, directories, pending = set(), set(), [root]
+    files, directories, pending = set(), set(), [(root, "")]
     while pending:
-        with os.scandir(pending.pop()) as entries:
+        directory, prefix = pending.pop()
+        with os.scandir(directory) as entries:
             for entry in entries:
-                relative = Path(entry.path).relative_to(root).as_posix()
+                # DirEntry.name is one native component; retain its spelling.
+                relative = prefix + entry.name
                 mode = entry.stat(follow_symlinks=False).st_mode
                 v.require(not stat.S_ISLNK(mode), relative, "bundle symlinks are not supported")
                 if stat.S_ISDIR(mode):
                     directories.add(relative)
-                    pending.append(Path(entry.path))
+                    pending.append((entry.path, relative + "/"))
                 else:
                     v.require(stat.S_ISREG(mode), relative, "expected regular file")
                     files.add(relative)

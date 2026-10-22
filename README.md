@@ -18,6 +18,7 @@ Controlled evaluation execution: [collection runner](docs/SECOND_PASS_COLLECTION
 Saved evaluation request and results: [read-only runner archive audit](docs/SECOND_PASS_RUNNER_AUDIT_UA.md).
 End-to-end synthetic matrix: [multi-dataset campaign validation](docs/SECOND_PASS_CAMPAIGN_2026-10-13_UA.md).
 Offline campaign/audit performance: [run-count scaling baseline](docs/SECOND_PASS_SCALING_2026-10-18_UA.md).
+Latest measured optimization: [closed archive inventory](docs/INVENTORY_OPTIMIZATION_2026-10-23_UA.md).
 
 ## Layout
 

@@ -1,14 +1,17 @@
 # Roadmap
 
-## Current Focus - 2026-10-21
+## Current Focus - 2026-10-23
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
-and [current status](CURRENT_PROJECT_STATUS_UA.md). The baseline in 658220f now
-has a [measured Dataset.path optimization](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md)
-with unchanged fresh filesystem/hash checks and mutation guards. Next: characterize
-and reduce relative-path construction in closed archive inventory, preserving
-every fresh scandir/stat, rejection rule and guard; require equivalence, full-suite
-and same-matrix before/after evidence. No hardware/output or threshold changes. Completed telemetry/timing
+and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
+[Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) and
+[closed inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) optimizations preserve
+fresh filesystem/hash checks and mutation guards. Next: measure frame-count
+scaling at fixed 12 runs / 3 datasets / resolution, with exact frame/prediction/
+coverage oracles; measure resolution separately afterward. Current 8-frame/2x2
+samples do not describe large routes. Use the new profile before selecting
+another production change; retain every fresh check and guard.
+No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 
 The milestone sections below preserve historical evidence and the deferred

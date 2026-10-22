@@ -48,6 +48,7 @@ python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v
 python3 "${repo_dir}/scripts/tests/test_recorded_route_benchmark.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_dataset.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_paths.py" -v
+python3 "${repo_dir}/scripts/tests/test_second_pass_inventory.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_scorer.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_bundle.py" -v
 python3 "${repo_dir}/scripts/tests/test_second_pass_collection.py" -v
