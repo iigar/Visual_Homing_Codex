@@ -25,6 +25,7 @@ import tempfile
 import time
 
 import test_second_pass_campaign as f
+import second_pass_resolution as resolution
 
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[2]
@@ -168,6 +169,7 @@ def worker(job_path):
     image_rss = vm_hwm_kib()
     measurement = dict(phase=job["phase"], runs=len(request["runs"]), profiled=job["profile"],
                        frames_per_dataset=job["frames_per_dataset"],
+                       side_pixels=job["side_pixels"],
                        worker_vm_hwm_kib=image_rss, worker_initial_vm_hwm_kib=initial_hwm,
                        worker_initial_rusage_maxrss_kib=initial_rusage,
                        wall_seconds=elapsed, worker_peak_rss_kib=rss, status=report["status"])
@@ -192,10 +194,11 @@ def worker(job_path):
     write(job_path.with_suffix(".measurement.json"), measurement)
 
 
-def run_pair(root, count, binary, revision, copied_script, profile=False, frames=f.FRAMES):
+def run_pair(root, count, binary, revision, copied_script, profile=False, frames=f.FRAMES, side=2, time_tool=None):
     root.mkdir()
     inputs, archive = root / "inputs", root / "archive"
     request = make_inputs(inputs, frames)
+    request = resolution.apply_resolution(inputs, request, side)
     base = request["runs"]
     request["runs"] = [dict(copy.deepcopy(row), run_id=f"repeat-{repeat:02d}-" + row["run_id"])
                        for repeat in range(count // 12) for row in base]
@@ -204,7 +207,7 @@ def run_pair(root, count, binary, revision, copied_script, profile=False, frames
     results = {}
     for phase in ("runner", "audit"):
         job = dict(phase=phase, inputs=str(inputs), archive=str(archive), binary=str(binary),
-                   revision=revision, profile=profile, frames_per_dataset=frames)
+                   revision=revision, profile=profile, frames_per_dataset=frames, side_pixels=side)
         if phase == "audit":
             before = f.snapshot(archive)
             job.update(plan_sha256=digest(archive / "runner-plan.json"), state_sha256=digest(archive / "runner-state.json"))
@@ -217,7 +220,10 @@ def run_pair(root, count, binary, revision, copied_script, profile=False, frames
             require(before == f.snapshot(archive), "audit mutated archive")
             write(root / "archive-inventory.json", before)
     require(source_before == f.snapshot(inputs), "mutated inputs")
-    print(json.dumps(dict(sample=root.name, **{key: {k: v for k, v in value.items() if k != "oracles"}
+    if time_tool is not None:
+        checked = json.loads((root / "audit.job.report.json").read_text())
+        results["replay_rss"] = resolution.measure_replays(archive, root / "replay-rss", binary, time_tool, checked)
+    print(json.dumps(dict(sample=root.name, **{key: {k: v for k, v in value.items() if k not in ("oracles", "records")}
                                              for key, value in results.items()})), flush=True)
     return results
 
@@ -229,6 +235,8 @@ def main():
     dimension = parser.add_mutually_exclusive_group()
     dimension.add_argument("--runs", type=int, nargs="+", help="vary runs at fixed 8 frames (default: 12 24 48)")
     dimension.add_argument("--frames", type=int, nargs="+", help="vary frames per dataset at fixed 12 runs")
+    dimension.add_argument("--resolution", type=int, nargs="+", help="vary square sides at fixed 64 frames and 12 runs")
+    parser.add_argument("--replay-rss", action="store_true", help="additional trusted replays under GNU Time, outside API timing")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--work-dir", type=Path, default=Path("/tmp"))
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
@@ -238,20 +246,30 @@ def main():
         worker(args.worker)
         return
     require(args.binary is not None and args.output is not None, "--binary and --output required")
-    axis = "frames_per_dataset" if args.frames is not None else "runs"
-    counts = args.frames if args.frames is not None else args.runs or [12, 24, 48]
+    axis = "side_pixels" if args.resolution is not None else "frames_per_dataset" if args.frames is not None else "runs"
+    counts = args.resolution if args.resolution is not None else args.frames if args.frames is not None else args.runs or [12, 24, 48]
     require(len(set(counts)) == len(counts), "counts must be unique")
     if axis == "runs":
         require(all(12 <= n <= 96 and n % 12 == 0 for n in counts), "run counts must be multiples of 12 in [12, 96]")
-    else:
+    elif axis == "frames_per_dataset":
         for count in counts:
             frame_count(count)
+    else:
+        for count in counts:
+            resolution.side_length(count)
+    require(not args.replay_rss or axis == "side_pixels", "--replay-rss requires --resolution")
+    def shape(count):
+        if axis == "runs":
+            return count, f.FRAMES, 2
+        if axis == "frames_per_dataset":
+            return 12, count, 2
+        return 12, 64, count
     require(1 <= args.repeats <= 5, "repeats must be in [1, 5]")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()
     sources = [REPO / "scripts" / name for name in f.a.TOOLS]
-    sources += [SCRIPT.with_name(name) for name in (SCRIPT.name, "test_second_pass_campaign.py",
+    sources += [SCRIPT.with_name(name) for name in (SCRIPT.name, "second_pass_resolution.py", "test_second_pass_campaign.py",
                 "test_second_pass_exporter.py", "test_second_pass_scorer.py", "test_second_pass_dataset.py")]
     source_hashes = {p.relative_to(REPO).as_posix(): digest(p) for p in sources}
     binary_hash = digest(args.binary)
@@ -266,6 +284,14 @@ def main():
         shutil.copy2(args.binary, binary)
         binary.chmod(0o700)
         require(digest(binary) == binary_hash, "binary copy differs")
+        time_tool, time_hash = None, None
+        if args.replay_rss:
+            system_time = Path("/usr/bin/time")
+            time_hash = digest(system_time)
+            time_tool = work / "gnu-time"
+            shutil.copy2(system_time, time_tool)
+            time_tool.chmod(0o700)
+            require(digest(time_tool) == time_hash, "GNU Time copy differs")
         script = work / "source" / SCRIPT.relative_to(REPO)
         summary = dict(schema_version=1, revision_declared=revision, source_sha256=source_hashes,
             binary_sha256=binary_hash, environment=dict(python=sys.version, executable=sys.executable,
@@ -276,28 +302,40 @@ def main():
                             if line.startswith("model name")), "unknown")),
             scope="API wall time; Linux VmHWM current image peak includes imports; legacy getrusage peak may include pre-exec parent; both exclude replay children; warm cache, no eviction",
             dimension=axis, run_counts=counts if axis == "runs" else [12],
-            frame_counts=counts if axis == "frames_per_dataset" else [f.FRAMES],
+            frame_counts=counts if axis == "frames_per_dataset" else [64 if axis == "side_pixels" else f.FRAMES],
+            square_sides=counts if axis == "side_pixels" else [2], time_sha256=time_hash,
             repeats=args.repeats, samples=[], aggregates=[])
-        run_pair(work / "warmup", 12, binary, revision, script)
+        run_pair(work / "warmup", 12, binary, revision, script,
+                 frames=64 if axis == "side_pixels" else f.FRAMES, time_tool=time_tool)
         # Round-robin sizes reduce confounding from a monotonic size/time order.
         for repeat in range(args.repeats):
             for count in counts:
-                runs, frames = (count, f.FRAMES) if axis == "runs" else (12, count)
+                runs, frames, side = shape(count)
                 name = f"{axis}-{count:02d}-repeat-{repeat:02d}"
-                result = run_pair(work / name, runs, binary, revision, script, frames=frames)
-                summary["samples"].append(dict(sample=name, runs=runs, frames_per_dataset=frames, phases=result))
+                result = run_pair(work / name, runs, binary, revision, script, frames=frames, side=side, time_tool=time_tool)
+                summary["samples"].append(dict(sample=name, runs=runs, frames_per_dataset=frames, side_pixels=side, phases=result))
                 write(output / "summary.partial.json", summary)
         for count in counts:
             for phase in ("runner", "audit"):
                 samples = [s["phases"][phase] for s in summary["samples"] if s[axis] == count]
-                runs, frames = (count, f.FRAMES) if axis == "runs" else (12, count)
-                summary["aggregates"].append(dict(runs=runs, frames_per_dataset=frames, phase=phase, **{key: dict(
+                runs, frames, side = shape(count)
+                summary["aggregates"].append(dict(runs=runs, frames_per_dataset=frames, side_pixels=side, phase=phase, **{key: dict(
                     median=statistics.median(s[key] for s in samples), minimum=min(s[key] for s in samples),
                     maximum=max(s[key] for s in samples)) for key in ("wall_seconds", "worker_peak_rss_kib", "worker_vm_hwm_kib")}))
-        runs, frames = (max(counts), f.FRAMES) if axis == "runs" else (12, max(counts))
-        summary["profile"] = run_pair(work / "profile", runs, binary, revision, script, profile=True, frames=frames)
+        if time_tool is not None:
+            summary["replay_rss_aggregates"] = []
+            for side in counts:
+                records = [row for sample in summary["samples"] if sample["side_pixels"] == side
+                           for row in sample["phases"]["replay_rss"]["records"]]
+                values = [row["max_rss_kib"] for row in records]
+                summary["replay_rss_aggregates"].append(dict(side_pixels=side, executions=len(records),
+                    max_rss_kib=dict(median=statistics.median(values), minimum=min(values), maximum=max(values))))
+        runs, frames, side = shape(max(counts))
+        summary["profile"] = run_pair(work / "profile", runs, binary, revision, script, profile=True, frames=frames, side=side, time_tool=time_tool)
         require(source_hashes == {p.relative_to(REPO).as_posix(): digest(p) for p in sources}, "source changed during probe")
         require(digest(args.binary) == binary_hash, "binary changed during probe")
+        if time_tool is not None:
+            require(digest(time_tool) == time_hash and digest(Path("/usr/bin/time")) == time_hash, "GNU Time changed during probe")
         for phase in ("runner", "audit"):
             for suffix in ("profile.txt", "profile.json", "pstats"):
                 shutil.copy2(work / "profile" / f"{phase}.job.{suffix}", output / f"{phase}.{suffix}")

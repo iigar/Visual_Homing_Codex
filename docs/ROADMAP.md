@@ -1,19 +1,23 @@
 # Roadmap
 
-## Current Focus - 2026-10-23
+## Current Focus - 2026-10-24
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
 [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) and
 [closed inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) optimizations preserve
-fresh filesystem/hash checks and mutation guards. The new
+fresh filesystem/hash checks and mutation guards. The
 [frame-count baseline](FRAME_COUNT_SCALING_2026-10-23_UA.md) covers 8/64/256 query
 frames at fixed 12 runs / 3 datasets / 4 references / 2x2 pixels, with exact
-oracles and separate VmHWM versus inherited getrusage peaks. Next: resolution
-scaling at fixed frame/run/dataset/reference counts, first characterizing pixel/
-preprocessing oracles without tuning matcher thresholds. Define C++ child memory
-scope separately from Python worker VmHWM. Current 2x2 samples do not describe
-real routes. Use new profiling before another production change; retain all guards.
+oracles and separate VmHWM versus inherited getrusage peaks. The new
+[resolution baseline](RESOLUTION_SCALING_2026-10-24_UA.md) covers 2x2/32x32/128x128
+at fixed 64 frames / 12 runs / 3 datasets / 4 references. Identity and 2:1
+downsampling tests preserve thresholds/oracles; separate trusted C++ diagnostics
+measure per-child RSS outside API timing, with matching CSVs and unchanged archives.
+Next: dataset-count scaling. First characterize catalog/peer/coverage contracts
+and separate catalog size from run count, holding frames, geometry, reference
+count, config and policy fixed. Repeated synthetic quadrants do not describe
+real routes or accuracy. Use fresh profiling before production changes; retain all guards.
 No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 

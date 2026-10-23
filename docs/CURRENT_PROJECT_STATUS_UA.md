@@ -1,15 +1,15 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-23` (frame-count scaling, уточнення RSS та нова software validation).
+Оновлено: `2026-10-24` (resolution scaling та окремі C++ RSS diagnostics).
 
-Для нової сесії: [frame-count scaling і next resolution step](FRAME_COUNT_SCALING_2026-10-23_UA.md),
+Для нової сесії: [resolution scaling і наступний dataset-count step](RESOLUTION_SCALING_2026-10-24_UA.md),
 потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
-Продовжено `48f551e`; path/inventory slices і frame-count baseline завершено. Актуальний
+Продовжено `9ac0172`; path/inventory slices, frame-count і resolution baselines завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-При сталих 12 runs / 3 datasets / 4 references / 2×2 pixels виміряно **8/64/256 query frames**. Campaign API медіани **3.777/12.517/42.170 с**, audit **0.768/2.746/9.663 с**; worker VmHWM campaign **30.82/34.95/47.40 MiB**, audit **32.50/41.70/73.72 MiB**. Виявлено й відтворено pre-exec parent floor у `ru_maxrss`; raw значення збережено поряд з новим VmHWM. Обидва виключають C++ children; це synthetic warm WSL measurements, не Pi/accuracy acceptance. Production C++/Python/config та всі guards незмінені. [Метод, обидві матриці та межі RSS](FRAME_COUNT_SCALING_2026-10-23_UA.md); завершені [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) оптимізації збережені.
+При сталих 64 query frames / 12 runs / 3 datasets / 4 references виміряно **2×2 / 32×32 / 128×128 pixels**. Campaign API медіани **12.530/13.064/17.272 с**, audit **2.696/2.864/3.732 с**; worker VmHWM **34.95/34.82/35.07 MiB** та **41.55/41.67/41.68 MiB** відповідно. Окремі trusted C++ diagnostics поза API time дали median peak RSS **4.000/4.000/4.125 MiB**; це не simultaneous process-tree peak. Geometry tests характеризують identity і 2:1 downsampling без зміни thresholds; repeated quadrants не є real-camera/accuracy evidence. Production C++/Python/config і всі guards незмінені. [Метод та межі](RESOLUTION_SCALING_2026-10-24_UA.md); попередні [frame-count](FRAME_COUNT_SCALING_2026-10-23_UA.md), [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) результати збережені.
 
-Наступний bounded software крок — resolution scaling при сталих frame/run/dataset/reference counts. Спочатку geometry/pixel/preprocessing oracles, потім API time і VmHWM; окремо визначити C++ child memory scope. Не змінювати matcher thresholds заради synthetic fixtures. Новий profile визначить наступну production оптимізацію; зберегти fresh filesystem/content checks і всі guards. Поточні 2×2 виміри не характеризують реальні routes. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
+Наступний bounded software крок — dataset-count scaling: спочатку characterize catalog/peer/coverage contracts і сформувати матрицю, яка відділяє catalog size від run count; зафіксувати frames/resolution/reference/config/policy та exact oracles. Profile досі показує значну вартість повторних filesystem/content перевірок; production оптимізацію обирати лише з новим evidence, зберігши всі fresh checks/guards. Не змінювати matcher thresholds заради synthetic fixtures. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -33,6 +33,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Resolution scaling (`2026-10-24`): нові **7/7** tests на Debug і Release; full CTest **64/64**, CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4**, frame scaling **6/6** кожна; common readiness **15/15**, benchmark **5/5**, validator **31/31**, paths/inventory **12/12** кожна, scorer **27/27**, bundle **24/24**, collection **27/27**, audit **30/30**. **11 archives / 132 runs / 8448 pairs** пройшли read-only relocation audit з однаковими predictions/metrics/coverage та raw CSV між resolutions; **132** окремих child RSS records звірено, archive bytes/mtime незмінні. Старі `--runs`/`--frames` smokes пройшли. **239** source hashes; production/core/config незмінені, сім flags OFF; без нових native sanitizer/NoTests/MSVC/hardware runs. [Звіт і межі RSS](RESOLUTION_SCALING_2026-10-24_UA.md), evidence `artifacts/resolution-scaling-20261024/`.
 
 - Frame-count scaling (`2026-10-23`): нові scaling tests **6/6** на Debug і Release, full CTest **64/64**, CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4** кожна; readiness **15/15**, benchmark **5/5**, validator **31/31**, paths/inventory **12/12** кожна, scorer **27/27**, bundle **24/24**, collection **27/27**, audit **30/30**. Дві повні 8/64/256-frame матриці; усі **22 archives / 264 runs / 29952 pairs** проходять read-only relocation audit, повтори й passes мають однакові predictions/metrics/coverage для відповідних frame counts. Counts integrity operations збігаються. Окремо пройшов старий `--runs` smoke. **237** source hashes; production/core/config незмінені, сім flags OFF, без нових native sanitizer/NoTests/MSVC/hardware runs. [Звіт і RSS caveat](FRAME_COUNT_SCALING_2026-10-23_UA.md), evidence `artifacts/frame-scaling-20261023/`.
 

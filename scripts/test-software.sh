@@ -13,7 +13,7 @@ if [[ ! "${jobs}" =~ ^[1-9][0-9]*$ ]]; then
     echo "VISUAL_HOMING_TEST_JOBS must be a positive integer" >&2
     exit 2
 fi
-for dependency in cmake ctest ninja python3; do
+for dependency in cmake ctest ninja python3 /usr/bin/time; do
     if ! command -v "${dependency}" >/dev/null 2>&1; then
         echo "Required software-test dependency is missing: ${dependency}" >&2
         exit 2
@@ -43,6 +43,7 @@ for configuration in Debug Release; do
     python3 "${repo_dir}/scripts/tests/test_second_pass_collection_runner.py" "${build_dir}/second_pass_replay" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_campaign.py" "${build_dir}/second_pass_replay" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_scaling.py" "${build_dir}/second_pass_replay" -v
+    python3 "${repo_dir}/scripts/tests/test_second_pass_resolution.py" "${build_dir}/second_pass_replay" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v

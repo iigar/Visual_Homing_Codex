@@ -20,6 +20,7 @@ End-to-end synthetic matrix: [multi-dataset campaign validation](docs/SECOND_PAS
 Offline campaign/audit performance: [run-count scaling baseline](docs/SECOND_PASS_SCALING_2026-10-18_UA.md).
 Latest measured optimization: [closed archive inventory](docs/INVENTORY_OPTIMIZATION_2026-10-23_UA.md).
 Query frame scaling and RSS scope: [frame-count measurements](docs/FRAME_COUNT_SCALING_2026-10-23_UA.md).
+Pixel scaling and separate C++ RSS: [resolution measurements](docs/RESOLUTION_SCALING_2026-10-24_UA.md).
 
 ## Layout
 
@@ -48,7 +49,8 @@ On Linux/WSL, run the Debug/Release core and CLI suites plus the offline Python 
 bash scripts/test-software.sh
 ```
 
-The runner needs a C++20 compiler, CMake, Ninja, Python 3 and Bash. It explicitly
+The runner needs a C++20 compiler, CMake, Ninja, Python 3.11+, Bash and GNU Time
+at `/usr/bin/time` (the `time` package on Debian/Ubuntu). It explicitly
 disables all seven camera/output build options and retains test assertions in
 Release. Builds go under `core/build-software`; an optional first argument selects
 another build parent. `VISUAL_HOMING_TEST_JOBS` selects build parallelism (default 2).

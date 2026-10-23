@@ -195,6 +195,8 @@ hash guards and mutation during complete audits.
 
 ## Scaling probe regression checks (Linux)
 
+These checks and the manual probe require Python 3.11+ (`hashlib.file_digest`).
+
 ```sh
 python3 scripts/tests/test_second_pass_scaling.py path/to/second_pass_replay -v
 ```
@@ -205,6 +207,20 @@ fixed reference/config/policy inputs, count validation before creation, actual
 16-frame replay with hand-calculated confusion counts, read-only relocation
 without execution, and oracle rejection of corrupted reports/predictions.
 No performance thresholds; the measurements below remain outside the runner.
+
+## Resolution and replay RSS regression checks (Linux)
+
+```sh
+python3 scripts/tests/test_second_pass_resolution.py path/to/second_pass_replay -v
+```
+
+Seven tests run for Debug and Release in `test-software.sh`; GNU Time at
+`/usr/bin/time` is required. Cover quadrant pixels, unchanged 2x2 inputs,
+dimension validation, VHRS/PGM geometry and hash bindings, unchanged thresholds,
+actual 32x32 identity versus 64x64-to-32x32 downsampling with equal predictions
+and independently calculated confusion counts, trusted diagnostic replay CSVs,
+unchanged archives, rejection of modified plans/binary mismatches before launch,
+and process-group cleanup on timeout/interruption. No performance thresholds.
 
 ## Second-pass campaign scaling probe (manual, Linux)
 
@@ -217,9 +233,14 @@ python3 scripts/tests/benchmark_second_pass_campaign.py \
 python3 scripts/tests/benchmark_second_pass_campaign.py \
   --binary path/to/second_pass_replay --output path/to/new-frame-evidence \
   --frames 8 64 256 --repeats 3 --work-dir /tmp
+
+# Vary square geometry; retain 64 frames, 12 runs, 3 datasets, 4 references.
+python3 scripts/tests/benchmark_second_pass_campaign.py \
+  --binary path/to/second_pass_replay --output path/to/new-resolution-evidence \
+  --resolution 2 32 128 --replay-rss --repeats 3 --work-dir /tmp
 ```
 
-Copies the seven trusted Python tools, four fixture modules, probe and local
+Copies the seven trusted Python tools, four fixture modules, geometry helper, probe and local
 binary to temporary storage. Uses one excluded 12-run warmup, fresh workers
 for runner/audit, round-robin sizes, and a separate largest-size cProfile run.
 In `--runs` mode the matrix repeats the existing 12-run synthetic fixture with
@@ -238,10 +259,27 @@ The native evidence tarball contains all samples, inputs, copied sources/binary,
 reports and profiles. Timing runs are deliberately outside `test-software.sh`.
 See [the measured baseline](../../docs/SECOND_PASS_SCALING_2026-10-18_UA.md).
 
-`--frames` and `--runs` are mutually exclusive. Frame counts are unique multiples
+`--frames`, `--runs` and `--resolution` are mutually exclusive. Frame counts are unique multiples
 of eight in [8, 512]; the default remains run-count scaling at eight frames.
 The frame mode repeats the explicit eight-frame pixel/label block with separate
 PGM files, monotonically increasing source IDs/timestamps and updated bindings.
 All run/split/dataset denominators, per-frame match/validity/unsupported gates,
 scaled TP/FP/FN, positive/negative/unscorable coverage and readonly audits are
 checked. Repeated synthetic pixels do not add independent physical evidence.
+
+Resolution sides are unique even integers in [2, 256]. Each original pixel
+becomes a constant quadrant; query/reference dimensions and configuration target
+sizes change together, while thresholds, policies, labels, IDs and timestamps
+stay fixed. The measured matrix uses identity preprocessing; a separate actual
+replay test characterizes exact 2:1 downsampling. This does not characterize
+arbitrary real-camera geometry, texture, noise or noninteger scaling.
+
+Optional `--replay-rss` requires resolution mode and copies/hash-binds GNU Time.
+After each completed API pair, it runs 12 additional diagnostics with the trusted
+external replay binary and verified frozen plan arguments. Archived executables
+are never used; stdout must match the bound raw CSV digest and archive bytes/mtime
+must remain unchanged. `%M` records each child process peak in KiB; these extra
+runs are outside API timings. They do not measure simultaneous process-tree peak
+or add accuracy evidence. Sources, executable/tool hashes, CSVs and raw RSS values
+are included in the native tarball. See
+[the resolution evidence](../../docs/RESOLUTION_SCALING_2026-10-24_UA.md).
