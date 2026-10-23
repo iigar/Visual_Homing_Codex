@@ -44,7 +44,58 @@ def write(path, value):
     f.e.write_json(path, value)
 
 
-def verify_collection(report, request, archive, inputs):
+def frame_count(value):
+    require(type(value) is int and 8 <= value <= 512 and value % 8 == 0,
+            "frame counts must be multiples of 8 in [8, 512]")
+    return value
+
+
+def vm_hwm_kib():
+    # Current executable image peak; getrusage can retain the pre-exec peak.
+    for line in Path("/proc/self/status").read_text().splitlines():
+        if line.startswith("VmHWM:"):
+            _, value, unit = line.split()
+            require(unit == "kB" and int(value) > 0, "invalid Linux VmHWM")
+            return int(value)
+    raise RuntimeError("Linux /proc/self/status has no VmHWM")
+
+
+def make_inputs(inputs, frames):
+    """Repeat the fixed eight-frame block, keeping references/config/policy fixed."""
+    frame_count(frames)
+    request = f.make_campaign(inputs)
+    if frames == f.FRAMES:
+        return request
+    for dataset in request["datasets"]:
+        root = inputs / dataset["path"]
+        meta = f.read(root, "dataset.json")
+        with (root / "frames.csv").open(newline="") as stream:
+            source = list(csv.DictReader(stream))
+        with (root / "labels.csv").open(newline="") as stream:
+            labels = list(csv.DictReader(stream))
+        expanded, annotations = [], []
+        for index in range(frames):
+            original, label = source[index % f.FRAMES], labels[index % f.FRAMES]
+            identity = dict(sequence=str(index), frame_id=str(int(source[0]["frame_id"]) + index),
+                            timestamp_ns=str(int(source[0]["timestamp_ns"]) + index * 100))
+            path = f"frames/{index}.pgm"
+            if index >= f.FRAMES:
+                shutil.copyfile(root / original["path"], root / path)
+            expanded.append({**original, **identity, "path": path})
+            annotations.append({**label, "frame_id": identity["frame_id"]})
+        meta["sequence"].update(acquired_count=frames, stored_count=frames)
+        meta["sequence"]["actual"].update(last_frame_id=int(expanded[-1]["frame_id"]),
+                                          last_timestamp_ns=int(expanded[-1]["timestamp_ns"]))
+        f.t.t.fixtures.save_dataset(root, meta, expanded, annotations)
+        validation = f.v.validate_datasets([root])
+        require(validation["status"] == "structurally_valid", str(validation))
+        dataset["input_sha256"] = validation["datasets"][0]["input_sha256"]
+    write(inputs / "request.json", request)
+    return request
+
+
+def verify_collection(report, request, archive, inputs, frames=f.FRAMES):
+    blocks = frame_count(frames) // f.FRAMES
     require(report["status"] == "verified", str(report.get("errors")))
     for flag in ("archive_integrity_verified", "saved_report_reproduced", "results_released"):
         require(report[flag] is True, flag)
@@ -59,8 +110,8 @@ def verify_collection(report, request, archive, inputs):
     for coverage, rows in groups:
         counts = {key: len(rows) if key == "verified" else 0 for key in f.c.RUN_STATES}
         require(coverage == dict(expected_runs=len(rows), runs_by_status=counts,
-            expected_frame_run_pairs=f.FRAMES * len(rows),
-            frame_run_pairs_by_status={key: n * f.FRAMES for key, n in counts.items()},
+            expected_frame_run_pairs=frames * len(rows),
+            frame_run_pairs_by_status={key: n * frames for key, n in counts.items()},
             all_runs_verified=True), "coverage differs from full request")
     predictions, metrics = [], []
     for index, (requested, row) in enumerate(zip(request["runs"], collection["runs"])):
@@ -70,20 +121,28 @@ def verify_collection(report, request, archive, inputs):
         require(bundle["peer_scope"]["peer_ids"] == [s for s in f.SPLITS if s != requested["dataset_id"]], "peers")
         require(bundle["peer_scope"]["disjoint_references"] is True, "reference scope")
         metric = bundle["score"]["metrics"]
-        require(tuple(metric[key] for key in ("tp", "fp", "fn")) == f.expected_metrics(requested), "metric oracle")
-        require(metric["recall"]["denominator"] == (6 if config_policy[1] == "inclusive" else 5), "positive denominator")
-        require(metric["prediction_coverage"] == dict(numerator=8, denominator=8, value=1), "prediction coverage")
+        require(tuple(metric[key] for key in ("tp", "fp", "fn")) ==
+                tuple(n * blocks for n in f.expected_metrics(requested)), "metric oracle")
+        require(metric["frames"] == frames, "metric frame count")
+        require(metric["recall"]["denominator"] == (6 if config_policy[1] == "inclusive" else 5) * blocks, "positive denominator")
+        require(metric["prediction_coverage"] == dict(numerator=frames, denominator=frames, value=1), "prediction coverage")
+        require(metric["unscorable_fraction"]["numerator"] ==
+                (1 if config_policy[1] == "inclusive" else 2) * blocks, "unscorable denominator")
+        require(metric["negative_prediction_coverage"] == dict(numerator=blocks, denominator=blocks, value=1), "negative coverage")
         path = archive / "collection" / row["path"] / "predictions.csv"
         with path.open(newline="") as stream:
             actual = list(csv.DictReader(stream))
         with (inputs / requested["dataset_id"] / "frames.csv").open(newline="") as stream:
             source = list(csv.DictReader(stream))
-        require(len(actual) == len(source) == f.FRAMES, "frame count")
+        require(len(actual) == len(source) == frames, "frame count")
         for i, (prediction, frame) in enumerate(zip(actual, source)):
             require(all(prediction[key] == frame[key] for key in ("sequence", "frame_id", "timestamp_ns")), "source identity")
-            expected = f.MATCHES[i] if config_policy[0] == "near" else None
+            expected = f.MATCHES[i % f.FRAMES] if config_policy[0] == "near" else None
             require(prediction["reference_index"] == ("" if expected is None else str(expected)), "prediction oracle")
             require(prediction["observation"] == "observed", "missing prediction")
+            valid = "true" if expected is not None else "false"
+            require(prediction["match_valid"] == prediction["navigation_command_valid"] == valid, "validity oracle")
+            require(all(prediction[key] == "" for key in f.c.b.UNSUPPORTED), "unsupported gate")
         predictions.append(digest(path))
         metrics.append(metric)
     return dict(coverage=collection["coverage"], prediction_sha256=predictions, metrics=metrics)
@@ -96,6 +155,7 @@ def worker(job_path):
     action = (lambda: f.r.run(inputs / "request.json", archive, Path(job["binary"]), job["revision"])) \
         if job["phase"] == "runner" else (lambda: f.a.check(archive, job["plan_sha256"], job["state_sha256"]))
     profiler = cProfile.Profile() if job["profile"] else None
+    initial_hwm, initial_rusage = vm_hwm_kib(), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     started = time.perf_counter()
     if profiler:
         profiler.enable()
@@ -105,7 +165,11 @@ def worker(job_path):
     elapsed = time.perf_counter() - started
     # Capture before oracle checks, output serialization and profiler formatting.
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    image_rss = vm_hwm_kib()
     measurement = dict(phase=job["phase"], runs=len(request["runs"]), profiled=job["profile"],
+                       frames_per_dataset=job["frames_per_dataset"],
+                       worker_vm_hwm_kib=image_rss, worker_initial_vm_hwm_kib=initial_hwm,
+                       worker_initial_rusage_maxrss_kib=initial_rusage,
                        wall_seconds=elapsed, worker_peak_rss_kib=rss, status=report["status"])
     require(report["status"] == "verified", str(report.get("errors")))
     if job["phase"] == "runner":
@@ -113,7 +177,7 @@ def worker(job_path):
         require(report["exporter_calls"] == len(request["runs"]), "exporter count")
         require(all(row["status"] == "verified" for row in report["runs"]), "non-verified slot")
     else:
-        measurement["oracles"] = verify_collection(report, request, archive, inputs)
+        measurement["oracles"] = verify_collection(report, request, archive, inputs, job["frames_per_dataset"])
     write(job_path.with_suffix(".report.json"), report)
     if profiler:
         profiler.dump_stats(str(job_path.with_suffix(".pstats")))
@@ -128,10 +192,10 @@ def worker(job_path):
     write(job_path.with_suffix(".measurement.json"), measurement)
 
 
-def run_pair(root, count, binary, revision, copied_script, profile=False):
+def run_pair(root, count, binary, revision, copied_script, profile=False, frames=f.FRAMES):
     root.mkdir()
     inputs, archive = root / "inputs", root / "archive"
-    request = f.make_campaign(inputs)
+    request = make_inputs(inputs, frames)
     base = request["runs"]
     request["runs"] = [dict(copy.deepcopy(row), run_id=f"repeat-{repeat:02d}-" + row["run_id"])
                        for repeat in range(count // 12) for row in base]
@@ -140,7 +204,7 @@ def run_pair(root, count, binary, revision, copied_script, profile=False):
     results = {}
     for phase in ("runner", "audit"):
         job = dict(phase=phase, inputs=str(inputs), archive=str(archive), binary=str(binary),
-                   revision=revision, profile=profile)
+                   revision=revision, profile=profile, frames_per_dataset=frames)
         if phase == "audit":
             before = f.snapshot(archive)
             job.update(plan_sha256=digest(archive / "runner-plan.json"), state_sha256=digest(archive / "runner-state.json"))
@@ -162,7 +226,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--runs", type=int, nargs="+", default=[12, 24, 48])
+    dimension = parser.add_mutually_exclusive_group()
+    dimension.add_argument("--runs", type=int, nargs="+", help="vary runs at fixed 8 frames (default: 12 24 48)")
+    dimension.add_argument("--frames", type=int, nargs="+", help="vary frames per dataset at fixed 12 runs")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--work-dir", type=Path, default=Path("/tmp"))
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
@@ -172,8 +238,14 @@ def main():
         worker(args.worker)
         return
     require(args.binary is not None and args.output is not None, "--binary and --output required")
-    require(all(12 <= n <= 96 and n % 12 == 0 for n in args.runs) and len(set(args.runs)) == len(args.runs),
-            "unique run counts must be multiples of 12 in [12, 96]")
+    axis = "frames_per_dataset" if args.frames is not None else "runs"
+    counts = args.frames if args.frames is not None else args.runs or [12, 24, 48]
+    require(len(set(counts)) == len(counts), "counts must be unique")
+    if axis == "runs":
+        require(all(12 <= n <= 96 and n % 12 == 0 for n in counts), "run counts must be multiples of 12 in [12, 96]")
+    else:
+        for count in counts:
+            frame_count(count)
     require(1 <= args.repeats <= 5, "repeats must be in [1, 5]")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -202,23 +274,28 @@ def main():
             filesystem=subprocess.check_output(["stat", "-f", "-c", "%T", str(work)], text=True).strip(),
             cpu_model=next((line.split(":", 1)[1].strip() for line in Path("/proc/cpuinfo").read_text().splitlines()
                             if line.startswith("model name")), "unknown")),
-            scope="API wall time; fresh Python worker self peak RSS in KiB, excludes replay children; warm cache, no eviction",
-            run_counts=args.runs, repeats=args.repeats, samples=[], aggregates=[])
+            scope="API wall time; Linux VmHWM current image peak includes imports; legacy getrusage peak may include pre-exec parent; both exclude replay children; warm cache, no eviction",
+            dimension=axis, run_counts=counts if axis == "runs" else [12],
+            frame_counts=counts if axis == "frames_per_dataset" else [f.FRAMES],
+            repeats=args.repeats, samples=[], aggregates=[])
         run_pair(work / "warmup", 12, binary, revision, script)
         # Round-robin sizes reduce confounding from a monotonic size/time order.
         for repeat in range(args.repeats):
-            for count in args.runs:
-                name = f"runs-{count:02d}-repeat-{repeat:02d}"
-                result = run_pair(work / name, count, binary, revision, script)
-                summary["samples"].append(dict(sample=name, runs=count, phases=result))
+            for count in counts:
+                runs, frames = (count, f.FRAMES) if axis == "runs" else (12, count)
+                name = f"{axis}-{count:02d}-repeat-{repeat:02d}"
+                result = run_pair(work / name, runs, binary, revision, script, frames=frames)
+                summary["samples"].append(dict(sample=name, runs=runs, frames_per_dataset=frames, phases=result))
                 write(output / "summary.partial.json", summary)
-        for count in args.runs:
+        for count in counts:
             for phase in ("runner", "audit"):
-                samples = [s["phases"][phase] for s in summary["samples"] if s["runs"] == count]
-                summary["aggregates"].append(dict(runs=count, phase=phase, **{key: dict(
+                samples = [s["phases"][phase] for s in summary["samples"] if s[axis] == count]
+                runs, frames = (count, f.FRAMES) if axis == "runs" else (12, count)
+                summary["aggregates"].append(dict(runs=runs, frames_per_dataset=frames, phase=phase, **{key: dict(
                     median=statistics.median(s[key] for s in samples), minimum=min(s[key] for s in samples),
-                    maximum=max(s[key] for s in samples)) for key in ("wall_seconds", "worker_peak_rss_kib")}))
-        summary["profile"] = run_pair(work / "profile", max(args.runs), binary, revision, script, profile=True)
+                    maximum=max(s[key] for s in samples)) for key in ("wall_seconds", "worker_peak_rss_kib", "worker_vm_hwm_kib")}))
+        runs, frames = (max(counts), f.FRAMES) if axis == "runs" else (12, max(counts))
+        summary["profile"] = run_pair(work / "profile", runs, binary, revision, script, profile=True, frames=frames)
         require(source_hashes == {p.relative_to(REPO).as_posix(): digest(p) for p in sources}, "source changed during probe")
         require(digest(args.binary) == binary_hash, "binary changed during probe")
         for phase in ("runner", "audit"):

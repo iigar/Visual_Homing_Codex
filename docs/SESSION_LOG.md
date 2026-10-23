@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-10-23 — Frame-count scaling
+
+- Resumed published 48f551e, matching remote and clean tracked tree. Extended only the manual campaign probe and test runner for fixed-12-run 8/64/256 query-frame measurements; 3 datasets, 4 reference frames, geometry/config/policy remain fixed. Production sources unchanged, no subagents/hardware/output changes. Graph metadata still 6d8f547; direct source/diff review used.
+- Added six scaling tests per build: byte-identical original fixture, expanded files/IDs/timestamps/labels/hash/geometry, invalid counts before creation, actual 16-frame hand-calculated oracles, corruption rejection and read-only relocation without execution. Frame and run modes are mutually exclusive; compatibility --runs 12 smoke passed.
+- First full matrix revealed inherited pre-exec ru_maxrss values. Preserved all evidence, reproduced the parent/child RSS discrepancy, added current-image VmHWM and initial measurements alongside the original field, then repeated the full matrix. Final 8/64/256 medians: campaign 3.777/12.517/42.170 s, audit 0.768/2.746/9.663 s; VmHWM 30.82/34.95/47.40 and 32.50/41.70/73.72 MiB respectively. Warm WSL API scope, approximate kernel accounting and excluded child RSS documented; no production speedup claim.
+- Both passes pass hash-bound readback/relocation: 22 archives / 264 runs / 29952 pairs, exact same-count predictions/metrics/coverage, unchanged bytes/mtime and equal selected integrity profile counts. Full Debug/Release CTest 64/64, CLI 7/7, exporter 21/21, runner 23/23, campaign 4/4, scaling 6/6 each; readiness 15/15, benchmark 5/5, validator 31/31, paths/inventory 12/12 each, scorer 27/27, bundle 24/24, collection 27/27, audit 30/30. Recorded 237 source hashes; production/core/config unchanged, seven flags OFF, no new native sanitizer/NoTests/MSVC/hardware runs. Report FRAME_COUNT_SCALING_2026-10-23_UA.md; local evidence artifacts/frame-scaling-20261023/. Next: resolution scaling with characterized oracles and explicit child-memory scope.
+
 ## 2026-10-23
 
 - Resumed on October 22 from 27532ce with matching remote and clean tracked tree. Current status superseded older memory: Dataset.path was already complete, so followed the next inventory slice. No subagents or hardware/output work. Direct source/caller/diff review used because graph metadata remains 6d8f547.

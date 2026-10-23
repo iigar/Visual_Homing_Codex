@@ -42,6 +42,7 @@ for configuration in Debug Release; do
     python3 "${repo_dir}/scripts/tests/test_second_pass_exporter.py" "${build_dir}/second_pass_replay" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_collection_runner.py" "${build_dir}/second_pass_replay" -v
     python3 "${repo_dir}/scripts/tests/test_second_pass_campaign.py" "${build_dir}/second_pass_replay" -v
+    python3 "${repo_dir}/scripts/tests/test_second_pass_scaling.py" "${build_dir}/second_pass_replay" -v
 done
 
 python3 "${repo_dir}/scripts/tests/test_readiness_logs.py" -v

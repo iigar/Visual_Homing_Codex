@@ -193,26 +193,55 @@ inventory optimization. Simulated Windows cases are not native filesystem
 acceptance; bundle/collection/runner suites cover closed-membership rejection,
 hash guards and mutation during complete audits.
 
+## Scaling probe regression checks (Linux)
+
+```sh
+python3 scripts/tests/test_second_pass_scaling.py path/to/second_pass_replay -v
+```
+
+Six tests run for Debug and Release in `test-software.sh`. Verify byte-identical
+eight-frame fixtures, expanded file/ID/timestamp/label/hash/geometry contracts,
+fixed reference/config/policy inputs, count validation before creation, actual
+16-frame replay with hand-calculated confusion counts, read-only relocation
+without execution, and oracle rejection of corrupted reports/predictions.
+No performance thresholds; the measurements below remain outside the runner.
+
 ## Second-pass campaign scaling probe (manual, Linux)
 
 ```sh
 python3 scripts/tests/benchmark_second_pass_campaign.py \
   --binary path/to/second_pass_replay --output path/to/new-evidence \
   --runs 12 24 48 --repeats 3 --work-dir /tmp
+
+# Vary only query frame count; retain 12 runs, 3 datasets, 4 references, 2x2 pixels.
+python3 scripts/tests/benchmark_second_pass_campaign.py \
+  --binary path/to/second_pass_replay --output path/to/new-frame-evidence \
+  --frames 8 64 256 --repeats 3 --work-dir /tmp
 ```
 
 Copies the seven trusted Python tools, four fixture modules, probe and local
 binary to temporary storage. Uses one excluded 12-run warmup, fresh workers
 for runner/audit, round-robin sizes, and a separate largest-size cProfile run.
-Each matrix repeats the existing 12-run synthetic fixture with unique run IDs;
-dataset/frame sizes stay fixed. Every sample must pass full coverage, prediction
+In `--runs` mode the matrix repeats the existing 12-run synthetic fixture with
+unique run IDs; dataset/frame sizes stay fixed. Every sample must pass full coverage, prediction
 and metric oracles; audits must leave bytes/mtime unchanged. Failures abort the
 probe rather than being dropped from averages. No retries or performance gates.
 
 Wall time covers the API call; imports, fixture creation, oracle checks and
-evidence persistence are excluded. Peak RSS is the Linux Python worker's own
-high-water mark (KiB), including imports and excluding replay child processes;
-it is not simultaneous whole-process-tree memory. Warm cache, no cache eviction.
+evidence persistence are excluded. `worker_vm_hwm_kib` reads Linux `/proc/self/status`
+VmHWM for the current executable image, including imports. The original
+`worker_peak_rss_kib` retains getrusage ru_maxrss, which can include pre-exec
+parent memory; initial values are also recorded to expose this floor. Both
+exclude replay children, are kernel accounting estimates and are not simultaneous
+whole-process-tree memory or isolated API allocation. Warm cache, no eviction.
 The native evidence tarball contains all samples, inputs, copied sources/binary,
 reports and profiles. Timing runs are deliberately outside `test-software.sh`.
 See [the measured baseline](../../docs/SECOND_PASS_SCALING_2026-10-18_UA.md).
+
+`--frames` and `--runs` are mutually exclusive. Frame counts are unique multiples
+of eight in [8, 512]; the default remains run-count scaling at eight frames.
+The frame mode repeats the explicit eight-frame pixel/label block with separate
+PGM files, monotonically increasing source IDs/timestamps and updated bindings.
+All run/split/dataset denominators, per-frame match/validity/unsupported gates,
+scaled TP/FP/FN, positive/negative/unscorable coverage and readonly audits are
+checked. Repeated synthetic pixels do not add independent physical evidence.

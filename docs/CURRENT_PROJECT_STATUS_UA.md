@@ -1,15 +1,15 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-23` (closed inventory optimization та нова software validation).
+Оновлено: `2026-10-23` (frame-count scaling, уточнення RSS та нова software validation).
 
-Для нової сесії: [останній inventory slice і next scaling step](INVENTORY_OPTIMIZATION_2026-10-23_UA.md),
+Для нової сесії: [frame-count scaling і next resolution step](FRAME_COUNT_SCALING_2026-10-23_UA.md),
 потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
-Продовжено `27532ce`; path та inventory slices завершено. Актуальний
+Продовжено `48f551e`; path/inventory slices і frame-count baseline завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-У closed archive `inventory()` relative paths будуються з directory prefix і `DirEntry.name`; повторний Path parsing прибрано. Fresh scandir/no-follow stat, closed membership, symlink/nonregular rejection, hashes і всі guards збережені. Нові before/after 12/24/48-run медіани audit **1.101/2.064/4.049 → 0.755/1.565/3.009 с** (24–31%); campaign **4.302/10.975/31.605 → 3.801/10.087/31.291 с**. Для 48-run campaign зміна лише 1%; RSS приблизно незмінний. Це synthetic warm WSL API measurements, не performance guarantee або Pi/accuracy evidence. [Метод, profile та межі](INVENTORY_OPTIMIZATION_2026-10-23_UA.md); попередній [Dataset.path slice](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) та [scaling baseline](SECOND_PASS_SCALING_2026-10-18_UA.md) збережені.
+При сталих 12 runs / 3 datasets / 4 references / 2×2 pixels виміряно **8/64/256 query frames**. Campaign API медіани **3.777/12.517/42.170 с**, audit **0.768/2.746/9.663 с**; worker VmHWM campaign **30.82/34.95/47.40 MiB**, audit **32.50/41.70/73.72 MiB**. Виявлено й відтворено pre-exec parent floor у `ru_maxrss`; raw значення збережено поряд з новим VmHWM. Обидва виключають C++ children; це synthetic warm WSL measurements, не Pi/accuracy acceptance. Production C++/Python/config та всі guards незмінені. [Метод, обидві матриці та межі RSS](FRAME_COUNT_SCALING_2026-10-23_UA.md); завершені [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) оптимізації збережені.
 
-Наступний bounded software крок — frame-count scaling при сталих 12 runs / 3 datasets / resolution з exact frame/prediction/coverage oracles; потім окремо resolution. Новий profile визначить наступну production оптимізацію. Зберегти fresh filesystem/content checks, closed inventory, hashes і guards; не кешувати перевірки. Поточні 8-frame/2×2 виміри не характеризують великі routes. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
+Наступний bounded software крок — resolution scaling при сталих frame/run/dataset/reference counts. Спочатку geometry/pixel/preprocessing oracles, потім API time і VmHWM; окремо визначити C++ child memory scope. Не змінювати matcher thresholds заради synthetic fixtures. Новий profile визначить наступну production оптимізацію; зберегти fresh filesystem/content checks і всі guards. Поточні 2×2 виміри не характеризують реальні routes. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -33,6 +33,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Frame-count scaling (`2026-10-23`): нові scaling tests **6/6** на Debug і Release, full CTest **64/64**, CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4** кожна; readiness **15/15**, benchmark **5/5**, validator **31/31**, paths/inventory **12/12** кожна, scorer **27/27**, bundle **24/24**, collection **27/27**, audit **30/30**. Дві повні 8/64/256-frame матриці; усі **22 archives / 264 runs / 29952 pairs** проходять read-only relocation audit, повтори й passes мають однакові predictions/metrics/coverage для відповідних frame counts. Counts integrity operations збігаються. Окремо пройшов старий `--runs` smoke. **237** source hashes; production/core/config незмінені, сім flags OFF, без нових native sanitizer/NoTests/MSVC/hardware runs. [Звіт і RSS caveat](FRAME_COUNT_SCALING_2026-10-23_UA.md), evidence `artifacts/frame-scaling-20261023/`.
 
 - Inventory slice (`2026-10-23`): **12/12** characterization tests до/після; full WSL Debug/Release CTest **64/64**, CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4** кожна; readiness **15/15**, benchmark **5/5**, validator **31/31**, paths **12/12**, scorer **27/27**, bundle **24/24**, collection **27/27**, audit **30/30**. Усі 22 benchmark archives / 624 runs / 4992 pairs мають exact predictions/metrics/coverage equivalence і повторний read-only relocation audit без зміни bytes/mtime. Profile counts scandir/no-follow stat/resolve/read/hash/guard збігаються. **236** source hashes; із попередніх 235 змінено лише bundle checker, runner і tests README, додано inventory tests. Core/config незмінені, сім flags OFF; без нових native sanitizer/NoTests/MSVC/hardware runs. [Звіт](INVENTORY_OPTIMIZATION_2026-10-23_UA.md), evidence `artifacts/inventory-overhead-20261022/`.
 
