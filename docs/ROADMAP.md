@@ -14,10 +14,15 @@ oracles and separate VmHWM versus inherited getrusage peaks. The new
 at fixed 64 frames / 12 runs / 3 datasets / 4 references. Identity and 2:1
 downsampling tests preserve thresholds/oracles; separate trusted C++ diagnostics
 measure per-child RSS outside API timing, with matching CSVs and unchanged archives.
-Next: dataset-count scaling. First characterize catalog/peer/coverage contracts
-and separate catalog size from run count, holding frames, geometry, reference
-count, config and policy fixed. Repeated synthetic quadrants do not describe
-real routes or accuracy. Use fresh profiling before production changes; retain all guards.
+The new [dataset-count baseline](DATASET_COUNT_SCALING_2026-10-24_UA.md) covers
+3/6/12 catalog entries with unchanged twelve replay workloads: eight frames,
+32x32 pixels and four references. Same-split copies retain capture/content;
+4/2/1 runs per entry keep total/split coverage fixed. They add no independent data.
+Next: isolate path-object construction/normalization cost before fresh resolve
+in Dataset.path, guided by the new 12-entry profile. Keep prior character-scan/
+containment semantics, every fresh filesystem/content check and mutation guard.
+Only retain a replacement if characterized equivalence and measurements support
+it; otherwise record a no-change result. Synthetic fixtures do not establish accuracy.
 No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 

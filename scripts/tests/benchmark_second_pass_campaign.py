@@ -26,6 +26,7 @@ import time
 
 import test_second_pass_campaign as f
 import second_pass_resolution as resolution
+import second_pass_catalog as catalog
 
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[2]
@@ -104,10 +105,18 @@ def verify_collection(report, request, archive, inputs, frames=f.FRAMES):
         require(report[flag] is False, flag)
     collection = report["collection"]
     require(len(collection["runs"]) == len(request["runs"]), "dropped run")
+    datasets = {row["dataset_id"]: row for row in request["datasets"]}
+    splits = {row["split"] for row in datasets.values()}
+    require(set(collection["by_dataset"]) == set(datasets), "dataset coverage keys")
+    require(set(collection["by_split"]) == splits, "split coverage keys")
     groups = [(collection["coverage"], request["runs"])]
-    for split in f.SPLITS:
-        rows = [row for row in request["runs"] if row["dataset_id"] == split]
-        groups.extend((collection[key][split], rows) for key in ("by_dataset", "by_split"))
+    for did in datasets:
+        rows = [row for row in request["runs"] if row["dataset_id"] == did]
+        require(rows, "catalog dataset without runs")
+        groups.append((collection["by_dataset"][did], rows))
+    for split in splits:
+        rows = [row for row in request["runs"] if datasets[row["dataset_id"]]["split"] == split]
+        groups.append((collection["by_split"][split], rows))
     for coverage, rows in groups:
         counts = {key: len(rows) if key == "verified" else 0 for key in f.c.RUN_STATES}
         require(coverage == dict(expected_runs=len(rows), runs_by_status=counts,
@@ -119,7 +128,7 @@ def verify_collection(report, request, archive, inputs, frames=f.FRAMES):
         require((row["run_id"], row["dataset_id"], row["path"], row["status"]) ==
                 (requested["run_id"], requested["dataset_id"], f"bundles/{index:04d}", "verified"), "run identity")
         bundle, config_policy = row["bundle"], f.variants(requested)
-        require(bundle["peer_scope"]["peer_ids"] == [s for s in f.SPLITS if s != requested["dataset_id"]], "peers")
+        require(bundle["peer_scope"]["peer_ids"] == [did for did in datasets if did != requested["dataset_id"]], "peers")
         require(bundle["peer_scope"]["disjoint_references"] is True, "reference scope")
         metric = bundle["score"]["metrics"]
         require(tuple(metric[key] for key in ("tp", "fp", "fn")) ==
@@ -133,7 +142,7 @@ def verify_collection(report, request, archive, inputs, frames=f.FRAMES):
         path = archive / "collection" / row["path"] / "predictions.csv"
         with path.open(newline="") as stream:
             actual = list(csv.DictReader(stream))
-        with (inputs / requested["dataset_id"] / "frames.csv").open(newline="") as stream:
+        with (inputs / datasets[requested["dataset_id"]]["path"] / "frames.csv").open(newline="") as stream:
             source = list(csv.DictReader(stream))
         require(len(actual) == len(source) == frames, "frame count")
         for i, (prediction, frame) in enumerate(zip(actual, source)):
@@ -170,6 +179,7 @@ def worker(job_path):
     measurement = dict(phase=job["phase"], runs=len(request["runs"]), profiled=job["profile"],
                        frames_per_dataset=job["frames_per_dataset"],
                        side_pixels=job["side_pixels"],
+                       dataset_count=len(request["datasets"]),
                        worker_vm_hwm_kib=image_rss, worker_initial_vm_hwm_kib=initial_hwm,
                        worker_initial_rusage_maxrss_kib=initial_rusage,
                        wall_seconds=elapsed, worker_peak_rss_kib=rss, status=report["status"])
@@ -194,11 +204,12 @@ def worker(job_path):
     write(job_path.with_suffix(".measurement.json"), measurement)
 
 
-def run_pair(root, count, binary, revision, copied_script, profile=False, frames=f.FRAMES, side=2, time_tool=None):
+def run_pair(root, count, binary, revision, copied_script, profile=False, frames=f.FRAMES, side=2, time_tool=None, datasets=3):
     root.mkdir()
     inputs, archive = root / "inputs", root / "archive"
     request = make_inputs(inputs, frames)
     request = resolution.apply_resolution(inputs, request, side)
+    request = catalog.expand_catalog(inputs, request, datasets)
     base = request["runs"]
     request["runs"] = [dict(copy.deepcopy(row), run_id=f"repeat-{repeat:02d}-" + row["run_id"])
                        for repeat in range(count // 12) for row in base]
@@ -236,6 +247,7 @@ def main():
     dimension.add_argument("--runs", type=int, nargs="+", help="vary runs at fixed 8 frames (default: 12 24 48)")
     dimension.add_argument("--frames", type=int, nargs="+", help="vary frames per dataset at fixed 12 runs")
     dimension.add_argument("--resolution", type=int, nargs="+", help="vary square sides at fixed 64 frames and 12 runs")
+    dimension.add_argument("--datasets", type=int, nargs="+", help="vary 3/6/12 catalog entries at fixed 12 runs, 8 frames, 32x32 pixels")
     parser.add_argument("--replay-rss", action="store_true", help="additional trusted replays under GNU Time, outside API timing")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--work-dir", type=Path, default=Path("/tmp"))
@@ -246,30 +258,36 @@ def main():
         worker(args.worker)
         return
     require(args.binary is not None and args.output is not None, "--binary and --output required")
-    axis = "side_pixels" if args.resolution is not None else "frames_per_dataset" if args.frames is not None else "runs"
-    counts = args.resolution if args.resolution is not None else args.frames if args.frames is not None else args.runs or [12, 24, 48]
+    axis, counts = next(((axis, values) for axis, values in (
+        ("dataset_count", args.datasets), ("side_pixels", args.resolution),
+        ("frames_per_dataset", args.frames), ("runs", args.runs)) if values is not None), ("runs", [12, 24, 48]))
     require(len(set(counts)) == len(counts), "counts must be unique")
     if axis == "runs":
         require(all(12 <= n <= 96 and n % 12 == 0 for n in counts), "run counts must be multiples of 12 in [12, 96]")
     elif axis == "frames_per_dataset":
         for count in counts:
             frame_count(count)
-    else:
+    elif axis == "side_pixels":
         for count in counts:
             resolution.side_length(count)
+    else:
+        for count in counts:
+            catalog.dataset_count(count)
     require(not args.replay_rss or axis == "side_pixels", "--replay-rss requires --resolution")
     def shape(count):
         if axis == "runs":
-            return count, f.FRAMES, 2
+            return count, f.FRAMES, 2, 3
         if axis == "frames_per_dataset":
-            return 12, count, 2
-        return 12, 64, count
+            return 12, count, 2, 3
+        if axis == "side_pixels":
+            return 12, 64, count, 3
+        return 12, f.FRAMES, 32, count
     require(1 <= args.repeats <= 5, "repeats must be in [1, 5]")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()
     sources = [REPO / "scripts" / name for name in f.a.TOOLS]
-    sources += [SCRIPT.with_name(name) for name in (SCRIPT.name, "second_pass_resolution.py", "test_second_pass_campaign.py",
+    sources += [SCRIPT.with_name(name) for name in (SCRIPT.name, "second_pass_resolution.py", "second_pass_catalog.py", "test_second_pass_campaign.py",
                 "test_second_pass_exporter.py", "test_second_pass_scorer.py", "test_second_pass_dataset.py")]
     source_hashes = {p.relative_to(REPO).as_posix(): digest(p) for p in sources}
     binary_hash = digest(args.binary)
@@ -303,23 +321,25 @@ def main():
             scope="API wall time; Linux VmHWM current image peak includes imports; legacy getrusage peak may include pre-exec parent; both exclude replay children; warm cache, no eviction",
             dimension=axis, run_counts=counts if axis == "runs" else [12],
             frame_counts=counts if axis == "frames_per_dataset" else [64 if axis == "side_pixels" else f.FRAMES],
-            square_sides=counts if axis == "side_pixels" else [2], time_sha256=time_hash,
+            square_sides=counts if axis == "side_pixels" else [32 if axis == "dataset_count" else 2],
+            dataset_counts=counts if axis == "dataset_count" else [3], time_sha256=time_hash,
             repeats=args.repeats, samples=[], aggregates=[])
         run_pair(work / "warmup", 12, binary, revision, script,
-                 frames=64 if axis == "side_pixels" else f.FRAMES, time_tool=time_tool)
+                 frames=64 if axis == "side_pixels" else f.FRAMES,
+                 side=32 if axis == "dataset_count" else 2, time_tool=time_tool)
         # Round-robin sizes reduce confounding from a monotonic size/time order.
         for repeat in range(args.repeats):
             for count in counts:
-                runs, frames, side = shape(count)
+                runs, frames, side, datasets = shape(count)
                 name = f"{axis}-{count:02d}-repeat-{repeat:02d}"
-                result = run_pair(work / name, runs, binary, revision, script, frames=frames, side=side, time_tool=time_tool)
-                summary["samples"].append(dict(sample=name, runs=runs, frames_per_dataset=frames, side_pixels=side, phases=result))
+                result = run_pair(work / name, runs, binary, revision, script, frames=frames, side=side, time_tool=time_tool, datasets=datasets)
+                summary["samples"].append(dict(sample=name, runs=runs, frames_per_dataset=frames, side_pixels=side, dataset_count=datasets, phases=result))
                 write(output / "summary.partial.json", summary)
         for count in counts:
             for phase in ("runner", "audit"):
                 samples = [s["phases"][phase] for s in summary["samples"] if s[axis] == count]
-                runs, frames, side = shape(count)
-                summary["aggregates"].append(dict(runs=runs, frames_per_dataset=frames, side_pixels=side, phase=phase, **{key: dict(
+                runs, frames, side, datasets = shape(count)
+                summary["aggregates"].append(dict(runs=runs, frames_per_dataset=frames, side_pixels=side, dataset_count=datasets, phase=phase, **{key: dict(
                     median=statistics.median(s[key] for s in samples), minimum=min(s[key] for s in samples),
                     maximum=max(s[key] for s in samples)) for key in ("wall_seconds", "worker_peak_rss_kib", "worker_vm_hwm_kib")}))
         if time_tool is not None:
@@ -330,8 +350,8 @@ def main():
                 values = [row["max_rss_kib"] for row in records]
                 summary["replay_rss_aggregates"].append(dict(side_pixels=side, executions=len(records),
                     max_rss_kib=dict(median=statistics.median(values), minimum=min(values), maximum=max(values))))
-        runs, frames, side = shape(max(counts))
-        summary["profile"] = run_pair(work / "profile", runs, binary, revision, script, profile=True, frames=frames, side=side, time_tool=time_tool)
+        runs, frames, side, datasets = shape(max(counts))
+        summary["profile"] = run_pair(work / "profile", runs, binary, revision, script, profile=True, frames=frames, side=side, time_tool=time_tool, datasets=datasets)
         require(source_hashes == {p.relative_to(REPO).as_posix(): digest(p) for p in sources}, "source changed during probe")
         require(digest(args.binary) == binary_hash, "binary changed during probe")
         if time_tool is not None:

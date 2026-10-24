@@ -21,6 +21,7 @@ Offline campaign/audit performance: [run-count scaling baseline](docs/SECOND_PAS
 Latest measured optimization: [closed archive inventory](docs/INVENTORY_OPTIMIZATION_2026-10-23_UA.md).
 Query frame scaling and RSS scope: [frame-count measurements](docs/FRAME_COUNT_SCALING_2026-10-23_UA.md).
 Pixel scaling and separate C++ RSS: [resolution measurements](docs/RESOLUTION_SCALING_2026-10-24_UA.md).
+Catalog scaling with fixed replay work: [dataset-count measurements](docs/DATASET_COUNT_SCALING_2026-10-24_UA.md).
 
 ## Layout
 

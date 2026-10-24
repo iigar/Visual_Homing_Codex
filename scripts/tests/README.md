@@ -222,6 +222,19 @@ and independently calculated confusion counts, trusted diagnostic replay CSVs,
 unchanged archives, rejection of modified plans/binary mismatches before launch,
 and process-group cleanup on timeout/interruption. No performance thresholds.
 
+## Catalog scaling regression checks (Linux)
+
+```sh
+python3 scripts/tests/test_second_pass_catalog.py path/to/second_pass_replay -v
+```
+
+Seven tests run for Debug and Release. Cover unchanged three-dataset fixtures,
+3/6/12-entry content/binding/assignment contracts, full ordered peer lists,
+actual replay equality with independent confusion counts, unused catalog and
+cross-split leakage rejection before launch, corrupted coverage/peer oracles,
+and read-only relocation without execution. Same-split copies preserve capture
+identity and content; they do not represent independent physical data.
+
 ## Second-pass campaign scaling probe (manual, Linux)
 
 ```sh
@@ -238,9 +251,14 @@ python3 scripts/tests/benchmark_second_pass_campaign.py \
 python3 scripts/tests/benchmark_second_pass_campaign.py \
   --binary path/to/second_pass_replay --output path/to/new-resolution-evidence \
   --resolution 2 32 128 --replay-rss --repeats 3 --work-dir /tmp
+
+# Vary catalog entries; retain twelve workloads, eight frames and 32x32 pixels.
+python3 scripts/tests/benchmark_second_pass_campaign.py \
+  --binary path/to/second_pass_replay --output path/to/new-catalog-evidence \
+  --datasets 3 6 12 --repeats 3 --work-dir /tmp
 ```
 
-Copies the seven trusted Python tools, four fixture modules, geometry helper, probe and local
+Copies the seven trusted Python tools, four fixture modules, geometry/catalog helpers, probe and local
 binary to temporary storage. Uses one excluded 12-run warmup, fresh workers
 for runner/audit, round-robin sizes, and a separate largest-size cProfile run.
 In `--runs` mode the matrix repeats the existing 12-run synthetic fixture with
@@ -259,7 +277,7 @@ The native evidence tarball contains all samples, inputs, copied sources/binary,
 reports and profiles. Timing runs are deliberately outside `test-software.sh`.
 See [the measured baseline](../../docs/SECOND_PASS_SCALING_2026-10-18_UA.md).
 
-`--frames`, `--runs` and `--resolution` are mutually exclusive. Frame counts are unique multiples
+`--frames`, `--runs`, `--resolution` and `--datasets` are mutually exclusive. Frame counts are unique multiples
 of eight in [8, 512]; the default remains run-count scaling at eight frames.
 The frame mode repeats the explicit eight-frame pixel/label block with separate
 PGM files, monotonically increasing source IDs/timestamps and updated bindings.
@@ -283,3 +301,13 @@ runs are outside API timings. They do not measure simultaneous process-tree peak
 or add accuracy evidence. Sources, executable/tool hashes, CSVs and raw RSS values
 are included in the native tarball. See
 [the resolution evidence](../../docs/RESOLUTION_SCALING_2026-10-24_UA.md).
+
+Dataset counts are unique choices from 3, 6 and 12. One/two/four catalog entries
+per split share identical files except dataset IDs in metadata. Each split's
+four unchanged config/policy runs are assigned round-robin: 4/2/1 runs per entry,
+always 12 runs / 96 frame-run pairs overall and four runs per split. Every entry
+is used; every run includes all other catalog entries as peers. Replay payloads,
+IDs/timestamps, references, thresholds and policies stay fixed. This deliberately
+varies catalog storage and peer validation without increasing C++ work; per-entry
+config/policy coverage changes, and the copies add no independent data. See
+[the dataset-count evidence](../../docs/DATASET_COUNT_SCALING_2026-10-24_UA.md).
