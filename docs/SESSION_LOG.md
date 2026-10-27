@@ -1,5 +1,12 @@
 # Session Log
 
+## 2026-10-27 — Path-construction experiment completed without a code change
+
+- Resumed published 5acd288; experiment started October 25 with clean tracked tree and matching remote. Compared the existing Dataset.path operator with two local constructor substitutions, preserving all path/content/mutation guards. Production source never edited. Software-only; no agents/hardware/output changes, direct source/caller review with stale graph 6d8f547 noted.
+- Three variants each passed 12 path/mutation tests; 40 additional POSIX/Windows lexical cases passed. Seven rotated micro rounds gave construction medians 7.49/6.79/6.52 us and full lookup 67.05/65.42/67.98 us; equal resolve/stat counts. Materialized string conversion avoids bare-constructor lazy-parsing timings.
+- One previously hash-bound 12-dataset archive audited 27 times in fresh workers: three warmups, 21 timed samples, three separate profiles. Exact full reports/oracles, unchanged archive bytes/mtime and matching integrity counts; archived programs never executed. Audit medians 5.489/5.926/6.046 s did not support a candidate gain; retained current operator. Host variance and warm native WSL scope explicit. No campaign rerun or new full suite for rejected candidates and unchanged source.
+- Verified all 241 source hashes against 5acd288 and seven OFF flags per Debug/Release cache. Documentation-only checkpoint; previous 333 Python / 64 CTest per build are not presented as new runs. Report PATH_CONSTRUCTION_2026-10-25_UA.md, ignored local evidence artifacts/path-construction-20261025/. Next: 8/64-frame larger-archive baseline at fixed 12 catalog datasets / 12 runs / 32x32 / four references, exact oracles, worker VmHWM and read-only relocation. Fresh-worker measurements do not establish cold-cache cost; broader queue and hardware gates retained.
+
 ## 2026-10-24 — Dataset-count scaling
 
 - Resumed published 87ee902 with matching remote and clean tracked tree. Read runner/catalog/validator contracts: every catalog entry needs a run, same-split duplicate captures/content are allowed, and cross-split leakage checks remain. Added --datasets 3/6/12 at fixed twelve replay workloads, eight frames, 32x32 pixels and four references. Round-robin ownership gives 4/2/1 runs per entry, always four per split and 96 global pairs. Same-split copies retain identities/content; per-entry config/policy coverage changes, no independent data claim. Production code/config unchanged; no agents/hardware/output work. Graph remains 6d8f547, direct source/diff/tests fallback.

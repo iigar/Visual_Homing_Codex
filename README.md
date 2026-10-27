@@ -22,6 +22,7 @@ Latest measured optimization: [closed archive inventory](docs/INVENTORY_OPTIMIZA
 Query frame scaling and RSS scope: [frame-count measurements](docs/FRAME_COUNT_SCALING_2026-10-23_UA.md).
 Pixel scaling and separate C++ RSS: [resolution measurements](docs/RESOLUTION_SCALING_2026-10-24_UA.md).
 Catalog scaling with fixed replay work: [dataset-count measurements](docs/DATASET_COUNT_SCALING_2026-10-24_UA.md).
+Path construction experiment with no retained code change: [measurements and decision](docs/PATH_CONSTRUCTION_2026-10-25_UA.md).
 
 ## Layout
 

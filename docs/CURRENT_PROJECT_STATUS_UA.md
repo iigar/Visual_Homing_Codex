@@ -1,15 +1,15 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-24` (dataset-count scaling при сталих replay workloads).
+Оновлено: `2026-10-27` (path-construction experiment завершено без production зміни).
 
-Для нової сесії: [dataset-count scaling і наступний path-construction step](DATASET_COUNT_SCALING_2026-10-24_UA.md),
+Для нової сесії: [path-construction результат і наступний large-archive baseline](PATH_CONSTRUCTION_2026-10-25_UA.md),
 потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
-Продовжено `87ee902`; path/inventory slices, frame/resolution/dataset-count baselines завершено. Актуальний
+Продовжено `5acd288`; path/inventory slices, frame/resolution/dataset-count baselines і path-construction experiment завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-Виміряно **3 / 6 / 12 datasets** при сталих **12 runs / 8 query frames / 32×32 pixels / 4 references**. Same-split catalog copies отримують 4/2/1 незмінних runs; загалом завжди 96 frame-run pairs, 4 runs на split. Campaign API медіани **5.362/8.885/15.185 с**, audit **1.146/1.804/3.323 с**; worker VmHWM **31.03/31.78/33.53 MiB** та **32.66/34.03/36.78 MiB** відповідно. Копії зберігають capture identities/content і не додають незалежних даних; per-entry config/policy coverage змінюється. Production C++/Python/config і всі guards незмінені. [Метод та межі](DATASET_COUNT_SCALING_2026-10-24_UA.md); попередні [resolution і child RSS](RESOLUTION_SCALING_2026-10-24_UA.md), [frame-count](FRAME_COUNT_SCALING_2026-10-23_UA.md), [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) результати збережені.
+Порівняно `root / value`, `Path(root, value)` і `Path(os.path.join(root, value))` зі збереженими fresh resolve/stat/hash checks. Constructor зменшив micro lookup median на 2.4%, але full audit median **5.489/5.926/6.046 с** не підтвердив виграшу кандидатів. **Production replacement відхилено**; 12 path/mutation tests на кожний варіант, 40 lexical cases, 27 однакових read-only audits одного архіву, однакові integrity counts і всі 241 source hashes. Новий full runner не запускався — production/tests/build/config bytes незмінні. [Метод, host variance та межі](PATH_CONSTRUCTION_2026-10-25_UA.md). Попередні [catalog](DATASET_COUNT_SCALING_2026-10-24_UA.md), [resolution/RSS](RESOLUTION_SCALING_2026-10-24_UA.md), [frames](FRAME_COUNT_SCALING_2026-10-23_UA.md), [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) результати збережені.
 
-Наступний bounded software крок — ізолювати path-object construction/normalization cost перед fresh resolve у `Dataset.path()`. Новий 12-entry profile: path 18.924 с cumulative із 31.062 с campaign; це включає обов'язкові I/O checks, тому спочатку відділити representation overhead від syscall cost. Заміна лише за виміряного виграшу, із незмінними strict resolve/stat, native containment/symlink semantics, content hashes і mutation guards; інакше зафіксувати no-change result. Character scan/containment попереднього slice зберегти. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
+Наступний bounded software крок — large-archive baseline: **8/64 query frames при сталих 12 catalog datasets / 12 runs / 32×32 / 4 references**. Одна змінна, exact oracles/coverage/peers, campaign/audit samples і worker VmHWM, read-only relocation та bytes/mtime checks. Fresh filesystem/content/mutation guards зберегти; нова оптимізація лише за профілем і виміряним виграшем. Cold-cache evidence потребує окремої методики; fresh worker не означає cold cache. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -33,6 +33,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Path-construction experiment (`2026-10-25`, завершено `2026-10-27`): **12/12** path/mutation tests для трьох локальних варіантів, **40** POSIX/Windows lexical cases, **27** read-only audits одного hash-bound relocated archive з exact reports/oracles і незмінними bytes/mtime. Сім timed rounds на варіант плюс окремі warmup/profile; integrity call counts однакові. **241 source hashes** незмінні від `5acd288`, сім flags OFF. Production replacement відхилено через непідтверджений API виграш; full suite не перезапускали. [Звіт](PATH_CONSTRUCTION_2026-10-25_UA.md), evidence `artifacts/path-construction-20261025/`.
 
 - Dataset-count scaling (`2026-10-24`): нові catalog tests **7/7** на Debug і Release; full CTest **64/64**, CLI **7/7**, exporter **21/21**, runner **23/23**, campaign **4/4**, frame scaling **6/6**, resolution **7/7** кожна; common suites **15/5/31/12/12/27/24/27/30**, усі пройшли, загалом **333 Python tests** без skips/failures. **11 archives / 132 runs / 1056 pairs** пройшли read-only relocation з однаковими workloads/raw CSV/predictions/metrics, правильним per-entry/split coverage і всіма peers, незмінними bytes/mtime. Compatibility `--runs`, `--frames`, `--resolution --replay-rss` пройшли. **241** source hash; production/core/config незмінені, сім flags OFF, без native sanitizer/NoTests/MSVC/hardware runs. [Звіт](DATASET_COUNT_SCALING_2026-10-24_UA.md), evidence `artifacts/dataset-scaling-20261024/`.
 

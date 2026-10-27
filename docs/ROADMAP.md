@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-10-24
+## Current Focus - 2026-10-27
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -18,11 +18,16 @@ The new [dataset-count baseline](DATASET_COUNT_SCALING_2026-10-24_UA.md) covers
 3/6/12 catalog entries with unchanged twelve replay workloads: eight frames,
 32x32 pixels and four references. Same-split copies retain capture/content;
 4/2/1 runs per entry keep total/split coverage fixed. They add no independent data.
-Next: isolate path-object construction/normalization cost before fresh resolve
-in Dataset.path, guided by the new 12-entry profile. Keep prior character-scan/
-containment semantics, every fresh filesystem/content check and mutation guard.
-Only retain a replacement if characterized equivalence and measurements support
-it; otherwise record a no-change result. Synthetic fixtures do not establish accuracy.
+The [path-construction experiment](PATH_CONSTRUCTION_2026-10-25_UA.md) retained
+the existing operator: smaller construction timings did not produce an audit
+gain. All 241 source hashes remain unchanged; three candidates passed path
+characterization and 27 audits of one archive had identical reports/integrity counts.
+Next: larger-archive baseline with 8/64 query frames at fixed 12 catalog datasets,
+12 runs, 32x32 pixels and four references. Keep exact oracles/coverage/peers,
+record campaign/audit samples and worker VmHWM, and verify read-only relocation.
+Preserve every fresh filesystem/content check and mutation guard. Fresh workers
+do not imply cold cache; separate cache studies remain queued. Synthetic fixtures
+do not establish accuracy.
 No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 
