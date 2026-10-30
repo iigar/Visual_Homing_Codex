@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-10-27
+## Current Focus - 2026-10-30
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -20,14 +20,19 @@ The new [dataset-count baseline](DATASET_COUNT_SCALING_2026-10-24_UA.md) covers
 4/2/1 runs per entry keep total/split coverage fixed. They add no independent data.
 The [path-construction experiment](PATH_CONSTRUCTION_2026-10-25_UA.md) retained
 the existing operator: smaller construction timings did not produce an audit
-gain. All 241 source hashes remain unchanged; three candidates passed path
+gain. All 241 source hashes were unchanged in that experiment; three candidates passed path
 characterization and 27 audits of one archive had identical reports/integrity counts.
-Next: larger-archive baseline with 8/64 query frames at fixed 12 catalog datasets,
-12 runs, 32x32 pixels and four references. Keep exact oracles/coverage/peers,
-record campaign/audit samples and worker VmHWM, and verify read-only relocation.
-Preserve every fresh filesystem/content check and mutation guard. Fresh workers
-do not imply cold cache; separate cache studies remain queued. Synthetic fixtures
-do not establish accuracy.
+The [large-archive baseline](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md) now covers
+8/64 query frames at fixed 12 catalog datasets / 12 runs / 32x32 / four references.
+Campaign medians 11.603/52.264 s and audit 2.748/10.981 s retain exact oracles,
+coverage/peers and read-only relocation for eight archives / 96 runs / 3456 pairs.
+Full Debug/Release CTest 64/64 and all 343 Python tests passed; production unchanged.
+Next: fifteen unprofiled warm read-only audits of one hash-bound 64-frame archive
+in fresh workers after separate warmup, with all samples, VmHWM, median/range and
+descriptive p90 using an explicit estimator. Preserve normalized reports/oracles,
+bytes/mtime and every fresh filesystem/content/mutation check. Do not infer p99
+or tail guarantees from fifteen samples. Fresh workers do not imply cold cache;
+separate cache studies remain queued. Synthetic fixtures do not establish accuracy.
 No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.
 

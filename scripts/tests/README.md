@@ -311,3 +311,23 @@ IDs/timestamps, references, thresholds and policies stay fixed. This deliberatel
 varies catalog storage and peer validation without increasing C++ work; per-entry
 config/policy coverage changes, and the copies add no independent data. See
 [the dataset-count evidence](../../docs/DATASET_COUNT_SCALING_2026-10-24_UA.md).
+
+`--frames 8 64 --large-archive` varies frames with twelve catalog datasets,
+twelve runs, 32x32 pixels and four reference frames. The switch requires explicit
+frame mode; existing defaults stay unchanged. Same-split catalog copies retain
+capture identities/content. Coverage grows from 96 to 768 frame-run pairs while
+each run keeps all eleven peers. Warmup uses the same twelve-entry, 32x32 shape
+at eight frames; only timed samples enter aggregates. No cold-cache claim.
+
+```sh
+python3 scripts/tests/benchmark_second_pass_campaign.py \
+  --binary path/to/second_pass_replay --output artifacts/large-archive-new \
+  --frames 8 64 --large-archive --repeats 3 --work-dir /tmp
+python3 scripts/tests/test_second_pass_large_archive.py path/to/second_pass_replay -v
+```
+
+Five integration tests run on Debug and Release in `test-software.sh`: composed
+frame/catalog/geometry inputs, fixed references/settings/capture identities,
+actual hand-calculated confusion counts and per-entry/split coverage, corrupt
+coverage/missing-peer rejection, read-only relocation without execution, and
+CLI mode rejection before output creation. Timings remain outside the test suite.

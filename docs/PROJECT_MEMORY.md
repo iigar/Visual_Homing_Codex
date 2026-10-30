@@ -1,5 +1,15 @@
 # Project Memory
 
+## Large-archive Baseline — 2026-10-30
+
+Resumed remote-verified 90b48b2 and unfinished October 29 local benchmark/tests, preserving the focused 5/5 evidence. Explicit --frames 8 64 --large-archive fixes 12 catalog datasets / 12 replay runs / 32x32 pixels / four references. Each same-split copy retains capture identities/content, gets one config/policy run and all eleven peers. Coverage 96/768 globally, 8/64 per entry, 32/256 per split. Existing frame mode remains three entries / 2x2; invalid large-archive axis fails before output creation. Production/core/config unchanged, all fresh guards retained.
+
+Three alternating samples plus separate warmup/profile: campaign medians 11.603/52.264 s, audit 2.748/10.981 s; worker VmHWM 33.55/45.39 and 36.98/61.80 MiB. Warm native WSL API baseline, not cold cache, process-tree memory, accuracy or production speedup. Hash-bound tar readback verifies eight relocated archives / 96 runs / 3456 pairs, exact predictions/metrics/coverage/peers, identical eight-frame output prefixes across sizes, fixed dimensions and unchanged bytes/mtime without archived execution. Files per archive 2401/11137. Report LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md; local ignored scripts/logs/tar/profiles under artifacts/large-archive-20261029/ are not shipped in a clone.
+
+Full runner exit 0: Debug/Release CTest 64/64, all 343 Python tests, including five new integration tests each build; no skips/failures. Captured/rechecked 242 source hashes, seven flags OFF, old frame-mode smoke passed. No native sanitizer/NoTests/MSVC/hardware runs. Graph metadata remains 6d8f547; direct source/caller/diff review used. No agents, hardware or output changes. Profile preserves the earlier conclusion that fresh path/resolve/read work dominates; no new production replacement accepted.
+
+Next bounded slice: fifteen unprofiled warm audits of one hash-bound 64-frame / 12-entry archive in fresh workers after separate warmup. Record every sample and VmHWM, median/range and descriptive p90 with an explicit estimator; require identical normalized full reports/exact oracles and unchanged bytes/mtime, block archived execution. Fifteen samples do not establish p99/tail guarantees. Preserve fresh resolve/stat/read/hash, closed inventory, peers and mutation guards. Cold-cache methodology and independent annotated data remain separate; broader October 20 queue retained.
+
 ## Path-construction Experiment, No Production Change — 2026-10-27
 
 Resumed remote-verified 5acd288 with clean tracked tree. Local experiment started October 25: isolate materialized path construction before fresh resolve, comparing root / value, Path(root, value), and Path(os.path.join(root, value)). Production was never edited; candidate copies differ by one checked expression. Existing character/component/containment, symlink, strict resolve/stat, content and mutation guards remain. No agents/hardware/output work; stale graph 6d8f547 replaced by direct source/caller/diff review.

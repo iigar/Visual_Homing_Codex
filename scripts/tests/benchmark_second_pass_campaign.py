@@ -248,6 +248,7 @@ def main():
     dimension.add_argument("--frames", type=int, nargs="+", help="vary frames per dataset at fixed 12 runs")
     dimension.add_argument("--resolution", type=int, nargs="+", help="vary square sides at fixed 64 frames and 12 runs")
     dimension.add_argument("--datasets", type=int, nargs="+", help="vary 3/6/12 catalog entries at fixed 12 runs, 8 frames, 32x32 pixels")
+    parser.add_argument("--large-archive", action="store_true", help="with --frames: fix 12 catalog entries and 32x32 pixels")
     parser.add_argument("--replay-rss", action="store_true", help="additional trusted replays under GNU Time, outside API timing")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--work-dir", type=Path, default=Path("/tmp"))
@@ -258,6 +259,7 @@ def main():
         worker(args.worker)
         return
     require(args.binary is not None and args.output is not None, "--binary and --output required")
+    require(not args.large_archive or args.frames is not None, "--large-archive requires --frames")
     axis, counts = next(((axis, values) for axis, values in (
         ("dataset_count", args.datasets), ("side_pixels", args.resolution),
         ("frames_per_dataset", args.frames), ("runs", args.runs)) if values is not None), ("runs", [12, 24, 48]))
@@ -278,7 +280,7 @@ def main():
         if axis == "runs":
             return count, f.FRAMES, 2, 3
         if axis == "frames_per_dataset":
-            return 12, count, 2, 3
+            return 12, count, 32 if args.large_archive else 2, 12 if args.large_archive else 3
         if axis == "side_pixels":
             return 12, 64, count, 3
         return 12, f.FRAMES, 32, count
@@ -321,12 +323,14 @@ def main():
             scope="API wall time; Linux VmHWM current image peak includes imports; legacy getrusage peak may include pre-exec parent; both exclude replay children; warm cache, no eviction",
             dimension=axis, run_counts=counts if axis == "runs" else [12],
             frame_counts=counts if axis == "frames_per_dataset" else [64 if axis == "side_pixels" else f.FRAMES],
-            square_sides=counts if axis == "side_pixels" else [32 if axis == "dataset_count" else 2],
-            dataset_counts=counts if axis == "dataset_count" else [3], time_sha256=time_hash,
+            square_sides=counts if axis == "side_pixels" else [32 if axis == "dataset_count" or args.large_archive else 2],
+            dataset_counts=counts if axis == "dataset_count" else [12 if args.large_archive else 3],
+            large_archive=args.large_archive, time_sha256=time_hash,
             repeats=args.repeats, samples=[], aggregates=[])
         run_pair(work / "warmup", 12, binary, revision, script,
                  frames=64 if axis == "side_pixels" else f.FRAMES,
-                 side=32 if axis == "dataset_count" else 2, time_tool=time_tool)
+                 side=32 if axis == "dataset_count" or args.large_archive else 2,
+                 datasets=12 if args.large_archive else 3, time_tool=time_tool)
         # Round-robin sizes reduce confounding from a monotonic size/time order.
         for repeat in range(args.repeats):
             for count in counts:
