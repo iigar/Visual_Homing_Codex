@@ -2,7 +2,7 @@
 
 ## Current Focus - 2026-10-31
 
-Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-20_UA.md)
+Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-10-31_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
 [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) and
 [closed inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) optimizations preserve

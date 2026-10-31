@@ -1,5 +1,10 @@
 # Session Log
 
+## 2026-10-31 — Context preservation by explicit request
+
+- User requested “збережи все”. Verified e4d5a57 against remote and clean tracked tree, then saved SESSION_HANDOFF_2026-10-31_UA.md with both completed slices, exact validation/runtime limits, local artifact bindings, the next bounded PGM-header experiment and the full deferred optimization/functional queue. Updated resume pointers; historical handoffs retained. No optimization, source/test change, agents or hardware/output work.
+- Rechecked all 242 source hashes, 90 warm-audit evidence files, bound large-archive tar and full software log. No new tests/benchmarks for this documentation-only save. Local ignored evidence and unrelated untracked directories/known-hosts file preserved. User-authorized memory update is a separate ad-hoc note, not an edit to the memory registry.
+
 ## 2026-10-31 — Fixed-archive warm audit distribution
 
 - Prepared October 30, resumed remote-verified f704a2a with clean tracked tree; completed October 31. Used one bound 64-frame / 12-entry / 12-run / 32x32 / four-reference archive (11137 files, 26044586 bytes, 768 unique pairs). Current trusted source copies ran on native WSL storage; no archived code/binary execution, no replay runs, agents or hardware/output work.

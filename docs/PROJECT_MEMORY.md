@@ -1,5 +1,9 @@
 # Project Memory
 
+## Resume Handoff — 2026-10-31
+
+Explicit “збережи все” request saved SESSION_HANDOFF_2026-10-31_UA.md over remote-verified e4d5a57. Read AGENTS/current status/new handoff on resume; current Git state supersedes old SHAs. Large-archive (f704a2a) and warm-latency (e4d5a57) work is complete, no PGM candidate patch is pending. Next is the bounded PGM-header characterization/experiment described below, with current Python identity, preserved guards, measured equivalence/gain and a no-change option. The new handoff retains all broader queues and historical links, exact validation caveats and artifact bindings. Rechecked 242 source hashes, 90 evidence files, baseline tar/software log; no new tests for the save. Artifacts remain local/ignored, unrelated untracked files preserved; software-only, no subagents or outputs.
+
 ## Fixed-archive Warm Audit Latency — 2026-10-31
 
 Continued remote-verified f704a2a with clean tracked tree. Prepared October 30 and completed October 31: one warmup plus fifteen sequential unprofiled fresh-worker audits of the same bound 64-frame / 12-entry / 12-run / 32x32 / four-reference archive. 11137 files, 26044586 bytes, 768 unique pairs; no new replay executions or independent captures. Current hash-bound source copies run on native WSL; parent bytes/mtime snapshots warm files before each call. Timer excludes startup/import setup, snapshots, oracle checks and persistence. VmHWM includes current-image imports and is sampled before oracle checks/persistence; default GC retained, archive execution/resume blocked.

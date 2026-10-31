@@ -1,9 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-31` (warm-audit latency study завершено; source/tests без змін).
+Оновлено: `2026-10-31` (контекст і всі черги збережено; warm-audit study завершено).
 
-Для нової сесії: [warm-audit latency та наступний PGM header experiment](WARM_AUDIT_LATENCY_2026-10-31_UA.md),
-потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
+Для нової сесії: [handoff 2026-10-31](SESSION_HANDOFF_2026-10-31_UA.md),
+потім [warm-audit latency та наступний PGM header experiment](WARM_AUDIT_LATENCY_2026-10-31_UA.md).
+Збереження виконано поверх remote-verified `e4d5a57`; новий optimization slice не розпочато.
 Продовжено `f704a2a`; path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
