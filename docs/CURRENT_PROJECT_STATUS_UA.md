@@ -1,15 +1,15 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-30` (large-archive baseline завершено; production без змін).
+Оновлено: `2026-10-31` (warm-audit latency study завершено; source/tests без змін).
 
-Для нової сесії: [large-archive результат і наступний warm-audit latency slice](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md),
+Для нової сесії: [warm-audit latency та наступний PGM header experiment](WARM_AUDIT_LATENCY_2026-10-31_UA.md),
 потім [handoff 2026-10-20](SESSION_HANDOFF_2026-10-20_UA.md) із повною чергою.
-Продовжено `90b48b2` і незавершений slice від 29 жовтня; path/inventory slices, frame/resolution/dataset-count/large-archive baselines і path-construction experiment завершено. Актуальний
+Продовжено `f704a2a`; path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-Виміряно **8/64 query frames при сталих 12 catalog datasets / 12 runs / 32×32 / 4 references**. Campaign medians **11.603/52.264 с**, audit **2.748/10.981 с**; worker VmHWM **33.55/45.39** і **36.98/61.80 MiB**. Усі **8 archives / 96 runs / 3456 pairs** перевірено після relocation, exact oracles/coverage/peers і bytes/mtime збережено. Full runner пройшов: **64/64 CTest** на Debug/Release, **343 Python tests**, сім flags OFF. Це synthetic warm WSL scaling baseline, без production speedup/accuracy claim. [Повний звіт](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md). Попередню [constructor replacement](PATH_CONSTRUCTION_2026-10-25_UA.md) залишено відхиленою; [catalog](DATASET_COUNT_SCALING_2026-10-24_UA.md), [resolution/RSS](RESOLUTION_SCALING_2026-10-24_UA.md), [frames](FRAME_COUNT_SCALING_2026-10-23_UA.md), [inventory](INVENTORY_OPTIMIZATION_2026-10-23_UA.md) і [Dataset.path](DATASET_PATH_OPTIMIZATION_2026-10-21_UA.md) результати збережені.
+Після warmup виконано **15 unprofiled audits одного 64-frame / 12-entry архіву** у fresh workers: median **10.461 с**, p90 nearest-rank **11.032 с**, range **10.371–11.111 с**; worker VmHWM median **60.78 MiB**. Усі 16 audits відтворили повний normalized baseline report/exact oracles, bytes/mtime незмінні; це **один архів / 12 saved runs / 768 унікальних pairs**, без нових replay executions. Всі **242 source hashes** незмінні, сім flags OFF. Нового full runner немає; попередні 343 Python tests / 64 CTest на збірку лишаються prior evidence. Build metadata Python 3.12.3 відрізняється від попереднього запуску, тому це не before/after speedup. [Звіт і межі](WARM_AUDIT_LATENCY_2026-10-31_UA.md). Попередні [large-archive baseline](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md) та відхилена [constructor replacement](PATH_CONSTRUCTION_2026-10-25_UA.md) збережені.
 
-Наступний bounded software крок — **15 unprofiled warm audits одного 64-frame / 12-entry архіву** в fresh workers після окремого warmup: усі samples, VmHWM, median/range та описовий p90, exact normalized reports/oracles й незмінні bytes/mtime. Це оцінка latency distribution/host variance; не p99 guarantee. Fresh filesystem/content/mutation guards зберегти; нова оптимізація лише за профілем і виміряним виграшем. Cold-cache evidence потребує окремої методики; fresh worker не означає cold cache. Незалежний annotated dataset досі потрібен для accuracy; scope лишається локальним software-only.
+Наступний bounded software крок — **PGM header overhead characterization/experiment**: спочатку підтвердити hotspot і Python identity, охарактеризувати comments/CRLF/4096-byte header/truncations/binary pixels та consumed-byte hashes. Локальний candidate лише за виміряним isolated cost; acceptance потребує exact paired full-audit equivalence/gain, регресій і full runner. Весь PGM parser — лише близько 6.5% попереднього profiled audit, тому за малого виграшу залишити production без змін. Fresh filesystem/content/mutation guards зберегти. Cold-cache methodology й незалежні annotated data залишаються окремими; scope локальний software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -33,6 +33,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Warm-audit latency (`2026-10-31`): **16/16 audits одного архіву** (warmup + 15 timed), persisted normalized full reports/exact oracles однакові з hash-bound baseline, bytes/mtime й 242 source hashes незмінні. Незалежний finalizer перечитав reports і перерахував aggregates; probe/finalizer exit 0. Median/p90/range **10.461/11.032/10.371–11.111 с**, VmHWM median **60.78 MiB**, сім flags OFF. Source/tests unchanged; нових full-suite/native sanitizer/NoTests/MSVC/hardware runs немає. Python build metadata відрізняється від попереднього checkpoint runtime. [Звіт](WARM_AUDIT_LATENCY_2026-10-31_UA.md), local evidence `artifacts/warm-audit-latency-20261030/`.
 
 - Large-archive baseline (`2026-10-30`): нові **5/5** integration tests на Debug і Release; full CTest **64/64** кожна, усі **343 Python tests** пройшли без skips/failures. **8 relocated archives / 96 runs / 3456 pairs**, 2401/11137 files на архів: exact oracles, однакові перші вісім raw/prediction rows між розмірами, всі 11 peers, правильна dataset/split coverage і незмінні bytes/mtime. **242 source hashes** звірено, production/core/config незмінні, сім flags OFF; старий frame CLI smoke пройшов. Native sanitizer/NoTests/MSVC/hardware runs не виконувалися. [Звіт](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md), evidence `artifacts/large-archive-20261029/`.
 
