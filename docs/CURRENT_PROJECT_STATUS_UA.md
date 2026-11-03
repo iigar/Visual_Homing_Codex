@@ -1,16 +1,18 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-10-31` (контекст і всі черги збережено; warm-audit study завершено).
+Оновлено: `2026-11-03` (PGM characterization і cost study; production parser незмінний).
 
-Для нової сесії: [handoff 2026-10-31](SESSION_HANDOFF_2026-10-31_UA.md),
-потім [warm-audit latency та наступний PGM header experiment](WARM_AUDIT_LATENCY_2026-10-31_UA.md).
-Збереження виконано поверх remote-verified `e4d5a57`; новий optimization slice не розпочато.
-Продовжено `f704a2a`; path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
+Для нової сесії: [handoff 2026-10-31 із ширшою чергою](SESSION_HANDOFF_2026-10-31_UA.md),
+потім [новий PGM characterization/cost report](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md).
+Продовжено remote-verified `82e8c91`; PGM characterization завершено, candidate не реалізовано.
+Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
-Після warmup виконано **15 unprofiled audits одного 64-frame / 12-entry архіву** у fresh workers: median **10.461 с**, p90 nearest-rank **11.032 с**, range **10.371–11.111 с**; worker VmHWM median **60.78 MiB**. Усі 16 audits відтворили повний normalized baseline report/exact oracles, bytes/mtime незмінні; це **один архів / 12 saved runs / 768 унікальних pairs**, без нових replay executions. Всі **242 source hashes** незмінні, сім flags OFF. Нового full runner немає; попередні 343 Python tests / 64 CTest на збірку лишаються prior evidence. Build metadata Python 3.12.3 відрізняється від попереднього запуску, тому це не before/after speedup. [Звіт і межі](WARM_AUDIT_LATENCY_2026-10-31_UA.md). Попередні [large-archive baseline](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md) та відхилена [constructor replacement](PATH_CONSTRUCTION_2026-10-25_UA.md) збережені.
+Нові **14/14 PGM tests** фіксують comments/ASCII whitespace, single separator/CRLF, усі first-pixel bytes, 4096-byte header і реальний 64 MiB payload, truncations/trailing bytes, consumed-byte hashes та mutation/error semantics. **6/6 audits** одного hash-bound archive зберегли exact full reports/oracles/peers і bytes/mtime. На Python 3.12.3 build Aug 31 весь `pgm` зайняв **0.600 с / 5.44%** окремого instrumented audit; in-memory 19200 parses median **0.470 с**, unprofiled API median **10.526 с** (три samples). Header-only potential менший; production залишено без змін за cost/prioritization, а не за результатом candidate comparison. Новий full runner на поточному Python: **357 Python tests**, Debug/Release CTest **64/64** кожна, exit 0, без skips/failures. Independent readback exit 0; **243 source hashes** звірено, сім flags OFF.
 
-Наступний bounded software крок — **PGM header overhead characterization/experiment**: спочатку підтвердити hotspot і Python identity, охарактеризувати comments/CRLF/4096-byte header/truncations/binary pixels та consumed-byte hashes. Локальний candidate лише за виміряним isolated cost; acceptance потребує exact paired full-audit equivalence/gain, регресій і full runner. Весь PGM parser — лише близько 6.5% попереднього profiled audit, тому за малого виграшу залишити production без змін. Fresh filesystem/content/mutation guards зберегти. Cold-cache methodology й незалежні annotated data залишаються окремими; scope локальний software-only.
+Попередній [warm-audit study 2026-10-31](WARM_AUDIT_LATENCY_2026-10-31_UA.md): 15 timed audits після warmup, median **10.461 с**, nearest-rank p90 **11.032 с**, range **10.371–11.111 с**, VmHWM median **60.78 MiB**. Усі 16 reports/oracles однакові, bytes/mtime й 242 source hashes незмінні; одного archive / 12 saved runs / 768 pairs недостатньо для accuracy acceptance. Full runner тоді не повторювали; цю прогалину для поточного build закрито новим запуском 2026-11-03. Cross-date timings не є before/after speedup. Попередні [large-archive baseline](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md) та відхилена [constructor replacement](PATH_CONSTRUCTION_2026-10-25_UA.md) збережені.
+
+Наступний bounded software крок — **read-only attribution filesystem operations**: розділити фактичні resolve/stat/open/read між validator і closed inventory на тому самому hash-bound archive. Новий profile: Dataset.path **13.525 с**, Path.resolve **8.520 с** cumulative з **22.412 с**; вкладені times не додаються. Diagnostic runs відокремити від timing, записати runtime/source identities, exact reports/oracles та bytes/mtime. Жодного cache checks/hashes або усунення guards; спочатку встановити, чи є безпечно усувна зайва робота. Завершені lexical/constructor experiments не повторювати. Cold-cache methodology й незалежні annotated data залишаються окремими; scope локальний software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -34,6 +36,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- PGM characterization/cost (`2026-11-03`): focused **14/14**, full WSL Debug/Release CTest **64/64** кожна, усі **357 Python tests** без skips/failures; runner і independent finalizer exit 0. **6/6 audits одного archive / 768 pairs** з exact full reports/oracles/peers, незмінними bytes/mtime; raw profile й micro inputs звірені з bound evidence. **243 source hashes**, сім flags OFF, production Python/C++/config незмінні. Python build/executable SHA-256 зафіксовано. Немає candidate/speedup/native sanitizer/NoTests/MSVC/hardware acceptance claims. [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md), local evidence `artifacts/pgm-header-20261103/`.
 
 - Warm-audit latency (`2026-10-31`): **16/16 audits одного архіву** (warmup + 15 timed), persisted normalized full reports/exact oracles однакові з hash-bound baseline, bytes/mtime й 242 source hashes незмінні. Незалежний finalizer перечитав reports і перерахував aggregates; probe/finalizer exit 0. Median/p90/range **10.461/11.032/10.371–11.111 с**, VmHWM median **60.78 MiB**, сім flags OFF. Source/tests unchanged; нових full-suite/native sanitizer/NoTests/MSVC/hardware runs немає. Python build metadata відрізняється від попереднього checkpoint runtime. [Звіт](WARM_AUDIT_LATENCY_2026-10-31_UA.md), local evidence `artifacts/warm-audit-latency-20261030/`.
 

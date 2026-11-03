@@ -1,5 +1,32 @@
 # Session Log
 
+## 2026-11-03 — PGM contract characterization and bounded cost study
+
+- Resumed remote-verified 82e8c91 with clean tracked state; the current handoff
+  superseded older memory that still described unfinished large-archive work.
+  Confirmed Python build/executable identity and directly reviewed the validator,
+  actual callers and C++ reader; stale graph metadata 6d8f547 remained advisory.
+- Added 14 PGM tests covering byte/separator/comment/header/payload/hash/error
+  semantics and Dataset.read mutations. Focused suite passed; registered it in
+  the full software runner and documented it. No production/parser/core/config
+  change, no subagents or hardware/output work.
+- Six fresh-worker audits of one relocated bound archive preserve full baseline
+  reports, exact oracles/peers and bytes/mtime. Timed API median 10.526 s (three
+  samples); separate whole-parser timer 0.600 s / 5.44%; in-memory 19200 parses
+  median 0.470 s (seven samples). Separate cProfile confirms the cost. No replay
+  executions in the read-only study; repeats do not create independent data.
+- Candidate deferred on cost/prioritization grounds; no candidate comparison or
+  speedup claim. Report PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md and local
+  ignored evidence artifacts/pgm-header-20261103/. Next bounded step is read-only
+  filesystem operation attribution, preserving every fresh/content/mutation
+  guard; wider handoff/roadmap queues retained.
+- Full runner exit 0 on the recorded Python build: Debug/Release CTest 64/64
+  each and all 357 Python tests, no skips/failures. Independent finalizer exit 0,
+  six full reports/oracles and raw profile/micro inputs read back, medians
+  recalculated, 243 source hashes verified, seven camera/output flags OFF.
+  No native sanitizer/NoTests/MSVC/hardware runs. Production remains unchanged;
+  the new full suite closes the current interpreter's earlier validation gap.
+
 ## 2026-10-31 — Context preservation by explicit request
 
 - User requested “збережи все”. Verified e4d5a57 against remote and clean tracked tree, then saved SESSION_HANDOFF_2026-10-31_UA.md with both completed slices, exact validation/runtime limits, local artifact bindings, the next bounded PGM-header experiment and the full deferred optimization/functional queue. Updated resume pointers; historical handoffs retained. No optimization, source/test change, agents or hardware/output work.

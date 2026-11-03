@@ -177,6 +177,23 @@ Windows pure-path cases do not claim Windows filesystem/junction acceptance.
 The same suite passes before and after the path optimization; closed archive
 symlink rejection remains covered by bundle/collection/audit suites.
 
+## PGM parser characterization
+
+```sh
+python3 scripts/tests/test_second_pass_pgm.py -v
+```
+
+14 tests run once in `test-software.sh`. They characterize the existing Python
+validator, including all six ASCII whitespace separators, comments ending at LF,
+single-separator/CRLF ambiguity, every possible first pixel, exact 4096-byte
+header boundaries, unsigned ASCII dimensions and the real 64 MiB payload bound.
+They verify every truncation of representative headers/rasters, trailing-byte
+rejection, consumed-byte versus pixel hashes, bounded payload reads, expected
+digests, same-size/mtime changes, in-read mutation and error propagation without
+recording partial inputs. Buffered lookahead must not enter the consumed digest.
+These tests preserve current behavior; they do not assert full acceptance parity
+with the more permissive C++ replay reader. The parser remains unchanged.
+
 ## Closed archive inventory characterization
 
 ```sh

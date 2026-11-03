@@ -1,5 +1,20 @@
 # Decisions
 
+## 2026-11-03 - Keep PGM Production Parser After Bounded Cost Characterization
+
+- Preserve the current parser and its exact consumed-byte hash/error behavior.
+  Fourteen tests characterize comments, whitespace/CRLF, binary pixels, header
+  and payload bounds, truncation/trailing bytes and Dataset.read mutation guards.
+  Do not infer full grammar parity from the C++ reader's shared CRLF convention.
+- Whole-parser instrumentation measured 0.600 s / 5.44% of one audit; isolated
+  in-memory parsing measured 0.470 s per 19200 calls. Header-only opportunity is
+  smaller. Defer a candidate on cost/prioritization grounds; this is not a paired
+  comparison, statistical proof of no benefit or measured optimization result.
+- Next attribute actual filesystem work read-only, preserving fresh checks,
+  hashing, closed inventory and exact reports. No cached integrity checks, broad
+  rewrite, hardware/output work or reopening completed constructor experiments.
+  See [the study](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md).
+
 ## 2026-10-18 - Measure Campaign Scaling Before Changing Integrity Checks
 
 - Establish an explicit 12/24/48-run baseline with unchanged 3-dataset, 8-frame synthetic fixtures and actual Release replay. Use fresh phase workers, native WSL copies, three round-robin samples, excluded warmup and a separate cProfile pair. Record API wall time and Python worker self peak RSS with explicit exclusions; do not describe this as tree-wide memory, CLI latency, cold-cache throughput, hardware performance or accuracy evidence.

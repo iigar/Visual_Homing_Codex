@@ -1,5 +1,44 @@
 # Project Memory
 
+## PGM Characterization And Cost — 2026-11-03
+
+Resumed remote-verified 82e8c91 under the October 31 handoff. Added fourteen
+PGM characterization tests and registered them once in the software runner:
+comments/ASCII whitespace, single separator/CRLF, every first pixel, exact
+4096-byte header and real 64 MiB payload boundaries, truncation/trailing-byte
+consumption, full/pixel hashes, expected hashes and Dataset.read mutation/errors.
+Production Python/C++/config remains unchanged. The C++ reader shares CRLF
+handling but is not a full grammar/acceptance oracle for the stricter validator.
+
+Recorded Python 3.12.3 build Aug 31, resolved /usr/bin/python3.12 hash
+e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f. Six fresh-worker
+read-only audits of the bound 64-frame / 12-entry / 12-run archive preserve full
+normalized baseline reports, exact oracles/peers and bytes/mtime. One excluded
+warmup, three timed samples (10.526/11.330/10.011 s), separate cProfile and PGM
+timer workers. Whole pgm costs 0.600 s / 5.44% of the separately instrumented
+11.041 s audit; seven in-memory 19200-call samples have median 0.470 s. All
+measurements are warm WSL, one archive/768 unique pairs, no new study replay.
+
+No candidate implemented: defer on limited header-only potential and priority,
+not a measured candidate rejection or proof of no speedup. Report
+PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md; ignored evidence under
+artifacts/pgm-header-20261103/. Old study/helper and baseline tar preserved.
+Full runner and independent finalizer both exit 0: Debug/Release CTest 64/64
+each, all 357 Python tests without skips/failures, 243 source hashes verified,
+seven flags OFF. Finalizer rereads baseline-bound reports/oracles, raw pstats,
+micro inputs and aggregates, interpreter identity and full log. No native
+sanitizer/NoTests/MSVC/hardware runs. This closes the prior full-suite gap for
+the current Python build; it does not establish cross-date performance gain.
+
+Next bounded slice: attribute actual resolve/stat/open/read work between
+validator and closed inventory, read-only with separate diagnostics/timing.
+New profile: Dataset.path 87383 calls/13.525 s cumulative, Path.resolve
+87879/8.520 s out of 22.412 s; nested costs do not add. Establish whether any
+work can safely be removed; never cache integrity checks/hashes or weaken
+mutation/containment/inventory guards. Do not redo completed lexical/constructor
+experiments. Broader October 31 queues retained, software-only, no agents or
+hardware/output work. Graph metadata still 6d8f547; direct source review used.
+
 ## Resume Handoff — 2026-10-31
 
 Explicit “збережи все” request saved SESSION_HANDOFF_2026-10-31_UA.md over remote-verified e4d5a57. Read AGENTS/current status/new handoff on resume; current Git state supersedes old SHAs. Large-archive (f704a2a) and warm-latency (e4d5a57) work is complete, no PGM candidate patch is pending. Next is the bounded PGM-header characterization/experiment described below, with current Python identity, preserved guards, measured equivalence/gain and a no-change option. The new handoff retains all broader queues and historical links, exact validation caveats and artifact bindings. Rechecked 242 source hashes, 90 evidence files, baseline tar/software log; no new tests for the save. Artifacts remain local/ignored, unrelated untracked files preserved; software-only, no subagents or outputs.
