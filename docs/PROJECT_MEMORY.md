@@ -1,5 +1,20 @@
 # Project Memory
 
+## Resume Handoff — 2026-11-03
+
+Explicit “збережи все” request saved SESSION_HANDOFF_2026-11-03_UA.md over
+remote-verified 42541d41258eb47b8b1d9c98bc3a0b905b6594b0. Read AGENTS/current
+status/new handoff on resume; live Git supersedes dated SHAs. PGM characterization
+is complete, production unchanged, no candidate pending. Next is read-only
+filesystem operation attribution with all fresh/content/mutation guards intact.
+The handoff preserves completed decisions, full 357 Python/64 CTest evidence,
+runtime identities and limitations, artifact bindings, the next bounded steps
+and all wider queues/links. Rechecked 243 source hashes, 45 evidence files,
+baseline tar and summary/software log. No new tests/benchmarks or experiment
+for the documentation-only save. Artifacts remain local/ignored; unrelated
+untracked files preserved. A user-authorized memory update is a separate ad-hoc
+note; the memory registry is not edited. Software-only, no agents or outputs.
+
 ## PGM Characterization And Cost — 2026-11-03
 
 Resumed remote-verified 82e8c91 under the October 31 handoff. Added fourteen

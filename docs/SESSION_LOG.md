@@ -1,5 +1,18 @@
 # Session Log
 
+## 2026-11-03 — Preserve context after the PGM checkpoint
+
+- User requested “збережи все”. Confirmed 42541d4 against remote and clean tracked
+  state, then saved SESSION_HANDOFF_2026-11-03_UA.md with completed PGM decisions,
+  current validation/runtime limits, local artifact bindings, the next read-only
+  filesystem attribution slice and the full deferred optimization/functional queue.
+  Updated AGENTS/current status/roadmap/project memory; historical handoffs retained.
+- Rechecked all 243 source hashes, 45 PGM evidence files, baseline tar and current
+  summary/full software log. No new tests/benchmarks for this documentation-only
+  save; no experiment, code/test change, agents or hardware/output work. Existing
+  ignored evidence and unrelated untracked files preserved. User-authorized memory
+  update is a separate ad-hoc note, not an edit to the memory registry.
+
 ## 2026-11-03 — PGM contract characterization and bounded cost study
 
 - Resumed remote-verified 82e8c91 with clean tracked state; the current handoff

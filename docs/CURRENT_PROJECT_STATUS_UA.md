@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-03` (PGM characterization і cost study; production parser незмінний).
+Оновлено: `2026-11-03` (контекст і чергу збережено поверх опублікованого PGM checkpoint).
 
-Для нової сесії: [handoff 2026-10-31 із ширшою чергою](SESSION_HANDOFF_2026-10-31_UA.md),
+Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
 потім [новий PGM characterization/cost report](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md).
-Продовжено remote-verified `82e8c91`; PGM characterization завершено, candidate не реалізовано.
+Test/study checkpoint `42541d41258eb47b8b1d9c98bc3a0b905b6594b0` опублікований і remote-verified; PGM characterization завершено, candidate не реалізовано. На запит «збережи все» додано documentation-only handoff; новий experiment не починали.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
