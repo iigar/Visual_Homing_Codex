@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-04` (filesystem study від 3 листопада завершено; production незмінний).
+Оновлено: `2026-11-04` (парний path-depth study завершено; production незмінний).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [filesystem attribution report](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md).
-Відновлено remote-verified `c927c933ae71eac6c5110591194770330e800b5e`; PGM checkpoint `42541d4` і початкове збереження handoff завершені. Новий read-only study відокремив validator path work від closed inventory; candidate не реалізовано.
+потім [path-depth sensitivity report](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md).
+Відновлено remote-verified `68c8f9bbe3aed63c526c90901c6a1b2c1bff49b7`; filesystem attribution і PGM characterization завершені. Новий парний read-only study виміряв вплив absolute path depth; production candidate не реалізовано.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -14,7 +14,9 @@ HEAD/remote перевіряти через Git, не припускати ст�
 
 Filesystem attribution: **6/6 audits**, exact reports/oracles/peers і незмінні bytes/mtime; **243 source hashes**. Усі **19 Python/C call totals** збігаються з окремим raw cProfile. Dataset.path: **87383 resolve / 1023002 lstat**; constructor додає **496 resolve / 4078 lstat**. Closed inventory: **28 traversals / 3954 scandir / 68922 DirEntry.stat**, без resolve/open/read. Усі **87215 Dataset.read** мають два fstat; **32498 reads** належать фінальним verify_frozen guards. Безпечного вилучення checks не встановлено. Unprofiled median **9.942 с** (три samples); observer **166.410 с**, окремий cProfile **22.641 с**, inventory cumulative **0.427 с**. Це API call counts, не kernel syscalls; diagnostic timings не є звичайною latency або before/after. Нового full runner немає: hash-bound попередні **357 Python / 64+64 CTest** звірені на ідентичних sources/runtime. Probe/finalizer exit 0, сім flags OFF.
 
-Наступний bounded software крок — **read-only path-depth sensitivity**: той самий archive на двох контрольованих absolute path depths у тому самому native WSL filesystem, alternating paired fresh-worker timings, окремі warmups/diagnostics, exact reports/oracles/peers і bytes/mtime. У поточному study сума depth × resolve calls точно пояснює **1027080 lstat**; вплив layout ще не виміряний. Не змінювати production, guards або workload, не кешувати checks/hashes і не повторювати завершені lexical/constructor experiments. Cold-cache methodology й незалежні annotated data залишаються окремими; scope локальний software-only.
+Path-depth study: **20/20 audits** (16 timed, 2 warmups, 2 profiles) двох copies одного bound archive, exact full reports/oracles/peers і незмінні bytes/mtime. Absolute root depths **4/10**, однакова довжина **64 characters**, спільні filesystem/device, trusted sources, inputs/runtime. Shallow швидший у **8/8 pairs**: medians **10.111/11.896 с**, median paired delta **1.410 с**, median pair-wise reduction **11.99%**, delta range **0.025–3.388 с**. Profiles: **939417/1465395 lstat**, різниця **525978 = 6 × 87663 archive resolves**; інші **18 tracked totals** однакові. Це measured warm layout effect, без production speedup/accuracy/cold-cache claim. **243 source hashes**, сім flags OFF; probe/finalizer exit 0. Нового full runner немає; prior same-source/runtime log звірений. Local evidence: **115 bound files** у `artifacts/path-depth-20261104/`.
+
+Наступний bounded software крок — **warm end-to-end CLI latency / worker VmHWM**: той самий archive на fixed shallow native layout, parent wall time startup→JSON output і окремий API-only time, наперед визначені warmup + 15 fresh workers. Runtime/source/storage/depth identities, exact full reports/oracles/peers, bytes/mtime та no replay/resume guards. VmHWM враховує imports/serialization; inherited ru_maxrss не використовувати як current-image peak. Cold-cache methodology й незалежні annotated data залишаються окремими. Fresh checks/hashes і mutation guards зберігаються; scope локальний software-only.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -38,6 +40,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Path-depth sensitivity (`2026-11-04`): probe/independent finalizer exit 0; **20/20** exact audits, **8 balanced timed pairs**, два raw profiles. Незмінні archive/input bytes/mtime, **243 source hashes**, сім flags OFF; production/tests/runner/core/config незмінні, нового full-suite run немає. Вісім менших shallow times, median paired reduction **11.99%** у цьому warm workload. [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md), local evidence `artifacts/path-depth-20261104/`; наступна перевірка — end-to-end CLI latency/VmHWM.
 
 - Filesystem attribution (`2026-11-03`): calibration, probe та independent readback exit 0; **6/6** audits з exact full reports/oracles/peers і незмінними bytes/mtime. **19** totals звірені з raw cProfile, **243** source hashes незмінні, сім flags OFF. Production/tests/runner/core/config незмінні; нового full-suite run немає, попередній same-source/runtime log звірений. [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md), local evidence `artifacts/filesystem-attribution-20261103/`. Наступна перевірка — path-depth sensitivity, без guard changes.
 

@@ -1,5 +1,22 @@
 # Decisions
 
+## 2026-11-04 - Record Path Depth As A Performance Input
+
+- Twenty read-only audits preserve the bound archive's full reports/oracles and
+  bytes/mtime. Equal-length roots at depths 4/10 on the same native filesystem
+  yield smaller shallow times in all eight balanced pairs: median paired reduction
+  11.99%, delta 1.410 s, range 0.025–3.388 s. One physical copy per layout and host
+  variability limit generalization; no production speedup or cold-cache claim.
+- Separate raw profiles retain all other 18 tracked counts; 525978 additional
+  lstat calls equal six components on 87663 archive resolutions. Keep fresh
+  resolution/content/mutation guards and record absolute depth/path length in
+  subsequent studies. Shallow native working copies are a measured warm layout
+  opportunity; production/tests/runner/core/config unchanged, no new full suite.
+- Close this filesystem slice. Next measure warm end-to-end CLI latency/VmHWM
+  versus API time at fixed shallow layout with exact reports and source/runtime
+  bindings. Keep cold-cache methodology separate. See
+  [the paired study](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md).
+
 ## 2026-11-03 - Retain Integrity Boundaries After Filesystem Attribution
 
 - Attribute filesystem calls before changing checks: Dataset resolution owns

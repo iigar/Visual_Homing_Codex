@@ -1,5 +1,29 @@
 # Session Log
 
+## 2026-11-04 — Measure absolute path-depth sensitivity
+
+- Resumed remote-verified 68c8f9b and clean tracked tree. Verified Python
+  executable/build identity and sources; directly reviewed fresh path/read and
+  closed-inventory implementations. No agents, hardware or output work.
+- Copied one bound archive to native roots at depths 4/10, both 64 characters,
+  same filesystem/device, shared inputs/trusted sources/cwd. Predeclared eight
+  balanced timed pairs, two excluded warmups and two separate cProfile workers.
+  All 20 reports/oracles/peers and bytes/mtime agree; no replay/resume.
+- Shallow faster in 8/8 pairs; medians 10.111/11.896 s, median paired delta
+  1.410 s and paired reduction 11.99%, delta range 0.025–3.388 s. Both order
+  groups retain positive median delta. Profiles: 939417/1465395 lstat, difference
+  525978 = 6 × 87663 archive resolves; other 18 tracked totals agree.
+- Probe/finalizer exit 0; independent readback verifies all jobs/full reports,
+  raw profiles, schedule/layout controls, counts and paired statistics. 243
+  source hashes/runtime and seven OFF flags checked; prior identical-source/runtime
+  357 Python/64+64 CTest log reverified. No new full runner or production/test/
+  runner/core/config changes. Evidence is warm WSL layout sensitivity, with
+  allocation/host variability limits; no production/cold-cache/accuracy claim.
+- Report PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md; local ignored evidence
+  artifacts/path-depth-20261104/ has 115 bound files. Updated handoff/status/queue.
+  Next: fixed-depth warm CLI wall-time/worker VmHWM versus API-only time,
+  predeclared warmup + 15 fresh workers, unchanged trust/guards/reports/bytes.
+
 ## 2026-11-03 — Attribute filesystem calls without changing production
 
 - Resumed c927c93, verified remote SHA and clean tracked state; current handoff

@@ -1,5 +1,26 @@
 # Project Memory
 
+## Path-Depth Sensitivity — 2026-11-04
+
+Resumed remote-verified 68c8f9b with clean tracked state. Twenty audits of one
+bound archive (two native copies) preserve exact full reports/oracles/peers and
+bytes/mtime. Depths 4/10, equal root length 64, common filesystem/device/source/
+inputs/runtime; eight balanced pairs, two warmups, two separate raw cProfiles.
+Shallow faster in 8/8 pairs: medians 10.111/11.896 s, median paired reduction
+11.99%, delta 1.410 s (range 0.025–3.388 s). Profiles: 939417/1465395 lstat;
+delta 525978 = 6 × 87663 archive resolves, other 18 tracked totals unchanged.
+Record path depth/length in future comparisons; keep every fresh/content/mutation
+guard. Single copy/layout and host effects limit inference; no production speedup,
+cold-cache/accuracy or memory-improvement claim. No production/tests/runner/core/
+config change or new full suite; prior same-source/runtime validation bound.
+Probe/finalizer exit 0, 243 source hashes/runtime and seven flags OFF verified.
+Report PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md, local ignored
+`artifacts/path-depth-20261104/` (115 bound files). Next: warm end-to-end CLI latency/worker VmHWM versus
+API time at fixed shallow layout, predeclared warmup + 15 fresh workers, exact
+reports/oracles/bytes/mtime and no execution/resume. Cold-cache methodology and
+matcher/functional queues remain separate. Current handoff supersedes older
+next-step text below; no global memory edits, agents or hardware/output work.
+
 ## Filesystem Attribution — 2026-11-03
 
 Resumed remote-verified c927c93 with clean tracked state. The read-only filesystem

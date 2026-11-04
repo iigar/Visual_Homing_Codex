@@ -50,11 +50,20 @@ Repeated reads preserve distinct initial/validation/rescore/final guard boundari
 no safely removable check was established. Unprofiled median 9.942 s (three samples),
 observer 166.410 s, cProfile 22.641 s: diagnostics are separate, no speedup claim.
 No code/test/runner change or new full suite; prior same-source/runtime suite bound.
-Next: read-only path-depth sensitivity on two controlled absolute depths of the
-same native filesystem, identical archive/source/runtime, alternating paired
-timings, excluded warmups and separate diagnostics. Preserve exact reports/oracles,
-peers and bytes/mtime. Do not cache checks/hashes, weaken guards, change cwd inside
-the audit or repeat completed lexical/constructor experiments.
+The [paired path-depth study](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) completed
+20 exact audits, including 8 timed pairs with balanced order, two warmups and two
+profiles. Root depths 4/10 have equal length 64 on the same filesystem/device.
+Shallow was faster in 8/8 pairs: medians 10.111/11.896 s, median paired reduction
+11.99% and delta 1.410 s (range 0.025–3.388 s). Profiles differ by exactly
+525978 lstat = six additional components on 87663 archive resolves; the other
+18 tracked counts agree. All guards, 243 source hashes and bytes/mtime retained.
+This is a warm layout result; no production candidate/change or new full suite.
+Next: warm end-to-end CLI latency and worker VmHWM at fixed shallow depth on
+the same bound archive. Predeclare warmup + 15 fresh workers; distinguish process
+startup/imports/check/JSON-output wall time from API-only time. Preserve exact
+reports/oracles/peers and bytes/mtime, source/runtime/storage/depth identities,
+no replay/resume and all integrity guards. VmHWM includes imports/serialization;
+do not substitute inherited ru_maxrss or call fresh workers cold-cache evidence.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing
