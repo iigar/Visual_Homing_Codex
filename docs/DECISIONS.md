@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-11-03 - Retain Integrity Boundaries After Filesystem Attribution
+
+- Attribute filesystem calls before changing checks: Dataset resolution owns
+  1027080 lstat calls; closed inventory has no resolve/open/read and accounts
+  for 0.427 s of the 22.641 s cProfile audit. Counts independently agree across
+  sys.setprofile and raw cProfile; nested timings are not additive or syscalls.
+- Preserve initial bindings, validation/rescore and final verify_frozen reads.
+  Repeated paths at different boundaries are not proven redundant; no candidate
+  or production change justified by this study. Do not cache resolved paths,
+  file hashes or membership checks, or merge validator/inventory symlink contracts.
+- Next measure read-only path-depth sensitivity on the same native filesystem,
+  bound archive/runtime/source, alternating paired timings and exact reports.
+  The observed depth-weighted resolve count explains lstat count on this layout;
+  it does not yet establish a layout speedup. No chdir-based implementation or
+  guard weakening. See [attribution evidence](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md).
+
 ## 2026-11-03 - Keep PGM Production Parser After Bounded Cost Characterization
 
 - Preserve the current parser and its exact consumed-byte hash/error behavior.

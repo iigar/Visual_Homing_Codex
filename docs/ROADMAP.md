@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-03
+## Current Focus - 2026-11-04
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -42,12 +42,19 @@ no candidate gain or rejection was measured. Current Python identity is recorded
 The new full runner passed Debug/Release CTest 64/64 and all 357 Python tests
 on this interpreter; independent readback passed, 243 source hashes verified,
 seven flags OFF. No new native sanitizer/NoTests/MSVC/hardware acceptance.
-Next: read-only attribution of actual resolve/stat/open/read operations between
-validator and closed inventory. The new profile assigns 13.525 s cumulative to
-Dataset.path and 8.520 s to Path.resolve out of 22.412 s; nested times do not add.
-Separate diagnostics from timing, retain exact archive equivalence, and establish
-whether any work can safely be removed before proposing a change. Do not cache
-checks/hashes, weaken guards or repeat completed lexical/constructor experiments.
+The [filesystem attribution](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) is complete:
+six exact read-only audits, 243 unchanged source hashes, all 19 API call totals
+agree with a separate raw cProfile. Validator resolution accounts for 1027080
+lstat calls; inventory uses 3954 scandir/68922 DirEntry.stat and no resolve/open/read.
+Repeated reads preserve distinct initial/validation/rescore/final guard boundaries;
+no safely removable check was established. Unprofiled median 9.942 s (three samples),
+observer 166.410 s, cProfile 22.641 s: diagnostics are separate, no speedup claim.
+No code/test/runner change or new full suite; prior same-source/runtime suite bound.
+Next: read-only path-depth sensitivity on two controlled absolute depths of the
+same native filesystem, identical archive/source/runtime, alternating paired
+timings, excluded warmups and separate diagnostics. Preserve exact reports/oracles,
+peers and bytes/mtime. Do not cache checks/hashes, weaken guards, change cwd inside
+the audit or repeat completed lexical/constructor experiments.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

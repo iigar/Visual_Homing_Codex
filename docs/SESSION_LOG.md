@@ -1,5 +1,32 @@
 # Session Log
 
+## 2026-11-03 — Attribute filesystem calls without changing production
+
+- Resumed c927c93, verified remote SHA and clean tracked state; current handoff
+  superseded the older memory queue. Reviewed validator/scorer/exporter and
+  bundle/collection/runner callers directly; graph 6d8f547 remains advisory.
+- Completed one warmup, three timed, one sys.setprofile attribution and one
+  separate cProfile audit of the same bound archive. All 6 full reports/oracles,
+  peers and bytes/mtime agree; no replay executions. All 19 observer totals
+  independently match raw cProfile. Calibration caught _io.open classification
+  before measurement; fixed observer calibration passed, original log retained.
+- Dataset.path owns 87383 resolves/1023002 lstat; constructors add 496/4078.
+  Closed inventory uses 28 traversals, 3954 scandir, 68922 DirEntry.stat and no
+  resolve/open/read. All 87215 Dataset.read calls retain two fstat; 32498 reads
+  belong to final verify_frozen boundaries. No safely removable guard established.
+- Unprofiled median 9.942 s (three samples); observer 166.410 s, cProfile 22.641 s.
+  Python/C API counts are not syscalls; diagnostic ratios are not speedup evidence.
+  Production/tests/runner/core/config unchanged. Probe/finalizer exit 0; 243 source
+  hashes and runtime verified, seven flags OFF. No new full runner: verified prior
+  same-source/runtime 357 Python and 64/64 Debug/Release CTest log by hash/readback.
+- Report FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md; 49 bound local evidence files in
+  artifacts/filesystem-attribution-20261103/. Updated current status/handoff/queue.
+  Next is read-only absolute path-depth sensitivity with paired audits, unchanged
+  guards/workload/runtime/storage. No subagents, hardware or output work.
+- Resumed finalization on November 4: reran independent readback (exit 0),
+  rechecked all 49 evidence/243 source hashes and completed the handoff update.
+  No repeated measurement or new experiment during checkpoint finalization.
+
 ## 2026-11-03 — Preserve context after the PGM checkpoint
 
 - User requested “збережи все”. Confirmed 42541d4 against remote and clean tracked

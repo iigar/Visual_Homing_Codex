@@ -1,5 +1,27 @@
 # Project Memory
 
+## Filesystem Attribution — 2026-11-03
+
+Resumed remote-verified c927c93 with clean tracked state. The read-only filesystem
+slice is complete: six exact audits of one bound 11137-file/768-pair archive,
+unchanged reports/oracles/peers and bytes/mtime, no replay. All 19 Python/C API
+totals agree with separate raw cProfile; these are not kernel syscall counts.
+Dataset.path owns 87383 resolve/1023002 lstat, constructors 496/4078; inventory
+uses 28 traversals/3954 scandir/68922 DirEntry.stat and no resolve/open/read.
+87215 guarded reads retain 174430 fstat; 32498 reads belong to final verify_frozen.
+No safely removable guard established; production/tests/runner/core/config unchanged.
+
+Unprofiled median 9.942 s (three samples), observer 166.410 s, cProfile 22.641 s;
+no before/after, cold-cache, hardware, accuracy or tail-latency claim. Calibration,
+probe and independent readback exit 0; 243 source hashes/runtime verified, seven
+flags OFF. No new full runner; prior identical-source/runtime 357 Python and
+64/64 Debug/Release CTest evidence hash/readback verified. Report
+FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md; 49 bound local ignored evidence files in
+artifacts/filesystem-attribution-20261103/. Next: controlled read-only path-depth
+sensitivity with paired timings, same archive/filesystem/runtime/source, exact
+oracles and fresh guards. Current status/handoff supersede the historical next
+step below. No subagents, hardware/output or global memory edits.
+
 ## Resume Handoff — 2026-11-03
 
 Explicit “збережи все” request saved SESSION_HANDOFF_2026-11-03_UA.md over
