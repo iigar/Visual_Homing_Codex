@@ -1,5 +1,29 @@
 # Session Log
 
+## 2026-11-04 — Measure guarded CLI boundaries and worker memory
+
+- Resumed remote-verified fe2b331 with clean tracked state and unchanged Python
+  executable/build. Ran trusted auditor main through a minimal native wrapper
+  retaining argparse/JSON output and blocking child/replay/resume. One excluded
+  warmup + 15 fresh workers, no profiler, fixed native root depth 4/length 64.
+- Parent launch/wait plus worker module/import/API/flush timestamps distinguish
+  API, output-ready and process-exit times. Native stdout file opened before
+  timer; copies/oracles/snapshots outside it. VmHWM sampled after flush before
+  sidecar, includes imports/serialization. No bare-CLI/cold-cache/tree-RSS claim.
+- All 16 full reports/oracles/peers and 6356740-byte raw stdout hashes agree;
+  bytes/mtime unchanged, zero replay. Process median/p90 10.642/11.108 s, API
+  10.498/10.943 s, per-worker non-API-to-output median 0.143 s. VmHWM median/p90
+  58.65/58.89 MiB. No CLI candidate or cross-study speedup/memory claim.
+- Probe/finalizer exit 0; raw timestamp deltas and nearest-rank p90 independently
+  recalculated. 243 source hashes/runtime and seven OFF flags verified; prior
+  same-source/runtime 357 Python/64+64 CTest log bound. No new full runner or
+  production/tests/runner/core/config change. Local artifacts/cli-latency-20261104/
+  contains 108 bound evidence files; report CLI_LATENCY_MEMORY_2026-11-04_UA.md.
+- Updated status/handoff/queue. Next: current local matcher 44-scenario oracle
+  reestablishment and separate CPU profile/timing on six routes/13 stop-frames.
+  Tools and local historical evidence located read-only; matcher runs not started.
+  No subagents or hardware/output work.
+
 ## 2026-11-04 — Measure absolute path-depth sensitivity
 
 - Resumed remote-verified 68c8f9b and clean tracked tree. Verified Python

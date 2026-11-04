@@ -2,9 +2,9 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-04` після завершення парного read-only
-[path-depth study](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) поверх опублікованого
-filesystem attribution checkpoint `68c8f9b`.
+Оновлено `2026-11-04` після завершення
+[guarded CLI latency/VmHWM baseline](CLI_LATENCY_MEMORY_2026-11-04_UA.md)
+поверх опублікованого path-depth checkpoint `fe2b331`.
 Production/tests/runner/core/config незмінні; нової candidate patch немає.
 Цей handoff замінює [жовтневу точку входу](SESSION_HANDOFF_2026-10-31_UA.md);
 старі документи зберігають історію, evidence та ширшу функціональну чергу.
@@ -13,14 +13,14 @@ Production/tests/runner/core/config незмінні; нової candidate patch
 
 > Продовжуй Visual_Homing із docs/SESSION_HANDOFF_2026-11-03_UA.md.
 > Прочитай AGENTS.md і docs/CURRENT_PROJECT_STATUS_UA.md, перевір HEAD,
-> native Windows tracked status та remote. PGM, filesystem attribution і
-> path-depth study завершені; production незмінний, candidate не реалізовано.
-> Наступний bounded software slice — warm end-to-end CLI latency / worker
-> VmHWM на тому самому bound archive з fixed shallow native layout.
-> Наперед визнач warmup + 15 fresh workers; parent startup→JSON-output wall
-> time й API-only time відокрем, запиши runtime/source/storage/depth identities.
-> Збережи exact full reports/oracles/peers, bytes/mtime, fresh filesystem,
-> content і mutation guards. Не кешуй checks/hashes і не повторюй завершені
+> native Windows tracked status та remote. PGM/filesystem/path-depth/CLI stages
+> завершені; production незмінний, candidate не реалізовано. Наступний bounded
+> software slice — актуальний offline matcher baseline/profile: шість локальних
+> VHRS routes, 13 stop-frame PGM, historical 44-scenario match/candidate oracles.
+> Спочатку перевір input/session/source/compiler/current Release binary identities
+> і сім flags OFF; поясни schema/behavior drift, окремо timed runs та CPU profile.
+> Збережи exact match/candidate/stop-frame oracles, input bytes/mtime та
+> filesystem/content/mutation guards. Не кешуй checks/hashes і не повторюй завершені
 > lexical/constructor experiments. Працюй локально, без Pi/camera/FC/UART/output
 > і subagents. Завершений checkpoint документуй, перевір diff/tests,
 > commit/push, remote SHA та чистий tracked status.
@@ -34,6 +34,8 @@ Production/tests/runner/core/config незмінні; нової candidate patch
   його publication commit перевіряти через live Git, не припускати dated SHA.
 - Path-depth study відновлено з remote-verified `68c8f9bbe3aed63c526c90901c6a1b2c1bff49b7`;
   новий publication commit теж перевіряти live.
+- CLI study відновлено з remote-verified `fe2b331d7c755cfe02a6e18747b5bba21407beda`;
+  його publication commit перевіряти через live Git.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -59,6 +61,21 @@ Production/tests/runner/core/config незмінні; нової candidate patch
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
+| Guarded CLI latency/VmHWM | 16 exact audits; process median/p90 10.642/11.108 s, VmHWM 58.65/58.89 MiB | [Звіт](CLI_LATENCY_MEMORY_2026-11-04_UA.md) |
+
+CLI study завершено: **16/16** exact full normalized reports/oracles/peers,
+ідентичний raw stdout **6356740 bytes**, archive/input bytes/mtime незмінні.
+Один excluded warmup + **15 fresh workers**, fixed native depth **4**, root
+length **64**, default GC, без profiler/replay/resume. Trusted CLI main викликано
+через мінімальний guarded wrapper; guards/setup входять у timing.
+Process wall median/p90 **10.642/11.108 s**, output-ready **10.633/11.100 s**,
+API **10.498/10.943 s**. Median per-worker non-API-to-output **0.143 s**;
+stage medians не додаються. Current-image VmHWM median/p90 **58.65/58.89 MiB**
+після stdout flush, до sidecar/shutdown. Це не bare-CLI або tree-RSS evidence;
+different harness imports не дають cross-study memory-improvement claim.
+Probe/finalizer exit 0; raw timestamps/phase deltas/nearest-rank p90 перевірено.
+**243 source hashes**, сім flags OFF; нового full runner немає, prior
+same-source/runtime log bound. CLI candidate не реалізовано за limited cost.
 
 Path-depth study завершено: **20/20 full normalized reports/oracles/peers**,
 незмінні bytes/mtime, **243 source hashes**, сім flags OFF; probe/finalizer exit 0.
@@ -148,23 +165,27 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. Виміряти **warm end-to-end CLI latency / worker VmHWM** на тому самому archive,
-   fixed shallow native layout; записати roots/depth/length/storage/source/runtime.
-   Наперед визначити один excluded warmup + 15 fresh workers і estimator median/p90.
-3. Parent wall time startup/imports/check/JSON-output відокремити від API-only
-   time; oracle/snapshots/persistence з боку вимірювача — поза timing. Показати
-   current worker VmHWM з imports/serialization; inherited ru_maxrss не є заміною.
-   Default GC і однакові pre/post snapshots прогрівають cache; це warm study,
-   fresh process не є cold-cache доказом. Global cache dropping поза scope.
-4. Exact full normalized reports/oracles/peers, bytes/mtime та no replay/resume.
-   CLI має використовувати тільки trusted source і не виконувати archived tools.
-   Зберегти subprocess/runner stop guards, filesystem/content/mutation semantics.
-5. Filesystem/path-depth stages завершені. Не кешувати checks/hashes між guards,
-   не замінювати content hashing size/mtime, не вводити global chdir/cached resolve.
-   Validator дозволяє contained resolved regular-file symlinks; closed inventory
-   відхиляє symlinks. Не змішувати контракти і не послаблювати mutation guards.
+2. **Актуальний offline matcher baseline/profile**. Bind input hashes/session
+   mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
+   `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
+   Додаткові hardware captures для цього локального кроку не потрібні.
+3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
+   target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
+   compiler/options/cache/binary identities. Новий artifact directory; старі
+   bound scripts/finalizers не перезапускати для іншого revision.
+4. Відновити відповідні **44 scenarios** і exact match/candidate/stop-frame
+   oracles із `artifacts/scale-refinement-20260924/`; однакові modes/configs/
+   workload. Нормалізувати лише timing/display metadata. Будь-який schema або
+   behavior drift спочатку пояснити, не оголошувати equivalence за count alone.
+   Лише потім окремі warmup/timed runs та current CPU profile; source/input
+   snapshots/measurements зберегти. Profile overhead відокремити від API timing.
+5. Обрати один hotspot за evidence. Завершені lazy edge-cache/scale early exits
+   не відкривати без нового profile; не підганяти policy/thresholds за self-match.
+   Широкий rewrite та hardware/output поза scope. Cold-cache methodology й
+   незалежні annotated data лишаються окремими. Архівні integrity guards,
+   hashes/containment/mutation та різні symlink contracts зберігаються.
 6. Якщо candidate виправданий, потрібні characterization/regressions,
-   alternating paired full-audit equivalence і виміряний API gain; за малого
+   alternating paired full-workload equivalence і виміряний API gain; за малого
    gain залишити production незмінним. Code change потребує нового full runner,
    документації, actual staged diff/check, commit/push, remote SHA, clean tracked
    state. Завершені lexical/path-constructor/PGM stages не відкривати без evidence.
@@ -199,6 +220,11 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 ## Локальні evidence та робочі правила
 
+- `artifacts/cli-latency-20261104/`: probe/minimal worker/finalizer, 16 raw stdout/
+  metrics/jobs/oracles/results/stderr, inventories, source manifest, summary/
+  validation, **108 bound evidence files**. Summary SHA-256
+  `1b53a8e7937abdf10cb7307bc0d9e4187ff20b5af7f23bcc676c08a51629a5bc`.
+  Native measurement files прибрані після study; persisted evidence збережено.
 - `artifacts/path-depth-20261104/`: probe/finalizer, 20 jobs/reports/oracles/
   results/logs, два raw pstats/JSON profiles, snapshots/source manifest,
   summary/validation, **115 bound evidence files**. Summary SHA-256

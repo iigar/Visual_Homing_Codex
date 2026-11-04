@@ -58,12 +58,19 @@ Shallow was faster in 8/8 pairs: medians 10.111/11.896 s, median paired reductio
 525978 lstat = six additional components on 87663 archive resolves; the other
 18 tracked counts agree. All guards, 243 source hashes and bytes/mtime retained.
 This is a warm layout result; no production candidate/change or new full suite.
-Next: warm end-to-end CLI latency and worker VmHWM at fixed shallow depth on
-the same bound archive. Predeclare warmup + 15 fresh workers; distinguish process
-startup/imports/check/JSON-output wall time from API-only time. Preserve exact
-reports/oracles/peers and bytes/mtime, source/runtime/storage/depth identities,
-no replay/resume and all integrity guards. VmHWM includes imports/serialization;
-do not substitute inherited ru_maxrss or call fresh workers cold-cache evidence.
+The [guarded CLI latency/memory baseline](CLI_LATENCY_MEMORY_2026-11-04_UA.md)
+completed warmup + 15 timed workers at fixed depth 4/root length 64: 16 exact
+reports/oracles/peers, identical raw stdout, unchanged bytes/mtime and 243 sources.
+Process wall median/p90 10.642/11.108 s, API 10.498/10.943 s, median per-worker
+non-API-to-output 0.143 s. Worker current-image VmHWM median/p90 58.65/58.89 MiB
+after flush, before sidecar/shutdown. Wrapper overhead is included; no bare-CLI,
+memory-improvement or speedup claim. No production change or new full suite.
+Next: current offline matcher baseline/profile on six local VHRS routes and 13
+stop-frame PGMs. Bind input/session/source/compiler/Release binary identities,
+seven flags OFF; reestablish corresponding 44-scenario exact match/candidate/
+stop-frame oracles before a new isolated CPU profile and timed runs. Explain any
+schema/behavior drift first. Choose one hotspot only after evidence; preserve
+completed early exits/cache behavior and do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

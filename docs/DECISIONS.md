@@ -1,5 +1,20 @@
 # Decisions
 
+## 2026-11-04 - Keep CLI Startup And Output After Warm Cost Baseline
+
+- Sixteen guarded CLI calls preserve exact full reports/oracles/peers, identical
+  6356740-byte stdout and bytes/mtime. Warmup + 15 samples, fixed native depth 4,
+  length 64. Process median/p90 10.642/11.108 s; API 10.498/10.943 s; per-worker
+  non-API-to-output median 0.143 s. Defer CLI candidate on limited cost grounds.
+- Measure process exit separately from stdout-ready flush. Wrapper guards/setup
+  are included; VmHWM 58.65/58.89 MiB median/p90 is current-image peak sampled
+  after flush, not process-tree or complete-shutdown memory. Different harness
+  imports prevent a cross-study memory-improvement claim. No production changes.
+- Close this warm audit baseline slice; next reestablish current offline matcher
+  oracles and profile on existing local routes/stop-frames before selecting one
+  hotspot. Keep cold-cache methodology and independent accuracy data separate.
+  See [CLI boundaries and results](CLI_LATENCY_MEMORY_2026-11-04_UA.md).
+
 ## 2026-11-04 - Record Path Depth As A Performance Input
 
 - Twenty read-only audits preserve the bound archive's full reports/oracles and

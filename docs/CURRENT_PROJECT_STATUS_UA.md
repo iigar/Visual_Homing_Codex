@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-04` (парний path-depth study завершено; production незмінний).
+Оновлено: `2026-11-04` (guarded CLI latency/VmHWM baseline завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [path-depth sensitivity report](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md).
-Відновлено remote-verified `68c8f9bbe3aed63c526c90901c6a1b2c1bff49b7`; filesystem attribution і PGM characterization завершені. Новий парний read-only study виміряв вплив absolute path depth; production candidate не реалізовано.
+потім [CLI latency/memory report](CLI_LATENCY_MEMORY_2026-11-04_UA.md).
+Відновлено remote-verified `fe2b331d7c755cfe02a6e18747b5bba21407beda`; PGM/filesystem/path-depth stages завершені. Новий read-only baseline виміряв guarded CLI startup/API/output/exit та current-image VmHWM; production candidate не реалізовано.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -16,7 +16,9 @@ Filesystem attribution: **6/6 audits**, exact reports/oracles/peers і незм�
 
 Path-depth study: **20/20 audits** (16 timed, 2 warmups, 2 profiles) двох copies одного bound archive, exact full reports/oracles/peers і незмінні bytes/mtime. Absolute root depths **4/10**, однакова довжина **64 characters**, спільні filesystem/device, trusted sources, inputs/runtime. Shallow швидший у **8/8 pairs**: medians **10.111/11.896 с**, median paired delta **1.410 с**, median pair-wise reduction **11.99%**, delta range **0.025–3.388 с**. Profiles: **939417/1465395 lstat**, різниця **525978 = 6 × 87663 archive resolves**; інші **18 tracked totals** однакові. Це measured warm layout effect, без production speedup/accuracy/cold-cache claim. **243 source hashes**, сім flags OFF; probe/finalizer exit 0. Нового full runner немає; prior same-source/runtime log звірений. Local evidence: **115 bound files** у `artifacts/path-depth-20261104/`.
 
-Наступний bounded software крок — **warm end-to-end CLI latency / worker VmHWM**: той самий archive на fixed shallow native layout, parent wall time startup→JSON output і окремий API-only time, наперед визначені warmup + 15 fresh workers. Runtime/source/storage/depth identities, exact full reports/oracles/peers, bytes/mtime та no replay/resume guards. VmHWM враховує imports/serialization; inherited ru_maxrss не використовувати як current-image peak. Cold-cache methodology й незалежні annotated data залишаються окремими. Fresh checks/hashes і mutation guards зберігаються; scope локальний software-only.
+Guarded CLI baseline: **16/16** exact audits (один warmup + 15 timed), raw stdout **6356740 bytes** ідентичний, bytes/mtime незмінні. Fixed native root depth **4**, length **64**; startup/imports/check/JSON flush/exit виміряні raw monotonic timestamps, no replay/resume. Process median/p90 **10.642/11.108 с**, output-ready **10.633/11.100 с**, API **10.498/10.943 с**. Median per-worker non-API-to-output **0.143 с**. Worker VmHWM median/p90 **58.65/58.89 MiB**; sampled після flush, до sidecar/shutdown. Wrapper setup входить у timing, це не bare CLI або process-tree RSS. Probe/finalizer exit 0, **243 source hashes**, сім flags OFF, **108 bound evidence files**. Production/tests/runner/core/config незмінні, нового full runner немає, prior same-source/runtime log звірений. CLI candidate відкладено за cost; speedup/memory-improvement claim немає.
+
+Наступний bounded software крок — **актуальний offline matcher baseline/profile** на локальних шести VHRS routes і 13 stop-frame PGM. Перевірити hashes/session bindings, current source/compiler/Release binary identities і сім flags OFF; нові artifacts. Відновити відповідні **44 scenario** match/candidate/stop-frame oracles, окремі warmup/timed runs і CPU profile. Різницю schema/behavior з historical evidence спочатку пояснити. Лише після profile обрати один hotspot; не відкривати завершені kernels/early exits без evidence і не підганяти thresholds за self-match. Cold-cache methodology й незалежні annotated data залишаються окремими; scope software-only, без hardware/output.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -40,6 +42,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- CLI latency/VmHWM (`2026-11-04`): probe/independent finalizer exit 0, **16/16** exact reports/oracles/peers і raw stdout hashes; усі timestamp phase deltas й median/p90 перераховані. **243 source hashes**, output flags OFF, archive/input bytes/mtime незмінні. Guarded process median/p90 **10.642/11.108 с**, current-image VmHWM **58.65/58.89 MiB**. Нового full suite немає. [Звіт](CLI_LATENCY_MEMORY_2026-11-04_UA.md), local evidence `artifacts/cli-latency-20261104/`; next — matcher baseline/profile.
 
 - Path-depth sensitivity (`2026-11-04`): probe/independent finalizer exit 0; **20/20** exact audits, **8 balanced timed pairs**, два raw profiles. Незмінні archive/input bytes/mtime, **243 source hashes**, сім flags OFF; production/tests/runner/core/config незмінні, нового full-suite run немає. Вісім менших shallow times, median paired reduction **11.99%** у цьому warm workload. [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md), local evidence `artifacts/path-depth-20261104/`; наступна перевірка — end-to-end CLI latency/VmHWM.
 

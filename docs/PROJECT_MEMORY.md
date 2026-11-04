@@ -1,5 +1,26 @@
 # Project Memory
 
+## Guarded CLI Latency And VmHWM — 2026-11-04
+
+Resumed remote-verified fe2b331. Trusted auditor CLI main, guarded native wrapper,
+one warmup + 15 fresh workers, fixed archive depth 4/root length 64. All 16 full
+reports/oracles/peers, identical 6356740-byte stdout and bytes/mtime verified;
+zero replay. Process median/p90 10.642/11.108 s, output-ready 10.633/11.100 s,
+API 10.498/10.943 s. Per-worker non-API residual median 0.143 s; no CLI candidate.
+Worker VmHWM median/p90 58.65/58.89 MiB after flush, before sidecar/shutdown.
+Wrapper setup included; no bare CLI, tree-RSS, cold-cache, accuracy, speedup or
+memory-improvement claim. Probe/finalizer exit 0, all raw timestamp phases and
+nearest-rank p90 verified, 243 source hashes/runtime and seven OFF flags bound.
+No production/tests/runner/core/config changes or new full suite; prior log bound.
+Report CLI_LATENCY_MEMORY_2026-11-04_UA.md, local ignored
+`artifacts/cli-latency-20261104/` (108 bound files). Next: current offline matcher
+baseline/profile with verified six local VHRS routes/13 PGM stop-frames and
+historical 44-scenario oracles. Bind source/compiler/Release binary, verify all
+flags OFF, explain any schema/behavior drift, separate CPU profile from timing.
+No candidate until hotspot established; preserve early exits/cache/thresholds
+and software-only scope. Cold-cache/independent annotated data and wider queue
+remain separate. Current handoff supersedes older next-step text below.
+
 ## Path-Depth Sensitivity — 2026-11-04
 
 Resumed remote-verified 68c8f9b with clean tracked state. Twenty audits of one
