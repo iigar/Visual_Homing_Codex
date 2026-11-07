@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-04` (guarded CLI latency/VmHWM baseline завершено).
+Оновлено: `2026-11-07` (offline matcher baseline/profile завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [CLI latency/memory report](CLI_LATENCY_MEMORY_2026-11-04_UA.md).
-Відновлено remote-verified `fe2b331d7c755cfe02a6e18747b5bba21407beda`; PGM/filesystem/path-depth stages завершені. Новий read-only baseline виміряв guarded CLI startup/API/output/exit та current-image VmHWM; production candidate не реалізовано.
+потім [matcher baseline/profile](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md).
+Відновлено remote-verified `4131371e30c3d776842f4d22628ec8d6a04d8b1d`; PGM/filesystem/path-depth/CLI stages завершені. Новий offline matcher baseline відновив exact historical oracles та встановив coarse-scoring hotspot; production candidate не реалізовано.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -18,7 +18,9 @@ Path-depth study: **20/20 audits** (16 timed, 2 warmups, 2 profiles) двох co
 
 Guarded CLI baseline: **16/16** exact audits (один warmup + 15 timed), raw stdout **6356740 bytes** ідентичний, bytes/mtime незмінні. Fixed native root depth **4**, length **64**; startup/imports/check/JSON flush/exit виміряні raw monotonic timestamps, no replay/resume. Process median/p90 **10.642/11.108 с**, output-ready **10.633/11.100 с**, API **10.498/10.943 с**. Median per-worker non-API-to-output **0.143 с**. Worker VmHWM median/p90 **58.65/58.89 MiB**; sampled після flush, до sidecar/shutdown. Wrapper setup входить у timing, це не bare CLI або process-tree RSS. Probe/finalizer exit 0, **243 source hashes**, сім flags OFF, **108 bound evidence files**. Production/tests/runner/core/config незмінні, нового full runner немає, prior same-source/runtime log звірений. CLI candidate відкладено за cost; speedup/memory-improvement claim немає.
 
-Наступний bounded software крок — **актуальний offline matcher baseline/profile** на локальних шести VHRS routes і 13 stop-frame PGM. Перевірити hashes/session bindings, current source/compiler/Release binary identities і сім flags OFF; нові artifacts. Відновити відповідні **44 scenario** match/candidate/stop-frame oracles, окремі warmup/timed runs і CPU profile. Різницю schema/behavior з historical evidence спочатку пояснити. Лише після profile обрати один hotspot; не відкривати завершені kernels/early exits без evidence і не підганяти thresholds за self-match. Cold-cache methodology й незалежні annotated data залишаються окремими; scope software-only, без hardware/output.
+Matcher baseline/profile: **44 scenarios, 253 exact processes** (176 Release, включно з 44 excluded warmups, і 77 diagnostics), **69741 timed self-matches + 234 PGM**; schema/behavior drift немає. Inputs: шість routes / 2583 frames / 13 PGM, bytes/mtime незмінні, **243 source hashes**, сім flags OFF. Global raw-score source lines мають **446/449 CPU samples**, **5173956 calls**; window-scale — **617520 calls**, без scale calls у self-match. Flat gprof помилково називає raw compiler clone як edge function; raw histogram/ELF та незалежний addr2line readback це виправляють. Менші groups мають лише 34/33 samples, percentages грубі. Probe/calibration/finalizer exit 0; **658 bound local evidence files**. Production/tests/runner/core/config незмінні, нового full suite немає; prior same-source/runtime log звірений.
+
+Наступний bounded software крок — **characterization coarse zero-bound scoring skip** за `top_candidate_count=0` і нейтрального directional bias. Повний structural validation traversal, strict winner/tie order, state/exception semantics і top-k/bias negative controls зберегти. Спочатку baseline characterization; candidate лише після доказу, alternating paired full-workload equivalence і API gain. Code change потребуватиме нового full runner. Не переробляти завершені pixel kernels/cache і не підганяти thresholds за self-match. Cold-cache methodology й незалежні annotated data залишаються окремими; scope software-only, без hardware/output.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -42,6 +44,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Offline matcher baseline/profile (`2026-11-07`): calibration/probe/independent finalizer exit 0; **44 historical oracles / 253 exact processes**, без schema/behavior drift. **243 source hashes**, input/session/build/binary bindings і bytes/mtime звірено; сім flags OFF. Raw-PC/source mapping встановлює coarse scoring як hotspot; flat gprof labels для compiler clone непридатні. Нового full suite чи production change немає. [Звіт](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md), local evidence `artifacts/matcher-profile-20261106/`; next — bounded zero-bound coarse-skip characterization.
 
 - CLI latency/VmHWM (`2026-11-04`): probe/independent finalizer exit 0, **16/16** exact reports/oracles/peers і raw stdout hashes; усі timestamp phase deltas й median/p90 перераховані. **243 source hashes**, output flags OFF, archive/input bytes/mtime незмінні. Guarded process median/p90 **10.642/11.108 с**, current-image VmHWM **58.65/58.89 MiB**. Нового full suite немає. [Звіт](CLI_LATENCY_MEMORY_2026-11-04_UA.md), local evidence `artifacts/cli-latency-20261104/`; next — matcher baseline/profile.
 

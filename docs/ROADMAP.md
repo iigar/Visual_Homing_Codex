@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-04
+## Current Focus - 2026-11-07
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -65,12 +65,19 @@ Process wall median/p90 10.642/11.108 s, API 10.498/10.943 s, median per-worker
 non-API-to-output 0.143 s. Worker current-image VmHWM median/p90 58.65/58.89 MiB
 after flush, before sidecar/shutdown. Wrapper overhead is included; no bare-CLI,
 memory-improvement or speedup claim. No production change or new full suite.
-Next: current offline matcher baseline/profile on six local VHRS routes and 13
-stop-frame PGMs. Bind input/session/source/compiler/Release binary identities,
-seven flags OFF; reestablish corresponding 44-scenario exact match/candidate/
-stop-frame oracles before a new isolated CPU profile and timed runs. Explain any
-schema/behavior drift first. Choose one hotspot only after evidence; preserve
-completed early exits/cache behavior and do not tune thresholds from self-match.
+The [current matcher baseline/profile](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md)
+reestablishes all 44 historical oracles with unchanged schema/behavior across
+176 Release processes and 77 diagnostics. Six routes/2583 frames, 13 PGM inputs,
+session mappings, 243 source hashes and seven OFF flags are bound. Raw gmon/ELF
+and independent addr2line locate 446/449 global CPU samples in coarse raw scoring;
+gprof flat mislabels its compiler clone as unused edge code. Smaller profiles
+have only 34/33 samples. No production change/new full suite; prior log bound.
+Next: bounded zero-bound coarse-skip characterization for no-top-k/neutral-bias
+paths, preserving complete structural validation, strict winner/tie behavior,
+state/exceptions and diagnostics. Include top-k/bias negative controls. Candidate
+only after baseline characterization, paired exact full-workload/API gain and a
+new full runner for code changes. Preserve completed pixel kernels/cache behavior
+and do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

@@ -1,5 +1,29 @@
 # Session Log
 
+## 2026-11-07 — Reestablish matcher oracles and locate coarse scoring cost
+
+- Resumed remote-verified 4131371 with clean tracked state. Preserved the failed
+  November 5 artifacts. New artifacts/matcher-profile-20261106/ was started
+  November 6; work resumed after a server restart and completed November 7.
+- Verified six VHRS routes (2583 frames), 13 PGM files, explicit session bindings,
+  243 source hashes and current Release/profile build identities. Seven flags
+  OFF. All original/native input bytes/mtime remained unchanged.
+- Reestablished full historical 44-scenario schema and exact oracles: 44 excluded
+  warmup processes, 132 timed Release processes, 77 separate diagnostics all agree.
+  Timed output contains 69741 self-matches and 234 PGM matches. No behavior drift.
+- Calibrated raw gmon reading and mapped every nonzero PC bin independently with
+  addr2line; gprof flat misattributes a raw-score clone to unused edge code and
+  line mode fails. Global raw-score lines hold 446/449 samples; coarse calls
+  5173956/617520/156000 for global/window-scale/stop-scale, matched to workload
+  formulas. Self profiles have zero scale/edge calls. Small profiles 34/33 samples.
+- Probe/calibration/finalizer exit 0; 658 bound local files, report
+  MATCHER_BASELINE_PROFILE_2026-11-07_UA.md. Production/tests/runner/core/config
+  unchanged; no new full suite, prior identical-source/runtime 357 Python and
+  64+64 CTest log hash/success/counts verified. No speedup/accuracy/hardware claim.
+- Next: zero-bound coarse-skip characterization with complete validation and
+  top-k/bias controls, before any candidate. Updated status/handoff/queue;
+  no subagents, hardware or output work.
+
 ## 2026-11-04 — Measure guarded CLI boundaries and worker memory
 
 - Resumed remote-verified fe2b331 with clean tracked state and unchanged Python

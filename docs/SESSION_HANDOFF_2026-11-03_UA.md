@@ -2,9 +2,9 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-04` після завершення
-[guarded CLI latency/VmHWM baseline](CLI_LATENCY_MEMORY_2026-11-04_UA.md)
-поверх опублікованого path-depth checkpoint `fe2b331`.
+Оновлено `2026-11-07` після завершення
+[offline matcher baseline/profile](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md)
+поверх опублікованого CLI checkpoint `4131371`.
 Production/tests/runner/core/config незмінні; нової candidate patch немає.
 Цей handoff замінює [жовтневу точку входу](SESSION_HANDOFF_2026-10-31_UA.md);
 старі документи зберігають історію, evidence та ширшу функціональну чергу.
@@ -13,12 +13,15 @@ Production/tests/runner/core/config незмінні; нової candidate patch
 
 > Продовжуй Visual_Homing із docs/SESSION_HANDOFF_2026-11-03_UA.md.
 > Прочитай AGENTS.md і docs/CURRENT_PROJECT_STATUS_UA.md, перевір HEAD,
-> native Windows tracked status та remote. PGM/filesystem/path-depth/CLI stages
-> завершені; production незмінний, candidate не реалізовано. Наступний bounded
-> software slice — актуальний offline matcher baseline/profile: шість локальних
-> VHRS routes, 13 stop-frame PGM, historical 44-scenario match/candidate oracles.
-> Спочатку перевір input/session/source/compiler/current Release binary identities
-> і сім flags OFF; поясни schema/behavior drift, окремо timed runs та CPU profile.
+> native Windows tracked status та remote. PGM/filesystem/path-depth/CLI/matcher
+> baseline stages завершені; production незмінний, candidate не реалізовано.
+> Наступний bounded software slice — characterization coarse zero-bound scoring
+> skip за top_candidate_count=0 і нейтрального directional bias. Повний structural
+> validation traversal, strict winner/tie order, state/exception semantics і
+> top-k/bias negative controls зберегти. Не повторюй завершений profile: є 44
+> exact oracles / 253 processes і raw-PC/source evidence coarse-scoring hotspot.
+> Перевір input/session/source/compiler/current Release binary identities й сім
+> flags OFF. Candidate лише після baseline characterization і paired API gain.
 > Збережи exact match/candidate/stop-frame oracles, input bytes/mtime та
 > filesystem/content/mutation guards. Не кешуй checks/hashes і не повторюй завершені
 > lexical/constructor experiments. Працюй локально, без Pi/camera/FC/UART/output
@@ -36,6 +39,8 @@ Production/tests/runner/core/config незмінні; нової candidate patch
   новий publication commit теж перевіряти live.
 - CLI study відновлено з remote-verified `fe2b331d7c755cfe02a6e18747b5bba21407beda`;
   його publication commit перевіряти через live Git.
+- Matcher study відновлено з remote-verified `4131371e30c3d776842f4d22628ec8d6a04d8b1d`;
+  наступний publication commit перевіряти через live Git.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -58,6 +63,7 @@ Production/tests/runner/core/config незмінні; нової candidate patch
 | Path-constructor candidate | `90b48b2`, API gain не підтверджено, production залишено | [Звіт](PATH_CONSTRUCTION_2026-10-25_UA.md) |
 | Large-archive baseline | `f704a2a`, fixed 12 datasets / 12 runs / 32×32 / 4 references, 8/64 frames | [Звіт](LARGE_ARCHIVE_BASELINE_2026-10-30_UA.md) |
 | Fixed-archive warm latency | `e4d5a57`, warmup + 15 timed audits | [Звіт](WARM_AUDIT_LATENCY_2026-10-31_UA.md) |
+| Current offline matcher baseline/profile | 44 exact oracles / 253 processes, coarse scoring hotspot, без candidate | [Звіт](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md) |
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
@@ -165,24 +171,29 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. **Актуальний offline matcher baseline/profile**. Bind input hashes/session
+2. **Characterization coarse zero-bound scoring skip**. Bind input hashes/session
    mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
    `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
-   Додаткові hardware captures для цього локального кроку не потрібні.
+   Актуальний baseline/profile завершено: 44 historical oracles / 253 exact
+   processes, schema/behavior drift немає. Не перезапускати його без причини.
 3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
    target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
    compiler/options/cache/binary identities. Новий artifact directory; старі
    bound scripts/finalizers не перезапускати для іншого revision.
-4. Відновити відповідні **44 scenarios** і exact match/candidate/stop-frame
-   oracles із `artifacts/scale-refinement-20260924/`; однакові modes/configs/
-   workload. Нормалізувати лише timing/display metadata. Будь-який schema або
-   behavior drift спочатку пояснити, не оголошувати equivalence за count alone.
-   Лише потім окремі warmup/timed runs та current CPU profile; source/input
-   snapshots/measurements зберегти. Profile overhead відокремити від API timing.
-5. Обрати один hotspot за evidence. Завершені lazy edge-cache/scale early exits
-   не відкривати без нового profile; не підганяти policy/thresholds за self-match.
-   Широкий rewrite та hardware/output поза scope. Cold-cache methodology й
-   незалежні annotated data лишаються окремими. Архівні integrity guards,
+4. Дослідити можливість пропускати подальше raw pixel scoring після zero lower
+   bound лише за **top_candidate_count=0 і нейтрального directional bias**.
+   Повний structural validation traversal зберегти, включно з malformed later
+   entries; strict `<` winner/tie, state після invalid match, exceptions,
+   refinement та diagnostics залишаються контрактами. Спочатку baseline
+   characterization; top-k/bias negative controls обов'язкові.
+5. Hotspot уже встановлено: raw coarse scoring, 446/449 global source samples,
+   5173956 global calls; self-match scale calls = 0. Flat gprof labels compiler
+   clone як unused edge function і не є достовірним attribution; raw gmon/ELF
+   та незалежний addr2line readback збережено. Менші groups мають лише 34/33
+   samples, не робити точних percentage claims. Завершені pixel kernels/cache
+   не переробляти; policy/thresholds за self-match не підганяти. Широкий rewrite
+   та hardware/output поза scope. Cold-cache methodology й незалежні annotated
+   data лишаються окремими. Архівні integrity guards,
    hashes/containment/mutation та різні symlink contracts зберігаються.
 6. Якщо candidate виправданий, потрібні characterization/regressions,
    alternating paired full-workload equivalence і виміряний API gain; за малого
@@ -220,6 +231,14 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 ## Локальні evidence та робочі правила
 
+- `artifacts/matcher-profile-20261106/`: розпочато 6 листопада, завершено
+  7 листопада після restart. Calibration/probe/finalizer exit 0; 44 oracles,
+  253 JSONL/result pairs, 77 gmon files, raw histogram/ELF і source mappings,
+  source/build identities, summary/validation, **658 bound files** поза build.
+  Summary SHA-256
+  `804cd457b5855cf233181f563e356d4742811b0784c81c84a267a919013113c4`.
+  Native temporary data прибрані probe після завершення; local build/evidence
+  збережено. Незавершені `matcher-profile-20261105/` artifacts не переписано.
 - `artifacts/cli-latency-20261104/`: probe/minimal worker/finalizer, 16 raw stdout/
   metrics/jobs/oracles/results/stderr, inventories, source manifest, summary/
   validation, **108 bound evidence files**. Summary SHA-256

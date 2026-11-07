@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-11-07 - Select Coarse Scoring After Exact Matcher Baseline
+
+- All 44 historical scenarios preserve their full config/match/candidate schema
+  and exact results across 176 Release processes and 77 separate diagnostics.
+  Inputs/session mappings, 243 source hashes, build identities, seven OFF flags
+  and unchanged bytes/mtime are verified. No production candidate or new full suite.
+- Flat gprof mislabels the raw-score compiler clone as an unused edge function;
+  line mode also fails. Use persisted gmon records, ELF ranges and independent
+  addr2line mapping: 446/449 global samples lie in raw-score source lines.
+  Smaller 34/33-sample profiles support only coarse observations. Do not infer
+  edge-cache work or precise cost shares from misleading labels/sparse samples.
+- Next characterize zero-bound coarse scoring skips for no-top-k, neutral-bias
+  paths while preserving complete structural validation, strict winner/tie,
+  state/exception and diagnostic contracts. Keep top-k/bias negative controls.
+  Candidate requires baseline characterization, paired exact workload/API gain
+  and a new full runner for code changes. No threshold tuning from self-match.
+  See [matcher baseline/profile](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md).
+
 ## 2026-11-04 - Keep CLI Startup And Output After Warm Cost Baseline
 
 - Sixteen guarded CLI calls preserve exact full reports/oracles/peers, identical

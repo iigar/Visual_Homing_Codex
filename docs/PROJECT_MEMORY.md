@@ -1,5 +1,29 @@
 # Project Memory
 
+## Offline Matcher Baseline And CPU Profile — 2026-11-07
+
+Resumed remote-verified 4131371. Six local routes/2583 frames and 13 PGM inputs
+retain hashes/mtime and explicit session mappings. All 44 historical config/
+match/candidate oracles match exactly: 176 Release processes (44 excluded warmup,
+132 timed) and 77 diagnostics. Timed 69741 self-matches + 234 PGM. No schema or
+behavior drift. Bound 243 source hashes, compiler/cache/commands/binary identities,
+seven flags OFF. Probe/calibration/independent finalizer exit 0; 658 local bound
+files in artifacts/matcher-profile-20261106/, completed November 7 after restart.
+Flat gprof incorrectly names raw-score clone samples/calls as unused edge code;
+line mode fails. Raw gmon/ELF and independent addr2line place 446/449 global
+samples in raw-score lines. Coarse counts 5173956/617520/156000 agree with window/
+workload formulas; self profiles execute no scaled scoring. Smaller profiles
+have only 34/33 samples, so do not treat percentages as precise cost shares.
+Production/tests/runner/core/config unchanged; no new full suite; prior bound
+same-source/runtime 357 Python and 64+64 CTest log verified. No speedup, accuracy,
+cold-cache/Pi/live acceptance. Report MATCHER_BASELINE_PROFILE_2026-11-07_UA.md.
+Next characterize zero-bound coarse scoring skips only for no-top-k/neutral-bias
+paths, retaining full structural traversal, strict tie/winner, state/exception
+and diagnostic behavior. Top-k/bias negative controls and baseline evidence
+precede a candidate; paired API gain/full-workload equivalence and new full
+runner required for code changes. Preserve finished kernels/cache/thresholds.
+This supersedes the earlier matcher-profile next step below.
+
 ## Guarded CLI Latency And VmHWM — 2026-11-04
 
 Resumed remote-verified fe2b331. Trusted auditor CLI main, guarded native wrapper,
