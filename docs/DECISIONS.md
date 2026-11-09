@@ -1,5 +1,31 @@
 # Decisions
 
+## 2026-11-10 - Keep Exact Coarse Zero Skip With Complete Validation
+
+- Seven production lines skip later pixel scoring only after exact zero with
+  top-k=0 and bias=0. Every eligible entry is structurally validated before the
+  skip. Strict winner/tie, state/exception, top-k/bias and diagnostic contracts
+  remain intact; no threshold/scale/kernel/cache/output change.
+- New characterization passed on archived baseline before production editing,
+  then candidate: 3456 bit-exact comparisons each plus explicit negative controls.
+  All 44 scenarios/534 processes preserve full historical oracles; 176 balanced
+  timed pairs. Global raw calls 5173956 -> 2592144 with all 5173956 validation
+  calls retained. Full runner/readback exit 0, 357 Python and 65+65 CTest passed,
+  244 source hashes and seven OFF flags bound.
+- Keep measured exact self-match API reductions 58.93/42.22/37.18% for the three
+  route modes, within warm WSL evidence. Positive-error camera queries do not
+  activate this gate. PGM case ratios are mixed (up to 1.226); no PGM speedup or
+  tight regression-free/tail claim. See [report](COARSE_ZERO_SCORING_2026-11-10_UA.md).
+- Investigated that control signal before publication with a separate fixed
+  20-pair confirmation across all 26 PGM cases on the same binaries. All 1092
+  processes/oracles match; medians 0.991/1.003, case ranges 0.949–1.066 and
+  0.972–1.020. Large initial slowdown did not reproduce; cause not established.
+  Preserve both datasets separately; no PGM gain or tight regression bound.
+- Next: read-only non-exact/top-k/scale CPU attribution with a predeclared adequate
+  sample budget and current source/oracle bindings. Completed zero skip/kernels/
+  cache remain closed without new evidence. Independent accuracy/cold-cache and
+  hardware gates stay separate.
+
 ## 2026-11-07 - Select Coarse Scoring After Exact Matcher Baseline
 
 - All 44 historical scenarios preserve their full config/match/candidate schema

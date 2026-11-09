@@ -1,5 +1,37 @@
 # Project Memory
 
+## Exact Coarse Zero Skip — 2026-11-10
+
+Resumed remote-verified 403e96e. Seven production lines in match skip only raw
+pixel scoring after exact zero when top-k=0 and bias=0; validation of each eligible
+entry remains before the skip. Strict ties, state/exceptions, bias/top-k and all
+diagnostics preserved. No policy/threshold/output/kernel/cache changes.
+New test passed against canonical Git baseline before editing production, then
+candidate: explicit controls and 3456 bit-exact full-scoring comparisons each.
+All 44 historical oracles match across 534 processes: 88 excluded warmups,
+352 timed (176 balanced pairs), 44 CMake and 50 separate call diagnostics.
+Median case paired reductions 58.93/42.22/37.18% in exact self-match modes only.
+PGM controls mixed, case ratio up to 1.226; no PGM gain/regression-free bound.
+Separate fixed confirmation of all 26 PGM cases used 20 balanced pairs/case,
+same binaries: 1092 exact processes, medians 0.991/1.003, case ranges
+0.949–1.066 / 0.972–1.020. Large initial slowdown did not reproduce; cause not
+established. No pooling with four-pair data; probe/readback exit 0, 2189 bound
+files in artifacts/coarse-zero-controls-20261110/. No new source or full runner.
+Global raw calls 5173956 -> 2592144, validation 5173956 unchanged; window raw
+617520 -> 318720 with validation unchanged. Top-k PGM raw/scale counts unchanged.
+Raw arc attribution must use full addr2line inline chains/outermost callee;
+innermost vector::size() can mask the raw function. Preflight CRLF archive and
+initial attribution-reader failures preserved; corrected checks retain all bounds.
+Full runner/independent finalizer exit 0: 357 Python, Debug/Release CTest 65/65,
+244 source hashes, input bytes/mtime unchanged and seven flags OFF. Local
+artifacts/coarse-zero-20261109/ has 1692 bound files; completion November 10.
+Report COARSE_ZERO_SCORING_2026-11-10_UA.md. Sources changed only matcher/CMake
+plus one new test; no native sanitizer/NoTests/MSVC/hardware acceptance claim.
+Next: read-only non-exact/top-k/scale CPU attribution with adequate predeclared
+sample budget, same bound stop-frames/exact oracles/current identities. Do not
+reopen finished zero-skip/kernels/cache or tune thresholds from self-match.
+This supersedes the older characterization next step below.
+
 ## Offline Matcher Baseline And CPU Profile — 2026-11-07
 
 Resumed remote-verified 4131371. Six local routes/2583 frames and 13 PGM inputs

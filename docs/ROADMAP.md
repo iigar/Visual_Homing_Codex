@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-07
+## Current Focus - 2026-11-10
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -72,12 +72,22 @@ session mappings, 243 source hashes and seven OFF flags are bound. Raw gmon/ELF
 and independent addr2line locate 446/449 global CPU samples in coarse raw scoring;
 gprof flat mislabels its compiler clone as unused edge code. Smaller profiles
 have only 34/33 samples. No production change/new full suite; prior log bound.
-Next: bounded zero-bound coarse-skip characterization for no-top-k/neutral-bias
-paths, preserving complete structural validation, strict winner/tie behavior,
-state/exceptions and diagnostics. Include top-k/bias negative controls. Candidate
-only after baseline characterization, paired exact full-workload/API gain and a
-new full runner for code changes. Preserve completed pixel kernels/cache behavior
-and do not tune thresholds from self-match.
+The [coarse-zero skip](COARSE_ZERO_SCORING_2026-11-10_UA.md) is implemented in
+seven production lines: exact zero with top-k=0/bias=0 skips raw scoring while
+every eligible entry is still validated. Baseline/candidate characterization,
+534 exact processes/176 balanced timed pairs and raw call formulas preserve all
+contracts. Warm exact-self paired reductions 58.93/42.22/37.18%; PGM controls mixed,
+no general camera/PGM gain or tight timing-regression bound. Full runner and
+independent readback passed: 357 Python, 65+65 CTest, 244 source hashes, flags OFF.
+Initial PGM slowdown signal was investigated separately: 20 fixed balanced
+pairs/all 26 PGM cases, 1092 exact processes; mode medians 0.991/1.003 and case
+ranges 0.949–1.066 / 0.972–1.020. Large slowdown did not reproduce; no pooling
+with the four-pair data or tight PGM timing-regression claim.
+Next: read-only non-exact/top-k/scale CPU attribution on the same bound stop-frames
+with adequate predeclared diagnostic workload/sample budget. Bind current sources,
+builds and exact oracles; separate profiling from timing. Previous 33 stop-scale
+samples cannot establish precise shares. Preserve completed zero-skip/pixel
+kernels/cache behavior and do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

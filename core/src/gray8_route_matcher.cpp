@@ -298,6 +298,8 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
     double best_raw_distance = std::numeric_limits<double>::infinity();
     std::size_t best_index = begin;
     bool evaluated_candidate = false;
+    const bool zero_bounds_coarse_score = config_.top_candidate_count == 0
+        && config_.directional_search_bias == 0.0;
     for (std::size_t index = begin; index < end; ++index) {
         const auto progress = route_progress_for_index(route_, index);
         if (!last_index_.has_value() && config_.initial_progress_window_enabled
@@ -306,6 +308,11 @@ RouteMatch Gray8RouteMatcher::match(const Frame& frame) {
         }
         const auto& entry = route_.entries[index];
         validate_frame_against_entry(frame, entry);
+        if (zero_bounds_coarse_score && best_distance == 0.0) {
+            // Later nonnegative scores cannot win a strict tie. Keep validating
+            // every eligible entry; top-k and biased scores still need all pixels.
+            continue;
+        }
         const auto distance = normalized_mean_absolute_difference(frame.data, entry.payload);
         evaluated_candidate = true;
         double ranked_distance = distance;

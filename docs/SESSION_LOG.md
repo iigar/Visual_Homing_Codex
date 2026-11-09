@@ -1,5 +1,34 @@
 # Session Log
 
+## 2026-11-10 — Keep exact coarse zero skip after paired validation
+
+- Resumed remote-verified 403e96e; started artifacts/coarse-zero-20261109/ on
+  November 9. Frozen canonical Git archive verified per blob; preserved initial
+  Windows/Git line-ending preflight failures. No production edit before the new
+  characterization test passed on baseline (3456 full-scoring comparisons).
+- Added seven match lines: exact zero, no-top-k and zero-bias skip only raw
+  scoring after each structural validation. Added one registered CTest. Same
+  characterization passes candidate; state/tie/exception/top-k/bias controls hold.
+- Four balanced paired rounds, 44 cases: 176 pairs, 88 excluded warmups, 44 CMake
+  checks and 50 diagnostic processes; all 534 outputs exactly match full historical
+  oracles. 92988 timed self-matches + 312 PGM per variant. Inputs bytes/mtime stable.
+- Independent readback fixed innermost-inline callee misattribution using full
+  addr2line chains, preserving expected count assertions. Global raw 5173956 ->
+  2592144, validation 5173956 unchanged; window raw 617520 -> 318720, validation
+  unchanged. PGM raw/scale counts unchanged. Initial reader failure preserved.
+- Median case paired exact-self reductions 58.93/42.22/37.18%; PGM mixed ratios,
+  no PGM speedup/regression-free/accuracy/Pi/live claim. CPU affinity not fixed.
+- Before publication, investigated the PGM slowdown signal with a separate
+  fixed 20-pair/all-26-case confirmation, same binaries: 1092 exact processes,
+  medians 0.991/1.003 and case ranges 0.949–1.066 / 0.972–1.020. Initial large
+  slowdown not reproduced, cause unestablished; no pooling or tight timing bound.
+  Probe/finalizer exit 0, 2189 additional bound files, sources/inputs unchanged.
+- Full runner and finalizer exit 0; Debug/Release CTest 65/65, all 357 Python
+  tests, 244 source hashes, seven flags OFF. Local evidence has 1692 bound files.
+  Report COARSE_ZERO_SCORING_2026-11-10_UA.md. Updated status/handoff/queue;
+  no subagents or hardware/output work. Next read-only non-exact/top-k/scale
+  CPU attribution with adequate sample budget and exact current bindings.
+
 ## 2026-11-07 — Reestablish matcher oracles and locate coarse scoring cost
 
 - Resumed remote-verified 4131371 with clean tracked state. Preserved the failed
