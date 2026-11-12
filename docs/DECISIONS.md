@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-11-12 - Characterize Coarse Partial-Score Rejection Before A Candidate
+
+- Fixed gated batches on 13 non-exact PGM images/mode retain exact results:
+  8192/4096 queries per image, 159744 repeated queries, 6492/7264 recorded text
+  samples. All 44 current CMake scenarios, three PGM timing rounds and gate
+  calibration pass; 244 source hashes/input bindings unchanged, flags OFF.
+- Raw scoring accounts for 98.11% recorded executable-text samples in pgm;
+  pgm-scale splits 50.44% raw/48.28% scaled. Do not interpret the small difference
+  as a proven ordering. Top-k insertion <0.5% offers no rewrite justification.
+  Sampling excludes dynamic-library PCs; CPU clock exceeds wall in 23/26 workers,
+  so clock ratios are not calibrated latency/coverage. No new speedup claim.
+- Next characterize a lossless coarse partial-score lower bound at neutral bias,
+  preserving both strict winner ties and rounded top-k confidence ties. Equality
+  cannot reject a top-k candidate because later equal confidence inserts first.
+  Retain every eligible structural validation and exact full/raw diagnostic paths.
+  Baseline controls precede any candidate, paired API gain and new full runner.
+- Keep production unchanged in this slice. Probe/readback exit 0; prior identical
+  source/Python 357 Python/65+65 CTest log verified, no new full suite. See
+  [stop-frame attribution](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md).
+
 ## 2026-11-10 - Keep Exact Coarse Zero Skip With Complete Validation
 
 - Seven production lines skip later pixel scoring only after exact zero with

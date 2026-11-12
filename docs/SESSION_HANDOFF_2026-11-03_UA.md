@@ -2,11 +2,11 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-10` після завершення
-[coarse zero-bound scoring skip](COARSE_ZERO_SCORING_2026-11-10_UA.md)
-поверх опублікованого matcher baseline checkpoint `403e96e`.
-Production diff — сім match рядків; CMake реєструє один новий test. Pixel
-kernels/cache/policy/thresholds/output gates і Python runner незмінні.
+Оновлено `2026-11-12` після завершення
+[non-exact stop-frame CPU attribution](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md)
+поверх опублікованого coarse-zero checkpoint `e7457ae`.
+У цьому slice production/tests/runner/core/config незмінні. Чинні сім coarse-zero
+match рядків, pixel kernels/cache/policy/thresholds/output gates збережені.
 Цей handoff замінює [жовтневу точку входу](SESSION_HANDOFF_2026-10-31_UA.md);
 старі документи зберігають історію, evidence та ширшу функціональну чергу.
 
@@ -18,12 +18,15 @@ kernels/cache/policy/thresholds/output gates і Python runner незмінні.
 > baseline та coarse-zero skip завершені. Новий skip застосовується лише після
 > exact zero за top-k=0/bias=0; повний structural validation traversal збережено.
 > Є 44 exact oracles / 534 processes, 176 balanced timed pairs, 244 source hashes,
-> full runner 357 Python і Debug/Release CTest 65/65. Наступний bounded software
-> slice — read-only non-exact/top-k/scale CPU attribution на bound stop-frames із
-> достатнім наперед визначеним diagnostic workload/sample budget. Попередні 33
-> samples недостатні для точних cost shares. Перевір current source/build/oracle
-> identities та сім flags OFF; profile відокрем від timing. Не відкривай завершені
-> zero-skip/pixel kernels/cache без нового evidence й не підганяй thresholds.
+> full runner 357 Python і Debug/Release CTest 65/65. Новий read-only profile
+> завершено: 159744 exact repeats, 6492/7264 recorded executable-text samples,
+> raw 98.11% у pgm і raw/scaled 50.44/48.28% у pgm-scale. Наступний bounded slice —
+> characterization lossless partial-score rejection у non-exact coarse full top-k
+> за neutral bias, до production edits. Зберігай strict winner і rounded confidence
+> ties: equality не дозволяє top-k skip. Повна validation перед scoring лишається.
+> Перевір current source/build/oracle identities й сім flags OFF. Не трактуй
+> observed CPU clocks як calibrated latency/coverage: CPU > wall у 23/26 workers.
+> Finished zero-skip/kernels/cache й thresholds без evidence не змінюй.
 > Збережи exact match/candidate/stop-frame oracles, input bytes/mtime та
 > filesystem/content/mutation guards. Не кешуй checks/hashes і не повторюй завершені
 > lexical/constructor experiments. Працюй локально, без Pi/camera/FC/UART/output
@@ -47,6 +50,8 @@ kernels/cache/policy/thresholds/output gates і Python runner незмінні.
   наступний publication commit перевіряти через live Git.
 - Coarse-zero slice відновлено з remote-verified `403e96e186ea03c8b4e252d03d05432eba11cad6`;
   має власні characterization/paired/full-suite/readback evidence, усі exit 0.
+- Stop-frame profile відновлено з remote-verified `e7457ae02257d5041cd8c3ccb0de22b778e8d318`;
+  probe/calibration/finalizer exit 0, 244 sources незмінні, нового full runner немає.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -71,6 +76,7 @@ kernels/cache/policy/thresholds/output gates і Python runner незмінні.
 | Fixed-archive warm latency | `e4d5a57`, warmup + 15 timed audits | [Звіт](WARM_AUDIT_LATENCY_2026-10-31_UA.md) |
 | Current offline matcher baseline/profile | 44 exact oracles / 253 processes, coarse scoring hotspot, без candidate | [Звіт](MATCHER_BASELINE_PROFILE_2026-11-07_UA.md) |
 | Exact coarse-zero skip | 7 production lines, 534 exact processes / 176 pairs, validation calls збережено | [Звіт](COARSE_ZERO_SCORING_2026-11-10_UA.md) |
+| Non-exact/top-k/scale CPU attribution | 6492/7264 text samples, raw scoring — спільний hotspot, без candidate | [Звіт](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md) |
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
@@ -148,6 +154,27 @@ Large-archive medians для 8/64 frames: campaign **11.603/52.264 s**, audit
 Pi/live latency, physical accuracy, process-tree RSS або p99 acceptance.
 Legacy ru_maxrss має inherited parent floor; не підміняти ним current-image VmHWM.
 
+## Актуальний read-only profile — 2026-11-12
+
+Fixed plan: 8192 pgm/4096 pgm-scale repetitions/image, 13 images/mode,
+minimum 1000 recorded samples/mode. Після load/construction/warmup profile gate
+охоплює один retained-matcher batch із exact checks. Калібровки N=32 підтвердили
+N match calls, N×entries raw/validation/top-k і 0 constructor/route-read calls.
+**150 processes** (122 Release + 26 profiles + 2 calibrations) зберегли historical
+oracles; **159744 profiled repeated queries** bit-exact. Sources/input bytes/mtime
+незмінні, сім flags OFF, compiler/binary/runtime identities bound.
+
+Recorded executable-text samples **6492/7264**: raw kernel **98.11%** у pgm;
+raw/scaled **50.44/48.28%** у pgm-scale, top-k insertion <0.5%. Ці shares не
+охоплюють dynamic-library PCs і не є full-CPU latency. CPU clock > steady-wall
+у **23/26 workers**, причина не встановлена; ratio не є calibrated coverage.
+Separate unprofiled Release medians **649.4/1354.5 us**, без speedup claim.
+Нового production candidate/full runner немає; prior 244-source/Python-bound
+**357 Python / 65+65 CTest** log звірено за hash/success/counts. Local evidence
+`artifacts/stop-profile-20261112/`, **493 bound files**, усі final stages exit 0.
+Raw gmon/full inline chains/source attribution перевірено незалежно; не
+повторювати завершений profile або old paired runs без причини.
+
 ## Остання повна валідація
 
 На `2026-11-10` coarse-zero full runner та independent finalizer — **exit 0**:
@@ -201,25 +228,31 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. **Read-only non-exact/top-k/scale CPU attribution**. Bind input hashes/session
+2. **Characterization lossless coarse partial-score rejection**. Bind input hashes/session
    mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
    `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
-   Актуальний coarse-zero slice завершено: 44 historical oracles / 534 exact
-   processes, schema/behavior drift немає. Не повторювати завершені paired runs.
+   Coarse-zero та новий stop-frame profile завершені; oracles незмінні. Є 6492/
+   7264 recorded samples, raw scoring — спільний hotspot. Не повторювати завершені
+   profile/paired runs; нові captures для цього локального кроку не потрібні.
 3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
    target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
    compiler/options/cache/binary identities. Новий artifact directory; старі
    bound scripts/finalizers не перезапускати для іншого revision.
-4. Зафіксувати достатній diagnostic workload/sample budget для non-exact PGM
-   top-k/scale paths до запуску. Попередні 33 stop-scale CPU samples недостатні
-   для точних shares. Зберегти current 244-source/build/input bindings та exact
-   oracles, окремі diagnostic і timing runs; не змішувати observer overhead із
-   API latency. Нові captures для цього локального кроку не потрібні.
-5. Обрати один наступний hotspot лише після readback нового profile. Flat gprof
-   compiler-clone labels можуть бути хибними; raw PCs/arcs/ELF і full inline
-   chains/outermost callee потрібно звіряти з source. Coarse-zero skip уже
-   реалізований зі збереженням structural traversal/ties/state/exceptions і
-   top-k/bias controls. Завершені zero-skip/pixel kernels/cache не переробляти;
+4. До production edits охарактеризувати lower-bound feasibility за neutral bias:
+   partial nonnegative sum із повним denominator може відкинути entry лише якщо
+   він гарантовано не поліпшить winner і не ввійде у вже заповнений top-k.
+   Strict winner tie і rounded confidence ties зберегти: equality для top-k
+   недостатня, бо пізніший equal-confidence candidate вставляється раніше.
+   Повна structural validation кожного eligible entry перед scoring лишається.
+   Чинний full raw scorer/diagnostic APIs, bias/initial/window paths і state/
+   exceptions потребують controls. Зберегти current 244-source/input/oracle bindings.
+5. Один bounded candidate лише після baseline characterization та feasibility,
+   не за count alone. Source profile shares стосуються recorded executable text;
+   CPU/wall anomaly не дозволяє calibrated coverage/latency claims. Diagnostic
+   overhead відокремлювати від API timings. Raw PCs/ELF/full inline chains
+   використовувати замість хибних flat clone labels. Coarse-zero skip уже
+   реалізований зі збереженням validation/ties/state/exceptions і top-k/bias.
+   Завершені zero-skip/pixel kernels/cache не переробляти;
    policy/thresholds за self-match не підганяти. Широкий rewrite
    та hardware/output поза scope. Cold-cache methodology й незалежні annotated
    data лишаються окремими. Архівні integrity guards,
@@ -260,6 +293,13 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 ## Локальні evidence та робочі правила
 
+- `artifacts/stop-profile-20261112/`: local batch harness/plan/probe/finalizer,
+  150 raw process results, 28 gmon files, symbols/full inline mapping, source
+  manifest, summary/validation; **493 bound files**, probe/calibration/readback
+  exit 0. Original/native inputs unchanged; native temporary copies прибрано,
+  local evidence збережено. Summary SHA-256
+  `c0a2794db9c66c6037981739a8f5e0ef672c923462eb9b9188ec7219528c21df`.
+  Source manifest і prior full software log ті самі, що у coarse-zero slice нижче.
 - `artifacts/coarse-zero-controls-20261110/`: окреме fixed 20-pair підтвердження
   initial PGM slowdown signal. Усі 26 controls / 1092 exact processes;
   probe/finalizer exit 0, 2189 bound files, без source changes чи нового full

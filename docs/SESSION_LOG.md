@@ -1,5 +1,28 @@
 # Session Log
 
+## 2026-11-12 — Profile non-exact/top-k/scale stop-frame work
+
+- Resumed remote-verified e7457ae with clean tracked tree. Bound current 244
+  sources, existing Release binary/cache/compiler, 19 inputs and session mappings.
+  Production/tests/runner/core/config unchanged; no subagents/hardware/output work.
+- Fixed plan before runs: 8192/4096 repetitions/image, 13 images/mode, >=1000
+  recorded samples/mode, 44 CMake conformance cases and three separate timing
+  rounds. Local -pg/-g harness gates one retained-matcher batch after warmup and
+  verifies every result/candidate bit-exact. N=32 gate calibrations pass.
+- All 150 processes/159744 repeated queries match historical oracles. Recorded
+  text samples 6492/7264; raw 98.11% in pgm, raw/scaled 50.44/48.28% in pgm-scale.
+  Top-k insertion <0.5%. Independent raw gmon/full inline-chain readback validates
+  every expected call formula, source attribution and sample budget.
+- Observed CPU clock > steady-wall in 23/26 workers, cause unestablished. Record
+  executable-text shares only; do not infer calibrated CPU coverage, library
+  missing time or latency. Separate Release medians 649.4/1354.5 us; no speedup.
+- Probe/finalizer exit 0, inputs bytes/mtime unchanged and flags OFF. Prior
+  source/Python-bound full log verified (357 Python, 65+65 CTest); no new runner.
+  493 bound files in artifacts/stop-profile-20261112/. Report
+  STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md. Next characterize lossless coarse
+  partial-score rejection with strict winner/rounded confidence tie controls;
+  no production candidate in this slice. Updated status/handoff/queue.
+
 ## 2026-11-10 — Keep exact coarse zero skip after paired validation
 
 - Resumed remote-verified 403e96e; started artifacts/coarse-zero-20261109/ on

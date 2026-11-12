@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-10
+## Current Focus - 2026-11-12
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -83,11 +83,19 @@ Initial PGM slowdown signal was investigated separately: 20 fixed balanced
 pairs/all 26 PGM cases, 1092 exact processes; mode medians 0.991/1.003 and case
 ranges 0.949–1.066 / 0.972–1.020. Large slowdown did not reproduce; no pooling
 with the four-pair data or tight PGM timing-regression claim.
-Next: read-only non-exact/top-k/scale CPU attribution on the same bound stop-frames
-with adequate predeclared diagnostic workload/sample budget. Bind current sources,
-builds and exact oracles; separate profiling from timing. Previous 33 stop-scale
-samples cannot establish precise shares. Preserve completed zero-skip/pixel
-kernels/cache behavior and do not tune thresholds from self-match.
+The [stop-frame attribution](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md) now
+uses fixed gated 8192/4096-query batches per image: 159744 exact queries and
+6492/7264 recorded text samples. Raw dominates pgm (98.11%); pgm-scale has raw/
+scaled 50.44/48.28%, while top-k insertion <0.5%. These are instrumented executable
+text shares, not full-CPU latency; CPU/wall clock anomaly is explicit. Separate
+Release timings/oracles, 244 source hashes and prior full-suite log are bound;
+no production change or new full suite/candidate. All gates remain OFF.
+Next: baseline characterization of lossless coarse partial-score rejection for
+non-exact full top-k at neutral bias. Preserve every eligible validation, strict
+winner ties and rounded confidence ties; top-k equality cannot be rejected.
+Only then consider one bounded candidate with exact paired workload/API gain and
+new full runner. Preserve completed zero-skip/pixel kernels/cache behavior and
+do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

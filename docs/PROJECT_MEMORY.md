@@ -1,5 +1,30 @@
 # Project Memory
 
+## Non-Exact Stop-Frame CPU Attribution — 2026-11-12
+
+Resumed remote-verified e7457ae; no production/tests/runner/core/config changes.
+Fixed plan: 8192 pgm/4096 pgm-scale repeats per image, 13 images/mode, >=1000
+recorded samples/mode. Gate surrounds one retained-matcher batch after I/O/
+construction/warmup, includes exact checks. Calibration N=32 confirms N match
+calls, no constructor/route-read calls. Every repeated RouteMatch/candidate is
+bit-exact; first/last match historical oracles. 122 unprofiled Release processes,
+26 profiles, 2 calibrations, 159744 profile queries; current 44 cases unchanged.
+6492/7264 text samples: pgm raw 98.11%; pgm-scale raw/scaled 50.44/48.28%; top-k
+<0.5%. These are instrumented executable-text shares, missing shared-library PCs.
+Full inline chains avoid clone/innermost-vector attribution errors. CPU clock
+exceeds steady wall in 23/26 workers; cause unestablished, no calibrated clock
+coverage or latency claim. Separate Release image-median API times 649.4/1354.5 us.
+Probe/finalizer exit 0; 244 sources, input bytes/mtime, compiler/binaries/runtime
+and seven OFF flags verified. Prior identical-source/Python 357/65+65 log bound;
+no new full runner. artifacts/stop-profile-20261112/ has 493 bound local files.
+Report STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md. No candidate/speedup/hardware claim.
+Next characterize lossless partial-score rejection in coarse non-exact top-k at
+neutral bias. Reject only proven non-winners that cannot enter full top-k;
+preserve strict winner/rounded confidence ties (top-k equality cannot skip), full
+structural validation and full/raw diagnostic behavior. Baseline controls then
+one candidate/paired exact API gain/full runner for code changes. This supersedes
+the earlier profile next step below; finished zero-skip/kernels/cache stay bounded.
+
 ## Exact Coarse Zero Skip — 2026-11-10
 
 Resumed remote-verified 403e96e. Seven production lines in match skip only raw
