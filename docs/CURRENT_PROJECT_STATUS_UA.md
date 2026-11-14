@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-12` (non-exact stop-frame CPU attribution завершено).
+Оновлено: `2026-11-14` (partial-score characterization завершено, candidate відхилено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [stop-frame CPU attribution](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md).
-Відновлено remote-verified `e7457ae02257d5041cd8c3ccb0de22b778e8d318`. У цьому slice production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [partial-score characterization](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md).
+Відновлено remote-verified `a254d83212cd4d9741e87cd03f43091841ac4347`. У цьому slice production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -26,7 +26,9 @@ Guarded CLI baseline: **16/16** exact audits (один warmup + 15 timed), raw s
 
 Matcher baseline/profile до coarse-zero patch (`2026-11-07`): **44 scenarios, 253 exact processes** (176 Release, включно з 44 excluded warmups, і 77 diagnostics), **69741 timed self-matches + 234 PGM**; schema/behavior drift немає. Inputs: шість routes / 2583 frames / 13 PGM, bytes/mtime незмінні, **243 source hashes**, сім flags OFF. Global raw-score source lines мають **446/449 CPU samples**, **5173956 calls**; window-scale — **617520 calls**, без scale calls у self-match. Flat gprof помилково називає raw compiler clone як edge function; raw histogram/ELF та незалежний addr2line readback це виправляють. Менші groups мають лише 34/33 samples, percentages грубі. Probe/calibration/finalizer exit 0; **658 bound local evidence files**. На тому етапі production/tests/runner/core/config незмінні, нового full suite не було; prior same-source/runtime log звірений.
 
-Наступний bounded software крок — **characterization lossless partial-score rejection для non-exact coarse top-k path**, спочатку без production edits. За neutral bias дослідити lower bound partial sum із повним denominator: reject лише коли entry гарантовано не поліпшить winner і не потрапить у заповнений top-k. Strict winner ties та rounded confidence ties зберегти; equality для top-k не дозволяє skip. Повна validation кожного eligible entry лишається перед scoring. Baseline characterization/controls → один candidate лише за evidence, exact full-workload paired/API gain та новий full runner для code change. Finished kernels/cache/zero-skip і policy/thresholds не переробляти без evidence; scope software-only, без hardware/output. Cold-cache й незалежні annotated data окремо.
+Partial-score characterization завершено: один local candidate, block 1024, **675 bit-exact match / 90 capacity comparisons**, **28 allocation-fault cases / 13 paired throws** на baseline й candidate. На 13 PGM logical reads **124800000 → 108311040 (−13.21%)**, exact winner/top-k/capacity збережено. **440 exact processes / 176 balanced timed pairs** усіх 44 scenarios; median case paired ratios **1.0124 pgm / 1.0271 pgm-scale**, ranges **0.8647–1.1420 / 0.8984–1.2466**. API gain не підтверджено, candidate відхилено, production/tests/runner/core/config незмінні. Probe/finalizer exit 0, **244 source hashes / 1361 bound files**, inputs bytes/mtime та сім OFF flags звірено. Нового full runner немає; prior same-source/Python **357 / 65+65** log перевірений.
+
+Наступний bounded software крок — **read-only characterization exact integer cutoff і threshold epochs** для того самого rounded rejection predicate: exactness на ties/overflow та вартість amortized threshold updates перед новим candidate. Approximate inverse/epsilon не вводити; floating-check overhead поки лише hypothesis. Зберегти strict winner/rounded top-k ties, validation, insert/pop capacity/allocation semantics та exact full/raw diagnostics. Code change потребує нового paired API gain/full runner. Finished kernels/cache/zero-skip і policy/thresholds не переробляти без evidence; scope software-only, без hardware/output. Cold-cache й незалежні annotated data окремо.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -50,6 +52,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Partial-score characterization (`2026-11-14`): **440 exact processes / 176 pairs**, baseline/candidate characterization і 13-image feasibility пройшли; logical pixels −13.21%, але pgm/scale ratios 1.0124/1.0271 не підтвердили gain. Один local candidate відхилено. **244 source hashes / 1361 bound files**, sources/inputs/flags незмінні, prior 357 Python/65+65 CTest log звірений без нового runner. [Звіт](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md), local evidence `artifacts/partial-score-20261114/`; next — read-only exact cutoff/threshold-epoch characterization.
 
 - Stop-frame CPU attribution (`2026-11-12`): probe/calibration/finalizer exit 0; **150 exact processes / 159744 repeated queries**, **244 source hashes**, незмінні inputs/runtime bindings, сім flags OFF. Recorded samples **6492/7264**; raw accumulation — спільний hotspot, top-k insertion <0.5%. CPU/wall clock anomaly зафіксовано, full-CPU shares не заявлено. Production/tests/runner/core/config незмінні, prior full log звірений без нового runner. [Звіт](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md), local evidence `artifacts/stop-profile-20261112/`; next — lossless partial-score characterization.
 

@@ -1,5 +1,29 @@
 # Project Memory
 
+## Partial-Score Characterization — 2026-11-14
+
+Resumed remote-verified a254d83; production/tests/runner/core/config unchanged.
+One local candidate, block 1024, neutral bias/positive best/full nonempty top-k.
+Reject only lower>=best and rounded confidence<worst; equality must score fully.
+Keep ordinary insert/pop of the proven loser to preserve vector capacity and
+allocation-failure prefixes/state. Full validation stays before scoring.
+Baseline/candidate each pass 675 bit-exact matches, 90 capacity comparisons,
+28 paired fault cases with 13 paired throws, plus boundary/overflow/error controls.
+Thirteen PGM witnesses independently replay every prefix: logical coarse pixels
+124800000 -> 108311040, reduction 13.21%, all final oracles/capacities exact.
+Four balanced rounds/44 scenarios: 176 pairs, 352 timed+88 warmup=440 exact
+processes. Median case paired ratios pgm 1.0124 (range .8647–1.1420), pgm-scale
+1.0271 (.8984–1.2466). No API gain established; reject this one candidate.
+No block sweep, new production test or new full runner. All 244 sources/inputs/
+seven OFF flags unchanged; prior identical-source/Python 357/65+65 log verified.
+Probe/finalizer/native hash readback pass; artifacts/partial-score-20261114/ has
+1361 bound files. Fault-scaffold GCC allocation warnings retained; no sanitizer/
+warning-free claim. Report PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md.
+Next read-only characterization: exact integer cutoff and threshold epochs,
+same rounded predicate, ties/overflow and amortized update cost. No approximate
+inverse/epsilon; division overhead is only a hypothesis. This supersedes the
+earlier characterization next step; finished kernels/cache/zero-skip stay bounded.
+
 ## Non-Exact Stop-Frame CPU Attribution — 2026-11-12
 
 Resumed remote-verified e7457ae; no production/tests/runner/core/config changes.

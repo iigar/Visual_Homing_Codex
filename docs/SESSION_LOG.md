@@ -1,5 +1,28 @@
 # Session Log
 
+## 2026-11-14 — Reject local partial-score candidate after paired characterization
+
+- Resumed remote-verified a254d83, clean tracked tree; no production/tests/runner/
+  core/config edits, subagents or hardware/output work. Frozen plan: one candidate,
+  1024-pixel blocks, 13 PGM witnesses, four balanced rounds of all 44 cases.
+- Canonical Git archive verified per blob. Baseline characterization precedes
+  candidate creation; both pass 675 exact match/90 capacity comparisons and
+  28 allocation-fault cases (13 throws), boundary ties/error/overflow controls.
+  Keep insert/pop even for losers: capacity/exception prefix is observable.
+- Shadow full/partial scoring and independent witness replay retain every
+  winner/top-k prefix; 124800000 -> 108311040 logical pixels, reduction 13.21%.
+  All 440 benchmark processes/176 timed pairs preserve full historical oracles.
+  PGM/scale median case ratios 1.0124/1.0271, case ranges .8647–1.1420 /
+  .8984–1.2466. Gain not established; reject this candidate, no parameter sweep.
+- Probe/finalizer/native readback pass; 244 sources, inputs bytes/mtime and seven
+  OFF flags unchanged, 1361 bound local files. Prior same-source/Python full log
+  verified (357 Python/65+65 CTest), no new full runner. Fault-scaffold compiler
+  warnings retained; no warning-free/sanitizer/tight timing-regression claim.
+- Report PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md; updated status/handoff/
+  queue. Next read-only exact integer cutoff/threshold-epoch feasibility and cost,
+  preserving rounded ties/overflow and all capacity/validation semantics. Possible
+  floating-check overhead is not established causality; no second candidate here.
+
 ## 2026-11-12 — Profile non-exact/top-k/scale stop-frame work
 
 - Resumed remote-verified e7457ae with clean tracked tree. Bound current 244

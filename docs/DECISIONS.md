@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-11-14 - Reject The Fixed-Block Partial-Score Candidate
+
+- One local 1024-pixel-block prototype preserves validation, strict winner and
+  rounded confidence ties. Return a proven losing lower bound but retain normal
+  insert/pop: skipping insertion would alter capacity/allocation-failure semantics.
+- Baseline and candidate each pass 675 bit-exact match/90 capacity comparisons,
+  28 fault cases including 13 paired throws. Independent 13-image witnesses retain
+  every winner/top-k prefix while reducing logical pixels by 13.21%.
+- All 440 processes/176 balanced pairs of 44 scenarios retain historical oracles.
+  Target pgm/pgm-scale median case paired ratios 1.0124/1.0271, ranges
+  0.8647–1.1420 / 0.8984–1.2466, do not establish API gain. Reject this candidate;
+  do not tune block size or claim that logical pixel reduction is a speedup.
+- Production/tests/runner/core/config remain unchanged. Probe/readback pass;
+  244 source hashes, input bytes/mtime and seven OFF flags retained, 1361 bound
+  local files. Prior same-source/Python 357/65+65 full log verified; no new runner.
+- Next read-only slice: exact integer cutoff/threshold-epoch feasibility and cost,
+  preserving the same rounded predicate, ties/overflow, insert/pop and diagnostics.
+  Repeated divide/branch overhead is a hypothesis, not attributed cause. No
+  approximate inverse/epsilon or production change without new exact API evidence.
+  See [characterization](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md).
+
 ## 2026-11-12 - Characterize Coarse Partial-Score Rejection Before A Candidate
 
 - Fixed gated batches on 13 non-exact PGM images/mode retain exact results:

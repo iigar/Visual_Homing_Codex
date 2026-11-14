@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-12
+## Current Focus - 2026-11-14
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -90,12 +90,21 @@ scaled 50.44/48.28%, while top-k insertion <0.5%. These are instrumented executa
 text shares, not full-CPU latency; CPU/wall clock anomaly is explicit. Separate
 Release timings/oracles, 244 source hashes and prior full-suite log are bound;
 no production change or new full suite/candidate. All gates remain OFF.
-Next: baseline characterization of lossless coarse partial-score rejection for
-non-exact full top-k at neutral bias. Preserve every eligible validation, strict
-winner ties and rounded confidence ties; top-k equality cannot be rejected.
-Only then consider one bounded candidate with exact paired workload/API gain and
-new full runner. Preserve completed zero-skip/pixel kernels/cache behavior and
-do not tune thresholds from self-match.
+The [partial-score characterization](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md)
+is complete: one local 1024-pixel-block candidate retains exact matches/top-k,
+capacity/allocation-failure semantics and validation. Baseline/candidate controls,
+13-image full/partial witnesses and all 440 processes/176 pairs pass. Logical
+pixels fall 13.21%, but target pgm/scale median case ratios 1.0124/1.0271 do not
+establish API gain. Reject this candidate; 244 sources/inputs/flags unchanged,
+1361 bound evidence files, prior same-source/Python full log verified, no new runner.
+Next: read-only characterization of exact integer cutoffs and threshold epochs,
+using the same rounded rejection predicate with boundary ties/overflow controls.
+Measure amortized cutoff-update cost before another candidate; repeated floating
+checks are a possible overhead, not an attributed cause. No approximate inverse/
+epsilon. Retain insert/pop capacity/exception semantics, every eligible validation,
+strict winner/rounded top-k ties and full/raw diagnostics. A production candidate
+still requires exact paired API gain and a new full runner. Preserve completed
+zero-skip/pixel kernels/cache; do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing
