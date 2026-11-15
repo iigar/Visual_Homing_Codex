@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-11-15 - Keep Exact Cutoff Feasibility Separate From API Acceptance
+
+- Binary-search the original rounded double/clamp predicate over a checked uint64
+  numerator domain, with explicit impossible state. No inverse/epsilon or max+1
+  sentinel. C++ 9685 cases/7168176 checks and independent Python 6857183 checks pass;
+  small exhaustive, 2^53/uint64 boundaries, 869 impossible cases and three guards.
+- All 7800 entries preserve prior witnesses/oracles. 103465 block checks need 809
+  threshold epochs/18586 original-predicate search evaluations, plus cached integer
+  checks/epoch branches. Keep the same logical pixel reads and insert/pop semantics.
+- 104 balanced threshold-only replay pairs give median image ratio .7993, range
+  .6086–.9874; costs 15.762/12.576 us. This excludes pixel accumulation, validation,
+  insertion and scale work, so does not establish match API gain or past causality.
+- No matcher candidate or production/tests/runner/core/config changes. Readback
+  passes, 244 sources/inputs/seven OFF flags unchanged, 50 bound local files;
+  prior same-source/Python 357/65+65 log verified, no new full runner.
+- Next one local cached-cutoff candidate at block 1024, baseline characterization
+  first, local per-match lifetime and unsupported-domain full-score fallback.
+  Require new exact paired 44-case API comparison against current baseline, not
+  just the rejected prototype; no adoption without API gain/new full runner.
+  See [cutoff study](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md).
+
 ## 2026-11-14 - Reject The Fixed-Block Partial-Score Candidate
 
 - One local 1024-pixel-block prototype preserves validation, strict winner and

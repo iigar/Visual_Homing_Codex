@@ -1,5 +1,29 @@
 # Project Memory
 
+## Exact Cutoff And Threshold Epochs — 2026-11-15
+
+Resumed remote-verified 9bd2c5e; no production/tests/runner/core/config changes.
+Read-only binary search of original double/clamp predicate: checked numerator
+domain 1..UINT64_MAX/255 pixels, explicit impossible bool, overflow-safe midpoint.
+No inverse/epsilon. C++ 9685 cases/7168176 numerator checks; independent Python
+6857183 checks, 3120 exhaustive small cases, large rounding/uint64 boundaries,
+869 impossible cases/three guards. IEEE double FE_TONEAREST/GCC13 x86 evidence.
+All 13 images/7800 entry witnesses/final historical oracles/capacity exact.
+103465 block checks -> 809 epochs and 18586 search predicate evaluations, plus
+integer comparisons and epoch branches. Logical pixels remain 108311040/124800000.
+104 threshold-only pairs, 1024 replays/batch: median image paired ratio .7993,
+range .6086–.9874, median costs 15.762/12.576 us. No pixel/validation/insert/scale
+work in timing; no matcher API gain or cause of previous regression established.
+Probe/finalizer/native readback pass, 244 sources/inputs/flags unchanged, 50 bound
+files in artifacts/cutoff-20261115/. Initial emitter schema failure retained in
+failed-01; corrected timestamp_ns matches full historical schema. Final build
+warning-free; no new full runner, prior same-source/Python 357/65+65 log verified.
+Report EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md. Next one local cached-cutoff
+candidate at the same block 1024, with baseline characterization and new paired
+44-case API comparison against production baseline. Local per-match lifetime,
+checked-domain full-score fallback, all validation/ties/capacity/exceptions stay.
+No production adoption without API gain/new full runner; no block sweep/epsilon.
+
 ## Partial-Score Characterization — 2026-11-14
 
 Resumed remote-verified a254d83; production/tests/runner/core/config unchanged.

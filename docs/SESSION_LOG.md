@@ -1,5 +1,27 @@
 # Session Log
 
+## 2026-11-15 — Characterize exact cutoff and threshold epochs without matcher edits
+
+- Resumed remote-verified 9bd2c5e with clean tracked tree. Frozen read-only plan,
+  one exact binary-search cutoff, original rounded predicate, checked domain and
+  explicit impossible flag. No production candidate, hardware/output or subagents.
+- C++ contract passes 9685 cases/7168176 numerator checks, 3120 exhaustive small
+  cases, rounding/uint64 boundaries, 869 impossible cases/three guards. Independent
+  Python passes 6857183 checks and all cutoff/search-count boundaries.
+- Initial emitter used frame_id instead of timestamp_ns; schema assertion stopped
+  the first run despite equal match/top-k values. Retained full attempt in
+  failed-01, fixed emitter, kept exact oracle assertion. Successful final build
+  warning-free; all 13 images/7800 entries/capacities match prior witnesses/oracles.
+- 103465 block checks, 809 epochs and 18586 search evaluations; logical pixel
+  counts unchanged. 104 balanced threshold-only replay pairs give ratio .7993,
+  range .6086–.9874; median costs 15.762/12.576 us. No matcher API gain claim.
+- Probe/finalizer/native hash readback pass; 244 sources/inputs/seven OFF flags
+  unchanged, 50 bound files. Prior same-source/Python 357/65+65 log verified;
+  no new full runner. Report EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md.
+- Next one local cached-cutoff candidate, block 1024, baseline characterization
+  first and new exact paired 44-case comparison against current production.
+  API gain/new full runner gate adoption; threshold micro-gain may be too small.
+
 ## 2026-11-14 — Reject local partial-score candidate after paired characterization
 
 - Resumed remote-verified a254d83, clean tracked tree; no production/tests/runner/

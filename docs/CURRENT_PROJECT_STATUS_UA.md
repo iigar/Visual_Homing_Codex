@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-14` (partial-score characterization завершено, candidate відхилено).
+Оновлено: `2026-11-15` (exact cutoff/threshold-epoch characterization завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [partial-score characterization](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md).
-Відновлено remote-verified `a254d83212cd4d9741e87cd03f43091841ac4347`. У цьому slice production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [exact cutoff characterization](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md).
+Відновлено remote-verified `9bd2c5e61f60da2fa24474cce8999afbd7d7f86f`. У цьому slice production/tests/runner/core/config незмінні, нового matcher candidate немає. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -28,7 +28,9 @@ Matcher baseline/profile до coarse-zero patch (`2026-11-07`): **44 scenarios, 
 
 Partial-score characterization завершено: один local candidate, block 1024, **675 bit-exact match / 90 capacity comparisons**, **28 allocation-fault cases / 13 paired throws** на baseline й candidate. На 13 PGM logical reads **124800000 → 108311040 (−13.21%)**, exact winner/top-k/capacity збережено. **440 exact processes / 176 balanced timed pairs** усіх 44 scenarios; median case paired ratios **1.0124 pgm / 1.0271 pgm-scale**, ranges **0.8647–1.1420 / 0.8984–1.2466**. API gain не підтверджено, candidate відхилено, production/tests/runner/core/config незмінні. Probe/finalizer exit 0, **244 source hashes / 1361 bound files**, inputs bytes/mtime та сім OFF flags звірено. Нового full runner немає; prior same-source/Python **357 / 65+65** log перевірений.
 
-Наступний bounded software крок — **read-only characterization exact integer cutoff і threshold epochs** для того самого rounded rejection predicate: exactness на ties/overflow та вартість amortized threshold updates перед новим candidate. Approximate inverse/epsilon не вводити; floating-check overhead поки лише hypothesis. Зберегти strict winner/rounded top-k ties, validation, insert/pop capacity/allocation semantics та exact full/raw diagnostics. Code change потребує нового paired API gain/full runner. Finished kernels/cache/zero-skip і policy/thresholds не переробляти без evidence; scope software-only, без hardware/output. Cold-cache й незалежні annotated data окремо.
+Exact cutoff characterization завершено: **9685 C++ cases / 7168176 numerator checks**, independent Python **6857183 checks**, exhaustive small domains, 2^53/uint64 boundaries, 869 impossible cases і три guards. Усі **7800 entries / 103465 block checks** exact; **809 epochs / 18586 search predicate evaluations**. **104 threshold-only pairs**, median image paired ratio **0.7993**, range **0.6086–0.9874**, median replay costs **15.762 → 12.576 µs**. Це не matcher API speedup. Probe/finalizer/native readback pass; **244 sources / 50 bound files**, inputs/flags незмінні. Нового candidate/full runner немає, prior same-source/Python **357 / 65+65** log звірений.
+
+Наступний bounded software крок — **один local cached-cutoff candidate**, block 1024, перед production edits. Baseline characterization, checked domain/full-score fallback, local per-match cutoff lifetime; strict winner/rounded top-k ties, validation, insert/pop capacity/allocation semantics та full/raw diagnostics зберегти. Потрібне нове paired порівняння всіх 44 API scenarios із current baseline; threshold-only gain може бути замалим. За відсутності API gain production лишити; code change потребує нового full runner. Block sweep, inverse/epsilon, finished kernel/cache/zero-skip rewrite і policy/threshold tuning поза scope. Software-only, без hardware/output; cold-cache й незалежні annotated data окремо.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -52,6 +54,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Exact cutoff/epochs (`2026-11-15`): **9685 cases**, C++/Python **7.17/6.86 млн numerator checks**, **7800 exact entry witnesses**, 809 epochs/103465 blocks. **104 threshold-only pairs**, median ratio 0.7993; API gain не встановлено, candidate/production change немає. **244 sources / 50 bound files**, inputs/flags і prior full log звірені, нового runner немає. [Звіт](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md); next — один local candidate з окремим API comparison.
 
 - Partial-score characterization (`2026-11-14`): **440 exact processes / 176 pairs**, baseline/candidate characterization і 13-image feasibility пройшли; logical pixels −13.21%, але pgm/scale ratios 1.0124/1.0271 не підтвердили gain. Один local candidate відхилено. **244 source hashes / 1361 bound files**, sources/inputs/flags незмінні, prior 357 Python/65+65 CTest log звірений без нового runner. [Звіт](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md), local evidence `artifacts/partial-score-20261114/`; next — read-only exact cutoff/threshold-epoch characterization.
 

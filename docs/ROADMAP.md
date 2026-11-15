@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-14
+## Current Focus - 2026-11-15
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -97,13 +97,19 @@ capacity/allocation-failure semantics and validation. Baseline/candidate control
 pixels fall 13.21%, but target pgm/scale median case ratios 1.0124/1.0271 do not
 establish API gain. Reject this candidate; 244 sources/inputs/flags unchanged,
 1361 bound evidence files, prior same-source/Python full log verified, no new runner.
-Next: read-only characterization of exact integer cutoffs and threshold epochs,
-using the same rounded rejection predicate with boundary ties/overflow controls.
-Measure amortized cutoff-update cost before another candidate; repeated floating
-checks are a possible overhead, not an attributed cause. No approximate inverse/
-epsilon. Retain insert/pop capacity/exception semantics, every eligible validation,
-strict winner/rounded top-k ties and full/raw diagnostics. A production candidate
-still requires exact paired API gain and a new full runner. Preserve completed
+The [exact cutoff study](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md) passes
+9685 contract cases, C++/Python 7.17/6.86 million numerator checks and all 7800
+entry witnesses/oracles. 103465 block checks need 809 cutoff updates/18586 search
+predicate evaluations. 104 threshold-only pairs: median image ratio .7993,
+range .6086–.9874, replay costs 15.762/12.576 us. No matcher API gain/candidate;
+244 sources/inputs/flags unchanged, 50 bound files, prior full log reverified.
+Next: one local cached-cutoff candidate at block 1024, with baseline
+characterization, local per-match lifetime and checked-domain full-score fallback.
+Require new exact paired 44-case API comparison against current production, not
+only the rejected prototype. Threshold-only gain may be too small; retain
+production without API gain. No inverse/epsilon or block sweep. Retain insert/pop
+capacity/exception semantics, every validation, strict winner/rounded top-k ties
+and full/raw diagnostics. Adoption requires a new full runner. Preserve completed
 zero-skip/pixel kernels/cache; do not tune thresholds from self-match.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
