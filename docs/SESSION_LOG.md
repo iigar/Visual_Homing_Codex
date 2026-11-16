@@ -1,5 +1,27 @@
 # Session Log
 
+## 2026-11-16 — Reject local cached-cutoff candidate after full API comparison
+
+- Resumed remote-verified 2495b45 with clean tracked tree; frozen one-candidate
+  block-1024 plan. Canonical Git blob archive, current compiler/flags and inputs
+  bound. Software-only, no production/test/runner/config edits or subagents.
+- Baseline characterization first. Generator preflight marker matched diagnostics
+  too and stopped before candidate source; preserved failed-01, fixed unique
+  match anchor. Successful baseline/candidate each pass 739 exact match/154
+  capacity comparisons, 28 fault cases/13 throws, 64 four-rounding-mode controls.
+  All four local builds warning-free; full-score fallback for unsupported domain/
+  rounding, local cutoff lifetime and ordinary insert/pop retained.
+- 440 exact processes/176 balanced API pairs of all 44 historical scenarios;
+  93300 timed queries per variant. PGM/scale median case ratios .9739/1.0223,
+  case ranges .8039–1.1494 / .8106–1.1928. No clear consistent API gain; reject
+  candidate and retain production. No parameter sweep or extra selection runs.
+- Probe/finalizer/native readback pass; 244 sources/inputs/seven OFF flags unchanged,
+  1359 bound files. Prior same-source/Python 357/65+65 log verified, no new runner.
+  Report CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md; status/handoff/queue updated.
+- Next read-only generated-loop/vectorization review using frozen sources/binaries,
+  compiler/flags. No repeated completed API/profile runs or new candidate without
+  concrete evidence; compiler/disassembly facts are not runtime attribution.
+
 ## 2026-11-15 — Characterize exact cutoff and threshold epochs without matcher edits
 
 - Resumed remote-verified 9bd2c5e with clean tracked tree. Frozen read-only plan,

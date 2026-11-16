@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-15
+## Current Focus - 2026-11-16
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -103,14 +103,19 @@ entry witnesses/oracles. 103465 block checks need 809 cutoff updates/18586 searc
 predicate evaluations. 104 threshold-only pairs: median image ratio .7993,
 range .6086–.9874, replay costs 15.762/12.576 us. No matcher API gain/candidate;
 244 sources/inputs/flags unchanged, 50 bound files, prior full log reverified.
-Next: one local cached-cutoff candidate at block 1024, with baseline
-characterization, local per-match lifetime and checked-domain full-score fallback.
-Require new exact paired 44-case API comparison against current production, not
-only the rejected prototype. Threshold-only gain may be too small; retain
-production without API gain. No inverse/epsilon or block sweep. Retain insert/pop
-capacity/exception semantics, every validation, strict winner/rounded top-k ties
-and full/raw diagnostics. Adoption requires a new full runner. Preserve completed
-zero-skip/pixel kernels/cache; do not tune thresholds from self-match.
+The [cached-cutoff candidate](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md) passes
+739 exact match/154 capacity comparisons per variant, 28 fault cases and 64
+rounding controls. All 440 processes/176 balanced pairs of 44 API scenarios
+retain oracles; ratios .9739 pgm / 1.0223 pgm-scale do not establish clear gain.
+Reject this one local candidate; 244 sources/inputs/flags unchanged, 1359 bound
+files, prior full log verified, no new runner. No block sweep or favorable-run
+selection; no cross-date causal comparison with the earlier prototype/replay.
+Next: read-only generated-loop/vectorization review of frozen baseline/cached
+binaries and sources at matched compiler/flags. Use ELF/disassembly/compiler
+reports to establish structural facts, not runtime attribution. Do not rerun
+completed API/profile campaigns. No third candidate, block tuning or production
+kernel/cache/policy rewrite without concrete evidence. Preserve validation,
+strict/rounded ties, insert/pop capacity/exception semantics and full diagnostics.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

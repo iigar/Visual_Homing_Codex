@@ -1,5 +1,27 @@
 # Decisions
 
+## 2026-11-16 - Reject Cached Cutoff Without Clear API Gain
+
+- One local block-1024 candidate caches exact cutoff per match/threshold epoch,
+  with checked-domain/rounding full-score fallback. Keep validation, strict winner/
+  rounded confidence ties, normal insert/pop and capacity/allocation-failure state.
+- Baseline before candidate creation; both pass 739 bit-exact matches/154 capacity
+  comparisons, 28 fault cases/13 throws, including 64 controls on four rounding
+  modes. Successful builds warning-free; bounded fields/state/errors equivalence
+  does not establish floating-status/trap-mode acceptance.
+- All 440 processes/176 balanced API pairs retain the 44 historical oracles.
+  Target median case ratios .9739 pgm / 1.0223 pgm-scale, ranges .8039–1.1494 /
+  .8106–1.1928, do not establish clear consistent API gain. Reject this candidate;
+  no parameter sweep or extra runs to select a favorable result. No pooling with
+  prior threshold-only/first-prototype data or cross-date causality claim.
+- Production/tests/runner/core/config unchanged. Probe/finalizer/native readback
+  pass, 244 source hashes/1359 bound local files, input bytes/mtime/flags unchanged.
+  Prior same-source/Python 357/65+65 log verified; no new full runner.
+- Next read-only generated-loop/vectorization review on frozen sources/binaries
+  and compiler/flags. Compiler reports/disassembly are structural evidence, not
+  runtime attribution; no third candidate/block tuning/kernel rewrite without
+  concrete evidence. [Report](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md).
+
 ## 2026-11-15 - Keep Exact Cutoff Feasibility Separate From API Acceptance
 
 - Binary-search the original rounded double/clamp predicate over a checked uint64

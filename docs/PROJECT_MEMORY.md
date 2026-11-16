@@ -1,5 +1,29 @@
 # Project Memory
 
+## Cached-Cutoff Candidate Rejected — 2026-11-16
+
+Resumed remote-verified 2495b45; production/tests/runner/core/config unchanged.
+One local candidate at block 1024: lazy cutoff per threshold epoch/local per-match
+state, original rounded binary-search predicate, explicit impossible flag,
+checked-domain/IEEE/FE_TONEAREST guard with full-score fallback. Validation and
+ordinary loser insert/pop retained; full raw diagnostic/scale/policy untouched.
+Baseline before candidate; both pass 739 bit-exact matches/154 capacity checks,
+28 allocation-fault cases/13 throws, including 64 controls on four rounding modes.
+Successful builds warning-free after test-only noinline allocation scaffold.
+Initial generator marker preflight failed before candidate source; retained in
+failed-01, fixed unique match anchor. Only one actual candidate, no oracle change.
+44 scenarios, 440 exact processes, 176 balanced pairs/93300 timed queries per
+variant. Target median case ratios .9739 pgm (.8039–1.1494), 1.0223 pgm-scale
+(.8106–1.1928). No clear API gain; reject, no sweep or extra selection runs.
+Do not compare old threshold replay/first prototype across dates as causal gain.
+Probe/finalizer/native readback pass, 244 sources/inputs/flags unchanged,
+1359 bound files in artifacts/cached-cutoff-20261116/. Prior same-source/Python
+357/65+65 full log verified; no new runner. Report
+CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md. Next read-only frozen-loop/vectorization
+review with compiler reports/ELF/disassembly at matched sources/flags; structural
+facts do not prove runtime attribution. No third candidate/block tuning or
+production kernel/cache/policy rewrite without concrete evidence.
+
 ## Exact Cutoff And Threshold Epochs — 2026-11-15
 
 Resumed remote-verified 9bd2c5e; no production/tests/runner/core/config changes.

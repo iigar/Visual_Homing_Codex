@@ -2,9 +2,9 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-15` після завершення
-[exact cutoff/epoch characterization](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md)
-поверх опублікованого partial-score checkpoint `9bd2c5e`.
+Оновлено `2026-11-16` після завершення
+[cached-cutoff API comparison](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md)
+поверх опублікованого exact-cutoff checkpoint `2495b45`.
 У цьому slice production/tests/runner/core/config незмінні. Чинні сім coarse-zero
 match рядків, pixel kernels/cache/policy/thresholds/output gates збережені.
 Цей handoff замінює [жовтневу точку входу](SESSION_HANDOFF_2026-10-31_UA.md);
@@ -27,11 +27,14 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 > study теж завершено: 9685 contract cases, C++/Python 7.17/6.86 млн checks,
 > 7800 exact entry witnesses, 809 epochs/103465 blocks. 104 threshold-only pairs
 > дали ratio .7993, але matcher API gain не встановлено; нового candidate немає.
-> Наступний bounded slice — один local cached-cutoff candidate, block 1024,
-> baseline characterization і нове paired 44-case API comparison із current
-> production. Local per-match lifetime, checked-domain full-score fallback.
-> За відсутності API gain production лишити; adoption потребує нового full runner.
-> Approximate inverse/epsilon і block sweep не вводь. Зберігай strict winner, rounded top-k ties,
+> Cached candidate теж перевірено: baseline/candidate 739 exact match/154 capacity
+> comparisons, 28 fault cases, 64 four-rounding-mode controls; 440 exact processes/
+> 176 API pairs. Ratios .9739 pgm / 1.0223 pgm-scale без clear gain — candidate
+> відхилено, production незмінний. Наступний bounded slice — read-only generated-
+> loop/vectorization review frozen sources/binaries/compiler/flags. Compiler
+> reports/disassembly дають structural facts, не runtime attribution. Завершені
+> API/profile runs не повторюй. Нового candidate/block tuning/kernel rewrite без
+> concrete evidence не роби. Зберігай strict winner, rounded top-k ties,
 > insert/pop capacity/allocation semantics і validation перед scoring.
 > Перевір current source/build/oracle identities й сім flags OFF. Не трактуй
 > observed CPU clocks як calibrated latency/coverage: CPU > wall у 23/26 workers.
@@ -67,6 +70,9 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 - Exact cutoff study відновлено з remote-verified
   `9bd2c5e61f60da2fa24474cce8999afbd7d7f86f`; probe/finalizer/native readback pass,
   244 sources та prior full log звірені, нового matcher candidate немає.
+- Cached-cutoff comparison відновлено з remote-verified
+  `2495b45a71a9c712fa1d88391c84b156c3457c3d`; local candidate відхилено,
+  probe/finalizer/native readback pass, 244 sources/prior full log звірені.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -94,6 +100,7 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 | Non-exact/top-k/scale CPU attribution | 6492/7264 text samples, raw scoring — спільний hotspot, без candidate | [Звіт](STOP_FRAME_CPU_ATTRIBUTION_2026-11-12_UA.md) |
 | Lossless partial-score characterization | 13.21% fewer logical pixels, 440 exact processes / 176 pairs; API gain не підтверджено, candidate відхилено | [Звіт](PARTIAL_SCORE_CHARACTERIZATION_2026-11-14_UA.md) |
 | Exact cutoff / threshold epochs | 9685 cases, 809 epochs/103465 blocks; threshold-only ratio .7993, API gain не встановлено | [Звіт](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md) |
+| Cached-cutoff API comparison | 739 exact match/154 capacity controls, 440 exact processes/176 pairs; ratios .9739/1.0223, candidate відхилено | [Звіт](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md) |
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
@@ -245,7 +252,7 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. **Один local cached-cutoff candidate, block 1024**, перед production edits. Bind input hashes/session
+2. **Read-only generated-loop/vectorization review**, без нового candidate. Bind input hashes/session
    mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
    `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
    Coarse-zero, stop-frame profile і block-1024 partial-score study завершені;
@@ -253,39 +260,34 @@ raw pstats проти JSON, перерахував medians, звірив interpr
    paired ratios 1.0124/1.0271 без API gain. Не повторювати ці завершені runs;
    Exact cutoff/epoch study теж завершено: 9685 cases, 809 epochs/18586 search
    evaluations на 103465 blocks; threshold-only ratio .7993 не є API gain.
-   Не повторювати завершені diagnostic runs; нові captures не потрібні.
+   Cached candidate теж завершено й відхилено: 739/154 characterization,
+   440 exact processes/176 API pairs, ratios .9739 pgm / 1.0223 pgm-scale без
+   clear gain. Не повторювати завершені API/profile/diagnostic runs;
+   нові captures не потрібні.
 3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
    target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
    compiler/options/cache/binary identities. Новий artifact directory; старі
    bound scripts/finalizers не перезапускати для іншого revision.
-4. Baseline characterization до створення local candidate. Взяти original
-   double/clamp predicate binary search з explicit impossible state; cutoff
-   lazy на first non-final block після best/worst tuple change, reset per match.
-   Neutral bias/positive best/full nonempty top-k; checked numerator domain,
-   unsupported domain -> full scoring, без нового input rejection/throw.
-   Зберегти rounding contract і boundary controls. Strict winner/rounded top-k
-   ties, повна validation перед scoring і звичайний insert/pop loser лишаються:
-   capacity/allocation failure prefix/state semantics observable. Чинні full
-   raw diagnostics, bias/initial/window, zero-skip/scale policy не змінювати.
-5. Один local candidate, не block sweep/inverse/epsilon. Нове balanced paired
-   порівняння всіх 44 API scenarios із current production baseline, не лише з
-   відхиленим prototype; threshold replay gain може бути замалим. Зберегти
-   exact full oracles і 244-source/input bindings до production edit.
-   Source profile shares стосуються recorded executable text;
-   CPU/wall anomaly не дозволяє calibrated coverage/latency claims. Diagnostic
-   overhead відокремлювати від API timings. Raw PCs/ELF/full inline chains
-   використовувати замість хибних flat clone labels. Coarse-zero skip уже
-   реалізований зі збереженням validation/ties/state/exceptions і top-k/bias.
-   Завершені zero-skip/pixel kernels/cache не переробляти;
-   policy/thresholds за self-match не підганяти. Широкий rewrite
-   та hardware/output поза scope. Cold-cache methodology й незалежні annotated
-   data лишаються окремими. Архівні integrity guards,
-   hashes/containment/mutation та різні symlink contracts зберігаються.
-6. Якщо candidate виправданий, потрібні characterization/regressions,
-   alternating paired full-workload equivalence і виміряний API gain; за малого
-   gain залишити production незмінним. Code change потребує нового full runner,
-   документації, actual staged diff/check, commit/push, remote SHA, clean tracked
-   state. Завершені lexical/path-constructor/PGM stages не відкривати без evidence.
+4. Bind frozen before/after binaries, canonical archive/helper/candidate source
+   та compiler/options із `artifacts/cached-cutoff-20261116/preparation.json`.
+   ELF symbols/disassembly і compiler vectorization/optimization reports зібрати
+   в новій directory. Diagnostic rebuild, якщо потрібний, робити з matched flags
+   без заміни original binaries; записати identities і пояснити будь-який drift.
+5. Порівняти full raw і bounded pixel loops: що саме vectorized, які tails,
+   checks/search/control paths видно у generated code. Не припускати причину API
+   ratios за instruction counts або optimizer report; structural evidence не є
+   runtime attribution. За відсутності concrete removable cost не створювати
+   третій candidate. Block tuning/inverse/epsilon/kernel/cache/policy rewrite
+   без evidence поза scope. Strict/rounded ties, validation, insert/pop capacity/
+   exceptions, full diagnostics, zero-skip/scale лишаються. CPU/wall anomaly
+   не дозволяє calibrated coverage claims; flat gprof clone labels не oracle.
+   Cold-cache й independent annotated data окремо; hardware/output поза scope.
+   Архівні hashes/containment/mutation і різні symlink contracts зберегти.
+6. Документувати facts/limits, перевірити source/input bindings, actual staged
+   diff/check, commit/push, remote SHA та clean tracked state. За unchanged sources/
+   runtime звірити prior full-suite log; future code change потребує нового
+   characterization/paired API evidence/full runner. Завершені lexical/path-
+   constructor/PGM stages не відкривати без evidence.
 
 Partial-score study evidence: `artifacts/partial-score-20261114/`, **1361 bound
 local files**, frozen plan/tar/helper/characterization, raw witnesses та всі paired
@@ -301,6 +303,16 @@ inputs/session/flags незмінні. C++/Python 7168176/6857183 numerator chec
 .6086–.9874; costs 15.762/12.576 us. Нового matcher candidate/API gain/full runner
 немає; prior same-source/Python 357/65+65 log verified. Initial emitter schema
 failure retained in failed-01; corrected timestamp_ns exact, final build warning-free.
+
+Cached-cutoff API study: `artifacts/cached-cutoff-20261116/`, **1359 bound files /
+244 unchanged sources**, input bytes/mtime та сім flags OFF. Successful baseline/
+candidate 739 exact match/154 capacity controls, 28 fault cases/13 throws,
+64 comparisons on four rounding modes; all builds warning-free. 440 exact
+processes/176 pairs, 93300 timed queries/variant. Target ratios .9739/1.0223,
+case ranges .8039–1.1494 / .8106–1.1928; clear gain немає, candidate відхилено.
+Initial generator preflight retained in failed-01; лише один actual candidate.
+Production/tests/runner/core/config незмінні, prior same-source/Python 357/65+65
+log verified без нового runner. Frozen binary/source/evidence hashes у report.
 
 ## Ширша черга не втрачена
 
