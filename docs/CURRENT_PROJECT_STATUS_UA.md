@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-19` (generated-loop/vectorization review завершено).
+Оновлено: `2026-11-19` (first-checkpoint candidate відхилено; partial-score серію завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [generated-loop review](GENERATED_LOOP_REVIEW_2026-11-19_UA.md).
-Відновлено remote-verified `ddedf0be4d95ff799f8a4165f841aa6aae5c1dd0`. У цьому read-only slice production/tests/runner/core/config незмінні, нового candidate чи matcher/profile runs немає. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [first-checkpoint candidate](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md).
+Відновлено remote-verified `03ec0a227a052b2fc81ca51f7a30c9375d19ff52`. Local candidate відхилено, production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -34,7 +34,9 @@ Cached-cutoff candidate перевірено й відхилено: baseline/can
 
 Generated-loop review завершено: **2 exact full-ELF rebuilds / 2 exact assembly objects**, raw і bounded inner loops vectorized на **16/8 bytes**, main body 7 instructions із `psadbw`; raw 29-byte loop bytes ідентичні. SIMD-loss hypothesis не підтверджено. Trace model: **7800 → 105597 block finalizations**, tails не потрібні для цих spans; це не runtime attribution. Знайдено **95730 повторних tuple checks** понад first checkpoint на **7735 eligible entries** (усього 103465 checkpoints); original arguments invariant у helper call. **244 unchanged sources / 96 bound files**, prior inputs/binaries/flags/log звірені; нових matcher/profile/full-suite runs немає. Evidence `artifacts/generated-loop-20261118/`, завершено November 19.
 
-Наступний bounded software крок — **characterization first-checkpoint tuple refresh** перед одним local candidate: порівняти tuple лише на першому non-final checkpoint entry, cutoff search лишити в тому самому checkpoint. Зберегти block=1024, ≤1024 lazy behavior, local cutoff lifetime, fallback, validation, strict/rounded ties, insert/pop capacity/errors, zero-skip/scale/full diagnostics. Це concrete removable check, не доведений API gain; adoption потребує нового exact paired 44-case gain/full runner. SIMD/kernel rewrite, block sweep, inverse/epsilon, policy tuning без evidence поза scope. Software-only, без hardware/output; cold-cache й незалежні annotated data окремо.
+First-checkpoint candidate перевірено й відхилено: baseline/candidate **819 exact match / 234 capacity comparisons**, 28 fault cases/13 throws, 80 нових boundary controls. Separate diagnostic: **32 order/laziness self-tests**, 13 exact PGM; **7735 tuple checks** замість prior 103465, ті самі **809 updates / 18586 predicate evaluations / 108311040 pixels**. **440 exact API processes / 176 pairs**, ratios **1.0083 pgm / 0.9740 pgm-scale**, ranges **0.8285–1.1283 / 0.9006–1.1186**; clear consistent gain немає. **244 sources / 1387 bound files**, inputs/flags/prior 357/65+65 log verified, нового full runner немає. Partial-score серію на цих fixtures завершено, нові variants відкладено до іншого workload/profile evidence.
+
+Наступний bounded software крок — **read-only retained non-exact top-k/window30 characterization і baseline**. Current PGM top-k5 scenarios global/window0/one query; self window30 має top-k0. На тих самих 13 PGM/route mappings окремо дослідити window30/top-k5, scale OFF/ON, neutral bias, initial global query + 8 follow-ons. First match звірити з historical oracle; наступні window-limited outputs мають explicit new reference/oracles/config description, старі 44 oracles не змінювати. Timing protocol freeze після characterization. Це unpaced repeated-image software workload, без freshness/live/accuracy acceptance, threshold tuning, hardware/output або production edits.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -58,6 +60,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- First-checkpoint candidate (`2026-11-19`): baseline/candidate **819/234 comparisons**, 28 fault cases/13 throws; **32 counter self-tests / 13 PGM diagnostics**, tuple checks 7735 із unchanged search/pixels. **440 exact processes / 176 API pairs**, ratios 1.0083/0.9740 не дали clear gain, candidate відхилено. **244 sources / 1387 bound files**, prior 357/65+65 log verified, нового runner немає. [Звіт](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md); next — retained top-k/window30 baseline.
 
 - Generated-loop review (`2026-11-19`, artifacts почато 18-го): **2 byte-identical ELF rebuilds / 2 assembly objects**, direct ELF64/symbol/loop-byte readback pass; 16/8-byte SIMD збережено. Model виявляє 95730 redundant tuple rechecks, не встановлює runtime cause. **244 sources / 96 bound files**, inputs/flags/prior full log verified; нових matcher/profile/full runner немає. [Звіт](GENERATED_LOOP_REVIEW_2026-11-19_UA.md); next — first-checkpoint tuple-refresh characterization.
 

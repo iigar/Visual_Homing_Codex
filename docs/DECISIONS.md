@@ -1,5 +1,29 @@
 # Decisions
 
+## 2026-11-19 - Reject First-Checkpoint Candidate And Close This Partial-Score Series
+
+- One local fixed-block-1024 candidate limits tuple checks to first nonfinal
+  checkpoint, retaining search timing, <=1024 laziness, fallback/lifetime,
+  validation/ties/ordinary insert-pop/capacity/errors and full diagnostics.
+- Baseline/candidate each pass 819 exact match/234 capacity comparisons, 28 fault
+  cases/13 throws; 80 new boundary controls supplement prior rounding/state tests.
+  Separate instrumented copy passes 32 order/laziness tests and 13 PGM oracles:
+  tuple checks 7735 vs prior model 103465; 809 updates/18586 predicate evaluations
+  and 108311040 pixels unchanged. Counters absent from timed binaries.
+- 440 exact processes/176 balanced API pairs against current production give
+  median case ratios 1.0083 pgm / .9740 pgm-scale, ranges .8285–1.1283 /
+  .9006–1.1186. No clear consistent API gain; reject. Counter reduction is not
+  timing causality, and old cached samples are not a matched ablation/control.
+- Close partial-score candidate series on these fixtures. No further variants/
+  block/SIMD tuning without new workload/profile evidence. Production unchanged;
+  probe/readback pass, 244 sources/1387 bound files, prior same-source/Python
+  357/65+65 log verified, no new full runner.
+- Next read-only retained non-exact top-k5/window30 characterization/baseline,
+  fixed initial+8 follow-on queries, scale OFF/ON. First query matches historical
+  oracle; subsequent window-limited outputs require explicit new references and
+  scenario/config explanation. Preserve old 44 oracles; no policy/accuracy claim.
+  [Report](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md).
+
 ## 2026-11-19 - Preserve SIMD And Characterize Redundant Tuple Rechecks
 
 - Read-only review resumed ddedf0b. Matched diagnostic full ELF rebuilds and

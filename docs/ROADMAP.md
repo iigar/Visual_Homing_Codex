@@ -117,12 +117,22 @@ raw 29-byte main loops identical. Model: 7800->105597 block finalizations,
 103465 checkpoints/7735 eligible entries. Found 95730 invariant tuple rechecks;
 source/assembly establish concrete repeated work, not runtime causality.
 244 sources/96 bound files, inputs/flags/prior log unchanged, no new matcher/
-profile/full-suite runs. Next: baseline characterization then one local
-first-checkpoint tuple-refresh candidate at fixed block 1024. Keep cutoff search
-at same first checkpoint, <=1024 lazy behavior, fallback/per-match lifetime,
-validation, strict/rounded ties, insert/pop capacity/errors and diagnostics.
-Require new exact paired 44-case API gain/full runner for adoption. No manual
-SIMD/kernel rewrite, block sweep or epsilon; completed campaigns remain frozen.
+profile/full-suite runs.
+The [first-checkpoint candidate](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md)
+passes 819 match/234 capacity comparisons per variant and separate 32 boundary/
+order tests/13 PGM diagnostics. Tuple checks fall to 7735 with search/pixels
+unchanged, but 440 exact processes/176 API pairs give mixed ratios 1.0083/.9740.
+Reject; 244 sources/1387 bound files, prior full log verified, no new runner.
+Close this partial-score series; no further variants/tuning without new workload/
+profile evidence. Counter reduction and static findings are not API gain.
+Next: read-only retained non-exact top-k5/window30 characterization/baseline.
+Existing PGM top-k cases use global search/one query, window30 self uses top-k0.
+Use the same 13 bound PGM mappings, scale OFF/ON, initial global+8 retained calls.
+First query must match historical oracle; window-limited follow-ons need explicit
+new references/oracles/config metadata. Keep old 44 scenarios frozen. Freeze
+timing protocol after characterization; repeated unpaced images do not establish
+freshness/live/accuracy acceptance. No production edits, threshold tuning or
+new candidate in this baseline slice.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

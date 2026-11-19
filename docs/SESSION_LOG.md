@@ -1,5 +1,28 @@
 # Session Log
 
+## 2026-11-19 — Reject first-checkpoint candidate and close partial-score series
+
+- Resumed remote-verified 03ec0a2, clean tracked tree. Frozen one-candidate plan,
+  block 1024, baseline before candidate source, same first-checkpoint search.
+  Reviewed orchestration copied to new directory with provenance; old scripts
+  not rerun. No production/test/runner/config changes, hardware/output or subagents.
+- Baseline/candidate each pass 819 exact match/234 capacity comparisons,
+  28 fault cases/13 throws, 80 new boundary controls; all five builds warning-free.
+  Separate counter binary passes 32 boundary/order tests and 13 PGM oracles:
+  tuple checks 7735 vs prior model 103465, same updates 809/predicate evaluations
+  18586/108311040 pixels. No counter callbacks in API timing binaries.
+- All 440 API processes/176 balanced pairs retain 44 historical oracles;
+  93300 timed queries per variant. Median case ratios 1.0083/.9740, ranges
+  .8285–1.1283 / .9006–1.1186. No sufficient consistent gain; reject, no extra
+  favorable-run selection or tuning. Counter reduction does not prove causality.
+- All probes/independent finalizer/native readback pass, 244 sources/1387 bound
+  files, inputs/session/seven OFF flags unchanged; prior same-source/Python
+  357/65+65 log verified without new runner. Report
+  FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md; status/handoff/queue updated.
+- Close this partial-score series. Next read-only retained non-exact top-k5/
+  window30 characterization and baseline, initial global+8 follow-ons, scale
+  OFF/ON; explicit new references after first historical match, no old oracle edits.
+
 ## 2026-11-19 — Review frozen loops and identify invariant tuple rechecks
 
 - Resumed remote-verified ddedf0b with clean tracked tree; began read-only artifact

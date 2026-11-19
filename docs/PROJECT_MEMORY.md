@@ -1,5 +1,31 @@
 # Project Memory
 
+## First-Checkpoint Candidate Rejected — 2026-11-19
+
+Resumed remote-verified 03ec0a2; production/tests/runner/core/config unchanged.
+One local block-1024 candidate adds helper-local first_checkpoint guard; tuple
+check once, cutoff search after same completed block; <=1024 lazy/fallback/cache
+lifetime/validation/ties/ordinary insert-pop/state/errors/diagnostics retained.
+Baseline before candidate: each 819 bit-exact match/234 capacity comparisons,
+28 allocation-fault cases/13 throws, 80 new boundary comparisons (1023/1024/1025/
+2048/2049). Four rounding modes and prior controls retained; five builds warning-free.
+Separate counter copy: 32 boundary/order self-tests incl 16 no-checkpoint cases,
+13 exact PGM processes. Measured tuple checks 7735 vs old trace model 103465;
+checkpoints 103465, updates 809, predicate evaluations 18586, pixels 108311040
+unchanged. Counters excluded from ordinary benchmark sources/binaries.
+440 exact API processes/176 balanced pairs, 93300 timed queries/variant. Ratios
+1.0083 pgm (.8285–1.1283) / .9740 pgm-scale (.9006–1.1186); no clear consistent
+gain, reject. No pooling/causal inference from previous cached or replay data.
+Setup/preparation/counter/paired/finalizer/native readback pass, 244 unchanged
+sources/1387 bound files in artifacts/first-checkpoint-20261119/. Prior same-source/
+Python 357/65+65 log verified, no new full runner. Report
+FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md. Close this partial-score series; no
+further tuning without new workload/profile evidence. Next read-only retained
+non-exact top-k5/window30 characterization/baseline on 13 bound PGM mappings,
+scale OFF/ON, initial global+8 follow-ons. First match historical; subsequent
+window-limited results need new reference/oracles/config description. Old 44
+oracles unchanged; unpaced repeated images are not freshness/live/accuracy evidence.
+
 ## Generated Loops And Invariant Tuple Rechecks — 2026-11-19
 
 Resumed remote-verified ddedf0b; started artifacts/generated-loop-20261118/ on

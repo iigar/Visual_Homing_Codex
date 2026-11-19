@@ -3,9 +3,9 @@
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
 Оновлено `2026-11-19` після завершення
-[generated-loop review](GENERATED_LOOP_REVIEW_2026-11-19_UA.md)
-поверх опублікованого cached-cutoff checkpoint `ddedf0b`.
-Artifact collection почато November 18; directory дату збережено.
+[first-checkpoint candidate](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md)
+поверх опублікованого generated-loop checkpoint `03ec0a2`.
+Partial-score candidate серію на чинних fixtures завершено без production patch.
 У цьому slice production/tests/runner/core/config незмінні. Чинні сім coarse-zero
 match рядків, pixel kernels/cache/policy/thresholds/output gates збережені.
 Цей handoff замінює [жовтневу точку входу](SESSION_HANDOFF_2026-10-31_UA.md);
@@ -34,12 +34,15 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 > відхилено, production незмінний. Generated-loop review теж завершено: 2 exact ELF
 > rebuilds/2 assembly objects, raw/bounded 16/8-byte SIMD із psadbw, raw-loop bytes
 > ідентичні. Model знаходить 95730 redundant tuple rechecks понад first checkpoint
-> на 7735 eligible entries; runtime impact ще не встановлено. Наступний bounded
-> slice — baseline characterization перед одним local first-checkpoint tuple-
-> refresh candidate, block 1024. Search лишити в тому самому first checkpoint;
-> <=1024 lazy behavior, cutoff lifetime і fallback зберегти. Потрібні новий exact
-> paired 44-case API gain і full runner для adoption. SIMD rewrite/block tuning/
-> inverse/epsilon поза scope. Зберігай strict winner, rounded top-k ties,
+> на 7735 eligible entries. First-checkpoint candidate теж завершено: 819 exact
+> match/234 capacity controls, 32 counter self-tests/13 PGM diagnostics; tuple checks
+> 7735, search/pixels unchanged. 440 exact API processes/176 pairs дали ratios
+> 1.0083 pgm/.9740 pgm-scale без sufficient consistent gain — candidate відхилено.
+> Partial-score серію закрито; нових variants без іншого workload/profile evidence
+> не роби. Наступний bounded slice — read-only retained non-exact top-k5/window30
+> characterization/baseline, scale OFF/ON, initial global+8 follow-ons. First match
+> historical, наступні window-limited outputs мають new reference/oracles/config
+> description; старі 44 oracles не змінюй. Зберігай strict winner, rounded top-k ties,
 > insert/pop capacity/allocation semantics і validation перед scoring.
 > Перевір current source/build/oracle identities й сім flags OFF. Не трактуй
 > observed CPU clocks як calibrated latency/coverage: CPU > wall у 23/26 workers.
@@ -81,6 +84,9 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 - Generated-loop review відновлено з remote-verified
   `ddedf0be4d95ff799f8a4165f841aa6aae5c1dd0`; probe/analysis/finalizer/native
   readback pass, 244 sources/prior full log звірені, нових matcher runs немає.
+- First-checkpoint candidate відновлено з remote-verified
+  `03ec0a227a052b2fc81ca51f7a30c9375d19ff52`; candidate відхилено, counter/API/
+  finalizer/native readback pass, 244 sources/prior full log звірені.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -110,6 +116,7 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 | Exact cutoff / threshold epochs | 9685 cases, 809 epochs/103465 blocks; threshold-only ratio .7993, API gain не встановлено | [Звіт](EXACT_CUTOFF_CHARACTERIZATION_2026-11-15_UA.md) |
 | Cached-cutoff API comparison | 739 exact match/154 capacity controls, 440 exact processes/176 pairs; ratios .9739/1.0223, candidate відхилено | [Звіт](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md) |
 | Generated loops / vectorization | 2 exact ELF rebuilds/2 assembly objects; SIMD збережено, 95730 redundant tuple rechecks у model | [Звіт](GENERATED_LOOP_REVIEW_2026-11-19_UA.md) |
+| First-checkpoint candidate | 819/234 controls, tuple checks 7735, 440 exact processes/176 pairs; ratios 1.0083/.9740, candidate відхилено | [Звіт](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md) |
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
@@ -261,7 +268,7 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. **First-checkpoint tuple-refresh characterization**, baseline перед одним local candidate. Bind input hashes/session
+2. **Read-only retained non-exact top-k5/window30 characterization/baseline**. Bind input hashes/session
    mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
    `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
    Coarse-zero, stop-frame profile і block-1024 partial-score study завершені;
@@ -273,33 +280,36 @@ raw pstats проти JSON, перерахував medians, звірив interpr
    440 exact processes/176 API pairs, ratios .9739 pgm / 1.0223 pgm-scale без
    clear gain. Generated-loop review теж завершено: exact ELF/object mapping,
    raw/bounded SIMD збережено; 95730 redundant tuple checks понад first checkpoint.
-   Це concrete removable check, але API gain не встановлено. Завершені API/
-   profile/codegen runs не повторювати; нові captures не потрібні.
+   First-checkpoint candidate завершено: tuple checks 7735/search unchanged,
+   819/234 controls, 440 exact API processes, ratios 1.0083/.9740 без clear gain;
+   відхилено. Partial-score серію закрито. Не повторювати завершені API/profile/
+   codegen campaigns; нові captures не потрібні. Current PGM top-k5 global/one
+   query і self window30/top-k0 не покривають нову retained combination.
 3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
    target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
    compiler/options/cache/binary identities. Новий artifact directory; старі
    bound scripts/finalizers не перезапускати для іншого revision.
-4. Bind archive/helper/candidate/compiler із cached-cutoff preparation та codegen
-   review. Baseline controls до створення нового candidate; дослідити tuple check
-   лише на першому non-final checkpoint кожного helper call. Cutoff search не
-   переносити перед pixel loop; <=1024 input не має checkpoint/update. Зберегти
-   block=1024, cache lifetime per match, checked-domain/rounding fallback,
-   structural validation, strict/rounded ties, ordinary insert/pop capacity/
-   allocation errors і recovery state; full raw/scale/zero-skip/diagnostics незмінні.
-5. Окремий counter diagnostic може звірити unchanged decisions/search epochs:
-   prior model 103465 checkpoints, 7735 first-checkpoint checks, 809 updates і
-   18586 search evaluations. Counters поза API timing. Один local candidate лише
-   після characterization; нові balanced pairs усіх 44 API cases проти current
-   canonical production, не лише відхиленого cached prototype. Small/no API gain
-   -> production лишити. Static reports/model не доводять runtime causality.
-   SIMD/kernel rewrite, block sweep/inverse/epsilon/policy tuning поза scope.
-   CPU/wall anomaly і flat clone labels не використовувати як calibrated evidence.
-   Cold-cache/independent annotated data окремо, hardware/output поза scope;
-   hashes/containment/mutation та різні symlink contracts зберегти.
-6. Прийняття code change потребує нового full runner і actual source/diff review;
-   за unchanged sources/runtime звірити prior full-suite log. Завершений slice
-   документувати, staged diff/check, commit/push, remote SHA і clean tracked state.
-   Завершені lexical/path-constructor/PGM stages не відкривати без evidence.
+4. Новий ignored harness, без production edits/candidate. Fixed 26 scenarios:
+   ті самі 13 PGM/route mappings × scale OFF/ON, window30/top-k5, neutral bias,
+   minimum_confidence=0, yaw/direction/initial bounds disabled. Один initial
+   global query + 8 follow-ons на retained matcher, без reset між calls. Frame
+   bytes/id/timestamp не підмінювати для freshness simulation; це unpaced probe.
+   First match має full historical oracle; наступні window-limited matches/top-k/
+   state звірити з full-scoring reference і зафіксувати explicit new oracles.
+   Config/scenario drift описати, старі 44 oracle files не змінювати.
+5. Лише після characterization freeze timing protocol/budget: один excluded
+   whole-sequence warmup і три fixed timed batches усіх 26 cases; fresh matcher
+   для кожної sequence, initial-global та retained costs окремо. Не warming-up
+   timed matcher до першого query: це змінило б global->local state. Load/init/
+   oracle checks відокремити від match timing. Це new workload baseline, не
+   before/after speedup, live/freshness/accuracy evidence або threshold tuning.
+   Partial-score variants не відновлювати автоматично; hardware/output поза scope.
+   CPU/wall clocks не calibrated coverage; hashes/containment/mutation і різні
+   symlink contracts зберегти. Cold-cache/independent annotated data окремо.
+6. Звірити unchanged sources/runtime/prior full-suite log, actual source/diff review;
+   code change потребує нового full runner. Документувати new scenario/reference
+   contract і limits, staged diff/check, commit/push, remote SHA, clean tracked
+   state. Завершені lexical/path-constructor/PGM stages не відкривати без evidence.
 
 Partial-score study evidence: `artifacts/partial-score-20261114/`, **1361 bound
 local files**, frozen plan/tar/helper/characterization, raw witnesses та всі paired
@@ -334,6 +344,16 @@ no required tails; 103465 checkpoints/7735 entries -> 95730 redundant tuple
 rechecks. Це static/model finding, не measured API cause. Initial readback excerpt
 context failure retained; finalizer passes with full function check. Нових
 candidate/matcher/profile/full-runner processes немає; prior 357/65+65 log bound.
+
+First-checkpoint study: `artifacts/first-checkpoint-20261119/`, **1387 bound files /
+244 unchanged sources**, input bytes/mtime/session/flags verified. Baseline/
+candidate 819 exact match/234 capacity comparisons, 28 fault cases/13 throws;
+32 boundary/order self-tests (16 no-checkpoint), 13 PGM counter processes.
+Tuple checks 7735, checkpoints 103465, updates 809/predicate evaluations 18586,
+pixels 108311040 unchanged. 440 exact API processes/176 pairs, ratios
+1.0083/.9740, ranges .8285–1.1283 / .9006–1.1186; candidate відхилено. Prior
+same-source/Python 357/65+65 log bound, нового runner немає. Partial-score серію
+завершено; next retained-window baseline має new scenario/oracle contract.
 
 ## Ширша черга не втрачена
 
