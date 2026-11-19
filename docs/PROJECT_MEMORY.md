@@ -1,5 +1,30 @@
 # Project Memory
 
+## Generated Loops And Invariant Tuple Rechecks — 2026-11-19
+
+Resumed remote-verified ddedf0b; started artifacts/generated-loop-20261118/ on
+November 18, completed November 19. Production/tests/runner/core/config unchanged,
+new matcher/API/profile processes 0. Two matched full-ELF rebuilds and two
+separately assembled matcher objects byte-identical to originals; direct ELF64
+section/symbol/encoded-loop readback validates association. GCC13 x86-64 generic,
+SSE2 enabled/AVX disabled. Raw/bounded loops both vectorized 16/8 bytes, seven
+instructions with psadbw. Raw 29-byte loop bodies identical; match size
+2421->3732 bytes is static, not runtime/cache evidence. No lost-SIMD finding.
+Trace model: 7800->105597 block finalizations, 7.8m->6.76944m 16-byte iterations,
+no required pixel tails. Eligible entries 7735, non-final checkpoints 103465.
+Concrete redundant work: invariant tuple valid/best/worst checks inside block
+loop; 95730 checks beyond first checkpoint per entry. Cutoff updates 809/search
+predicate evaluations 18586 need not change. Source/assembly prove repeated
+checks, not their contribution to API timing. Initial excerpt-bound readback
+failure preserved in readback-failed-01; full function-context check passes.
+Probe/analysis/finalizer/native readback pass; 96 bound files/244 unchanged sources,
+inputs/binaries/flags unchanged; prior same-source/Python 357/65+65 log verified,
+no new full runner. Report GENERATED_LOOP_REVIEW_2026-11-19_UA.md.
+Next baseline characterization then one local first-checkpoint tuple-refresh
+candidate at block 1024: keep search at same first checkpoint, <=1024 lazy behavior,
+fallback, per-match lifetime, validation/ties/capacity/errors/diagnostics. Adoption
+still needs new exact paired 44-case API gain/full runner; no SIMD rewrite/sweep.
+
 ## Cached-Cutoff Candidate Rejected — 2026-11-16
 
 Resumed remote-verified 2495b45; production/tests/runner/core/config unchanged.

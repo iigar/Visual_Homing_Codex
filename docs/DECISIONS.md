@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-11-19 - Preserve SIMD And Characterize Redundant Tuple Rechecks
+
+- Read-only review resumed ddedf0b. Matched diagnostic full ELF rebuilds and
+  separately assembled matcher objects are byte-identical for both variants;
+  reports/assembly therefore bind to the measured binaries. No new matcher runs.
+- Full raw and bounded inner loops retain 16/8-byte vectorization and the same
+  seven-instruction psadbw pattern. Raw 29-byte main-loop bodies are identical;
+  match size 2421->3732 bytes is static evidence, not latency/cache attribution.
+- Frozen 13-image trace model: 7800->105597 block finalizations, 7.8m->6.76944m
+  16-byte iterations, no required pixel tails. Counts are modeled, not hardware.
+- Concrete removable work: invariant best/worst tuple checked at every non-final
+  block (103465), though 7735 eligible entries need only first-checkpoint checks.
+  95730 rechecks are redundant; 809 searches/18586 predicate evaluations unchanged
+  if search remains at the same first checkpoint. Runtime impact unestablished.
+- Next baseline characterization before one local first-checkpoint-refresh
+  candidate, fixed block 1024 and unchanged fallback/lifetime/validation/ties/
+  insert-pop semantics. Require new exact 44-case API gain/full runner for adoption;
+  no manual SIMD rewrite, sweep or epsilon. This is the concrete evidence gate
+  missing before codegen review, not permission for broader tuning.
+- Probe/analysis/readback pass, 244 sources/96 bound files; inputs/flags/prior
+  same-source/Python 357/65+65 log verified. Production unchanged, no new full suite.
+  [Report](GENERATED_LOOP_REVIEW_2026-11-19_UA.md).
+
 ## 2026-11-16 - Reject Cached Cutoff Without Clear API Gain
 
 - One local block-1024 candidate caches exact cutoff per match/threshold epoch,

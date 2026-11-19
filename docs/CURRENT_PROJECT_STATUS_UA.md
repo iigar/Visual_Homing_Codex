@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-16` (cached-cutoff API comparison завершено, candidate відхилено).
+Оновлено: `2026-11-19` (generated-loop/vectorization review завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [cached-cutoff candidate](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md).
-Відновлено remote-verified `2495b45a71a9c712fa1d88391c84b156c3457c3d`. У цьому slice local candidate відхилено, production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [generated-loop review](GENERATED_LOOP_REVIEW_2026-11-19_UA.md).
+Відновлено remote-verified `ddedf0be4d95ff799f8a4165f841aa6aae5c1dd0`. У цьому read-only slice production/tests/runner/core/config незмінні, нового candidate чи matcher/profile runs немає. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -32,7 +32,9 @@ Exact cutoff characterization завершено: **9685 C++ cases / 7168176 num
 
 Cached-cutoff candidate перевірено й відхилено: baseline/candidate по **739 exact match / 154 capacity comparisons**, **28 allocation-fault cases / 13 throws**, включно з **64 controls на чотирьох rounding modes**. **440 exact processes / 176 balanced API pairs**, median case ratios **0.9739 pgm / 1.0223 pgm-scale**, ranges **0.8039–1.1494 / 0.8106–1.1928**. Clear API gain не встановлено; production/tests/runner/core/config незмінні. Successful probe/finalizer/native readback pass, **244 sources / 1359 bound files**, inputs/flags незмінні; prior same-source/Python **357 / 65+65** log звірений, нового full runner немає.
 
-Наступний bounded software крок — **read-only generated-loop/vectorization review** frozen baseline і відхиленого cached prototype: ELF/disassembly та compiler optimization reports на тих самих sources/compiler/flags. Відділити structural codegen facts від runtime attribution; завершені API/profile runs не повторювати. Нового candidate, block sweep, inverse/epsilon або kernel/cache/zero-skip/policy rewrite без concrete evidence не робити. Зберегти validation, strict/rounded ties, insert/pop capacity/exceptions та full diagnostics. Software-only, без hardware/output; cold-cache й незалежні annotated data окремо.
+Generated-loop review завершено: **2 exact full-ELF rebuilds / 2 exact assembly objects**, raw і bounded inner loops vectorized на **16/8 bytes**, main body 7 instructions із `psadbw`; raw 29-byte loop bytes ідентичні. SIMD-loss hypothesis не підтверджено. Trace model: **7800 → 105597 block finalizations**, tails не потрібні для цих spans; це не runtime attribution. Знайдено **95730 повторних tuple checks** понад first checkpoint на **7735 eligible entries** (усього 103465 checkpoints); original arguments invariant у helper call. **244 unchanged sources / 96 bound files**, prior inputs/binaries/flags/log звірені; нових matcher/profile/full-suite runs немає. Evidence `artifacts/generated-loop-20261118/`, завершено November 19.
+
+Наступний bounded software крок — **characterization first-checkpoint tuple refresh** перед одним local candidate: порівняти tuple лише на першому non-final checkpoint entry, cutoff search лишити в тому самому checkpoint. Зберегти block=1024, ≤1024 lazy behavior, local cutoff lifetime, fallback, validation, strict/rounded ties, insert/pop capacity/errors, zero-skip/scale/full diagnostics. Це concrete removable check, не доведений API gain; adoption потребує нового exact paired 44-case gain/full runner. SIMD/kernel rewrite, block sweep, inverse/epsilon, policy tuning без evidence поза scope. Software-only, без hardware/output; cold-cache й незалежні annotated data окремо.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -56,6 +58,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Generated-loop review (`2026-11-19`, artifacts почато 18-го): **2 byte-identical ELF rebuilds / 2 assembly objects**, direct ELF64/symbol/loop-byte readback pass; 16/8-byte SIMD збережено. Model виявляє 95730 redundant tuple rechecks, не встановлює runtime cause. **244 sources / 96 bound files**, inputs/flags/prior full log verified; нових matcher/profile/full runner немає. [Звіт](GENERATED_LOOP_REVIEW_2026-11-19_UA.md); next — first-checkpoint tuple-refresh characterization.
 
 - Cached-cutoff candidate (`2026-11-16`): baseline/candidate **739 exact match / 154 capacity comparisons**, 28 fault cases, 64 rounding controls; **440 exact processes / 176 API pairs**. Ratios 0.9739 pgm / 1.0223 pgm-scale не дали clear gain, candidate відхилено. **244 sources / 1359 bound files**, inputs/flags незмінні; prior 357 Python/65+65 log verified, нового runner немає. [Звіт](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md); next — read-only codegen review.
 

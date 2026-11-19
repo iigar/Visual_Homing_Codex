@@ -1,5 +1,27 @@
 # Session Log
 
+## 2026-11-19 — Review frozen loops and identify invariant tuple rechecks
+
+- Resumed remote-verified ddedf0b with clean tracked tree; began read-only artifact
+  collection November 18. No new matcher/profile processes, production changes,
+  hardware/output or subagents. Bound 1359 prior files and compiler/binutils.
+- Both matched full-ELF rebuilds and separately assembled matcher objects are
+  byte-identical. Direct ELF64/symtab/.text/backedge readback validates original
+  symbol addresses and loop bytes; no gprof clone-label reliance.
+- Raw/bounded loops both vectorized 16/8 bytes, seven-instruction psadbw body;
+  raw 29-byte loops identical. Match code size 2421->3732 bytes, a static fact.
+  Trace model gives 7800->105597 block finalizations, no required pixel tails.
+- Found repeated invariant tuple checks: 103465 checkpoints/7735 eligible entries,
+  95730 redundant rechecks beyond first checkpoint. Assembly shows comparisons
+  inside block backedge; runtime impact remains unestablished. No new candidate.
+- Initial readback snippet omitted $65536 just outside window; preserved script/
+  log, verified bound in complete raw function. Probe/analysis/finalizer/native
+  hash readback pass, 244 sources/96 bound files, inputs/binaries/seven flags OFF.
+  Prior same-source/Python 357/65+65 suite log verified without new runner.
+- Report GENERATED_LOOP_REVIEW_2026-11-19_UA.md; next characterization then one
+  local first-checkpoint tuple-refresh candidate, same block/search timing and
+  contracts, exact paired 44-case API gain/full runner gate adoption.
+
 ## 2026-11-16 — Reject local cached-cutoff candidate after full API comparison
 
 - Resumed remote-verified 2495b45 with clean tracked tree; frozen one-candidate

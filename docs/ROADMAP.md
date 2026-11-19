@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-16
+## Current Focus - 2026-11-19
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -110,12 +110,19 @@ retain oracles; ratios .9739 pgm / 1.0223 pgm-scale do not establish clear gain.
 Reject this one local candidate; 244 sources/inputs/flags unchanged, 1359 bound
 files, prior full log verified, no new runner. No block sweep or favorable-run
 selection; no cross-date causal comparison with the earlier prototype/replay.
-Next: read-only generated-loop/vectorization review of frozen baseline/cached
-binaries and sources at matched compiler/flags. Use ELF/disassembly/compiler
-reports to establish structural facts, not runtime attribution. Do not rerun
-completed API/profile campaigns. No third candidate, block tuning or production
-kernel/cache/policy rewrite without concrete evidence. Preserve validation,
-strict/rounded ties, insert/pop capacity/exception semantics and full diagnostics.
+The [generated-loop review](GENERATED_LOOP_REVIEW_2026-11-19_UA.md) is complete:
+two exact full-ELF rebuilds/two assembly objects bind reports to measured code.
+Raw/bounded loops retain 16/8-byte SIMD and seven-instruction psadbw pattern;
+raw 29-byte main loops identical. Model: 7800->105597 block finalizations,
+103465 checkpoints/7735 eligible entries. Found 95730 invariant tuple rechecks;
+source/assembly establish concrete repeated work, not runtime causality.
+244 sources/96 bound files, inputs/flags/prior log unchanged, no new matcher/
+profile/full-suite runs. Next: baseline characterization then one local
+first-checkpoint tuple-refresh candidate at fixed block 1024. Keep cutoff search
+at same first checkpoint, <=1024 lazy behavior, fallback/per-match lifetime,
+validation, strict/rounded ties, insert/pop capacity/errors and diagnostics.
+Require new exact paired 44-case API gain/full runner for adoption. No manual
+SIMD/kernel rewrite, block sweep or epsilon; completed campaigns remain frozen.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing
