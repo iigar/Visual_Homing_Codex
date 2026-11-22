@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-11-21 - Freeze Retained-Window Oracles And Separate Work Attribution
+
+- Read-only 13 PGM mappings × scale OFF/ON, window30/top-k5, initial global+8
+  retained queries. Independent scalar full-score/full-sort reference passes
+  234 PGM queries and 360 synthetic state checks (40 cases/180 rejects).
+- First matches preserve historical outputs; 26 new config/oracle files describe
+  window-limited follow-ons and top_capacity. Old 44 files unchanged. Retained
+  winner/confidence stable; top-k changes in 16/208 follow-ons, windows31–61.
+- Freeze after characterization, then one excluded sequence warmup+3 fixed
+  batches: 104 exact processes, 78 initial/624 retained timed queries. Median
+  case initial/retained raw 697.593/31.7275 µs, scale 1454.456/812.5625 µs.
+  Workload phases are not before/after speedup or live/freshness/accuracy evidence.
+- 244 sources/306 bound files, inputs/seven OFF flags/prior same-source/Python
+  357/65+65 log verified; no new full runner, candidate or production edits.
+- Next separate read-only scale-work counters (raw/scaled calls, pixels/overlap,
+  coordinate preparation), exact frozen oracles and synthetic controls. Counts
+  are not CPU shares/latency savings; partial-score series stays closed.
+  [Report](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md).
+
 ## 2026-11-19 - Reject First-Checkpoint Candidate And Close This Partial-Score Series
 
 - One local fixed-block-1024 candidate limits tuple checks to first nonfinal

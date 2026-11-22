@@ -1,5 +1,28 @@
 # Session Log
 
+## 2026-11-21 — Complete retained-window reference and latency baseline
+
+- Resumed remote-verified 5d74d72, tracked clean; artifacts started November 20. Software-only,
+  no subagents/production edits. Recovered daemon; sandbox helper error193 required
+  approved escalated commands. Preserved pre-build Python reserved-keyword failure,
+  fixed syntax and checked AST before build; final build warning-free.
+- Independent scalar reference/full-sort top-k and Python witness replay pass
+  26 cases/234 PGM queries plus 40 synthetic cases/360 queries/180 invalid controls.
+  First queries historical, explicit 26 new oracles, old 44 unchanged. 208 retained
+  calls keep winner/confidence, windows 31–61, top-k changes 16 times; reference
+  raw/scaled counts 26256/7776 are not production CPU attribution.
+- Froze timing after characterization: one excluded sequence warmup per case,
+  3 fixed batches, 104 exact processes. 78 initial/624 retained timed queries;
+  median case raw initial/retained 697.593/31.7275 µs, scale 1454.456/812.5625 µs.
+  Fresh matcher per sequence, load/init/reference/serialization outside match timer.
+  No extra samples; no before/after, freshness/live/accuracy or tail guarantee.
+- Independent finalizer pass; 244 sources/306 bound files, inputs/session/flags/
+  compiler/runtime/old 44 oracles/prior 357/65+65 log verified, no new full runner.
+  Native Windows hashes and 148 local links in seven docs verified.
+  Report RETAINED_WINDOW_BASELINE_2026-11-21_UA.md; canonical status/queue updated.
+- Next separate read-only retained-window scale-work attribution, deterministic
+  counters with exact oracles/controls, no CPU-share claim. Partial-score stays closed.
+
 ## 2026-11-19 — Reject first-checkpoint candidate and close partial-score series
 
 - Resumed remote-verified 03ec0a2, clean tracked tree. Frozen one-candidate plan,

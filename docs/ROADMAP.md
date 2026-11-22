@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-19
+## Current Focus - 2026-11-21
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -125,14 +125,20 @@ unchanged, but 440 exact processes/176 API pairs give mixed ratios 1.0083/.9740.
 Reject; 244 sources/1387 bound files, prior full log verified, no new runner.
 Close this partial-score series; no further variants/tuning without new workload/
 profile evidence. Counter reduction and static findings are not API gain.
-Next: read-only retained non-exact top-k5/window30 characterization/baseline.
-Existing PGM top-k cases use global search/one query, window30 self uses top-k0.
-Use the same 13 bound PGM mappings, scale OFF/ON, initial global+8 retained calls.
-First query must match historical oracle; window-limited follow-ons need explicit
-new references/oracles/config metadata. Keep old 44 scenarios frozen. Freeze
-timing protocol after characterization; repeated unpaced images do not establish
-freshness/live/accuracy acceptance. No production edits, threshold tuning or
-new candidate in this baseline slice.
+The [retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md) is complete:
+26 scenarios/234 independent reference queries, 40 synthetic cases/360 state checks.
+Initial historical output preserved, 26 new config/oracles, old 44 unchanged.
+208 follow-ons keep winner/confidence, windows 31–61; top-k changes 16 times.
+104 exact measurement processes, 26 excluded warmups, 78 initial/624 retained
+timed queries. Median case initial/retained raw 697.593/31.7275 µs,
+scale 1454.456/812.5625 µs. These are workload phases, not before/after speedup.
+244 sources/306 bound files, inputs/flags/prior full log verified; no new runner.
+Next: separate read-only retained-window scale-work attribution on frozen cases.
+Count production raw/scaled calls, pixels/overlap and coordinate preparation in
+diagnostic copies; preserve all matches/top-k/capacity and synthetic controls.
+Keep diagnostics outside timing, counts are not CPU shares or latency savings.
+No automatic candidate/partial-score reopening, production edits, threshold tuning
+or hardware/output. Repeated unpaced images do not establish freshness/live/accuracy.
 Separate cold-cache studies remain queued.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing

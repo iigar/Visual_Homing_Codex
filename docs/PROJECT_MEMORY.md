@@ -1,5 +1,31 @@
 # Project Memory
 
+## Retained-Window Reference And Baseline — 2026-11-21
+
+Resumed remote-verified 5d74d72; no production/test/runner/core/config edits.
+Artifacts retained-window-20261120/, completed November 21. 13 PGM mappings × raw/scale,
+window30/top-k5/min0, one initial global + 8 follow-ons, same frame id/time/bytes.
+Independent scalar uint64/row-major scale/full-sort top-k reference: 234 exact
+PGM queries; synthetic 40 cases/360 queries/180 rejects. Python integer-witness
+selection/state/overlap replay passes. First query historical; 26 explicit new
+config/oracles including top_capacity, old 44 unchanged. 208 retained calls:
+window sizes 31/43/51/52/61, winner/confidence stable, top-k differs from initial 16 times.
+Reference raw/scaled score counts 26256/7776; refined/coarse winner differs 18 times.
+Timing frozen after characterization, one excluded whole-sequence warmup+3 fixed
+batches, fresh matcher each sequence: 104 exact processes, 78 initial/624 retained
+timed queries. Mode median of 13 case initial/retained medians: raw 697.593/31.7275,
+scale 1454.456/812.5625 µs; median case retained p95 raw 55.916/scale 1064.001 µs.
+Not before/after speedup, pooled p95, freshness/live/accuracy/cold-cache/Pi evidence.
+Independent finalizer pass; 244 sources/306 bound files, 19 inputs bytes/mtime,
+session/compiler/Python/official binary/seven OFF flags/prior 357/65+65 log verified.
+Native Windows verification passes, including 148 local links in seven docs.
+No new full runner. Pre-build Python keyword SyntaxError preserved and fixed;
+syntax preflight passed, final build warning-free. Sandbox error193 handled with
+approved escalated local commands. Report RETAINED_WINDOW_BASELINE_2026-11-21_UA.md.
+Next bounded read-only retained-window scale-work attribution with separate
+raw/scaled call/pixel/overlap/coordinate counters and exact oracles/controls.
+No diagnostic-to-latency conversion, no automatic candidate or partial-score tuning.
+
 ## First-Checkpoint Candidate Rejected — 2026-11-19
 
 Resumed remote-verified 03ec0a2; production/tests/runner/core/config unchanged.

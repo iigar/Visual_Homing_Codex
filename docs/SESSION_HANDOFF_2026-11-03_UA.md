@@ -2,9 +2,9 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-19` після завершення
-[first-checkpoint candidate](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md)
-поверх опублікованого generated-loop checkpoint `03ec0a2`.
+Оновлено `2026-11-21` після завершення
+[retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md)
+поверх опублікованого first-checkpoint checkpoint `5d74d72`.
 Partial-score candidate серію на чинних fixtures завершено без production patch.
 У цьому slice production/tests/runner/core/config незмінні. Чинні сім coarse-zero
 match рядків, pixel kernels/cache/policy/thresholds/output gates збережені.
@@ -39,10 +39,16 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 > 7735, search/pixels unchanged. 440 exact API processes/176 pairs дали ratios
 > 1.0083 pgm/.9740 pgm-scale без sufficient consistent gain — candidate відхилено.
 > Partial-score серію закрито; нових variants без іншого workload/profile evidence
-> не роби. Наступний bounded slice — read-only retained non-exact top-k5/window30
-> characterization/baseline, scale OFF/ON, initial global+8 follow-ons. First match
-> historical, наступні window-limited outputs мають new reference/oracles/config
-> description; старі 44 oracles не змінюй. Зберігай strict winner, rounded top-k ties,
+> не роби. Retained-window baseline теж завершено: 234 PGM reference queries,
+> 360 synthetic state checks, 26 нових oracles, старі 44 незмінні. 104 exact
+> measurement processes, 78 initial/624 retained timed queries. Case medians:
+> initial 697.593/1454.456 µs, retained 31.7275/812.5625 µs raw/scale; це різні
+> workload phases, не before/after speedup. 244 sources/306 bound files,
+> inputs/flags/prior 357/65+65 log verified, нового full runner/candidate немає.
+> Наступний bounded slice — separate read-only retained-window scale-work
+> attribution: production call/pixel/overlap/coordinate-preparation counters,
+> exact frozen oracles та synthetic controls, diagnostic runs поза timing.
+> Counts не є CPU shares/latency savings. Зберігай strict winner, rounded top-k ties,
 > insert/pop capacity/allocation semantics і validation перед scoring.
 > Перевір current source/build/oracle identities й сім flags OFF. Не трактуй
 > observed CPU clocks як calibrated latency/coverage: CPU > wall у 23/26 workers.
@@ -87,6 +93,9 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 - First-checkpoint candidate відновлено з remote-verified
   `03ec0a227a052b2fc81ca51f7a30c9375d19ff52`; candidate відхилено, counter/API/
   finalizer/native readback pass, 244 sources/prior full log звірені.
+- Retained-window baseline відновлено з remote-verified
+  `5d74d7236f8da8ad61a87bc9037d48f0b142f7fd`; characterization/timing/finalizer
+  pass, 244 sources/306 bound files, prior full log звірений, production незмінний.
 - Збережена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`;
   rollback tag: `baseline/pre-optimization-2026-09-17`. History не переписувати.
 - На вході filesystem study tracked tree чистий. Calibration/probe/finalizer
@@ -117,6 +126,7 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 | Cached-cutoff API comparison | 739 exact match/154 capacity controls, 440 exact processes/176 pairs; ratios .9739/1.0223, candidate відхилено | [Звіт](CACHED_CUTOFF_CANDIDATE_2026-11-16_UA.md) |
 | Generated loops / vectorization | 2 exact ELF rebuilds/2 assembly objects; SIMD збережено, 95730 redundant tuple rechecks у model | [Звіт](GENERATED_LOOP_REVIEW_2026-11-19_UA.md) |
 | First-checkpoint candidate | 819/234 controls, tuple checks 7735, 440 exact processes/176 pairs; ratios 1.0083/.9740, candidate відхилено | [Звіт](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md) |
+| Retained-window top-k5 baseline | 234 reference queries/360 synthetic checks, 26 new oracles, 104 exact measurements; retained raw/scale 31.7275/812.5625 µs | [Звіт](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md) |
 | PGM characterization/cost | `42541d4`, 14 tests, production незмінний; candidate не реалізовано | [Звіт](PGM_HEADER_CHARACTERIZATION_2026-11-03_UA.md) |
 | Filesystem attribution | 6 exact audits, 19 call totals звірені; production незмінний | [Звіт](FILESYSTEM_ATTRIBUTION_2026-11-03_UA.md) |
 | Absolute path-depth sensitivity | 20 exact audits, 8 balanced pairs, median paired reduction 11.99%; production незмінний | [Звіт](PATH_DEPTH_SENSITIVITY_2026-11-04_UA.md) |
@@ -268,48 +278,45 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.
-2. **Read-only retained non-exact top-k5/window30 characterization/baseline**. Bind input hashes/session
-   mappings із `artifacts/board-inventory-20260922/hash-verification.json` та
-   `session-summaries.log`: шість VHRS routes і 13 PGM stop-frames у `data/`.
-   Coarse-zero, stop-frame profile і block-1024 partial-score study завершені;
-   oracles незмінні. Candidate відхилено: logical pixels −13.21%, але pgm/scale
-   paired ratios 1.0124/1.0271 без API gain. Не повторювати ці завершені runs;
-   Exact cutoff/epoch study теж завершено: 9685 cases, 809 epochs/18586 search
-   evaluations на 103465 blocks; threshold-only ratio .7993 не є API gain.
-   Cached candidate теж завершено й відхилено: 739/154 characterization,
-   440 exact processes/176 API pairs, ratios .9739 pgm / 1.0223 pgm-scale без
-   clear gain. Generated-loop review теж завершено: exact ELF/object mapping,
-   raw/bounded SIMD збережено; 95730 redundant tuple checks понад first checkpoint.
-   First-checkpoint candidate завершено: tuple checks 7735/search unchanged,
-   819/234 controls, 440 exact API processes, ratios 1.0083/.9740 без clear gain;
-   відхилено. Partial-score серію закрито. Не повторювати завершені API/profile/
-   codegen campaigns; нові captures не потрібні. Current PGM top-k5 global/one
-   query і self window30/top-k0 не покривають нову retained combination.
-3. Прямо прочитати актуальні matcher/benchmark/callers. Trusted current Release
-   target `gray8_matcher_benchmark`, сім camera/output flags OFF; записати source,
-   compiler/options/cache/binary identities. Новий artifact directory; старі
-   bound scripts/finalizers не перезапускати для іншого revision.
-4. Новий ignored harness, без production edits/candidate. Fixed 26 scenarios:
-   ті самі 13 PGM/route mappings × scale OFF/ON, window30/top-k5, neutral bias,
-   minimum_confidence=0, yaw/direction/initial bounds disabled. Один initial
-   global query + 8 follow-ons на retained matcher, без reset між calls. Frame
-   bytes/id/timestamp не підмінювати для freshness simulation; це unpaced probe.
-   First match має full historical oracle; наступні window-limited matches/top-k/
-   state звірити з full-scoring reference і зафіксувати explicit new oracles.
-   Config/scenario drift описати, старі 44 oracle files не змінювати.
-5. Лише після characterization freeze timing protocol/budget: один excluded
-   whole-sequence warmup і три fixed timed batches усіх 26 cases; fresh matcher
-   для кожної sequence, initial-global та retained costs окремо. Не warming-up
-   timed matcher до першого query: це змінило б global->local state. Load/init/
-   oracle checks відокремити від match timing. Це new workload baseline, не
-   before/after speedup, live/freshness/accuracy evidence або threshold tuning.
-   Partial-score variants не відновлювати автоматично; hardware/output поза scope.
-   CPU/wall clocks не calibrated coverage; hashes/containment/mutation і різні
-   symlink contracts зберегти. Cold-cache/independent annotated data окремо.
+2. **Read-only retained-window scale-work attribution**. Baseline завершено;
+   26 frozen scenarios/oracles у `artifacts/retained-window-20261120/`, input
+   hashes/mtime/session mappings bound. Старі 44 oracles теж незмінні. Не повторювати
+   завершені partial-score/cutoff/codegen/API/profile campaigns і baseline timing
+   без нової причини; partial-score series закрита, нові captures не потрібні.
+3. Прямо прочитати current matcher/kernel declarations/callers/tests. Bind current
+   sources, canonical core, compiler/options, official і diagnostic binary identities;
+   сім camera/output flags OFF. Новий artifact directory та frozen diagnostic plan.
+   Старі bound scripts/finalizers не перезапускати для іншого revision.
+4. Окремий instrumented copy без production edits/candidate: raw/scaled call
+   counts, logical pixel/overlap totals і coordinate-preparation work. Зберегти
+   порядок validation/scoring, strict winner, rounded top-k ties, insert/pop capacity,
+   refinement neighborhood/scale order/early zero та last-index commit semantics.
+   Exact match/top-k/capacity checks усіх initial+8 retained calls до frozen нових
+   oracles; synthetic boundary/state controls і independent counter readback.
+5. Diagnostics відокремити від latency. Counters/reference counts не доводять
+   CPU shares, coordinate cost або latency savings. CPU/wall clocks попереднього
+   profiler не calibrated coverage. Новий candidate лише після конкретного cost
+   evidence, окремої characterization і fixed API comparison, без автоматичного
+   відновлення partial-score tuning. Repeated images не є freshness/live/accuracy
+   acceptance; hardware/output/threshold tuning поза scope. Hashes/containment/
+   mutation guards і різні symlink contracts зберегти; cold-cache/annotated data окремо.
 6. Звірити unchanged sources/runtime/prior full-suite log, actual source/diff review;
    code change потребує нового full runner. Документувати new scenario/reference
    contract і limits, staged diff/check, commit/push, remote SHA, clean tracked
    state. Завершені lexical/path-constructor/PGM stages не відкривати без evidence.
+
+Retained-window evidence: `artifacts/retained-window-20261120/`, завершено 21-го,
+**306 bound files / 244 source hashes**, 40 synthetic cases/360 queries/180 rejects,
+234 reference-checked PGM queries. 26 нових oracles, 44 historical untouched.
+208 follow-ons: winner/confidence stable, top-k changes 16, windows 31–61.
+104 exact measurement processes, 26 excluded warmups, 78 initial/624 retained
+timed queries. Median case raw initial/retained 697.593/31.7275 µs,
+scale 1454.456/812.5625 µs; median case retained p95 raw 55.916/scale 1064.001 µs.
+Independent finalizer pass, inputs/flags/prior 357/65+65 log verified; нового runner
+немає. Validation SHA `bbd4e6f62e006c0e4cf38b6443abf13ba633db1e164f77d0d4d024f673f9998f`;
+manifest SHA `8b4d3d3cbaeeb9c48b93c99cf158054fa9a2678f43a0966048addd5fdb0a5920`.
+Preserved pre-build Python syntax failure; final syntax/build/reference/timing pass.
+Warm WSL unpaced repeated-image baseline, не speedup/freshness/live/accuracy claim.
 
 Partial-score study evidence: `artifacts/partial-score-20261114/`, **1361 bound
 local files**, frozen plan/tar/helper/characterization, raw witnesses та всі paired

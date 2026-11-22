@@ -1,10 +1,10 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-19` (first-checkpoint candidate відхилено; partial-score серію завершено).
+Оновлено: `2026-11-21` (retained-window baseline завершено; partial-score серія закрита).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [first-checkpoint candidate](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md).
-Відновлено remote-verified `03ec0a227a052b2fc81ca51f7a30c9375d19ff52`. Local candidate відхилено, production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md).
+Відновлено remote-verified `5d74d7236f8da8ad61a87bc9037d48f0b142f7fd`. Read-only baseline завершено, production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -36,7 +36,9 @@ Generated-loop review завершено: **2 exact full-ELF rebuilds / 2 exact 
 
 First-checkpoint candidate перевірено й відхилено: baseline/candidate **819 exact match / 234 capacity comparisons**, 28 fault cases/13 throws, 80 нових boundary controls. Separate diagnostic: **32 order/laziness self-tests**, 13 exact PGM; **7735 tuple checks** замість prior 103465, ті самі **809 updates / 18586 predicate evaluations / 108311040 pixels**. **440 exact API processes / 176 pairs**, ratios **1.0083 pgm / 0.9740 pgm-scale**, ranges **0.8285–1.1283 / 0.9006–1.1186**; clear consistent gain немає. **244 sources / 1387 bound files**, inputs/flags/prior 357/65+65 log verified, нового full runner немає. Partial-score серію на цих fixtures завершено, нові variants відкладено до іншого workload/profile evidence.
 
-Наступний bounded software крок — **read-only retained non-exact top-k/window30 characterization і baseline**. Current PGM top-k5 scenarios global/window0/one query; self window30 має top-k0. На тих самих 13 PGM/route mappings окремо дослідити window30/top-k5, scale OFF/ON, neutral bias, initial global query + 8 follow-ons. First match звірити з historical oracle; наступні window-limited outputs мають explicit new reference/oracles/config description, старі 44 oracles не змінювати. Timing protocol freeze після characterization. Це unpaced repeated-image software workload, без freshness/live/accuracy acceptance, threshold tuning, hardware/output або production edits.
+Retained-window baseline завершено: **26 scenarios / 234 reference-checked queries**, **40 synthetic cases / 360 state checks**. Initial historical match збережено, follow-ons мають explicit new oracles; старі **44 oracle files незмінні**. У 208 retained calls winner/confidence стабільні, window31–61; top-k змінюється у 16 follow-ons. **104 exact measurement processes**, 26 excluded warmups, **78 initial / 624 retained timed queries**. Median case initial **697.593/1454.456 µs**, retained **31.7275/812.5625 µs** raw/scale; це workload phases, не before/after speedup. Independent finalizer pass, **244 sources / 306 bound files**, input bytes/mtime, flags та prior same-source/Python **357/65+65** log звірені; нового full runner немає. [Звіт](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md).
+
+Наступний bounded software крок — **read-only retained-window scale-work attribution**: окремі production call/pixel/overlap/coordinate-preparation counters на frozen scenarios з exact новими oracles і synthetic controls. Diagnostic counts відокремити від timing, не видавати за CPU shares/latency savings. Baseline не повторювати без причини, partial-score variants не відновлювати. Це unpaced repeated-image software workload, без freshness/live/accuracy acceptance, threshold tuning, hardware/output або production edits.
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 
@@ -60,6 +62,8 @@ Visual Homing залишається GPS-denied, replay-first, fail-closed си�
 - operational progress-only caller у `match_live_camera_route` та explicit environment contract для indexed source package/output revision. Він подає raw native frame, same-frame match, tracked progress, health, read-only relative altitude, visual scale та image-derived yaw residual; `local_pose` завжди absent.
 
 ## Доведена Валідація
+
+- Retained-window baseline (`2026-11-21`, artifacts почато 20-го): **234 independent reference queries / 360 synthetic state checks**, 26 нових oracles, 44 historical unchanged; **104 exact measurement processes / 702 timed queries**. Initial/retained case medians **697.593/31.7275 raw**, **1454.456/812.5625 scale µs**. **244 sources / 306 bound files**, prior 357/65+65 log verified, нового runner/candidate немає. [Звіт](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md); next — separate scale-work attribution.
 
 - First-checkpoint candidate (`2026-11-19`): baseline/candidate **819/234 comparisons**, 28 fault cases/13 throws; **32 counter self-tests / 13 PGM diagnostics**, tuple checks 7735 із unchanged search/pixels. **440 exact processes / 176 API pairs**, ratios 1.0083/0.9740 не дали clear gain, candidate відхилено. **244 sources / 1387 bound files**, prior 357/65+65 log verified, нового runner немає. [Звіт](FIRST_CHECKPOINT_CANDIDATE_2026-11-19_UA.md); next — retained top-k/window30 baseline.
 
