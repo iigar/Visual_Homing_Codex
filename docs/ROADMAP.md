@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current Focus - 2026-11-21
+## Current Focus - 2026-11-23
 
 Resume from [the saved session and optimization queue](SESSION_HANDOFF_2026-11-03_UA.md)
 and [current status](CURRENT_PROJECT_STATUS_UA.md). The bounded
@@ -140,6 +140,14 @@ Keep diagnostics outside timing, counts are not CPU shares or latency savings.
 No automatic candidate/partial-score reopening, production edits, threshold tuning
 or hardware/output. Repeated unpaced images do not establish freshness/live/accuracy.
 Separate cold-cache studies remain queued.
+The [saved optimization and architecture discussion](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md)
+preserves the methodology, class/source snapshot and larger recommendations.
+Proposed architectural order: shared live/replay frame processing, measured
+buffer ownership/scale preparation, then bounded multi-chunk route consumption
+and index-based search in separate stages. These are recommendations without
+implementation or measured gains; the established next diagnostic slice above
+remains current. Behavior-preserving extraction and algorithmic search changes
+need different acceptance criteria. No broad runtime rewrite or class hierarchy.
 Synthetic fixtures do not establish accuracy or tail-latency guarantees.
 No hardware/output or threshold changes. Completed telemetry/timing
 and second-pass evaluation work is recorded in current status; do not restart it.

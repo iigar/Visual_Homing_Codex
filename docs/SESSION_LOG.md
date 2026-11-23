@@ -1,5 +1,21 @@
 # Session Log
 
+## 2026-11-23 — Save methodology, classes and architectural optimization queue
+
+- User requested «збережи все» after methodology/class/priority discussions.
+  Resumed remote-verified 073a5d1, native tracked clean; preserved three user
+  untracked items. Reverified 306 retained evidence files/244 sources/19 inputs/
+  44 historical oracles and existing 148 doc links using native readback.
+- Saved diagnostic-first workflow, reference/candidate/timing acceptance, class
+  snapshot and composition debt, architecture-vs-runtime value assessment and five
+  larger directions. No new algorithm, refactor, benchmark/full-suite or hardware.
+- Recorded proposed order: shared live/replay frame processing, measured ownership/
+  scale preparation, bounded chunks and index search. Advice not implementation;
+  existing next scale-work diagnostic remains, later user steering takes priority.
+- Added OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md; synchronized status,
+  handoff, roadmap, decisions and project memory. Explicitly requested persistent
+  memory update is written as a separate ad_hoc note, without editing MEMORY.md.
+
 ## 2026-11-21 — Complete retained-window reference and latency baseline
 
 - Resumed remote-verified 5d74d72, tracked clean; artifacts started November 20. Software-only,

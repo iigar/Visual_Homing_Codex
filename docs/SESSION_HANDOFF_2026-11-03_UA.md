@@ -2,9 +2,10 @@
 
 Початково збережено `2026-11-03` за запитом «збережи все» поверх PGM checkpoint
 `42541d41258eb47b8b1d9c98bc3a0b905b6594b0`; опубліковано як `c927c93`.
-Оновлено `2026-11-21` після завершення
-[retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md)
-поверх опублікованого first-checkpoint checkpoint `5d74d72`.
+Оновлено `2026-11-23` за запитом «збережи все» після обговорення методики,
+класів та більших напрямів; [повний збережений контекст](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md).
+[Retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md) опубліковано
+як `073a5d1`; цей save відновлено поверх нього без production edits.
 Partial-score candidate серію на чинних fixtures завершено без production patch.
 У цьому slice production/tests/runner/core/config незмінні. Чинні сім coarse-zero
 match рядків, pixel kernels/cache/policy/thresholds/output gates збережені.
@@ -15,6 +16,10 @@ match рядків, pixel kernels/cache/policy/thresholds/output gates збер�
 
 > Продовжуй Visual_Homing із docs/SESSION_HANDOFF_2026-11-03_UA.md.
 > Прочитай AGENTS.md і docs/CURRENT_PROJECT_STATUS_UA.md, перевір HEAD,
+> прочитай OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md: там методика,
+> стан класів і запропонована архітектурна черга, ще без реалізації/gain.
+> Чинний next slice scale-work attribution збережено; нова явна вказівка
+> користувача має пріоритет. Далі перевір
 > native Windows tracked status та remote. PGM/filesystem/path-depth/CLI/matcher
 > baseline та coarse-zero skip завершені. Новий skip застосовується лише після
 > exact zero за top-k=0/bias=0; повний structural validation traversal збережено.
@@ -275,6 +280,10 @@ raw pstats проти JSON, перерахував medians, звірив interpr
 Попередній full log перевірено за hash, success/counts; це historical validation.
 
 ## Наступний bounded slice
+
+Збережені рекомендації щодо класів/live-replay/chunks/index не змінюють автоматично
+цю чинну diagnostic задачу. Методика, source snapshot, proposed order, межі та
+acceptance criteria зібрані в [контексті November23](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md).
 
 1. Звірити runtime, HEAD/status/remote, локальні artifacts і trusted-source
    identities. Новий experiment робити в новій artifact directory.

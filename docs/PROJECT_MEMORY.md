@@ -1,5 +1,29 @@
 # Project Memory
 
+## Methodology, Classes And Larger Optimization Directions Saved — 2026-11-23
+
+User asked to preserve everything after discussing diagnostic-vs-production code,
+class structure, value of bounded refactoring, and larger improvements. Baseline
+073a5d1 remote-verified. No production/core/tests/runner/config changes or new
+experiments/full suite in this save. Retained-window evidence 306/source 244 verified.
+Seven role interfaces and concrete matcher/navigator/health/telemetry/verification
+components exist. Source snapshot: camera_smoke.cpp 3128 physical lines, live match
+starts at 1479 and exceeds 1600; main.cpp 1543/main starts at 749. LOC is not a bug/performance
+proof; full ownership/dependency audit remains pending. Existing progress,
+endpoint/dwell and readiness helpers are already completed extraction slices.
+Recommended architecture: shared live/replay per-frame processing and session
+state boundaries, then measured buffer ownership/scale work, then bounded route
+chunks and compact-index candidate search. VHIX/chunk builders exist; actual
+bounded search/multi-chunk matcher/top-N verification/multi-frame lock pending.
+Refactoring value is testability/change safety; FPS/RAM gain unproven. New search
+policy also needs recall/missed-match/false-lock/off-route acceptance, not only
+exact old oracles. Preserve clocks/validation/top-k/state/allocation/output gates.
+These are saved recommendations, not implemented changes or automatic next-slice
+replacement. Established next remains read-only retained-window scale-work
+attribution; explicit later user steering overrides it. Partial-score remains closed.
+Full methodology, proposal details, acceptance limits and resume instructions:
+OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md.
+
 ## Retained-Window Reference And Baseline — 2026-11-21
 
 Resumed remote-verified 5d74d72; no production/test/runner/core/config edits.

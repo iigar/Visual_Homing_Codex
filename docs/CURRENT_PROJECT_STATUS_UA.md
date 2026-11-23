@@ -1,10 +1,11 @@
 # Поточний Стан Проєкту
 
-Оновлено: `2026-11-21` (retained-window baseline завершено; partial-score серія закрита).
+Оновлено: `2026-11-23` (збережено методику, стан класів і рекомендації; retained-window baseline завершено).
 
 Для нової сесії: [handoff 2026-11-03 із контекстом і чергою](SESSION_HANDOFF_2026-11-03_UA.md),
-потім [retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md).
-Відновлено remote-verified `5d74d7236f8da8ad61a87bc9037d48f0b142f7fd`. Read-only baseline завершено, production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
+потім [retained-window baseline](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md) і
+[методику та архітектурну чергу](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md).
+Збереження контексту відновлено з remote-verified `073a5d11a6384de9c874283f453de58f933d6f3e`. Production/tests/runner/core/config незмінні. Чинна coarse-zero optimization пропускає raw scoring лише після exact zero за top-k=0/bias=0, зі збереженням structural validation traversal та output gates.
 Path/inventory slices, frame/resolution/dataset-count/large-archive baselines, path-construction experiment і warm-audit distribution завершено. Актуальний
 HEAD/remote перевіряти через Git, не припускати старий SHA.
 
@@ -39,6 +40,8 @@ First-checkpoint candidate перевірено й відхилено: baseline/
 Retained-window baseline завершено: **26 scenarios / 234 reference-checked queries**, **40 synthetic cases / 360 state checks**. Initial historical match збережено, follow-ons мають explicit new oracles; старі **44 oracle files незмінні**. У 208 retained calls winner/confidence стабільні, window31–61; top-k змінюється у 16 follow-ons. **104 exact measurement processes**, 26 excluded warmups, **78 initial / 624 retained timed queries**. Median case initial **697.593/1454.456 µs**, retained **31.7275/812.5625 µs** raw/scale; це workload phases, не before/after speedup. Independent finalizer pass, **244 sources / 306 bound files**, input bytes/mtime, flags та prior same-source/Python **357/65+65** log звірені; нового full runner немає. [Звіт](RETAINED_WINDOW_BASELINE_2026-11-21_UA.md).
 
 Наступний bounded software крок — **read-only retained-window scale-work attribution**: окремі production call/pixel/overlap/coordinate-preparation counters на frozen scenarios з exact новими oracles і synthetic controls. Diagnostic counts відокремити від timing, не видавати за CPU shares/latency savings. Baseline не повторювати без причини, partial-score variants не відновлювати. Це unpaced repeated-image software workload, без freshness/live/accuracy acceptance, threshold tuning, hardware/output або production edits.
+
+Обговорення `2026-11-23` збережено повністю: diagnostic code перед production candidate, стан класів і велика runtime composition, оцінка цінності bounded refactoring. Архітектурна рекомендація — спільна обробка кадру live/replay → ownership/scale-work measurements → bounded route chunks та індексний пошук. Це окрема запропонована черга, не реалізація/підтверджений gain або автоматична заміна чинного next slice. Source snapshot: camera_smoke.cpp — 3128/main.cpp — 1543 фізичні рядки; великий runtime path лишається боргом. Новий save documentation-only, без experiments/full runner. [Повний контекст](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md).
 
 Гілка спрощення коду: `refactor/optimization-tech-debt`. Незмінена база `main`: `62c772b961917347471996a157c8a6e50d9c5449`; точка повернення — опублікований tag `baseline/pre-optimization-2026-09-17`.
 

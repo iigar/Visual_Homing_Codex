@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-11-23 - Preserve Methodology And Architectural Recommendations
+
+- User requested saving the full discussion of optimization methodology, class
+  structure, refactoring value and larger directions. Saved above remote-verified
+  073a5d1; this checkpoint changes documentation only, no new experiments/suite.
+- Diagnostic harness/reference/counters precede a production candidate; freeze
+  identities/contracts, separate diagnostics from timing, accept by correctness
+  and API evidence. Fewer operations/LOC do not establish CPU/RAM/FPS gains.
+- Current interfaces/components exist; camera_smoke.cpp 3128/main.cpp 1543 physical
+  lines and the >1600-line live matching function remain a composition concern.
+  Existing progress/endpoint/readiness helpers remain completed work.
+- Proposed architectural order: shared live/replay frame processing, ownership/
+  scale-work measurements, bounded chunks and index search as separate stages.
+  This is advice, not implemented or measured work; current next scale-work
+  diagnostic slice remains recorded. A new user instruction may reprioritize.
+- Separate behavior-preserving extraction from changed search policy, which
+  needs candidate recall/false-lock/off-route acceptance. Preserve software-only,
+  output gates, clocks/state, integrity guards and the closed partial-score series.
+  [Full context](OPTIMIZATION_STRATEGY_AND_ARCHITECTURE_2026-11-23_UA.md).
+
 ## 2026-11-21 - Freeze Retained-Window Oracles And Separate Work Attribution
 
 - Read-only 13 PGM mappings × scale OFF/ON, window30/top-k5, initial global+8
